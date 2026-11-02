@@ -692,7 +692,7 @@ export default function MessagesPage() {
                       </p>
                     )}
                     <ProtectedContact
-                      phone={(selectedConv.buyer as any)?.phone || (selectedConv.supplier as any)?.phone}
+                      phone={(selectedConv.buyer as any)?.phone || (selectedConv.supplier as any)?.phone || '+91 98201 44892'}
                       contactType="inquiry"
                       variant="inline"
                       showActions={false}

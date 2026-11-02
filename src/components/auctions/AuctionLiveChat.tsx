@@ -144,7 +144,7 @@ export default function AuctionLiveChat({
       buyerProfile?.company_name ||
       profile?.full_name ||
       user.email?.split('@')[0] ||
-      'Bidder';
+      'Verified Enterprise Buyer';
 
     const isUserManufacturer = company?.business_type === 'manufacturer' || profile?.role === 'supplier';
     const role: 'manufacturer' | 'buyer' = isUserManufacturer ? 'manufacturer' : 'buyer';

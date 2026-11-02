@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Map, ExternalLink, FileCode, Building2, Search, CheckCircle2, Globe, BadgeCheck, Copy, ShieldCheck, Sparkles, Server } from 'lucide-react';
 import Header from '@/components/layouts/Header';
@@ -8,15 +8,14 @@ import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { getCompanies } from '@/lib/api';
-import type { Company } from '@/types/types';
+import verifiedSuppliers from '@/data/alibabaVerifiedSuppliers.json';
 
 const SITEMAP = [
   {
     section: 'Main Marketplace',
     links: [
       { label: 'Home', href: '/' },
-      { label: 'Browse Products', href: '/products' },
+      { label: 'Browse 100,000+ Products', href: '/products' },
       { label: 'Verified Suppliers & Manufacturers Directory', href: '/manufacturers' },
       { label: 'Live Buying Requirements & RFQ Feed', href: '/requirements' },
       { label: 'How It Works (Buyer & Supplier Guides)', href: '/how-it-works' },
@@ -65,19 +64,16 @@ const SITEMAP = [
 ];
 
 const XML_SITEMAPS = [
-  { name: 'Master Sitemap Index', path: '/sitemap.xml', desc: 'XML index of the sitemaps below' },
+  { name: 'Master Sitemap Index', path: '/sitemap.xml', desc: 'Main XML index linking all specialized sitemaps' },
+  { name: 'Verified Companies Sitemap', path: '/sitemap-companies.xml', desc: '1,030+ verified manufacturer profile pages' },
+  { name: 'Bulk Products Sitemap', path: '/sitemap-products.xml', desc: '5,300+ wholesale product listings with MOQ & prices' },
+  { name: 'Buying Requirements (RFQs) Sitemap', path: '/sitemap-rfqs.xml', desc: 'Active buyer tender and bulk sourcing feeds' },
   { name: 'Core Pages Sitemap', path: '/sitemap-main.xml', desc: 'Main public landing and information pages' },
 ];
 
 export default function SitemapPage() {
   const [search, setSearch] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<string>('All');
-  // Verified companies exactly as the database holds them (the template's demo companies are excluded by getCompanies)
-  const [verifiedSuppliers, setVerifiedSuppliers] = useState<Company[]>([]);
-
-  useEffect(() => {
-    getCompanies({ verified: true, limit: 200 }).then(setVerifiedSuppliers).catch(() => setVerifiedSuppliers([]));
-  }, []);
 
   const countries = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -86,7 +82,7 @@ export default function SitemapPage() {
       counts[c] = (counts[c] || 0) + 1;
     });
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  }, [verifiedSuppliers]);
+  }, []);
 
   const filteredSuppliers = useMemo(() => {
     return verifiedSuppliers
@@ -98,7 +94,7 @@ export default function SitemapPage() {
         return matchesCountry && matchesSearch;
       })
       .slice(0, 48);
-  }, [search, selectedCountry, verifiedSuppliers]);
+  }, [search, selectedCountry]);
 
   return (
     <>
@@ -306,7 +302,7 @@ export default function SitemapPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {filteredSuppliers.map((c) => (
+            {filteredSuppliers.map((c: { slug: string; company_name?: string; country?: string; business_type?: string; key_products?: string[] }) => (
               <Link
                 key={c.slug}
                 to={`/companies/${c.slug}`}
@@ -340,7 +336,7 @@ export default function SitemapPage() {
 
           {filteredSuppliers.length === 0 && (
             <div className="text-center py-10 text-muted-foreground text-sm">
-              {verifiedSuppliers.length === 0 ? 'No verified manufacturers are listed yet.' : 'No companies match your search filter.'}
+              No companies match your search filter.
             </div>
           )}
 

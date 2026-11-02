@@ -3,10 +3,8 @@ import { Link } from 'react-router-dom';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
   BULKSKART_LOGO_DARK,
-  BULKSKART_LOGO_HEIGHT,
   BULKSKART_LOGO_LIGHT,
   BULKSKART_LOGO_URL,
-  BULKSKART_LOGO_WIDTH,
 } from '@/constants/branding';
 
 export interface BrandLogoProps {
@@ -61,8 +59,6 @@ export default function BrandLogo({
     <img
       src={logoSrc}
       alt="BulkSkart - Global B2B Marketplace"
-      width={BULKSKART_LOGO_WIDTH}
-      height={BULKSKART_LOGO_HEIGHT}
       onError={() => setImgError(true)}
       className={`w-auto object-contain shrink-0 transition-opacity duration-150 ${sizeClasses} ${className}`}
       loading="eager"
