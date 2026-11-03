@@ -24,6 +24,7 @@ vi.mock('@/components/common/NotificationBell', () => ({
 import MobileHomeHeader from '@/components/home/mobile/MobileHomeHeader';
 import MobileHomeHero from '@/components/home/mobile/MobileHomeHero';
 import MobileHomeNav from '@/components/home/mobile/MobileHomeNav';
+import indexHtml from '../../index.html?raw';
 
 function Where() {
   const { pathname, search } = useLocation();
@@ -192,6 +193,20 @@ describe('mobile home bottom bar', () => {
     mocks.phone = false;
     renderNav();
     expect(screen.queryByRole('navigation', { name: 'Main navigation' })).toBeNull();
+  });
+});
+
+describe('hero picture preload (index.html)', () => {
+  it('starts loading the phone hero picture early, and only for the home page at phone width', () => {
+    const tag = indexHtml.match(/<link id="mh-hero-preload"[^>]*>/)?.[0] ?? '';
+    // Vite rewrites this path to the fingerprinted file the hero imports, so it must be the same source file.
+    expect(tag).toContain('href="/src/assets/mobile-home/hero-art.webp"');
+    expect(tag).toContain('rel="preload"');
+    expect(tag).toContain('as="image"');
+    // inert until the small script below switches it on
+    expect(tag).toContain('media="not all"');
+    expect(indexHtml).toContain("window.location.pathname === '/'");
+    expect(indexHtml).toContain('(max-width: 767.98px)');
   });
 });
 
