@@ -100,9 +100,11 @@ export function extractNotificationDetails(item: {
 
 interface NotificationBellProps {
   className?: string;
+  /** 'mobileHome' draws the bell the way the mobile home header does; the menu it opens is the same. */
+  variant?: 'default' | 'mobileHome';
 }
 
-export default function NotificationBell({ className }: NotificationBellProps) {
+export default function NotificationBell({ className, variant = 'default' }: NotificationBellProps) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -440,19 +442,26 @@ export default function NotificationBell({ className }: NotificationBellProps) {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`h-9 w-9 text-muted-foreground hover:text-foreground relative ${className || ''}`}
-          aria-label={`Notifications (${unreadCount} unread)`}
-        >
-          <Bell className="w-4 h-4" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-white text-[10px] font-black flex items-center justify-center shadow-md animate-pulse">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </Button>
+        {variant === 'mobileHome' ? (
+          <button type="button" className="mh-bell" aria-label={`Notifications (${unreadCount} unread)`}>
+            <Bell strokeWidth={1.9} aria-hidden="true" />
+            {unreadCount > 0 && <span className="mh-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+          </button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-9 w-9 text-muted-foreground hover:text-foreground relative ${className || ''}`}
+            aria-label={`Notifications (${unreadCount} unread)`}
+          >
+            <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-white text-[10px] font-black flex items-center justify-center shadow-md animate-pulse">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </Button>
+        )}
       </DropdownMenuTrigger>
 
       <DropdownMenuContent

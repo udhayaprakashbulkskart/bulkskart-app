@@ -1,12 +1,15 @@
 import React from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import MobileHomeNav from '@/components/home/mobile/MobileHomeNav';
 interface MainLayoutProps {
   children: React.ReactNode;
   hideFooter?: boolean;
+  /** Shows the five-button bar at the bottom of the phone screen (home page only). */
+  mobileHomeNav?: boolean;
 }
 
-export default function MainLayout({ children, hideFooter = false }: MainLayoutProps) {
+export default function MainLayout({ children, hideFooter = false, mobileHomeNav = false }: MainLayoutProps) {
   return (
     <div className="flex flex-col min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background">
       <Header />
@@ -14,6 +17,7 @@ export default function MainLayout({ children, hideFooter = false }: MainLayoutP
         {children}
       </main>
       {!hideFooter && <Footer />}
+      {mobileHomeNav && <MobileHomeNav />}
     </div>
   );
 }

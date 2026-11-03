@@ -596,7 +596,7 @@ export default function HomePage() {
   };
 
   return (
-    <MainLayout>
+    <MainLayout mobileHomeNav>
       <PageMeta
         title="BulkSkart | B2B Wholesale Marketplace & Bulk Suppliers in India"
         description="Find verified manufacturers and wholesale suppliers in India. Every BulkSkart order includes free delivery. Compare bulk prices, estimate an order installment, post free RFQs, and source factory-direct products."

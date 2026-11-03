@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Search, ArrowRight, Package, Users, Globe, Flame, FileText, Truck, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import MobileHomeHero from '@/components/home/mobile/MobileHomeHero';
+import { MOBILE_QUERY, useMediaQuery } from '@/hooks/use-media-query';
 
 interface HeroSection3DProps {
   onSearch?: (query: string, category: string) => void;
@@ -29,6 +31,7 @@ export default function HeroSection3D({ onSearch }: HeroSection3DProps) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<'products' | 'manufacturers' | 'rfqs'>('products');
+  const isPhone = useMediaQuery(MOBILE_QUERY);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +58,20 @@ export default function HeroSection3D({ onSearch }: HeroSection3DProps) {
   const handleQuickTagClick = (tagQuery: string) => {
     navigate(`/products?q=${encodeURIComponent(tagQuery)}`);
   };
+
+  if (isPhone) {
+    return (
+      <MobileHomeHero
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        selectedType={selectedType}
+        onSelectedTypeChange={setSelectedType}
+        onSubmit={handleSearchSubmit}
+        popular={POPULAR_CATEGORIES}
+        onQuickTag={handleQuickTagClick}
+      />
+    );
+  }
 
   return (
     <section className="relative overflow-hidden border-b border-border bg-background">
