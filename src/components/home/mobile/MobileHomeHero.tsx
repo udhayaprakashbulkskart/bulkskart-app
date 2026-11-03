@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Box, ChevronDown, Database, Factory, FileText, Gavel, Globe, Search, ShieldCheck, Truck, Zap } from 'lucide-react';
+import { ArrowRight, ChevronDown, FileText, Globe, Search } from 'lucide-react';
 import heroArt from '@/assets/mobile-home/hero-art.webp';
 import promoArt from '@/assets/mobile-home/promo-art.webp';
+import { CheckBadge, FEATURES, Laurel, PROMO_POINTS, STATS, type HomeSearchType } from '../shared/parts';
 import './mobile-home.css';
 
-export type MobileSearchType = 'products' | 'manufacturers' | 'rfqs';
+export type MobileSearchType = HomeSearchType;
 
 interface MobileHomeHeroProps {
   searchQuery: string;
@@ -17,58 +18,10 @@ interface MobileHomeHeroProps {
   onQuickTag: (query: string) => void;
 }
 
-/** One gold laurel branch; the right one is the same drawing mirrored. */
-function Laurel({ flip = false }: { flip?: boolean }) {
-  // Where each pair of leaves sits along the branch.
-  const leaves: Array<[number, number]> = [[12, 32], [9.1, 27.4], [7.2, 22.3], [6.2, 17.1], [6.2, 11.7], [7, 6.4]];
-  return (
-    <svg className="mh-laurel" viewBox="0 0 22 38" aria-hidden="true" style={flip ? { transform: 'scaleX(-1)' } : undefined}>
-      <defs>
-        <linearGradient id={`laurel-${flip ? 'r' : 'l'}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffd98a" />
-          <stop offset="1" stopColor="#e8902a" />
-        </linearGradient>
-      </defs>
-      <g fill={`url(#laurel-${flip ? 'r' : 'l'})`} stroke="none">
-        <path d="M16 36 C 6 28, 4 14, 8 3" fill="none" stroke={`url(#laurel-${flip ? 'r' : 'l'})`} strokeWidth="1.1" />
-        {leaves.map(([x, y], i) => (
-          <React.Fragment key={i}>
-            <ellipse cx={x - 2.6} cy={y} rx="2.1" ry="3.9" transform={`rotate(-38 ${x - 2.6} ${y})`} />
-            <ellipse cx={x + 2.6} cy={y - 0.8} rx="2.1" ry="3.9" transform={`rotate(38 ${x + 2.6} ${y - 0.8})`} />
-          </React.Fragment>
-        ))}
-      </g>
-    </svg>
-  );
-}
-
-function CheckBadge() {
-  return (
-    <svg viewBox="0 0 27 27" aria-hidden="true">
-      <circle cx="13.5" cy="13.5" r="13" fill="#3a3a3f" />
-      <path d="M7 14l4.4 4.4L20 9" fill="none" stroke="#8be028" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 /** Widths of the popular-search chips in the design (reference pixels). */
 const POP_WIDTH: Record<string, number> = {
   Textile: 105, Steel: 87, Chemical: 128, Plastic: 107, Machinery: 124, Agriculture: 131, Packaging: 123, Electrical: 116,
 };
-
-const FEATURES = [
-  { icon: Truck, top: 'Free Delivery', bottom: 'on All Orders', href: '#order-benefits' },
-  { icon: ShieldCheck, top: 'Verified', bottom: 'Suppliers' },
-  { icon: Database, top: 'Bulk', bottom: 'Pricing' },
-  { icon: Zap, top: 'Fast', bottom: 'Quotations' },
-];
-
-const STATS = [
-  { icon: Factory, value: '5000+', label: 'Verified Manufacturers', tone: 'purple' },
-  { icon: Box, value: '1M+', label: 'Bulk Products', tone: 'brown' },
-  { icon: Globe, value: '120+', label: 'Trade Countries', tone: 'blue' },
-  { icon: Gavel, value: '10,000+', label: 'Live RFQs & Auctions', tone: 'green' },
-];
 
 export default function MobileHomeHero({
   searchQuery,
@@ -87,10 +40,10 @@ export default function MobileHomeHero({
         </div>
 
         <div className="mh-badge-row">
-          <Laurel />
+          <Laurel className="mh-laurel" />
           <Globe className="mh-badge-globe" strokeWidth={2} aria-hidden="true" />
           <span className="mh-badge-text">Global B2B Marketplace</span>
-          <Laurel flip />
+          <Laurel flip className="mh-laurel" />
         </div>
 
         <h1 className="mh-h1">
@@ -228,7 +181,7 @@ export default function MobileHomeHero({
           from <em>Verified Manufacturers</em>
         </h2>
         <ul>
-          {['Post Requirement (RFQ)', 'Receive Multiple Quotes', 'Compare & Choose Best Offer'].map((text) => (
+          {PROMO_POINTS.map((text) => (
             <li key={text}>
               <CheckBadge />
               {text}

@@ -1,0 +1,83 @@
+/*
+ * The site header on the home page for screens 768px wide and up: the same bar and the same controls,
+ * dressed like the new home design (deep purple-black, lavender search box, orange buttons).
+ * Every rule hangs off .dh-header, which is only set on the home page, so no other page changes.
+ */
+
+.dh-header {
+  background: #0b0a18;
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow: none;
+}
+.dh-header .dh-nav {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+.dh-header .dh-nav a:not(.text-primary) {
+  color: rgba(255, 255, 255, 0.76);
+  font-weight: 600;
+}
+.dh-header .dh-nav a:not(.text-primary):hover {
+  color: #ff9a1c;
+}
+
+.dh-header .dh-search {
+  max-width: min(680px, 46vw);
+  height: 42px;
+  padding-left: 14px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(132, 102, 190, 0.8);
+  background: linear-gradient(180deg, #352a50, #2a2043);
+  box-shadow: 0 0 0 1px rgba(120, 90, 200, 0.16), 0 6px 18px rgba(70, 30, 140, 0.3);
+}
+.dh-header .dh-search:focus-within {
+  border-color: #b48cff;
+  box-shadow: 0 0 0 3px rgba(160, 120, 255, 0.25);
+}
+.dh-header .dh-search svg {
+  color: #fff;
+}
+.dh-header .dh-search input {
+  color: #fff;
+  font-size: 14px;
+}
+.dh-header .dh-search input::placeholder {
+  color: rgba(255, 255, 255, 0.8);
+}
+.dh-header .dh-search button {
+  height: 32px;
+  padding: 0 20px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ff9a1c, #ee5c04);
+  box-shadow: 0 3px 12px rgba(255, 106, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dh-header .dh-region {
+  border: 1.5px solid rgba(255, 255, 255, 0.17);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+.dh-header .dh-register {
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ff9a1c, #ee5c04);
+  box-shadow: 0 4px 14px rgba(255, 106, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Tablets: the search box drops to its own full-width row so nothing is squeezed. */
+@media (max-width: 1023.98px) {
+  .dh-header > div:first-child {
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .dh-header .dh-search {
+    order: 3;
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: none;
+  }
+}

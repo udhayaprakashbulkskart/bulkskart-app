@@ -13,6 +13,7 @@ import { usePrefetch } from '@/hooks/usePrefetch';
 import NotificationBell from '@/components/common/NotificationBell';
 import MobileHomeHeader from '@/components/home/mobile/MobileHomeHeader';
 import { MOBILE_QUERY, useMediaQuery } from '@/hooks/use-media-query';
+import './header-desktop-home.css';
 import CopyPublicProfileButton from '@/components/common/CopyPublicProfileButton';
 import { toast } from 'sonner';
 import {
@@ -59,8 +60,9 @@ const navLinks = [
 
 import BrandLogo from '@/components/common/BrandLogo';
 
-function LogoMark({ className }: { className?: string }) {
-  return <BrandLogo size="responsive" linkTo={null} className={className} />;
+function LogoMark({ className, onDark = false }: { className?: string; onDark?: boolean }) {
+  // onDark: the header is dark whatever the theme (home page, wide screens), so use the white-lettered logo.
+  return <BrandLogo size="responsive" variant={onDark ? 'dark' : 'auto'} linkTo={null} className={className} />;
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -142,6 +144,8 @@ export default function Header() {
   const isActive = (href: string) => location.pathname === href;
   const isPhone = useMediaQuery(MOBILE_QUERY);
   const mobileHome = isPhone && location.pathname === '/';
+  // Home page on a wide screen: the same header, dressed like the new design (see header-desktop-home.css).
+  const desktopHome = !isPhone && location.pathname === '/';
 
   // The slide-in menu, shared by the old mobile header and the mobile home header.
   const drawer = (
@@ -323,17 +327,23 @@ export default function Header() {
   }
 
   return (
-    <header className="relative z-30 w-full bg-background border-b border-border shadow-sm transition-colors">
+    <header
+      className={
+        desktopHome
+          ? 'dh-header dark relative z-30 w-full border-b transition-colors'
+          : 'relative z-30 w-full bg-background border-b border-border shadow-sm transition-colors'
+      }
+    >
       {/* ── Main row ── */}
       <div className="max-w-[1400px] mx-auto px-2.5 sm:px-4 md:px-6 h-[56px] flex items-center gap-1 sm:gap-2 md:gap-4 justify-between md:justify-start">
 
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0 group py-1 min-w-0" aria-label="BulkSkart Homepage">
-          <LogoMark />
+          <LogoMark onDark={desktopHome} />
         </Link>
 
         {/* Search bar — desktop */}
-        <form onSubmit={handleSearch} className="hidden md:flex flex-1 min-w-[140px] max-w-[420px] lg:max-w-[500px] items-center bg-muted border border-border rounded-lg h-9 px-3 gap-2 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/30 transition-all">
+        <form onSubmit={handleSearch} className="dh-search hidden md:flex flex-1 min-w-[140px] max-w-[420px] lg:max-w-[500px] items-center bg-muted border border-border rounded-lg h-9 px-3 gap-2 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/30 transition-all">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input
             ref={searchInputRef}
@@ -392,7 +402,7 @@ export default function Header() {
           {/* Country, Currency & Tax Selector (Desktop) */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" aria-label="Select Country and Currency" className="h-9 px-2 gap-1.5 text-[13px] text-muted-foreground hover:text-foreground font-semibold">
+              <Button variant="ghost" size="sm" aria-label="Select Country and Currency" className="dh-region h-9 px-2 gap-1.5 text-[13px] text-muted-foreground hover:text-foreground font-semibold">
                 <span className="text-base leading-none">{countryConfig.flag}</span>
                 <span className="font-bold text-foreground">{countryConfig.code}</span>
                 <span className="text-xs font-mono text-muted-foreground">({countryConfig.symbol})</span>
@@ -498,7 +508,7 @@ export default function Header() {
                 <Button size="sm" variant="ghost" className="text-[13px] font-bold text-foreground hover:text-primary hover:bg-muted h-8 px-3 rounded whitespace-nowrap">Sign In</Button>
               </Link>
               <Link to="/register" className="shrink-0">
-                <Button size="sm" className="bg-[#FF5A00] text-white hover:bg-[#e04e00] h-8 px-3 text-[13px] font-bold rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Create Free Account</Button>
+                <Button size="sm" className="dh-register bg-[#FF5A00] text-white hover:bg-[#e04e00] h-8 px-3 text-[13px] font-bold rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Create Free Account</Button>
               </Link>
             </>
           )}
@@ -542,7 +552,7 @@ export default function Header() {
       </div>
 
       {/* ── Desktop Category Nav ── */}
-      <nav className="hidden md:block border-t border-border">
+      <nav className="dh-nav hidden md:block border-t border-border">
         <div className="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center overflow-x-auto scrollbar-none whitespace-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {navLinks.map((link, i) => (

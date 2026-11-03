@@ -11,6 +11,7 @@ import NotificationBell from '@/components/common/NotificationBell';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountry } from '@/contexts/CurrencyContext';
 import { BULKSKART_LOGO_DARK } from '@/constants/branding';
+import { MoreIcon } from '../shared/parts';
 import machineryIcon from '@/assets/mobile-home/cat-machinery.webp';
 import packagingIcon from '@/assets/mobile-home/cat-packaging.webp';
 import textileIcon from '@/assets/mobile-home/cat-textile.webp';
@@ -21,18 +22,6 @@ interface MobileHomeHeaderProps {
   dashboardHref: string;
   /** Opens the same slide-in menu the old mobile header opened. */
   onMenu: () => void;
-}
-
-/** The four dots of the "More" square: two outlined, two filled. */
-function MoreIcon() {
-  return (
-    <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <rect x="8" y="8" width="9" height="9" rx="3" stroke="#fff" strokeWidth="2.4" />
-      <rect x="23" y="8" width="9" height="9" rx="3" stroke="#fff" strokeWidth="2.4" />
-      <rect x="8" y="23" width="9" height="9" rx="3" fill="#8b5cf6" />
-      <rect x="23" y="23" width="9" height="9" rx="3" fill="#8b5cf6" />
-    </svg>
-  );
 }
 
 const CHIPS: Array<{ label: string; href: string; width: number; image?: string; icon?: React.ReactNode }> = [
