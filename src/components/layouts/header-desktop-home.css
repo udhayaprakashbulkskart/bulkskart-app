@@ -21,10 +21,9 @@
 }
 
 .dh-header .dh-search {
-  max-width: min(680px, 46vw);
-  height: 42px;
-  padding-left: 14px;
-  border-radius: 14px;
+  max-width: min(560px, 42vw);
+  padding-left: 12px;
+  border-radius: 12px;
   border: 1.5px solid rgba(132, 102, 190, 0.8);
   background: linear-gradient(180deg, #352a50, #2a2043);
   box-shadow: 0 0 0 1px rgba(120, 90, 200, 0.16), 0 6px 18px rgba(70, 30, 140, 0.3);
@@ -38,18 +37,18 @@
 }
 .dh-header .dh-search input {
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
 }
 .dh-header .dh-search input::placeholder {
   color: rgba(255, 255, 255, 0.8);
 }
 .dh-header .dh-search button {
-  height: 32px;
-  padding: 0 20px;
-  border-radius: 10px;
+  height: 28px;
+  padding: 0 16px;
+  border-radius: 9px;
   background: linear-gradient(180deg, #ff9a1c, #ee5c04);
-  box-shadow: 0 3px 12px rgba(255, 106, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  font-size: 13px;
+  box-shadow: 0 3px 10px rgba(255, 106, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  font-size: 12px;
   font-weight: 800;
 }
 

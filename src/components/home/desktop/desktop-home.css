@@ -1,6 +1,7 @@
 /*
  * Desktop home (screens 768px wide and up, home page only): the phone design carried over to a wide screen.
  * Same colours, shapes, text and links as the phone screen; laid out in rows and columns instead of one column.
+ * Sizes follow the rest of the site (compact: 13-15px text, headings up to about 60px), not the phone's.
  */
 
 .dh-dark {
@@ -31,13 +32,13 @@
 
 /* ───────────── the six category squares ───────────── */
 .dh-cats {
-  padding-top: 22px;
+  padding-top: 14px;
   background: linear-gradient(180deg, #0b0a18, #0d0b1a);
 }
 .dh-cats ul {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
   list-style: none;
 }
 .dh-cats li {
@@ -48,15 +49,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  height: 76px;
-  padding: 0 14px;
-  border-radius: 22px;
-  border: 2px solid rgba(118, 92, 188, 0.38);
+  gap: 10px;
+  height: 54px;
+  padding: 0 12px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(118, 92, 188, 0.38);
   background: linear-gradient(180deg, #251e3a, #1b152b);
   color: #fff;
   text-decoration: none;
-  font-size: 17px;
+  font-size: 14.5px;
   font-weight: 600;
   white-space: nowrap;
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
@@ -64,34 +65,34 @@
 .dh-cat:hover {
   transform: translateY(-2px);
   border-color: rgba(168, 138, 240, 0.75);
-  box-shadow: 0 10px 26px rgba(70, 30, 140, 0.38);
+  box-shadow: 0 8px 22px rgba(70, 30, 140, 0.38);
 }
 .dh-cat-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 48px;
-  height: 48px;
+  width: 34px;
+  height: 34px;
 }
 .dh-cat-icon img {
   display: block;
   max-width: 100%;
-  max-height: 46px;
+  max-height: 32px;
   width: auto;
   height: auto;
 }
 .dh-cat-icon svg {
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   stroke-width: 1.8;
 }
 
 /* ───────────── hero ───────────── */
 .dh-hero {
   position: relative;
-  margin-top: 22px;
-  padding-bottom: 64px;
+  margin-top: 14px;
+  padding-bottom: 46px;
   overflow: hidden;
   background:
     radial-gradient(52% 78% at 78% 36%, rgba(52, 60, 160, 0.5), transparent 70%),
@@ -100,20 +101,21 @@
 }
 .dh-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
   align-items: center;
-  column-gap: 8px;
-  padding-top: 48px;
-  padding-bottom: 8px;
+  column-gap: 16px;
+  padding-top: 26px;
 }
 .dh-hero-copy {
   position: relative;
   z-index: 1;
-  padding-bottom: 14px;
+  padding-bottom: 6px;
 }
 .dh-hero-art {
   position: relative;
-  margin-right: -24px;
+  max-width: 640px;
+  height: 410px;
+  margin: 0 -24px 0 auto;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%, #000 92%, transparent 100%), linear-gradient(180deg, transparent 0, #000 7%, #000 93%, transparent 100%);
   -webkit-mask-composite: source-in;
   mask-image: linear-gradient(90deg, transparent 0, #000 16%, #000 92%, transparent 100%), linear-gradient(180deg, transparent 0, #000 7%, #000 93%, transparent 100%);
@@ -122,39 +124,40 @@
 .dh-hero-art img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
 }
 .dh-badge-row {
   display: flex;
   align-items: center;
-  height: 44px;
+  height: 32px;
 }
 .dh-laurel {
-  width: 26px;
-  height: 44px;
+  width: 19px;
+  height: 32px;
 }
 .dh-badge-globe {
-  width: 32px;
-  height: 32px;
-  margin: 0 12px 0 10px;
+  width: 23px;
+  height: 23px;
+  margin: 0 9px 0 8px;
   color: #ffb347;
 }
 .dh-badge-text {
-  margin-right: 10px;
-  font-size: 24px;
+  margin-right: 8px;
+  font-size: 17px;
   font-style: italic;
   font-weight: 600;
   background: linear-gradient(180deg, #fff0c2, #ffb236);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 8px rgba(255, 150, 30, 0.55));
+  filter: drop-shadow(0 0 7px rgba(255, 150, 30, 0.55));
   white-space: nowrap;
 }
 .dh-h1 {
-  margin: 22px 0 0;
-  font-size: clamp(46px, 5.9vw, 86px);
-  line-height: 1.02;
+  margin: 14px 0 0;
+  font-size: clamp(34px, 4.2vw, 58px);
+  line-height: 1.04;
   font-style: italic;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -175,33 +178,33 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 12px rgba(255, 110, 20, 0.35));
+  filter: drop-shadow(0 0 10px rgba(255, 110, 20, 0.35));
 }
 .dh-swoosh {
   display: block;
-  width: min(230px, 38%);
-  height: 26px;
-  margin: 6px 0 0 clamp(70px, 10vw, 150px);
+  width: min(170px, 34%);
+  height: 20px;
+  margin: 4px 0 0 clamp(50px, 6.5vw, 92px);
 }
 .dh-sub {
-  max-width: 540px;
-  margin: 20px 0 0;
-  font-size: clamp(16px, 1.45vw, 21px);
+  max-width: 470px;
+  margin: 12px 0 0;
+  font-size: clamp(14px, 1.15vw, 16.5px);
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.93);
 }
 .dh-feats {
   display: flex;
-  margin-top: 32px;
+  margin-top: 20px;
 }
 .dh-feat {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 clamp(12px, 1.6vw, 24px);
+  gap: 9px;
+  padding: 0 clamp(10px, 1.3vw, 18px);
   color: #fff;
   text-decoration: none;
-  font-size: clamp(12.5px, 1.05vw, 14.5px);
+  font-size: clamp(12px, 0.95vw, 13px);
   line-height: 1.4;
 }
 .dh-feat:first-child {
@@ -212,8 +215,8 @@
 }
 .dh-feat svg {
   flex: none;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   color: #ff9a1c;
   stroke-width: 2;
 }
@@ -231,21 +234,21 @@
 .dh-ctas {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 34px;
+  gap: 12px;
+  margin-top: 22px;
 }
 .dh-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  min-width: clamp(200px, 19vw, 270px);
-  height: 62px;
-  padding: 0 30px;
-  border-radius: 18px;
+  gap: 9px;
+  min-width: clamp(160px, 14.5vw, 205px);
+  height: 46px;
+  padding: 0 22px;
+  border-radius: 14px;
   color: #fff;
   text-decoration: none;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   white-space: nowrap;
   transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
@@ -255,18 +258,18 @@
   filter: brightness(1.07);
 }
 .dh-cta svg {
-  width: 24px;
-  height: 24px;
+  width: 19px;
+  height: 19px;
   stroke-width: 2;
 }
 .dh-cta-1 {
   background: linear-gradient(180deg, #ff9a1c, #ee5c04);
-  box-shadow: 0 8px 26px rgba(255, 106, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.32);
+  box-shadow: 0 6px 20px rgba(255, 106, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.32);
 }
 .dh-cta-2 {
   background: linear-gradient(180deg, #17121f, #100c1a);
-  border: 2px solid #e08a22;
-  box-shadow: 0 0 16px rgba(255, 150, 30, 0.25);
+  border: 1.5px solid #e08a22;
+  box-shadow: 0 0 14px rgba(255, 150, 30, 0.25);
 }
 .dh-cta-2 svg {
   color: #ff9a2a;
@@ -275,20 +278,20 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 68px;
+  bottom: 52px;
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
 }
 .dh-dots i {
   display: block;
-  width: 18px;
-  height: 9px;
-  border-radius: 5px;
+  width: 16px;
+  height: 8px;
+  border-radius: 4px;
   background: #474255;
 }
 .dh-dots i:first-child {
-  width: 19px;
+  width: 17px;
   background: #f28002;
 }
 
@@ -296,42 +299,42 @@
 .dh-panel {
   position: relative;
   z-index: 2;
-  margin-top: -52px;
-  border-radius: 56px 56px 0 0;
+  margin-top: -38px;
+  border-radius: 38px 38px 0 0;
   border-top: 2px solid rgba(150, 110, 225, 0.35);
-  background: linear-gradient(180deg, #382059 0, #2a1946 110px, #1a1230 260px, #0f0c1f 420px, #0d0b1a 100%);
+  background: linear-gradient(180deg, #382059 0, #2a1946 90px, #1a1230 200px, #0f0c1f 330px, #0d0b1a 100%);
 }
 .dh-panel-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 32px 48px;
+  gap: 20px 40px;
   align-items: start;
-  padding-top: 40px;
-  padding-bottom: 52px;
+  padding-top: 26px;
+  padding-bottom: 32px;
 }
 .dh-panel-title {
   margin: 0;
-  font-size: 36px;
+  font-size: 26px;
   line-height: 1.2;
   font-weight: 700;
   color: #fff;
 }
 .dh-panel-title span {
   color: #ecdfff;
-  text-shadow: 0 0 16px rgba(190, 150, 255, 0.55);
+  text-shadow: 0 0 14px rgba(190, 150, 255, 0.55);
 }
 .dh-panel-sub {
-  margin: 6px 0 0;
-  font-size: 18px;
+  margin: 4px 0 0;
+  font-size: 14.5px;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.84);
 }
 .dh-find {
   display: flex;
   align-items: stretch;
-  height: 64px;
-  margin-top: 24px;
-  border-radius: 18px;
+  height: 48px;
+  margin-top: 16px;
+  border-radius: 13px;
   border: 1.5px solid rgba(140, 100, 215, 0.7);
   background: #1b162b;
   overflow: hidden;
@@ -343,7 +346,7 @@
 }
 .dh-find-select {
   position: relative;
-  flex: 0 0 200px;
+  flex: 0 0 160px;
   border-right: 1.5px solid rgba(140, 100, 215, 0.55);
   background: #131020;
 }
@@ -352,13 +355,13 @@
   -webkit-appearance: none;
   width: 100%;
   height: 100%;
-  padding: 0 44px 0 26px;
+  padding: 0 38px 0 20px;
   border: 0;
   outline: 0;
   background: transparent;
   color: #fff;
   font: inherit;
-  font-size: 17px;
+  font-size: 14.5px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -367,30 +370,30 @@
 }
 .dh-find-select svg {
   position: absolute;
-  right: 20px;
+  right: 15px;
   top: 50%;
-  width: 22px;
-  height: 22px;
-  margin-top: -11px;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
   pointer-events: none;
   stroke-width: 2.8;
 }
 .dh-find input {
   flex: 1;
   min-width: 0;
-  padding: 0 18px 0 24px;
+  padding: 0 14px 0 18px;
   border: 0;
   outline: 0;
   background: #1c172c;
   color: #fff;
   font: inherit;
-  font-size: 17px;
+  font-size: 14.5px;
 }
 .dh-find input::placeholder {
   color: rgba(255, 255, 255, 0.78);
 }
 .dh-find button {
-  flex: 0 0 78px;
+  flex: 0 0 60px;
   border: 0;
   background: linear-gradient(180deg, #ff9a1c, #ee5c04);
   color: #fff;
@@ -401,20 +404,20 @@
   filter: brightness(1.08);
 }
 .dh-find button svg {
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   stroke-width: 2.3;
 }
 .dh-popular {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  margin-top: 22px;
+  gap: 10px;
+  margin-top: 14px;
 }
 .dh-popular > span {
   flex: none;
-  padding-top: 8px;
-  font-size: 16px;
+  padding-top: 6px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #c9a8ff;
   white-space: nowrap;
@@ -422,18 +425,18 @@
 .dh-popular-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 .dh-pop {
-  height: 37px;
-  padding: 0 16px;
-  border-radius: 20px;
+  height: 31px;
+  padding: 0 13px;
+  border-radius: 16px;
   border: 1.5px solid rgba(255, 255, 255, 0.17);
   background: rgba(255, 255, 255, 0.07);
   color: #fff;
   font: inherit;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -445,16 +448,16 @@
 .dh-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
   align-self: center;
 }
 .dh-stat {
   display: flex;
   align-items: center;
-  gap: 16px;
-  min-height: 96px;
-  padding: 12px 18px;
-  border-radius: 24px;
+  gap: 12px;
+  min-height: 74px;
+  padding: 10px 14px;
+  border-radius: 18px;
   border: 1.5px solid var(--c-border);
   background: linear-gradient(135deg, var(--c-from), var(--c-to));
   color: #fff;
@@ -464,15 +467,15 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
   background: linear-gradient(145deg, var(--c-tile-from), var(--c-tile-to));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 .dh-stat-icon svg {
-  width: 36px;
-  height: 36px;
+  width: 27px;
+  height: 27px;
   stroke-width: 1.9;
 }
 .dh-stat-text {
@@ -480,14 +483,14 @@
 }
 .dh-stat-text b {
   display: block;
-  font-size: 28px;
+  font-size: 21px;
   line-height: 1.15;
   font-weight: 700;
 }
 .dh-stat-text span {
   display: block;
-  margin-top: 3px;
-  font-size: 16px;
+  margin-top: 2px;
+  font-size: 13px;
   line-height: 1.25;
   color: rgba(255, 255, 255, 0.9);
 }
@@ -523,7 +526,7 @@
 /* ───────────── promo banner ───────────── */
 /* full-width band behind the banner; in dark mode it melts into the page colour of the sections below */
 .dh-promo-band {
-  padding-bottom: 56px;
+  padding-bottom: 36px;
 }
 html.dark .dh-promo-band {
   background: linear-gradient(180deg, #0d0b1a, hsl(var(--background)));
@@ -531,9 +534,9 @@ html.dark .dh-promo-band {
 .dh-promo {
   position: relative;
   display: block;
-  min-height: 236px;
-  border-radius: 30px;
-  border: 2px solid rgba(140, 100, 210, 0.4);
+  min-height: 160px;
+  border-radius: 22px;
+  border: 1.5px solid rgba(140, 100, 210, 0.4);
   background: linear-gradient(90deg, #3a1b52 0%, #2c1d4b 38%, #1d1535 75%);
   overflow: hidden;
   color: #fff;
@@ -543,14 +546,14 @@ html.dark .dh-promo-band {
 .dh-promo:hover {
   transform: translateY(-2px);
   border-color: rgba(168, 138, 240, 0.7);
-  box-shadow: 0 14px 36px rgba(70, 30, 140, 0.4);
+  box-shadow: 0 12px 30px rgba(70, 30, 140, 0.4);
 }
 .dh-promo-art {
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(50%, 520px);
+  width: min(44%, 400px);
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 26%);
   mask-image: linear-gradient(90deg, transparent 0, #000 26%);
 }
@@ -563,13 +566,13 @@ html.dark .dh-promo-band {
 }
 .dh-promo-body {
   position: relative;
-  max-width: 72%;
-  padding: 36px 48px;
+  max-width: 70%;
+  padding: 24px 34px;
 }
 .dh-promo h2 {
   margin: 0;
-  font-size: clamp(26px, 2.5vw, 36px);
-  line-height: 1.18;
+  font-size: clamp(20px, 1.9vw, 27px);
+  line-height: 1.2;
   font-weight: 800;
 }
 .dh-promo h2 em {
@@ -579,65 +582,66 @@ html.dark .dh-promo-band {
 .dh-promo ul {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px 30px;
-  margin: 24px 0 0;
+  gap: 10px 26px;
+  margin: 14px 0 0;
   padding: 0;
   list-style: none;
 }
 .dh-promo li {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 16.5px;
+  gap: 9px;
+  font-size: 14px;
   color: #fff;
 }
 .dh-promo li svg {
   flex: none;
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
 }
 
 /* ───────────── narrower screens (small laptops and tablets) ───────────── */
 @media (max-width: 1279.98px) {
   .dh-cats ul {
-    gap: 12px;
+    gap: 10px;
   }
   .dh-cat {
-    gap: 10px;
-    padding: 0 10px;
-    font-size: 16px;
+    gap: 8px;
+    padding: 0 8px;
+    font-size: 14px;
   }
   .dh-cat-icon {
-    width: 42px;
-    height: 42px;
+    width: 30px;
+    height: 30px;
   }
   .dh-cat-icon img {
-    max-height: 40px;
+    max-height: 28px;
   }
   .dh-cat-icon svg {
-    width: 34px;
-    height: 34px;
+    width: 24px;
+    height: 24px;
   }
 }
 @media (max-width: 1099.98px) {
   .dh-cats ul {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    gap: 12px;
   }
   .dh-cat {
-    gap: 14px;
-    font-size: 17px;
+    gap: 10px;
+    padding: 0 12px;
+    font-size: 14.5px;
   }
   .dh-cat-icon {
-    width: 48px;
-    height: 48px;
+    width: 34px;
+    height: 34px;
   }
   .dh-cat-icon img {
-    max-height: 46px;
+    max-height: 32px;
   }
   .dh-cat-icon svg {
-    width: 40px;
-    height: 40px;
+    width: 28px;
+    height: 28px;
   }
   .dh-panel-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -649,21 +653,25 @@ html.dark .dh-promo-band {
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    gap: 10px;
-    padding: 16px;
+    gap: 8px;
+    padding: 12px 14px;
   }
 }
 @media (max-width: 1023.98px) {
-  .dh-hero-grid {
-    padding-top: 36px;
+  .dh-hero-art {
+    max-width: none;
+    height: auto;
+  }
+  .dh-hero-art img {
+    height: auto;
   }
   .dh-badge-text {
-    font-size: 20px;
+    font-size: 16px;
   }
   .dh-feats {
     display: grid;
     grid-template-columns: repeat(2, max-content);
-    row-gap: 14px;
+    row-gap: 10px;
   }
   .dh-feat:nth-child(odd) {
     padding-left: 0;
@@ -673,13 +681,13 @@ html.dark .dh-promo-band {
   }
   .dh-cta {
     min-width: 0;
-    height: 54px;
-    padding: 0 22px;
-    font-size: 16px;
+    height: 44px;
+    padding: 0 20px;
+    font-size: 14.5px;
   }
   .dh-promo-body {
     max-width: 62%;
-    padding: 30px 32px;
+    padding: 22px 26px;
   }
   .dh-promo-art {
     width: 44%;
@@ -693,8 +701,8 @@ html.dark .dh-promo-band {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    gap: 16px;
-    padding: 12px 18px;
+    gap: 12px;
+    padding: 10px 14px;
   }
 }
 
