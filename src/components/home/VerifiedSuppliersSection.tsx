@@ -1,41 +1,18 @@
 /**
- * VerifiedSuppliersSection - Exact Redesign matching reference mockup (file_00000000825482068b8a3f7235eeb10d.png)
+ * VerifiedSuppliersSection - the "Verified Suppliers" part of the home page.
  *
- * Requirements:
- * - Section Header:
- *   - "Verified Suppliers" in bold white text
- *   - Orange circular verified checkmark badge icon right next to title
- *   - "View All ->" link in brand orange on the right
- * - Card Architecture:
- *   - Modern factory exterior photograph at top (aspect 16/10)
- *   - Dark card container (bg-[#0f172a] with border border-slate-800)
- *   - Horizontal identity row:
- *     - Square white company logo box on left
- *     - Bold company name (e.g. ABC Industries Private Limited, Global Pack Solutions, Shakti Electricals)
- *     - Country flag + Country name in muted text
- *     - Orange "Verified Supplier" status badge with checkmark icon
- *   - Action Button:
- *     - Full-width dark button: "View Products >" linking to supplier catalog/profile
- * - Responsive:
- *   - Mobile: Horizontal touch swipe carousel with snap scrolling and partial card peek
- *   - Desktop: Responsive 3 to 4 column grid
+ * This file holds the data (which suppliers, the 30 second rotation, the country filter, the links).
+ * The look, and the cards that scroll left and right by themselves, are in ./suppliers/SuppliersShowcase.tsx.
  */
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {
-  ArrowRight,
-  ChevronRight,
-  ChevronLeft,
-  BadgeCheck,
-  Check,
-  Building2,
-  RefreshCw,
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getCompanies } from '@/lib/api';
 import { DISTINCT_PIXABAY_COMPANY_IMAGES } from '@/lib/contentImages';
 import { matchProductImage } from '@/lib/productImageMatchingEngine';
 import type { Company } from '@/types/types';
+import SuppliersShowcase, { type CountryChip } from './suppliers/SuppliersShowcase';
+import { optimizeCatalogUrl } from './suppliers/images';
 
 export interface DisplaySupplier {
   id: string;
@@ -51,75 +28,12 @@ export interface DisplaySupplier {
   productFocus?: string;
   /** Alibaba-style sample product listing title shown on the card */
   sampleProduct?: string;
-}
-
-/**
- * Lightweight catalog image — skips SafeImage matching overhead for known-good CDN URLs.
- * Uses small WebP Unsplash derivatives + eager load for above-the-fold cards.
- */
-function FastCatalogImage({
-  src,
-  alt,
-  priority = false,
-  className = '',
-}: {
-  src: string;
-  alt: string;
-  priority?: boolean;
-  className?: string;
-}) {
-  const [loaded, setLoaded] = React.useState(false);
-  const [failed, setFailed] = React.useState(false);
-  const optimized = React.useMemo(() => optimizeCatalogUrl(src), [src]);
-
-  return (
-    <div className={`relative w-full h-full overflow-hidden bg-slate-800 ${className}`}>
-      {!loaded && !failed && (
-        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800" />
-      )}
-      {!failed ? (
-        <img
-          src={optimized}
-          alt={alt}
-          width={480}
-          height={300}
-          loading={priority ? 'eager' : 'lazy'}
-          decoding="async"
-          // React 18: pass as DOM attr for LCP on above-the-fold cards
-          {...({ fetchpriority: priority ? 'high' : 'low' } as React.ImgHTMLAttributes<HTMLImageElement>)}
-          onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
-          className={`w-full h-full object-cover transition-opacity duration-300 ${
-            loaded ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-xs font-medium px-3 text-center">
-          {alt}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Shrink Unsplash/CDN payloads for card thumbnails (~40–80KB vs 300KB+) */
-function optimizeCatalogUrl(url: string): string {
-  if (!url) return url;
-  if (url.includes('images.unsplash.com')) {
-    try {
-      const u = new URL(url);
-      u.searchParams.set('auto', 'format');
-      u.searchParams.set('fit', 'crop');
-      u.searchParams.set('w', '480');
-      u.searchParams.set('h', '300');
-      u.searchParams.set('q', '70');
-      u.searchParams.set('fm', 'webp');
-      return u.toString();
-    } catch {
-      return url;
-    }
-  }
-  return url;
+  /** Up to three short labels for the card (what the supplier makes or does) */
+  tags?: string[];
+  /** Facts from the company record; a card only shows the ones it has */
+  yearsInBusiness?: number;
+  totalProducts?: number;
+  exportsGlobally?: boolean;
 }
 
 /** Simulation cycle: rotate unique supplier batches every 30 seconds */
@@ -770,7 +684,7 @@ function hydrateSupplierCatalog(seed: number): DisplaySupplier[] {
     } else {
       usedImages.add(img);
     }
-    return { ...raw, img } as DisplaySupplier;
+    return { ...raw, img, tags: raw.industry ? [raw.industry] : undefined } as DisplaySupplier;
   });
   return shuffleWithSeed(hydrated, seed);
 }
@@ -832,16 +746,32 @@ const COUNTRY_TABS = [
  * Custom High-Resolution Vector Brand Logo Renderer
  * Matches the exact aesthetic in the reference mockup
  */
+/** The initials on a dark tile, used when a supplier has no logo or its logo does not load */
+function SupplierMonogram({ name }: { name: string }) {
+  return (
+    <div className="vs-monogram select-none">
+      <span>{name.substring(0, 2).toUpperCase()}</span>
+    </div>
+  );
+}
+
+function SupplierLogoImage({ supplier }: { supplier: DisplaySupplier }) {
+  const [failed, setFailed] = useState(false);
+  if (failed || !supplier.logoUrl) return <SupplierMonogram name={supplier.name} />;
+  return (
+    <img
+      src={supplier.logoUrl}
+      alt={supplier.name}
+      className="w-full h-full object-contain p-0.5"
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 function SupplierBrandLogo({ supplier }: { supplier: DisplaySupplier }) {
   if (supplier.logoUrl) {
-    return (
-      <img
-        src={supplier.logoUrl}
-        alt={supplier.name}
-        className="w-full h-full object-contain p-0.5"
-        loading="lazy"
-      />
-    );
+    return <SupplierLogoImage supplier={supplier} />;
   }
 
   switch (supplier.logoType) {
@@ -1017,14 +947,44 @@ function SupplierBrandLogo({ supplier }: { supplier: DisplaySupplier }) {
 
     default:
       // Clean fallback monogram badge
-      return (
-        <div className="w-full h-full rounded-lg bg-slate-900 flex items-center justify-center select-none">
-          <span className="font-extrabold text-sm sm:text-base text-white tracking-wider">
-            {supplier.name.substring(0, 2).toUpperCase()}
-          </span>
-        </div>
-      );
+      return <SupplierMonogram name={supplier.name} />;
   }
+}
+
+/** Make a name short enough for a card label: drop brackets, keep the first part, trim at a word. */
+function shortTag(value?: string | null, max = 22): string {
+  let text = (value || '').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+  text = text.split(/\s[-–·|]\s|,|;/)[0].trim();
+  if (text.length > max) {
+    const cut = text.slice(0, max);
+    const lastSpace = cut.lastIndexOf(' ');
+    text = (lastSpace > 8 ? cut.slice(0, lastSpace) : cut).trim();
+  }
+  return text;
+}
+
+/** Short labels for a company's card: its industry first, then the things it makes. */
+function companyTags(c: Company): string[] {
+  const extra = c as Company & { industry?: string; subcategory?: string };
+  const seen = new Set<string>();
+  const tags: string[] = [];
+  const add = (value?: string | null) => {
+    const tag = shortTag(value);
+    if (!tag || seen.has(tag.toLowerCase())) return;
+    seen.add(tag.toLowerCase());
+    tags.push(tag);
+  };
+  add(extra.industry);
+  add(extra.subcategory);
+  (c.key_products || []).forEach(add);
+  // companies that list no products still say what kind of business they are
+  if (tags.length < 2) add(c.business_type);
+  if (tags.length < 2) add(c.production_capacity);
+  return tags.slice(0, 3);
+}
+
+function hasFacts(s: DisplaySupplier): boolean {
+  return s.yearsInBusiness != null || s.totalProducts != null || Boolean(s.exportsGlobally);
 }
 
 export default function VerifiedSuppliersSection() {
@@ -1110,6 +1070,8 @@ export default function VerifiedSuppliersSection() {
             (isReliableCoverUrl(c.cover_url) ? c.cover_url : null) ||
             (isReliableCoverUrl(c.banner_url) ? c.banner_url : null);
 
+          const years =
+            c.years_in_business ?? (c.year_established ? new Date().getFullYear() - c.year_established : undefined);
           formatted.push({
             id: c.id,
             name: c.company_name,
@@ -1125,12 +1087,23 @@ export default function VerifiedSuppliersSection() {
             industry,
             productFocus: industry,
             sampleProduct: `${industry} · OEM / Wholesale Lot`,
+            tags: companyTags(c),
+            yearsInBusiness: years && years > 0 ? years : undefined,
+            totalProducts: c.total_products && c.total_products > 0 ? c.total_products : undefined,
+            exportsGlobally: (c.export_destinations?.length ?? 0) > 0,
           });
         });
       }
 
-      setSuppliers(shuffleWithSeed(formatted, seed ^ 0x85ebca6b));
-      setRotationOffset(seed % Math.max(1, formatted.length));
+      // Cards with company facts (years, products, exports) come first, so the cards match the design;
+      // the hand-written reference suppliers, which carry none, follow.
+      const withFacts = formatted.filter(hasFacts);
+      const withoutFacts = formatted.filter((s) => !hasFacts(s));
+      setSuppliers([
+        ...shuffleWithSeed(withFacts, seed ^ 0x85ebca6b),
+        ...shuffleWithSeed(withoutFacts, seed ^ 0x85ebca6b),
+      ]);
+      setRotationOffset(0);
     } catch (err) {
       console.error('Failed to load verified suppliers', err);
       setError('Unable to load verified suppliers.');
@@ -1187,258 +1160,34 @@ export default function VerifiedSuppliersSection() {
     }
   };
 
-  const supplierScrollRef = useRef<HTMLDivElement>(null);
-
-  const scrollSuppliers = (direction: 'left' | 'right') => {
-    if (supplierScrollRef.current) {
-      const scrollAmount = supplierScrollRef.current.clientWidth * 0.75;
-      supplierScrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
-      });
-    }
-    advanceBatch(direction === 'left' ? -DISPLAY_COUNT : DISPLAY_COUNT);
-  };
+  // The chips after "All Global" are the first four countries of the tab list; the rest go in the "More" menu
+  const chips: CountryChip[] = COUNTRY_TABS.slice(1, 5);
+  const moreChips = useMemo<CountryChip[]>(() => {
+    const shown = new Set(COUNTRY_TABS.map((t) => t.key.toLowerCase()));
+    const rest: CountryChip[] = COUNTRY_TABS.slice(5);
+    const extra = new Map<string, CountryChip>();
+    suppliers.forEach((s) => {
+      const key = s.country;
+      if (!key || shown.has(key.toLowerCase()) || extra.has(key.toLowerCase())) return;
+      extra.set(key.toLowerCase(), { key, label: key, flag: COUNTRY_FLAGS[key] || s.flag || '🌐' });
+    });
+    return [...rest, ...Array.from(extra.values()).sort((a, b) => a.label.localeCompare(b.label))];
+  }, [suppliers]);
 
   return (
-    <section className="py-5 sm:py-7 md:py-9 bg-[#030712] text-white relative overflow-hidden border-b border-slate-900">
-      <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-5 md:px-6">
-
-        {/* ── SECTION HEADER (Exact to Reference Mockup file_00000000825482068b8a3f7235eeb10d.png) ── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3.5 sm:mb-4">
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <h2 className="text-lg sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              <span>Verified Suppliers</span>
-              {/* Orange circular badge with white checkmark matching reference mockup */}
-              <span
-                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#FF5A00] flex items-center justify-center shrink-0 shadow-sm shadow-[#FF5A00]/40"
-                title="Verified Global Suppliers"
-              >
-                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white stroke-[3.5]" />
-              </span>
-            </h2>
-
-            {/* 30-Second Live Simulation Countdown Badge */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FF5A00]/10 border border-[#FF5A00]/30 text-[#FF5A00] text-[11px] font-bold shadow-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF5A00] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FF5A00]"></span>
-              </span>
-              <span>30s Auto-Update: {secondsLeft}s</span>
-              <button
-                type="button"
-                onClick={handleManualRotate}
-                title="Show next unique suppliers"
-                className={`ml-1 text-[#FF5A00] hover:text-white transition-transform ${isRotating ? 'rotate-180 animate-spin' : 'hover:scale-110'}`}
-              >
-                <RefreshCw className="w-3 h-3" />
-              </button>
-            </div>
-
-            {/* Left and Right Scroll Navigation Buttons */}
-            <div className="flex items-center gap-1.5 ml-1">
-              <button
-                type="button"
-                onClick={() => scrollSuppliers('left')}
-                aria-label="Scroll verified suppliers left"
-                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#111827] hover:bg-[#FF5A00] text-slate-300 hover:text-white border border-slate-700 hover:border-[#FF5A00] flex items-center justify-center transition-all shadow-sm"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollSuppliers('right')}
-                aria-label="Scroll verified suppliers right"
-                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#111827] hover:bg-[#FF5A00] text-slate-300 hover:text-white border border-slate-700 hover:border-[#FF5A00] flex items-center justify-center transition-all shadow-sm"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <Link
-            to="/manufacturers"
-            className="text-[#FF5A00] hover:text-[#ff7429] font-bold text-xs sm:text-sm md:text-base flex items-center gap-1 transition-colors shrink-0 group"
-          >
-            <span>View All</span>
-            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-200 group-hover:translate-x-1" />
-          </Link>
-        </div>
-
-        {/* 30-Second Live Progress Timeline Bar */}
-        <div className="w-full h-1 bg-slate-900 rounded-full overflow-hidden mb-3 sm:mb-3.5" title={`Auto-updates every ${ROTATION_SECONDS}s (${secondsLeft}s remaining)`}>
-          <div
-            className="h-full bg-gradient-to-r from-[#FF5A00] via-[#FF7A00] to-[#FF5A00] transition-all duration-1000 ease-linear rounded-full"
-            style={{ width: `${((ROTATION_SECONDS - secondsLeft) / ROTATION_SECONDS) * 100}%` }}
-          />
-        </div>
-
-        {/* ── Country Filter Pills ───────────────────────────────────── */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2.5 mb-3.5 sm:mb-4 scrollbar-none -mx-1 px-1">
-          {COUNTRY_TABS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setSelectedCountry(tab.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 select-none ${
-                selectedCountry === tab.key
-                  ? 'bg-[#FF5A00] text-white shadow-sm shadow-[#FF5A00]/30 font-bold'
-                  : 'bg-[#111827] hover:bg-[#1f2937] text-slate-300 hover:text-white border border-slate-800'
-              }`}
-            >
-              <span className="text-xs">{tab.flag}</span>
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* ── Error Notification with Retry ──────────────────────────── */}
-        {error && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-950/40 border border-rose-800/50 flex items-center justify-between text-xs sm:text-sm text-rose-200">
-            <span>{error}</span>
-            <button
-              onClick={loadSuppliers}
-              className="flex items-center gap-1 px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-lg transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Retry
-            </button>
-          </div>
-        )}
-
-        {/* ── SUPPLIER CARDS DISPLAY ─────────────────────────────────── */}
-        {loading ? (
-          // Skeleton Loading
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, idx) => (
-              <div
-                key={idx}
-                className="bg-[#0f172a] border border-slate-800 rounded-2xl p-4 animate-pulse flex flex-col justify-between h-[280px]"
-              >
-                <div className="aspect-[16/10] bg-slate-800 rounded-xl mb-3" />
-                <div className="flex gap-3 items-center">
-                  <div className="w-12 h-12 rounded-xl bg-slate-800 shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-slate-800 rounded w-3/4" />
-                    <div className="h-3 bg-slate-800 rounded w-1/2" />
-                  </div>
-                </div>
-                <div className="h-9 bg-slate-800 rounded-xl w-full mt-3" />
-              </div>
-            ))}
-          </div>
-        ) : displayedSuppliers.length === 0 ? (
-          <div className="py-12 text-center bg-[#0f172a] rounded-2xl border border-slate-800 p-6">
-            <Building2 className="w-10 h-10 text-[#FF5A00] mx-auto mb-2 opacity-80" />
-            <p className="text-white font-semibold text-sm">No verified suppliers found for this region.</p>
-            <button
-              onClick={() => setSelectedCountry('all')}
-              className="mt-3 bg-[#FF5A00] hover:bg-[#ff7429] text-white text-xs px-4 py-2 rounded-xl font-bold transition-colors"
-            >
-              Show All Global Suppliers
-            </button>
-          </div>
-        ) : (
-          /* ── RESPONSIVE PC GRID (4 Columns) & MOBILE HORIZONTAL CAROUSEL ── */
-          <div
-            ref={supplierScrollRef}
-            className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 overflow-x-auto md:overflow-visible pb-4 pt-1 scrollbar-none snap-x snap-mandatory overscroll-x-contain touch-pan-x -mx-4 px-4 sm:mx-0 sm:px-0"
-          >
-            {displayedSuppliers.map((s, idx) => (
-              <div
-                key={`${s.id}-${s.img}`}
-                className={`w-[275px] sm:w-[295px] md:w-auto shrink-0 md:shrink snap-start bg-[#0f172a] hover:bg-[#131d33] border border-slate-800/90 hover:border-[#FF5A00]/50 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col justify-between group shadow-lg min-w-0 ${
-                  isRotating ? 'opacity-70 scale-[0.99]' : 'opacity-100 scale-100'
-                }`}
-              >
-                <div className="min-w-0 w-full">
-                  {/* Alibaba-style product catalog photo — optimized WebP, unique per card */}
-                  <div
-                    onClick={() => handleViewProducts(s)}
-                    className="aspect-[16/10] w-full overflow-hidden bg-slate-900 relative cursor-pointer"
-                  >
-                    <FastCatalogImage
-                      src={s.img}
-                      alt={s.sampleProduct || `${s.name} — ${s.industry || 'Verified Manufacturer'}`}
-                      priority={idx < 4}
-                      className="group-hover:[&_img]:scale-105 [&_img]:transition-transform [&_img]:duration-500 [&_img]:ease-out"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-                    <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md border border-[#FF5A00]/40 text-[#FF5A00] text-[10px] font-bold shadow-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                      <span>Verified Manufacturer</span>
-                    </div>
-                    {s.sampleProduct ? (
-                      <div className="absolute bottom-2 left-2.5 right-2.5 z-10 pointer-events-none">
-                        <span className="inline-block max-w-full truncate rounded-md bg-black/60 backdrop-blur-sm px-2 py-0.5 text-[10px] font-semibold tracking-wide text-slate-100 border border-white/10">
-                          {s.sampleProduct}
-                        </span>
-                      </div>
-                    ) : s.industry ? (
-                      <div className="absolute bottom-2 left-2.5 right-2.5 z-10 pointer-events-none">
-                        <span className="inline-block max-w-full truncate rounded-md bg-black/55 backdrop-blur-sm px-2 py-0.5 text-[10px] font-semibold tracking-wide text-slate-100 border border-white/10">
-                          {s.industry}
-                        </span>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {/* Card Body with Company Logo & Details */}
-                  <div className="p-3.5 sm:p-4">
-                    <div className="flex items-start gap-3">
-                      <div
-                        onClick={() => handleViewProducts(s)}
-                        className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-sm border border-slate-200/50 cursor-pointer overflow-hidden"
-                      >
-                        <SupplierBrandLogo supplier={s} />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h3
-                          onClick={() => handleViewProducts(s)}
-                          className="font-bold text-white text-sm sm:text-[14px] leading-snug line-clamp-2 group-hover:text-[#FF5A00] transition-colors cursor-pointer"
-                          title={s.name}
-                        >
-                          {s.name}
-                        </h3>
-
-                        <div className="flex items-center gap-1.5 text-xs text-slate-300 mt-1.5">
-                          <span className="text-sm shrink-0 leading-none">{s.flag}</span>
-                          <span className="truncate">{s.country}</span>
-                        </div>
-
-                        <div className="flex items-center gap-1 text-xs text-[#FF5A00] font-semibold mt-1">
-                          <BadgeCheck className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
-                          <span className="truncate">Verified Supplier</span>
-                        </div>
-
-                        {s.sampleProduct && (
-                          <p
-                            className="mt-1.5 text-[11px] text-slate-400 line-clamp-2 leading-snug"
-                            title={s.sampleProduct}
-                          >
-                            {s.sampleProduct}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="px-3.5 pb-3.5 sm:px-4 sm:pb-4 pt-0">
-                  <button
-                    type="button"
-                    onClick={() => handleViewProducts(s)}
-                    className="w-full bg-[#162032] hover:bg-[#FF5A00] text-white border border-slate-700/80 hover:border-[#FF5A00] rounded-xl py-2 px-3.5 text-xs sm:text-sm font-semibold flex items-center justify-between transition-all duration-200 shadow-sm active:scale-[0.99] group/btn"
-                  >
-                    <span className="font-medium">View Products</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover/btn:text-white group-hover/btn:translate-x-0.5 transition-all shrink-0" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-      </div>
-    </section>
+    <SuppliersShowcase
+      suppliers={displayedSuppliers}
+      selectedCountry={selectedCountry}
+      onCountryChange={setSelectedCountry}
+      chips={chips}
+      moreChips={moreChips}
+      secondsLeft={secondsLeft}
+      isRefreshing={isRotating}
+      onRefresh={handleManualRotate}
+      error={error}
+      onRetry={loadSuppliers}
+      onOpenSupplier={handleViewProducts}
+      renderLogo={(s) => <SupplierBrandLogo supplier={s} />}
+    />
   );
 }

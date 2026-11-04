@@ -8,8 +8,8 @@ export type HomeSearchType = 'products' | 'manufacturers' | 'rfqs';
 const LAUREL_LEAVES: Array<[number, number]> = [[12, 32], [9.1, 27.4], [7.2, 22.3], [6.2, 17.1], [6.2, 11.7], [7, 6.4]];
 
 /** One gold laurel branch; the right one is the same drawing mirrored. */
-export function Laurel({ flip = false, className }: { flip?: boolean; className?: string }) {
-  const id = `laurel-${flip ? 'r' : 'l'}`;
+export function Laurel({ flip = false, className, idPrefix = 'laurel' }: { flip?: boolean; className?: string; idPrefix?: string }) {
+  const id = `${idPrefix}-${flip ? 'r' : 'l'}`;
   return (
     <svg className={className} viewBox="0 0 22 38" aria-hidden="true" style={flip ? { transform: 'scaleX(-1)' } : undefined}>
       <defs>
