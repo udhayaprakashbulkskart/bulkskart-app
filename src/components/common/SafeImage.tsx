@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Package, Building2, ImageIcon } from 'lucide-react';
 import { resolveCompanyBranding, resolveRfqImage, resolveProductImage, generateIsolatedProductFallback, isGenericImage } from '@/lib/contentImages';
 import { resolveProductImageBackend } from '@/lib/pixabay';
@@ -124,6 +124,7 @@ export default function SafeImage({
   const [hasError, setHasError] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
   const [loading, setLoading] = useState(Boolean(initialUrl));
+  const imgRef = useRef<HTMLImageElement>(null);
   const [isStockResolved, setIsStockResolved] = useState<boolean>(
     Boolean(isRepresentativeImage || (!hasSellerImages && isFallbackOrStock(initialUrl)))
   );
@@ -173,6 +174,13 @@ export default function SafeImage({
     setLoading(Boolean(nextUrl));
     setIsStockResolved(Boolean(isRepresentativeImage || (!hasSellerImages && isFallbackOrStock(nextUrl))));
   }, [src, fallbackSrc, isRepresentativeImage, hasSellerImages, isProduct, category, alt, effectiveFallbackType]);
+
+  // A picture that comes out of the browser cache can finish loading before the effect above has run,
+  // and that effect switches the loading cover back on. Look at the picture again so the cover never gets stuck.
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth > 0) setLoading(false);
+  }, [imgSrc]);
 
   const handleError = () => {
     if (errorCount === 0) {
@@ -243,6 +251,7 @@ export default function SafeImage({
         </div>
       )}
       <img
+        ref={imgRef}
         src={imgSrc}
         alt={alt}
         loading={priority ? 'eager' : 'lazy'}

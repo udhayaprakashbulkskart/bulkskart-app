@@ -1,0 +1,1488 @@
+/*
+ * Featured Products section on the home page ("Verified Bulk Products").
+ *
+ * Phones (under 768px): every size is measured from the approved design, which is 1202 reference pixels wide.
+ * 1 reference pixel = 100vw / 1202 (capped at a 560px wide screen), so the section looks the same on every phone.
+ * Small text is never smaller than the floor given for it.
+ *
+ * Wide screens (768px and up): the same design in the site's compact scale, three to five cards a row.
+ */
+
+.pv {
+  position: relative;
+  background: #080a12;
+  color: #fff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+.pv *,
+.pv *::before,
+.pv *::after {
+  box-sizing: border-box;
+}
+:where(.pv) :where(h2, h3, p, ul, hr) {
+  margin: 0;
+  padding: 0;
+}
+:where(.pv) ul {
+  list-style: none;
+}
+:where(.pv) a {
+  color: inherit;
+  text-decoration: none;
+}
+:where(.pv) button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.pv :focus-visible {
+  outline: 3px solid #ff9a1c;
+  outline-offset: 3px;
+}
+
+/* ───────────── title and the line under it ───────────── */
+.pv-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.pv-title-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+}
+.pv-laurel {
+  flex: none;
+  display: block;
+}
+.pv-shield {
+  flex: none;
+  display: block;
+}
+.pv-title-block h2 {
+  font-weight: 700;
+  white-space: nowrap;
+  color: #fff;
+}
+.pv-title-block h2 span {
+  background: linear-gradient(180deg, #ff8f22, #ee6000);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.pv-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.96);
+}
+.pv-sub i {
+  font-style: normal;
+}
+.pv-free {
+  display: inline-flex;
+  align-items: center;
+  color: #4af06c;
+  font-weight: 700;
+}
+.pv-free svg {
+  flex: none;
+}
+
+/* ───────────── the four points ───────────── */
+.pv-stats {
+  position: relative;
+  display: grid;
+  align-items: center;
+  border-style: solid;
+  border-color: #f06a05;
+  background: #0f0e12;
+  box-shadow: 0 0 26px rgba(255, 110, 20, 0.24), inset 0 0 22px rgba(255, 120, 30, 0.07);
+}
+.pv-stats::before,
+.pv-stats::after {
+  content: '';
+  position: absolute;
+  left: 32%;
+  right: 32%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ffb02e, transparent);
+  filter: blur(0.4px);
+  pointer-events: none;
+}
+.pv-stats::before {
+  top: -2px;
+}
+.pv-stats::after {
+  bottom: -2px;
+}
+.pv-stats li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+.pv-stats li + li {
+  border-left: 1.5px solid rgba(255, 255, 255, 0.16);
+}
+.pv-stats svg {
+  flex: none;
+  color: #ff8a1f;
+}
+.pv-stats b {
+  display: block;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pv-stats li > span > span {
+  display: block;
+  color: rgba(255, 255, 255, 0.94);
+  white-space: nowrap;
+}
+.pv-stats li.is-green svg,
+.pv-stats li.is-green b,
+.pv-stats li.is-green li > span > span,
+.pv-stats li.is-green > span > span {
+  color: #3df06a;
+}
+.pv-stats li.is-green > span > span {
+  font-weight: 700;
+}
+
+/* ───────────── category chips ───────────── */
+.pv-chips {
+  display: flex;
+  align-items: center;
+  scrollbar-width: none;
+}
+.pv-chips::-webkit-scrollbar {
+  display: none;
+}
+.pv-chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: solid;
+  border-color: #3d4354;
+  background: #121624;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.pv-chip:hover {
+  border-color: #6b7384;
+}
+.pv-chip.is-selected {
+  border-color: transparent;
+  background: linear-gradient(180deg, #ff8403, #fd5700);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgba(255, 106, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.pv-chip svg {
+  flex: none;
+}
+
+/* ───────────── search and filters, and the messages ───────────── */
+.pv-tools {
+  display: flex;
+  align-items: center;
+}
+.pv-search {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.pv-search svg {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+.pv-search input {
+  display: block;
+  width: 100%;
+  border-style: solid;
+  border-color: #3d4354;
+  background: #0e111c;
+  color: #fff;
+  outline: none;
+  font: inherit;
+}
+.pv-search input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+.pv-search input:focus {
+  border-color: #ff8a1f;
+}
+.pv-search button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.65);
+}
+.pv-tool {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: solid;
+  border-color: #3d4354;
+  background: #121624;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.pv-tool:hover {
+  border-color: #6b7384;
+}
+.pv-tool.is-on {
+  border-color: transparent;
+  background: linear-gradient(180deg, #ff8403, #fd5700);
+  font-weight: 700;
+}
+.pv-tool svg {
+  flex: none;
+}
+.pv-tool.is-spinning svg {
+  animation: pv-spin 0.7s linear;
+}
+@keyframes pv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.pv-live {
+  display: none;
+  align-items: center;
+  flex: none;
+  color: rgba(255, 255, 255, 0.78);
+  white-space: nowrap;
+}
+.pv-live i {
+  flex: none;
+  border-radius: 50%;
+  background: #00d898;
+  box-shadow: 0 0 8px rgba(0, 216, 152, 0.65);
+}
+.pv-quick {
+  display: none;
+}
+.pv-clear {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #ff9a1c;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pv-clear:hover {
+  text-decoration: underline;
+}
+.pv-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  border-radius: 14px;
+  background: rgba(76, 5, 25, 0.4);
+  color: #fecdd3;
+  font-size: 13px;
+}
+.pv-error button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #e11d48;
+  color: #fff;
+  font-weight: 600;
+}
+.pv-error svg {
+  width: 14px;
+  height: 14px;
+}
+.pv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 36px 16px;
+  border: 1.5px solid #3d4354;
+  border-radius: 20px;
+  background: #0e111c;
+  text-align: center;
+}
+.pv-empty svg {
+  width: 38px;
+  height: 38px;
+  color: #ff7a1a;
+}
+.pv-empty h3 {
+  font-size: 15px;
+  font-weight: 700;
+}
+.pv-empty p {
+  max-width: 380px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+.pv-empty button {
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: #ff5a00;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ───────────── the cards ───────────── */
+.pv-grid {
+  display: grid;
+  transition: opacity 0.3s ease;
+}
+.pv-grid.is-rotating {
+  opacity: 0.55;
+}
+.pv-card {
+  container-type: inline-size;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-style: solid;
+  border-color: #e66a04;
+  background: linear-gradient(180deg, #0d1019, #080a12 70%);
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(255, 106, 0, 0.3), inset 0 0 18px rgba(255, 106, 0, 0.1);
+  animation: pv-in 0.35s ease both;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.pv-card:hover {
+  border-color: #ff8a1f;
+  box-shadow: 0 0 36px rgba(255, 106, 0, 0.45), inset 0 0 18px rgba(255, 106, 0, 0.12);
+}
+@keyframes pv-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.pv-media {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0b1020, #151a2a);
+}
+.pv-media .pv-photo {
+  position: absolute;
+  inset: 0;
+}
+.pv-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0, transparent 32%);
+  pointer-events: none;
+}
+.pv-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pv-media-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+}
+.pv-badge {
+  position: absolute;
+  z-index: 12;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  border-style: solid;
+  border-color: #1fcf5a;
+  background: linear-gradient(180deg, #055f2a, #023a18);
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+.pv-badge svg {
+  flex: none;
+}
+.pv-heart {
+  position: absolute;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  background: rgba(10, 12, 20, 0.78);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  color: #fff;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.pv-heart.is-on {
+  border-color: #ff5a00;
+  background: #ff5a00;
+}
+.pv-heart.is-on svg {
+  fill: #fff;
+}
+.pv-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.pv-name {
+  color: #fff;
+  font-weight: 700;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pv-name a:hover {
+  color: #ffb066;
+}
+.pv-price {
+  display: flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+.pv-price b {
+  color: #f57c05;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pv-price span {
+  flex: none;
+  color: #fff;
+  font-weight: 400;
+}
+.pv-moq {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  border-style: solid;
+  border-color: #d1a421;
+  background: rgba(255, 190, 40, 0.05);
+  color: #fff;
+  white-space: nowrap;
+}
+.pv-moq svg {
+  flex: none;
+  color: #f5c518;
+}
+.pv-moq span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pv-moq b {
+  color: #f6d21c;
+  font-weight: 700;
+}
+.pv-deliver {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  border-style: solid;
+  border-color: #28d65f;
+  background: linear-gradient(180deg, #0a5a2a, #02340f);
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pv-deliver svg {
+  flex: none;
+}
+.pv-seller {
+  display: flex;
+  align-items: center;
+  border-top-style: solid;
+  border-top-color: rgba(255, 255, 255, 0.09);
+}
+.pv-seller > svg {
+  flex: none;
+  color: #fff;
+}
+.pv-seller-name {
+  flex: 1;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.95);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pv-seal {
+  flex: none;
+}
+.pv-sep {
+  flex: none;
+  background: rgba(255, 255, 255, 0.55);
+}
+.pv-origin {
+  flex: none;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.95);
+}
+.pv-origin span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pv-flag {
+  display: block;
+  flex: none;
+  overflow: hidden;
+  text-align: center;
+  line-height: 1;
+}
+.pv-buy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: auto;
+  padding: 0;
+  border: 0;
+  background: linear-gradient(180deg, #ff8b05, #fd5300);
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 8px 22px rgba(255, 90, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  transition: filter 0.18s ease, transform 0.18s ease;
+}
+.pv-buy:hover {
+  filter: brightness(1.08);
+}
+.pv-buy:active {
+  transform: translateY(1px);
+}
+.pv-buy svg {
+  flex: none;
+}
+.pv-buy span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-width: 0;
+  text-align: center;
+  line-height: 1.15;
+  white-space: normal;
+}
+.pv-card.is-skeleton {
+  animation: none;
+  box-shadow: none;
+}
+.pv-card.is-skeleton .pv-media {
+  animation: pv-pulse 1.4s ease-in-out infinite;
+}
+.pv-bar {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  animation: pv-pulse 1.4s ease-in-out infinite;
+}
+@keyframes pv-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ───────────── under the cards ───────────── */
+.pv-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pv-count {
+  color: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+.pv-count b {
+  color: #fff;
+  font-weight: 700;
+}
+.pv-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff8b05, #fd5300);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 8px 22px rgba(255, 90, 0, 0.35);
+}
+.pv-more:disabled {
+  opacity: 0.75;
+  cursor: progress;
+}
+.pv-more svg {
+  flex: none;
+}
+.pv-more svg.is-spinning {
+  animation: pv-spin 0.9s linear infinite;
+}
+.pv-end {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+.pv-end svg {
+  flex: none;
+  color: #12c88a;
+}
+.pv-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: solid;
+  border-color: #e66a04;
+  background: rgba(255, 106, 0, 0.06);
+  color: #ffa24a;
+  font-weight: 700;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.pv-all:hover {
+  background: rgba(255, 106, 0, 0.16);
+  color: #fff;
+}
+.pv-all svg {
+  flex: none;
+}
+
+/* ───────────── phones ───────────── */
+@media (max-width: 767.98px) {
+  .pv {
+    --pv-u: calc(min(100vw, 560px) / 1202);
+    padding: calc(28 * var(--pv-u)) 0 calc(64 * var(--pv-u));
+  }
+  .pv-wrap {
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  .pv-title-block {
+    height: calc(79 * var(--pv-u));
+  }
+  .pv-laurel {
+    width: calc(45 * var(--pv-u));
+    height: calc(72 * var(--pv-u));
+  }
+  .pv-title-block .pv-laurel:first-child {
+    margin-right: calc(10 * var(--pv-u));
+  }
+  .pv-title-block .pv-laurel:last-child {
+    margin-left: calc(10 * var(--pv-u));
+  }
+  .pv-shield {
+    width: calc(80 * var(--pv-u));
+    height: calc(79 * var(--pv-u));
+    margin-right: calc(36 * var(--pv-u));
+  }
+  .pv-title-block h2 {
+    font-size: calc(65 * var(--pv-u));
+    line-height: calc(79 * var(--pv-u));
+  }
+  .pv-sub {
+    margin-top: calc(8 * var(--pv-u));
+    height: calc(30 * var(--pv-u));
+    font-size: max(7.5px, calc(20.9 * var(--pv-u)));
+    line-height: calc(30 * var(--pv-u));
+    gap: calc(11 * var(--pv-u));
+  }
+  .pv-free {
+    gap: calc(10 * var(--pv-u));
+    font-size: max(8.5px, calc(25.5 * var(--pv-u)));
+  }
+  .pv-free svg {
+    width: calc(52 * var(--pv-u));
+    height: calc(26 * var(--pv-u));
+  }
+
+  .pv-stats {
+    grid-template-columns: 318fr 235fr 315fr 283fr;
+    height: calc(109 * var(--pv-u));
+    margin: calc(28 * var(--pv-u)) calc(25 * var(--pv-u)) 0;
+    border-width: calc(2 * var(--pv-u));
+    border-radius: calc(30 * var(--pv-u));
+  }
+  .pv-stats li {
+    gap: calc(14 * var(--pv-u));
+    height: calc(70 * var(--pv-u));
+  }
+  .pv-stats li:nth-child(1) {
+    padding-right: calc(17 * var(--pv-u));
+  }
+  .pv-stats svg {
+    width: calc(72 * var(--pv-u));
+    height: calc(72 * var(--pv-u));
+    stroke-width: 1.5;
+  }
+  .pv-stats li:nth-child(4) svg {
+    width: calc(84 * var(--pv-u));
+    height: calc(84 * var(--pv-u));
+  }
+  .pv-stats b {
+    font-size: max(7.5px, calc(23 * var(--pv-u)));
+    line-height: calc(33 * var(--pv-u));
+  }
+  .pv-stats li > span > span {
+    font-size: max(7.5px, calc(22.4 * var(--pv-u)));
+    line-height: calc(33 * var(--pv-u));
+  }
+  .pv-stats li.is-green b,
+  .pv-stats li.is-green > span > span {
+    font-size: max(8.5px, calc(27 * var(--pv-u)));
+    line-height: calc(31 * var(--pv-u));
+  }
+
+  .pv-chips {
+    justify-content: space-between;
+    gap: calc(20 * var(--pv-u));
+    margin: calc(-2 * var(--pv-u)) 0 calc(-36 * var(--pv-u));
+    padding: calc(38 * var(--pv-u)) calc(21 * var(--pv-u)) calc(44 * var(--pv-u));
+    overflow-x: auto;
+  }
+  .pv-chip {
+    gap: calc(11 * var(--pv-u));
+    height: calc(65 * var(--pv-u));
+    padding: 0 calc(19 * var(--pv-u));
+    border-width: calc(2 * var(--pv-u));
+    border-radius: calc(33 * var(--pv-u));
+    font-size: max(7.5px, calc(20.6 * var(--pv-u)));
+  }
+  .pv-chip-all {
+    width: calc(241 * var(--pv-u));
+    padding: 0;
+    gap: calc(16 * var(--pv-u));
+    font-size: max(7.5px, calc(21.4 * var(--pv-u)));
+  }
+  .pv-chip svg {
+    width: calc(36 * var(--pv-u));
+    height: calc(36 * var(--pv-u));
+    stroke-width: 1.8;
+  }
+  .pv-chip-all svg {
+    width: calc(34 * var(--pv-u));
+    height: calc(34 * var(--pv-u));
+  }
+
+  .pv-tools {
+    gap: calc(12 * var(--pv-u));
+    margin: calc(14 * var(--pv-u)) calc(21 * var(--pv-u)) 0;
+  }
+  .pv-search svg {
+    left: calc(22 * var(--pv-u));
+    width: calc(30 * var(--pv-u));
+    height: calc(30 * var(--pv-u));
+  }
+  .pv-search input {
+    height: calc(62 * var(--pv-u));
+    padding: 0 calc(56 * var(--pv-u)) 0 calc(66 * var(--pv-u));
+    border-width: calc(2 * var(--pv-u));
+    border-radius: calc(31 * var(--pv-u));
+    font-size: max(9px, calc(23 * var(--pv-u)));
+  }
+  .pv-search button {
+    right: calc(16 * var(--pv-u));
+    width: calc(34 * var(--pv-u));
+    height: calc(34 * var(--pv-u));
+  }
+  .pv-search button svg {
+    position: static;
+    transform: none;
+    width: calc(24 * var(--pv-u));
+    height: calc(24 * var(--pv-u));
+  }
+  .pv-tool {
+    height: calc(62 * var(--pv-u));
+    border-width: calc(2 * var(--pv-u));
+    border-radius: calc(31 * var(--pv-u));
+    font-size: max(8.5px, calc(22 * var(--pv-u)));
+  }
+  .pv-tool-icon {
+    width: calc(62 * var(--pv-u));
+  }
+  .pv-tool-icon svg {
+    width: calc(28 * var(--pv-u));
+    height: calc(28 * var(--pv-u));
+  }
+  .pv-tool-filter {
+    gap: calc(12 * var(--pv-u));
+    padding: 0 calc(22 * var(--pv-u));
+  }
+  .pv-tool-filter svg {
+    width: calc(28 * var(--pv-u));
+    height: calc(28 * var(--pv-u));
+  }
+  .pv-clear {
+    font-size: max(8px, calc(20 * var(--pv-u)));
+  }
+  .pv-error {
+    margin: 14px calc(21 * var(--pv-u)) 0;
+  }
+  .pv-empty {
+    margin: 18px calc(21 * var(--pv-u)) 0;
+  }
+
+  .pv-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: calc(26 * var(--pv-u));
+    margin: calc(18 * var(--pv-u)) calc(21 * var(--pv-u)) 0;
+  }
+  .pv-card {
+    border-width: calc(2 * var(--pv-u));
+    border-radius: calc(30 * var(--pv-u));
+  }
+  .pv-media {
+    aspect-ratio: 564 / 299;
+  }
+  .pv-badge {
+    top: calc(19 * var(--pv-u));
+    left: calc(20 * var(--pv-u));
+    gap: calc(10 * var(--pv-u));
+    height: calc(55 * var(--pv-u));
+    padding: 0 calc(22 * var(--pv-u)) 0 calc(16 * var(--pv-u));
+    border-width: calc(2 * var(--pv-u));
+    border-radius: calc(28 * var(--pv-u));
+    font-size: max(8px, calc(22.4 * var(--pv-u)));
+  }
+  .pv-badge svg {
+    width: calc(38 * var(--pv-u));
+    height: calc(38 * var(--pv-u));
+  }
+  .pv-heart {
+    top: calc(10 * var(--pv-u));
+    right: calc(15 * var(--pv-u));
+    width: calc(64 * var(--pv-u));
+    height: calc(64 * var(--pv-u));
+    border-width: calc(2 * var(--pv-u));
+  }
+  .pv-heart svg {
+    width: calc(34 * var(--pv-u));
+    height: calc(34 * var(--pv-u));
+    stroke-width: 1.8;
+  }
+  .pv-body {
+    padding: 0 calc(21 * var(--pv-u)) calc(22 * var(--pv-u));
+  }
+  .pv-name {
+    margin: calc(7 * var(--pv-u)) 0 0 calc(6 * var(--pv-u));
+    font-size: max(10px, calc(31.9 * var(--pv-u)));
+    line-height: calc(40 * var(--pv-u));
+    min-height: calc(80 * var(--pv-u));
+  }
+  .pv-price {
+    gap: calc(16 * var(--pv-u));
+    margin: calc(12 * var(--pv-u)) 0 0 calc(6 * var(--pv-u));
+    height: calc(48 * var(--pv-u));
+    font-size: max(10px, calc(31 * var(--pv-u)));
+  }
+  .pv-price b {
+    font-size: max(12.5px, calc(41.4 * var(--pv-u)));
+    line-height: calc(48 * var(--pv-u));
+  }
+  .pv-moq {
+    gap: calc(14 * var(--pv-u));
+    height: calc(51 * var(--pv-u));
+    margin: calc(9 * var(--pv-u)) 0 0 calc(8 * var(--pv-u));
+    padding: 0 calc(18 * var(--pv-u)) 0 calc(16 * var(--pv-u));
+    border-width: calc(2 * var(--pv-u));
+    border-radius: calc(16 * var(--pv-u));
+    font-size: max(7.5px, calc(24.1 * var(--pv-u)));
+  }
+  .pv-moq svg {
+    width: calc(36 * var(--pv-u));
+    height: calc(36 * var(--pv-u));
+    stroke-width: 1.7;
+  }
+  .pv-moq b {
+    font-size: max(9px, calc(30 * var(--pv-u)));
+  }
+  .pv-deliver {
+    gap: calc(22 * var(--pv-u));
+    height: calc(55 * var(--pv-u));
+    margin: calc(17 * var(--pv-u)) 0 0 calc(7 * var(--pv-u));
+    padding: 0 calc(40 * var(--pv-u)) 0 calc(26 * var(--pv-u));
+    border-width: calc(2 * var(--pv-u));
+    border-radius: calc(28 * var(--pv-u));
+    font-size: max(9px, calc(29.3 * var(--pv-u)));
+  }
+  .pv-deliver svg {
+    width: calc(70 * var(--pv-u));
+    height: calc(33 * var(--pv-u));
+  }
+  .pv-seller {
+    gap: calc(14 * var(--pv-u));
+    margin: calc(16 * var(--pv-u)) 0 0 0;
+    padding: calc(4 * var(--pv-u)) calc(5 * var(--pv-u)) 0 calc(8 * var(--pv-u));
+    min-height: calc(66 * var(--pv-u));
+    border-top-width: calc(2 * var(--pv-u));
+  }
+  .pv-seller > svg {
+    width: calc(40 * var(--pv-u));
+    height: calc(40 * var(--pv-u));
+    stroke-width: 1.7;
+  }
+  .pv-seller-name {
+    font-size: max(7.5px, calc(21.4 * var(--pv-u)));
+    line-height: calc(30 * var(--pv-u));
+  }
+  .pv-seal {
+    width: calc(37 * var(--pv-u));
+    height: calc(37 * var(--pv-u));
+  }
+  .pv-sep {
+    width: calc(2 * var(--pv-u));
+    height: calc(40 * var(--pv-u));
+    margin: 0 calc(4 * var(--pv-u));
+  }
+  .pv-origin {
+    gap: calc(16 * var(--pv-u));
+    font-size: max(8px, calc(22 * var(--pv-u)));
+  }
+  .pv-flag {
+    width: calc(46 * var(--pv-u));
+    height: calc(34 * var(--pv-u));
+    border-radius: calc(6 * var(--pv-u));
+  }
+  .pv-buy {
+    gap: calc(18 * var(--pv-u));
+    height: calc(78 * var(--pv-u));
+    margin-top: calc(16 * var(--pv-u));
+    padding: 0 calc(18 * var(--pv-u));
+    border-radius: calc(25 * var(--pv-u));
+    font-size: max(8.5px, calc(24.8 * var(--pv-u)));
+  }
+  .pv-buy svg {
+    width: calc(42 * var(--pv-u));
+    height: calc(42 * var(--pv-u));
+    stroke-width: 1.7;
+  }
+  .pv-buy svg:last-child {
+    width: calc(38 * var(--pv-u));
+    height: calc(38 * var(--pv-u));
+    stroke-width: 2;
+  }
+  .pv-card.is-skeleton .pv-bar {
+    height: calc(28 * var(--pv-u));
+    margin: 0 0 0 calc(6 * var(--pv-u));
+  }
+
+  .pv-foot {
+    gap: calc(14 * var(--pv-u));
+    margin: calc(30 * var(--pv-u)) calc(21 * var(--pv-u)) 0;
+  }
+  .pv-count {
+    font-size: max(8.5px, calc(22 * var(--pv-u)));
+  }
+  .pv-more {
+    gap: calc(12 * var(--pv-u));
+    height: calc(68 * var(--pv-u));
+    padding: 0 calc(44 * var(--pv-u));
+    font-size: max(9.5px, calc(25 * var(--pv-u)));
+  }
+  .pv-more svg {
+    width: calc(30 * var(--pv-u));
+    height: calc(30 * var(--pv-u));
+  }
+  .pv-end {
+    gap: calc(10 * var(--pv-u));
+    font-size: max(8px, calc(20 * var(--pv-u)));
+  }
+  .pv-end svg {
+    width: calc(26 * var(--pv-u));
+    height: calc(26 * var(--pv-u));
+  }
+  .pv-all {
+    gap: calc(14 * var(--pv-u));
+    width: 100%;
+    height: calc(72 * var(--pv-u));
+    border-width: calc(2 * var(--pv-u));
+    border-radius: calc(36 * var(--pv-u));
+    font-size: max(9.5px, calc(25 * var(--pv-u)));
+  }
+  .pv-all svg {
+    width: calc(32 * var(--pv-u));
+    height: calc(32 * var(--pv-u));
+  }
+}
+@media (max-width: 479.98px) {
+  .pv-name {
+    -webkit-line-clamp: 2;
+  }
+}
+
+/* ───────────── wide screens ───────────── */
+@media (min-width: 768px) {
+  .pv {
+    padding: 30px 0 44px;
+  }
+  .pv-wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .pv-title-block {
+    height: 44px;
+  }
+  .pv-laurel {
+    width: 23px;
+    height: 38px;
+  }
+  .pv-title-block .pv-laurel:first-child {
+    margin-right: 10px;
+  }
+  .pv-title-block .pv-laurel:last-child {
+    margin-left: 10px;
+  }
+  .pv-shield {
+    width: 42px;
+    height: 42px;
+    margin-right: 16px;
+  }
+  .pv-title-block h2 {
+    font-size: 32px;
+    line-height: 44px;
+  }
+  .pv-sub {
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 20px;
+  }
+  .pv-free {
+    gap: 6px;
+    font-size: 14.5px;
+  }
+  .pv-free svg {
+    width: 30px;
+    height: 14px;
+  }
+
+  .pv-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    height: 64px;
+    margin-top: 18px;
+    border-width: 1.5px;
+    border-radius: 18px;
+  }
+  .pv-stats li {
+    gap: 12px;
+    height: 40px;
+  }
+  .pv-stats svg {
+    width: 30px;
+    height: 30px;
+    stroke-width: 1.8;
+  }
+  .pv-stats li:nth-child(4) svg {
+    width: 38px;
+    height: 32px;
+  }
+  .pv-stats b {
+    font-size: 14.5px;
+    line-height: 19px;
+  }
+  .pv-stats li > span > span {
+    font-size: 13px;
+    line-height: 19px;
+  }
+  .pv-stats li.is-green b,
+  .pv-stats li.is-green > span > span {
+    font-size: 15px;
+    line-height: 18px;
+  }
+
+  .pv-chips {
+    gap: 10px;
+    margin: -6px -24px -28px;
+    padding: 22px 24px 28px;
+    overflow-x: auto;
+  }
+  .pv-chip {
+    gap: 8px;
+    height: 38px;
+    padding: 0 16px;
+    border-width: 1.5px;
+    border-radius: 19px;
+    font-size: 13.5px;
+  }
+  .pv-chip svg {
+    width: 19px;
+    height: 19px;
+    stroke-width: 1.9;
+  }
+
+  .pv-tools {
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .pv-search svg {
+    left: 14px;
+    width: 16px;
+    height: 16px;
+  }
+  .pv-search input {
+    height: 38px;
+    padding: 0 34px 0 38px;
+    border-width: 1.5px;
+    border-radius: 19px;
+    font-size: 13px;
+  }
+  .pv-search button {
+    right: 10px;
+    width: 20px;
+    height: 20px;
+  }
+  .pv-search button svg {
+    position: static;
+    transform: none;
+    width: 14px;
+    height: 14px;
+  }
+  .pv-tool {
+    height: 38px;
+    border-width: 1.5px;
+    border-radius: 19px;
+    font-size: 13px;
+  }
+  .pv-tool-icon {
+    width: 38px;
+  }
+  .pv-tool-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .pv-tool-filter {
+    gap: 7px;
+    padding: 0 16px;
+  }
+  .pv-tool-filter svg {
+    width: 16px;
+    height: 16px;
+  }
+  .pv-live {
+    display: flex;
+    gap: 7px;
+    font-size: 12.5px;
+  }
+  .pv-live i {
+    width: 8px;
+    height: 8px;
+  }
+  .pv-clear {
+    font-size: 12.5px;
+  }
+
+  .pv-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+  }
+  .pv-card {
+    border-width: 1.5px;
+    border-radius: 18px;
+  }
+  .pv-media {
+    aspect-ratio: 564 / 299;
+  }
+  .pv-badge {
+    top: 10px;
+    left: 10px;
+    gap: 6px;
+    height: 28px;
+    padding: 0 12px 0 7px;
+    border-width: 1.5px;
+    border-radius: 14px;
+    font-size: 12px;
+  }
+  .pv-badge svg {
+    width: 18px;
+    height: 18px;
+  }
+  .pv-heart {
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-width: 1px;
+  }
+  .pv-heart svg {
+    width: 17px;
+    height: 17px;
+    stroke-width: 1.8;
+  }
+  .pv-body {
+    padding: 0 12px 12px;
+  }
+  .pv-name {
+    margin-top: 9px;
+    font-size: 14.5px;
+    line-height: 19px;
+    min-height: 38px;
+  }
+  .pv-price {
+    gap: 7px;
+    margin-top: 6px;
+    height: 26px;
+    font-size: 13.5px;
+  }
+  .pv-price b {
+    font-size: 20px;
+    line-height: 26px;
+  }
+  .pv-moq {
+    gap: 8px;
+    height: 28px;
+    margin-top: 7px;
+    padding: 0 10px;
+    border-width: 1px;
+    border-radius: 8px;
+    font-size: 11.5px;
+  }
+  .pv-moq svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 1.8;
+  }
+  .pv-moq b {
+    font-size: 12.5px;
+  }
+  .pv-deliver {
+    gap: 8px;
+    height: 28px;
+    margin-top: 8px;
+    padding: 0 14px 0 10px;
+    border-width: 1px;
+    border-radius: 14px;
+    font-size: 12.5px;
+  }
+  .pv-deliver svg {
+    width: 32px;
+    height: 15px;
+  }
+  .pv-seller {
+    gap: 7px;
+    margin-top: 11px;
+    padding-top: 9px;
+    min-height: 40px;
+    border-top-width: 1px;
+  }
+  .pv-seller > svg {
+    width: 17px;
+    height: 17px;
+    stroke-width: 1.7;
+  }
+  .pv-seller-name {
+    font-size: 11.5px;
+    line-height: 14px;
+  }
+  .pv-seal {
+    width: 16px;
+    height: 16px;
+  }
+  .pv-sep {
+    width: 1px;
+    height: 18px;
+    margin: 0 1px;
+  }
+  .pv-origin {
+    gap: 6px;
+    font-size: 11.5px;
+    max-width: 38%;
+  }
+  .pv-flag {
+    width: 20px;
+    height: 15px;
+    border-radius: 3px;
+  }
+  .pv-buy {
+    gap: 7px;
+    height: 38px;
+    margin-top: 11px;
+    padding: 0 10px;
+    border-radius: 11px;
+    font-size: 12px;
+  }
+  .pv-buy svg {
+    width: 17px;
+    height: 17px;
+    stroke-width: 1.8;
+  }
+  .pv-buy svg:last-child {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+  }
+  .pv-card.is-skeleton .pv-bar {
+    height: 14px;
+    margin-top: 10px;
+  }
+
+  .pv-foot {
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .pv-count {
+    font-size: 13px;
+  }
+  .pv-more {
+    gap: 8px;
+    height: 42px;
+    padding: 0 30px;
+    font-size: 13.5px;
+  }
+  .pv-more svg {
+    width: 16px;
+    height: 16px;
+  }
+  .pv-end {
+    gap: 7px;
+    padding: 8px 16px;
+    border: 1px solid #3d4354;
+    border-radius: 999px;
+    font-size: 12.5px;
+  }
+  .pv-end svg {
+    width: 15px;
+    height: 15px;
+  }
+  .pv-all {
+    gap: 8px;
+    height: 42px;
+    padding: 0 26px;
+    border-width: 1.5px;
+    border-radius: 21px;
+    font-size: 13.5px;
+  }
+  .pv-all svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+@media (min-width: 1200px) {
+  .pv-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .pv-chips {
+    flex-wrap: wrap;
+    margin: 16px 0 0;
+    padding: 0;
+    overflow: visible;
+  }
+}
+/* narrow cards (three to a row on a tablet): less padding, no seal or divider, and no cart in the button */
+@media (min-width: 768px) {
+  @container (max-width: 250px) {
+    .pv-body {
+      padding: 0 10px 10px;
+    }
+    .pv-name {
+      font-size: 13.5px;
+      line-height: 18px;
+      min-height: 36px;
+    }
+    .pv-price b {
+      font-size: 18px;
+    }
+    .pv-moq {
+      gap: 6px;
+      padding: 0 8px;
+      font-size: 10.5px;
+    }
+    .pv-moq b {
+      font-size: 11.5px;
+    }
+    .pv-moq svg {
+      width: 14px;
+      height: 14px;
+    }
+    .pv-seal,
+    .pv-sep {
+      display: none;
+    }
+    .pv-buy {
+      gap: 6px;
+      padding: 0 8px;
+      font-size: 11.5px;
+    }
+    .pv-buy svg:first-child {
+      display: none;
+    }
+  }
+}
+@media (min-width: 1280px) {
+  .pv-quick {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+@media (min-width: 768px) and (max-width: 1099.98px) {
+  .pv-stats li {
+    gap: 9px;
+  }
+  .pv-stats b {
+    font-size: 13px;
+  }
+  .pv-stats li > span > span {
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-card,
+  .pv-card.is-skeleton .pv-media,
+  .pv-bar,
+  .pv-tool.is-spinning svg,
+  .pv-more svg.is-spinning {
+    animation: none;
+  }
+  .pv-grid,
+  .pv-chip,
+  .pv-buy {
+    transition: none;
+  }
+}
