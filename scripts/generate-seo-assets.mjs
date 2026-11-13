@@ -1,5 +1,9 @@
 /**
- * After `vite build`, write route HTML shells and a sitemap from real rows.
+ * After `vite build`, stamp route meta into dist/index.html and write a sitemap.
+ * Live nginx 301s a no-slash URL when a directory of that name exists, and it does
+ * not serve /products from products.html. Shells stay out of dist so /products is
+ * the SPA (200, no redirect). A parse-time script applies the matching title,
+ * description, and no-slash canonical. Sitemap URLs use that same no-slash form.
  * If Supabase is unreachable, the public sitemap already copied into dist is left in place.
  */
 import fs from 'node:fs';
@@ -88,15 +92,20 @@ function applyMeta(html, page) {
   return next;
 }
 
-function writeShell(distDir, html, page) {
-  const rendered = applyMeta(html, page);
-  if (page.path === '/') {
-    fs.writeFileSync(path.join(distDir, 'index.html'), rendered);
-    return;
+function noSlash(urlPath) {
+  if (!urlPath || urlPath === '/') return '/';
+  return urlPath.endsWith('/') ? urlPath.slice(0, -1) : urlPath;
+}
+
+function injectRouteMeta(html, pages) {
+  const routes = {};
+  for (const page of pages) {
+    routes[noSlash(page.path)] = { title: page.title, description: page.description };
   }
-  const dir = path.join(distDir, page.path.replace(/^\//, ''));
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'index.html'), rendered);
+  const payload = JSON.stringify(routes).replace(/</g, '\\u003c');
+  const script = `<script id="bsk-route-meta">(function(){var routes=${payload};var path=location.pathname||"/";if(path.length>1&&path.endsWith("/"))path=path.slice(0,-1);var page=routes[path];if(!page)return;var canonical="https://www.bulkskart.com"+(path==="/"?"/":path);document.title=page.title;function meta(attr,name,content){var q="meta["+attr+"=\\""+name+"\\"]";var el=document.querySelector(q);if(!el){el=document.createElement("meta");el.setAttribute(attr,name);document.head.appendChild(el);}el.setAttribute("content",content);}meta("name","description",page.description);meta("property","og:title",page.title);meta("property","og:description",page.description);meta("property","og:url",canonical);meta("name","twitter:title",page.title);meta("name","twitter:description",page.description);var link=document.querySelector('link[rel="canonical"]');if(!link){link=document.createElement("link");link.setAttribute("rel","canonical");document.head.appendChild(link);}link.setAttribute("href",canonical);})();</script>`;
+  const without = html.replace(/<script id="bsk-route-meta">[\s\S]*?<\/script>\n?/, '');
+  return without.replace('</head>', `${script}\n</head>`);
 }
 
 function categoryPages() {
@@ -144,12 +153,13 @@ export async function generateSeoAssets(distDir) {
   if (!fs.existsSync(indexPath)) return;
   const html = fs.readFileSync(indexPath, 'utf8');
   const pages = [...STATIC_PAGES, ...categoryPages()];
-  for (const page of pages) writeShell(distDir, html, page);
+  const home = pages.find(page => page.path === '/') || STATIC_PAGES[0];
+  fs.writeFileSync(indexPath, injectRouteMeta(applyMeta(html, home), pages));
 
   const base = process.env.VITE_SUPABASE_URL;
   const key = process.env.VITE_SUPABASE_ANON_KEY;
   if (!base || !key) {
-    console.log('[seo] Supabase env missing; kept the existing sitemap and wrote HTML shells for static routes.');
+    console.log('[seo] Supabase env missing; kept the existing sitemap and stamped route meta into index.html.');
     return;
   }
 
@@ -160,17 +170,21 @@ export async function generateSeoAssets(distDir) {
       fetchAll(base, key, 'companies', 'select=slug&slug=not.is.null'),
       fetchAll(base, key, 'categories', 'select=slug&is_active=eq.true&slug=not.is.null'),
     ]);
-    const productUrls = products.map(row => row.slug).filter(Boolean).map(slug => `${SITE}/products/${slug}`);
+    const absolute = (urlPath) => {
+      const clean = noSlash(urlPath);
+      return `${SITE}${clean === '/' ? '/' : clean}`;
+    };
+    const productUrls = products.map(row => row.slug).filter(Boolean).map(slug => absolute(`/products/${slug}`));
     const requirementUrls = requirements
       .filter(row => row.id && row.title && !/\b(test|debug|timed|timeout)\b/i.test(row.title))
-      .map(row => `${SITE}/requirement/${row.id}`);
-    const companyUrls = companies.map(row => row.slug).filter(Boolean).map(slug => `${SITE}/suppliers/${slug}`);
+      .map(row => absolute(`/requirement/${row.id}`));
+    const companyUrls = companies.map(row => row.slug).filter(Boolean).map(slug => absolute(`/suppliers/${slug}`));
     const categoryUrls = [
-      ...categories.map(row => `${SITE}/category/${row.slug}`),
-      ...categoryPages().map(page => `${SITE}${page.path}`),
+      ...categories.map(row => absolute(`/category/${row.slug}`)),
+      ...categoryPages().map(page => absolute(page.path)),
     ];
     const unique = list => [...new Set(list)];
-    const mainUrls = STATIC_PAGES.map(page => `${SITE}${page.path === '/' ? '/' : page.path}`);
+    const mainUrls = STATIC_PAGES.map(page => absolute(page.path));
     fs.writeFileSync(path.join(distDir, 'sitemap-main.xml'), urlset(mainUrls));
     fs.writeFileSync(path.join(distDir, 'sitemap-products.xml'), urlset(unique(productUrls)));
     fs.writeFileSync(path.join(distDir, 'sitemap-rfqs.xml'), urlset(unique(requirementUrls)));
