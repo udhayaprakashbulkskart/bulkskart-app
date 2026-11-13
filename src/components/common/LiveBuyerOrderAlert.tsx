@@ -5,14 +5,13 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BadgeCheck, MapPin, Package, Pause, Play, X } from 'lucide-react';
+import { BadgeCheck, MessageSquare, Pause, Play, X } from 'lucide-react';
 import { supabase } from '@/db/supabase';
 import { checkDirectMessageQuota, checkSupplierPaidSubscription } from '@/lib/api';
 import type { Requirement } from '@/types/types';
 import { useAuth } from '@/contexts/AuthContext';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
-import BrandLogo from '@/components/common/BrandLogo';
 import { resolveRfqImage } from '@/lib/contentImages';
 
 const DISMISS_KEY = 'bsk_live_buyer_alert_dismissed';
@@ -153,7 +152,6 @@ export default function LiveBuyerOrderAlert() {
   const [ready, setReady] = useState(false);
   const [leads, setLeads] = useState<Requirement[]>([]);
   const [cursor, setCursor] = useState(0);
-  const [incoming, setIncoming] = useState(false);
   const [stats, setStats] = useState<Stats>({ active: null, today: null, buyers: null, countries: null });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogReason, setDialogReason] = useState<SubscriptionReason>('not_logged_in');
@@ -245,8 +243,7 @@ export default function LiveBuyerOrderAlert() {
           const seen = new Set(prev.map(row => row.id));
           const added = fresh.filter(row => !seen.has(row.id));
           if (added.length === 0) return prev;
-          setIncoming(true);
-          window.setTimeout(() => setIncoming(false), 500);
+          setCursor(0);
           return [...added, ...prev].slice(0, LEAD_LIMIT);
         });
         loadStats();
@@ -314,32 +311,35 @@ export default function LiveBuyerOrderAlert() {
   return (
     <>
       <style>{`
-        @keyframes bsk-alert-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-        @keyframes bsk-alert-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes bsk-alert-slide { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes bsk-alert-glow { 0%,100% { box-shadow: 0 0 0 1px rgba(255,101,0,0.45), 0 18px 50px -24px rgba(255,138,0,0.85); } 50% { box-shadow: 0 0 0 1px rgba(255,138,0,0.8), 0 18px 56px -18px rgba(255,101,0,0.95); } }
+        @keyframes bsk-alert-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        @keyframes bsk-alert-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bsk-sms-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bsk-alert-glow { 0%,100% { box-shadow: 0 0 0 1px rgba(255,101,0,0.4), 0 16px 40px -22px rgba(255,138,0,0.8); } 50% { box-shadow: 0 0 0 1px rgba(255,138,0,0.7), 0 16px 44px -18px rgba(255,101,0,0.9); } }
         @media (prefers-reduced-motion: reduce) {
           .bsk-alert-motion { animation: none !important; }
         }
       `}</style>
       <aside
-        className="bsk-alert-motion fixed z-40 flex max-h-[min(100dvh-24px,720px)] w-[calc(100%-24px)] flex-col overflow-hidden rounded-2xl border border-[#FF6500]/70 bg-[#080808]/88 text-white shadow-[0_18px_50px_-24px_rgba(255,138,0,0.9)] backdrop-blur-xl bottom-[max(12px,env(safe-area-inset-bottom))] left-3 right-3 sm:bottom-6 sm:left-auto sm:right-6 sm:w-[400px]"
-        style={{ animation: reduce ? undefined : 'bsk-alert-in 0.45s ease both, bsk-alert-glow 3.6s ease-in-out infinite, bsk-alert-float 4.5s ease-in-out 0.45s infinite' }}
+        className="bsk-alert-motion fixed z-40 flex max-h-[min(100dvh-24px,640px)] w-[calc(100%-24px)] flex-col overflow-hidden rounded-[22px] border border-[#FF6500]/70 bg-[#080808]/92 text-white shadow-[0_18px_50px_-24px_rgba(255,138,0,0.9)] backdrop-blur-xl bottom-[max(12px,env(safe-area-inset-bottom))] left-3 right-3 sm:bottom-6 sm:left-auto sm:right-6 sm:w-[360px]"
+        style={{ animation: reduce ? undefined : 'bsk-alert-in 0.4s ease both, bsk-alert-glow 3.6s ease-in-out infinite, bsk-alert-float 4.5s ease-in-out 0.4s infinite' }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
         aria-label="Live buyer alert"
       >
-        <header className="sticky top-0 z-10 flex items-start gap-2 border-b border-white/10 bg-[#080808]/90 px-3 py-2.5 backdrop-blur">
-          <BrandLogo size="sm" variant="dark" linkTo="/" className="mt-0.5 shrink-0" />
+        <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-white/10 bg-[#080808]/95 px-3 py-2.5 backdrop-blur">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FF6500] text-white">
+            <MessageSquare className="h-4 w-4" />
+          </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <span className="relative flex h-2 w-2 shrink-0">
-                <span className={`absolute inline-flex h-full w-full rounded-full bg-[#FF6500] opacity-70 ${reduce ? '' : 'animate-ping'}`} />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF8A00]" />
+              <p className="truncate text-[13px] font-bold text-white">Bulkskart</p>
+              <span className="rounded-full bg-[#FF6500] px-1.5 py-px text-[9px] font-black tracking-wide text-white">SMS</span>
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                <span className={`absolute inline-flex h-full w-full rounded-full bg-[#FF8A00] opacity-70 ${reduce ? '' : 'animate-ping'}`} />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#FF8A00]" />
               </span>
-              <p className="truncate text-[12px] font-black tracking-[0.14em] text-white">LIVE BUYER ALERT</p>
             </div>
-            <p className="mt-0.5 text-[11px] text-white/70">New bulk requirements are arriving right now!</p>
+            <p className="text-[11px] leading-snug text-white/65">New bulk requirements are arriving right now!</p>
           </div>
           <button
             type="button"
@@ -362,13 +362,13 @@ export default function LiveBuyerOrderAlert() {
         <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-3 py-3">
           <FeaturedLead
             req={featured}
-            animate={incoming && !reduce}
+            animate={!reduce}
             onView={() => openRequirement(featured)}
             onContact={() => contactBuyer(featured)}
           />
 
           {stacked.length > 0 && (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {stacked.map((req, index) => (
                 <MiniLead
                   key={req.id}
@@ -384,11 +384,11 @@ export default function LiveBuyerOrderAlert() {
           {visibleStats.length > 0 && (
             <div className={`grid gap-1.5 ${visibleStats.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {visibleStats.map(stat => (
-                <div key={stat.label} className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                  <p className="text-[16px] font-black tabular-nums text-[#FF8A00]">
+                <div key={stat.label} className="rounded-2xl bg-white/[0.04] px-2.5 py-1.5">
+                  <p className="text-[14px] font-black tabular-nums text-[#FF8A00]">
                     <Count value={stat.value} reduce={reduce} />
                   </p>
-                  <p className="text-[10px] leading-tight text-white/65">{stat.label}</p>
+                  <p className="text-[10px] leading-tight text-white/60">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -396,7 +396,7 @@ export default function LiveBuyerOrderAlert() {
 
           <Link
             to="/requirements"
-            className="flex h-11 w-full items-center justify-center rounded-xl bg-[#FF6500] text-[13px] font-bold text-white hover:bg-[#FF8A00] sm:h-10"
+            className="flex h-11 w-full items-center justify-center rounded-full bg-[#FF6500] text-[13px] font-bold text-white hover:bg-[#FF8A00] sm:h-10"
           >
             View All Buyer Requirements
           </Link>
@@ -433,38 +433,43 @@ function FeaturedLead({
   const place = locationOf(req);
   const posted = timeAgo(req.created_at);
   return (
-    <article
-      className="overflow-hidden rounded-xl border border-[#FF6500]/40 bg-black/40"
-      style={animate ? { animation: 'bsk-alert-slide 0.45s ease' } : undefined}
-    >
-      <div className="flex gap-3 p-2.5">
-        <button type="button" onClick={onView} className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-[#111]" aria-label={`View ${req.title}`}>
-          <img src={leadImage(req)} alt="" className="h-full w-full object-cover" width={160} height={160} />
-        </button>
-        <div className="min-w-0 flex-1">
-          <span className="inline-flex rounded-md bg-[#FF6500] px-1.5 py-0.5 text-[9px] font-extrabold tracking-wide text-white">NEW BUY REQUIREMENT</span>
-          <button type="button" onClick={onView} className="mt-1 block w-full text-left">
-            <h3 className="line-clamp-2 text-[14px] font-bold leading-snug text-white">{req.title}</h3>
+    <div>
+      <article
+        key={req.id}
+        className="max-w-full rounded-[18px] rounded-tl-[6px] bg-white px-3 py-2.5 text-[#111] shadow-sm"
+        style={animate ? { animation: 'bsk-sms-in 0.35s ease' } : undefined}
+      >
+        <div className="flex gap-2.5">
+          <button type="button" onClick={onView} className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#F3F3F3]" aria-label={`View ${req.title}`}>
+            <img src={leadImage(req)} alt="" className="h-full w-full object-cover" width={112} height={112} />
           </button>
-          {qty && <p className="mt-1 text-[12px] font-semibold text-[#FF8A00]">{qty}</p>}
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-white/70">
-            {place && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3 text-[#FF6500]" />{place}</span>}
-            {posted && <span>{posted}</span>}
-            {req.is_verified_buyer && (
-              <span className="inline-flex items-center gap-1 text-white"><BadgeCheck className="h-3 w-3 text-[#FF8A00]" /> Verified</span>
-            )}
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-[#FF6500]">New buy requirement</p>
+            <button type="button" onClick={onView} className="mt-0.5 block w-full text-left">
+              <h3 className="line-clamp-3 break-words text-[14px] font-semibold leading-snug text-[#111]">{req.title}</h3>
+            </button>
           </div>
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2 border-t border-white/10 p-2.5">
-        <button type="button" onClick={onView} className="h-9 rounded-lg border border-white/15 text-[12px] font-semibold hover:border-[#FF6500]">
+        <div className="mt-2 space-y-0.5 text-[13px] leading-snug text-[#222]">
+          {qty && <p className="break-words">Qty: {qty}</p>}
+          {place && <p className="break-words">{place}</p>}
+          {req.is_verified_buyer && (
+            <p className="inline-flex items-center gap-1 font-medium text-[#111]">
+              <BadgeCheck className="h-3.5 w-3.5 text-[#FF6500]" /> Verified buyer
+            </p>
+          )}
+        </div>
+      </article>
+      {posted && <p className="mt-1 pl-1 text-[10px] text-white/50">{posted}</p>}
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <button type="button" onClick={onView} className="h-9 rounded-full border border-white/20 text-[12px] font-semibold text-white hover:border-[#FF6500]">
           View Requirement
         </button>
-        <button type="button" onClick={onContact} className="h-9 rounded-lg bg-[#FF6500] text-[12px] font-bold text-white hover:bg-[#FF8A00]">
+        <button type="button" onClick={onContact} className="h-9 rounded-full bg-[#FF6500] text-[12px] font-bold text-white hover:bg-[#FF8A00]">
           Contact Buyer
         </button>
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -482,25 +487,24 @@ function MiniLead({
   const qty = quantityOf(req);
   const place = locationOf(req);
   const posted = timeAgo(req.created_at);
+  const detail = [qty, place].filter(Boolean).join(' · ');
   return (
     <button
       type="button"
       onClick={onView}
-      className="flex w-full items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-1.5 text-left hover:border-[#FF6500]/60"
-      style={{
-        opacity: 1 - depth * 0.08,
-        animation: animate ? `bsk-alert-slide 0.4s ease ${depth * 0.05}s both` : undefined,
-      }}
+      className="flex w-full max-w-full items-end gap-2 text-left"
+      style={{ animation: animate ? `bsk-sms-in 0.35s ease ${depth * 0.06}s both` : undefined }}
     >
-      <img src={leadImage(req)} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover" width={80} height={80} />
-      <span className="min-w-0 flex-1">
-        <span className="line-clamp-1 block text-[12px] font-semibold text-white">{req.title}</span>
-        <span className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-white/60">
-          {qty && <span className="inline-flex items-center gap-1"><Package className="h-3 w-3" />{qty}</span>}
-          {place && <span>{place}</span>}
-          {posted && <span>{posted}</span>}
+      <span className="min-w-0 flex-1 rounded-[16px] rounded-tl-[6px] bg-[#F4F4F5] px-2.5 py-2 text-[#111]">
+        <span className="flex items-center gap-2">
+          <img src={leadImage(req)} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" width={64} height={64} />
+          <span className="min-w-0">
+            <span className="line-clamp-2 block break-words text-[12px] font-semibold leading-snug">{req.title}</span>
+            {detail && <span className="mt-0.5 line-clamp-1 block break-words text-[11px] text-[#444]">{detail}</span>}
+          </span>
         </span>
       </span>
+      {posted && <span className="mb-1 shrink-0 text-[10px] text-white/45">{posted}</span>}
     </button>
   );
 }
