@@ -66,7 +66,7 @@ export const SEO_HUBS: Record<string, SEOHubConfig> = {
   },
   'wholesale-suppliers': {
     slug: 'wholesale-suppliers',
-    title: 'Verified Wholesale Suppliers in India | Bulk Distributors | Bulkskart',
+    title: 'BulkSkart Wholesale Suppliers in India | Verified Bulk Distributors',
     metaDescription: 'Source bulk goods directly from verified wholesale suppliers and distributors in India. Compare wholesale price lists, MOQs, and stock availability on Bulkskart.',
     h1: 'Verified Wholesale Suppliers & Bulk Distributors in India',
     tagline: 'Source high-volume wholesale commodities, FMCG, textiles, and industrial hardware at direct distributor rates.',
@@ -391,7 +391,6 @@ export default function SEOHubPage({ forcedSlug }: { forcedSlug?: string }) {
 
       {/* ── Hero Banner Section ── */}
       <section className="relative overflow-hidden bg-gradient-to-b from-[#0a0f1d] via-[#0d1322] to-background border-b border-border py-10 md:py-14">
-        <div className="bs-hero-grid pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 relative z-10">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-[#FF5A00]/10 border border-[#FF5A00]/25 rounded-full px-3 py-1 mb-3">
@@ -412,7 +411,7 @@ export default function SEOHubPage({ forcedSlug }: { forcedSlug?: string }) {
 
             <div className="flex flex-wrap items-center gap-3">
               <Link to="/post-requirement">
-                <Button className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-11 px-6 rounded-xl shadow-md gap-2">
+                <Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-11 px-6 rounded-xl shadow-md gap-2">
                   <FileText className="w-4 h-4" /> Post RFQ for {config.city || 'Wholesale'}
                 </Button>
               </Link>
@@ -510,7 +509,7 @@ export default function SEOHubPage({ forcedSlug }: { forcedSlug?: string }) {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute top-2 left-2">
-                      <Badge className="bg-[#FF5A00] text-white text-[10px] font-bold">
+                      <Badge className="bg-[#1A0C05] text-white text-[10px] font-bold">
                         Verified Supplier
                       </Badge>
                     </div>
@@ -535,7 +534,7 @@ export default function SEOHubPage({ forcedSlug }: { forcedSlug?: string }) {
                         </Button>
                       </Link>
                       <Link to="/post-requirement" className="flex-1">
-                        <Button size="sm" className="w-full h-8 text-xs font-bold bg-[#FF5A00] hover:bg-[#e04e00] text-white">
+                        <Button size="sm" className="w-full h-8 text-xs font-bold bg-[#C94400] hover:bg-[#B33D00] text-white">
                           Get Quote
                         </Button>
                       </Link>
@@ -550,7 +549,7 @@ export default function SEOHubPage({ forcedSlug }: { forcedSlug?: string }) {
               <p className="text-sm text-foreground font-semibold">Active listings are synchronizing.</p>
               <p className="text-xs text-muted-foreground mt-1">Explore all verified suppliers across India.</p>
               <Link to="/manufacturers" className="inline-block mt-3">
-                <Button size="sm" className="bg-[#FF5A00] text-white text-xs font-bold">
+                <Button size="sm" className="bg-[#1A0C05] text-white text-xs font-bold">
                   Browse All Manufacturers
                 </Button>
               </Link>

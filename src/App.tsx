@@ -6,7 +6,6 @@ import AutoImageSyncManager from '@/components/common/AutoImageSyncManager';
 import VersionCheckSafetyNet from '@/components/common/VersionCheckSafetyNet';
 import PageSkeleton from '@/components/common/PageSkeleton';
 import AIChatAssistant from '@/components/common/AIChatAssistant';
-import MobileBottomNav from '@/components/layouts/MobileBottomNav';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -54,7 +53,6 @@ const App: React.FC = () => {
             <LiveBuyerOrderAlert />
             <AutoImageSyncManager />
             <VersionCheckSafetyNet />
-            <MobileBottomNav />
             <AIChatAssistant />
             <Toaster richColors position="top-right" />
           </AuthProvider>

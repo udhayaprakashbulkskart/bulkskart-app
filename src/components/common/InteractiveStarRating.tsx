@@ -47,8 +47,8 @@ export default function InteractiveStarRating({
               <Star
                 className={`${starSizes[size]} transition-colors ${
                   isFilled
-                    ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]'
-                    : 'text-slate-600 fill-transparent'
+                    ? 'text-[#FF7A2E] fill-[#FF5A00] drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]'
+                    : 'text-neutral-300 fill-transparent'
                 }`}
               />
             </button>
@@ -63,7 +63,7 @@ export default function InteractiveStarRating({
       )}
 
       {count !== undefined && (
-        <span className="text-[11px] text-slate-400">
+        <span className="text-[11px] text-neutral-400">
           ({count} {count === 1 ? 'review' : 'reviews'})
         </span>
       )}

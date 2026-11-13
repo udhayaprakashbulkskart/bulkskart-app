@@ -190,7 +190,7 @@ export default function QuickQuoteModal({ product, open, onClose }: Props) {
       <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg bg-card border border-border text-foreground p-4 sm:p-5 rounded-2xl shadow-2xl max-h-[92dvh] overflow-y-auto">
         <DialogHeader className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#FF5A00] animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#C94400] animate-pulse" />
             <DialogTitle className="text-lg md:text-xl font-bold text-foreground">
               Request Quick Quote
             </DialogTitle>
@@ -202,7 +202,7 @@ export default function QuickQuoteModal({ product, open, onClose }: Props) {
 
         {success ? (
           <div className="py-6 text-center space-y-4">
-            <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto animate-bounce" />
+            <CheckCircle2 className="w-12 h-12 text-[#FF7A2E] mx-auto animate-bounce" />
             <div className="space-y-1">
               <h4 className="text-base font-bold text-foreground">Quote Request Submitted!</h4>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
@@ -218,7 +218,7 @@ export default function QuickQuoteModal({ product, open, onClose }: Props) {
               <Button
                 onClick={() => handleOpenDirectChat(submittedReqId)}
                 disabled={chatLoading}
-                className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs h-10 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.45)] gap-2"
+                className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-10 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.45)] gap-2"
               >
                 {chatLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -261,7 +261,7 @@ export default function QuickQuoteModal({ product, open, onClose }: Props) {
                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
                   <span>{product.moq}</span>
                   <span>•</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
+                  <span className="text-[#FF7A2E] dark:text-[#FF7A2E] font-semibold flex items-center gap-0.5">
                     <ShieldCheck className="w-3 h-3 inline" /> {product.supplierName}
                   </span>
                 </div>
@@ -364,7 +364,7 @@ export default function QuickQuoteModal({ product, open, onClose }: Props) {
               <Button
                 type="submit"
                 disabled={loading || chatLoading}
-                className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs h-9 rounded-xl px-5 shadow-[0_2px_12px_rgba(255,90,0,0.4)] gap-1.5 w-full sm:w-auto"
+                className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-9 rounded-xl px-5 shadow-[0_2px_12px_rgba(255,90,0,0.4)] gap-1.5 w-full sm:w-auto"
               >
                 {loading || chatLoading ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -195,7 +195,7 @@ export default function AIChatAssistant() {
         className={`fixed bottom-24 sm:bottom-28 right-2 sm:right-3 z-30 flex items-center justify-center rounded-full shadow-xl transition-all duration-200 border border-white/20 select-none ${
           open
             ? 'w-10 h-10 md:w-auto md:px-3 md:py-2 bg-muted text-foreground border-border'
-            : 'w-12 h-12 md:w-auto md:px-3.5 md:py-2 bg-[#FF5A00] text-white hover:bg-[#e04e00] hover:scale-105 active:scale-95 shadow-[0_8px_28px_rgba(255,90,0,0.45)]'
+            : 'w-11 h-11 md:w-auto md:px-3 md:py-2 bg-[#C94400] text-white hover:bg-[#B33D00] hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(255,90,0,0.4)]'
         }`}
         aria-label="BulkSkart AI Platform Trade Support"
       >
@@ -208,7 +208,7 @@ export default function AIChatAssistant() {
           <>
             <div className="relative flex items-center justify-center">
               <Bot className="w-5 h-5 md:w-4 md:h-4" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#FF5A00]" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#C94400] rounded-full border-2 border-[#FF5A00]" />
             </div>
             <span className="hidden md:inline text-xs font-bold tracking-tight md:ml-1.5">AI Trade Help</span>
           </>
@@ -218,18 +218,18 @@ export default function AIChatAssistant() {
       {/* Chat Window: z-[70] ensures it renders on top of MobileBottomNav and all widgets */}
       {open && (
         <div
-          className="bs-glass fixed inset-x-2 bottom-20 md:bottom-24 md:right-6 md:left-auto md:w-[390px] max-w-[calc(100vw-1rem)] shadow-2xl rounded-3xl border border-primary/20 bg-card flex flex-col overflow-hidden z-[70]"
+          className="fixed inset-x-2 bottom-16 md:bottom-20 md:right-6 md:left-auto md:w-[390px] max-w-[calc(100vw-1rem)] shadow-2xl rounded-2xl border border-border bg-card flex flex-col overflow-hidden z-[70]"
           style={{ height: 'min(520px, 76vh)' }}
         >
           {/* Header */}
-          <div className="flex items-center gap-2.5 px-4 py-3 bg-[#FF5A00] text-white shrink-0">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-[#C94400] text-white shrink-0">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center shrink-0">
               <Bot className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold truncate">BulkSkart AI Trade Support</p>
               <p className="text-[10px] text-white/85 flex items-center gap-1.5 truncate">
-                <span className="w-1.5 h-1.5 bg-emerald-300 rounded-full shrink-0" />
+                <span className="w-1.5 h-1.5 bg-[#C94400] rounded-full shrink-0" />
                 Live B2B Assistant · Isolated Session
               </p>
             </div>
@@ -256,7 +256,7 @@ export default function AIChatAssistant() {
             href={WHATSAPP_MESSAGE_URL}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center justify-between gap-2 px-4 py-2 bg-[#25D366]/10 border-b border-border text-[11px] font-semibold text-[#128C7E] hover:bg-[#25D366]/15"
+            className="flex items-center justify-between gap-2 px-4 py-2 bg-[#C94400] border-b border-border text-[11px] font-semibold text-white hover:bg-[#C94400]"
           >
             <span>Message BulkSkart on WhatsApp</span>
             <span className="font-mono">{WHATSAPP_DISPLAY}</span>
@@ -270,7 +270,7 @@ export default function AIChatAssistant() {
                   className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
                     m.role === 'assistant'
                       ? 'bg-[#FF5A00]/15 text-[#FF5A00]'
-                      : 'bg-primary text-primary-foreground'
+                      : 'bg-[#C94400] text-primary-foreground'
                   }`}
                 >
                   {m.role === 'assistant' ? <Bot className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
@@ -279,7 +279,7 @@ export default function AIChatAssistant() {
                   className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-xs md:text-sm text-pretty leading-relaxed ${
                     m.role === 'assistant'
                       ? 'bg-muted/90 text-foreground rounded-tl-none border border-border/40 shadow-xs'
-                      : 'bg-[#FF5A00] text-white rounded-tr-none shadow-sm font-normal'
+                      : 'bg-[#C94400] text-white rounded-tr-none shadow-sm font-normal'
                   }`}
                 >
                   {m.content}
@@ -294,9 +294,9 @@ export default function AIChatAssistant() {
                   <Bot className="w-3.5 h-3.5" />
                 </div>
                 <div className="bg-muted rounded-2xl rounded-tl-none px-3.5 py-2.5 flex items-center gap-1.5 border border-border/40">
-                  <span className="w-1.5 h-1.5 bg-[#FF5A00] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 bg-[#FF5A00] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-[#FF5A00] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <span className="w-1.5 h-1.5 bg-[#C94400] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-[#C94400] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-[#C94400] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
               </div>
             )}
@@ -339,7 +339,7 @@ export default function AIChatAssistant() {
                 size="icon"
                 onClick={() => sendMessage(input)}
                 disabled={!input.trim() || typing}
-                className="h-9 w-9 rounded-xl bg-[#FF5A00] text-white hover:bg-[#e04e00] shrink-0 disabled:opacity-40 transition-all active:scale-95"
+                className="h-9 w-9 rounded-xl bg-[#C94400] text-white hover:bg-[#B33D00] shrink-0 disabled:opacity-40 transition-all active:scale-95"
                 aria-label="Send message"
               >
                 {typing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

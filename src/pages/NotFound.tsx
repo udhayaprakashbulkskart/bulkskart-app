@@ -27,7 +27,7 @@ export default function NotFound() {
       />
 
       <div className="min-h-[65vh] flex items-center justify-center py-12 px-4 sm:px-6">
-        <div className="bs-glass max-w-xl w-full rounded-3xl p-8 text-center">
+        <div className="max-w-xl w-full text-center">
           {/* Status Badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 text-xs font-bold mb-4">
             <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
@@ -51,7 +51,7 @@ export default function NotFound() {
               onChange={(e) => setQuery(e.target.value)}
               className="h-11 bg-card border-border text-foreground"
             />
-            <Button type="submit" className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-11 px-5 rounded-xl shrink-0">
+            <Button type="submit" className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-11 px-5 rounded-xl shrink-0">
               <Search className="w-4 h-4 mr-1.5" /> Search
             </Button>
           </form>

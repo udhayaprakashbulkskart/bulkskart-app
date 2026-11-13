@@ -230,9 +230,9 @@ export default function SupplierAnalyticsPage() {
   const pendingPct = Math.max(0, 100 - acceptedPct - rejectedPct - revisedPct);
 
   const STATUS_COLOR: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400',
-    accepted: 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400',
-    rejected: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400',
+    pending: 'bg-[#FF5A00]/10 text-[#FF7A2E] dark:bg-[#B33D00]/40 dark:text-[#FF7A2E]',
+    accepted: 'bg-[#FF5A00]/10 text-[#FF7A2E] dark:bg-[#B33D00]/40 dark:text-[#FF7A2E]',
+    rejected: 'bg-[#FF5A00]/10 text-[#FF7A2E] dark:bg-[#B33D00]/40 dark:text-[#FF7A2E]',
     revised: 'bg-orange-500/10 text-[#FF5A00] dark:bg-orange-950/30 dark:text-[#FF5A00]',
   };
 
@@ -254,7 +254,7 @@ export default function SupplierAnalyticsPage() {
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Header */}
-          <div className="bs-glass flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-3xl p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
                 <span>Performance & Credit Analytics</span>
@@ -268,7 +268,7 @@ export default function SupplierAnalyticsPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button asChild size="sm" className="text-xs gap-1.5 bg-primary text-primary-foreground">
+              <Button asChild size="sm" className="text-xs gap-1.5 bg-[#1A0C05] text-primary-foreground">
                 <Link to="/dashboard/supplier/subscription">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>View Quota & Plan</span>
@@ -278,7 +278,7 @@ export default function SupplierAnalyticsPage() {
           </div>
 
           {!company && (
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-amber-600 dark:text-amber-400">
+            <div className="bg-[#FF5A00]/10 border border-[#FF5A00]/20 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-[#FF7A2E] dark:text-[#FF7A2E]">
               <div className="flex items-start gap-2.5">
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                 <div>
@@ -297,18 +297,18 @@ export default function SupplierAnalyticsPage() {
           )}
 
           {/* ── Highlighted Section: Lead Credits & Quota Usage ────────────── */}
-          <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-transparent to-primary/5">
+          <Card className="border-[#FF5A00]/30 bg-gradient-to-br from-[#C94400]/5 via-transparent to-primary/5">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-amber-500" /> Lead Credits & Quota Breakdown
+                    <Zap className="w-5 h-5 text-[#FF7A2E]" /> Lead Credits & Quota Breakdown
                   </CardTitle>
                   <CardDescription className="text-xs mt-0.5">
                     Clear transparency on how your lead credits and monthly allowances are utilized
                   </CardDescription>
                 </div>
-                <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-mono text-xs">
+                <Badge variant="secondary" className="bg-[#FF5A00]/10 text-[#FF7A2E] dark:text-[#FF7A2E] border border-[#FF5A00]/20 font-mono text-xs">
                   {a.leadCreditsBalance} Credits Available
                 </Badge>
               </div>
@@ -318,7 +318,7 @@ export default function SupplierAnalyticsPage() {
                 <div className="bg-card border border-border rounded-xl p-3.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                     <span>Available Balance</span>
-                    <Coins className="w-4 h-4 text-amber-500" />
+                    <Coins className="w-4 h-4 text-[#FF7A2E]" />
                   </div>
                   <p className="text-2xl font-bold text-foreground">{a.leadCreditsBalance}</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -340,7 +340,7 @@ export default function SupplierAnalyticsPage() {
                 <div className="bg-card border border-border rounded-xl p-3.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                     <span>Credits Purchased</span>
-                    <Package className="w-4 h-4 text-emerald-500" />
+                    <Package className="w-4 h-4 text-[#FF7A2E]" />
                   </div>
                   <p className="text-2xl font-bold text-foreground">{a.leadCreditsPurchased}</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -370,35 +370,35 @@ export default function SupplierAnalyticsPage() {
               label="Response Rate"
               value={`${Number(a.responseRate) || 0}%`}
               icon={BarChart3}
-              color="bg-primary"
+              color="bg-[#C94400]"
               sub={`${a.quotesSent} quotes / ${a.totalRfqsReceived} RFQs`}
             />
             <StatCard
               label="Avg Response Time"
               value={a.avgResponseHours > 0 ? `${a.avgResponseHours}h` : '—'}
               icon={Clock}
-              color="bg-indigo-500"
+              color="bg-[#C94400]"
             />
             <StatCard
               label="Quotes Accepted"
               value={a.quotesAccepted}
               icon={CheckCircle2}
-              color="bg-green-600"
+              color="bg-[#B33D00]"
               sub={`${acceptedPct}% acceptance rate`}
             />
             <StatCard
               label="Orders Completed"
               value={a.ordersCompleted}
               icon={Package}
-              color="bg-teal-600"
+              color="bg-[#B33D00]"
             />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <StatCard label="RFQs Received" value={a.totalRfqsReceived} icon={FileText} color="bg-orange-500" />
-            <StatCard label="Quotes Sent" value={a.quotesSent} icon={TrendingUp} color="bg-[#FF5A00]" />
-            <StatCard label="Active Orders" value={a.activeOrders} icon={MessageSquare} color="bg-purple-500" />
-            <StatCard label="Total Revenue" value={`₹${(Number(a.totalRevenue) || 0).toLocaleString('en-IN')}`} icon={Star} color="bg-yellow-500" />
+            <StatCard label="Quotes Sent" value={a.quotesSent} icon={TrendingUp} color="bg-[#C94400]" />
+            <StatCard label="Active Orders" value={a.activeOrders} icon={MessageSquare} color="bg-[#C94400]" />
+            <StatCard label="Total Revenue" value={`₹${(Number(a.totalRevenue) || 0).toLocaleString('en-IN')}`} icon={Star} color="bg-[#C94400]" />
           </div>
 
           {/* Commission Tracking Card */}
@@ -417,13 +417,13 @@ export default function SupplierAnalyticsPage() {
                   <p className="text-xs text-muted-foreground mt-0.5">Total Commission</p>
                 </div>
                 <div className="text-center border-x border-border">
-                  <p className="text-2xl font-bold text-yellow-500">
+                  <p className="text-2xl font-bold text-[#FF7A2E]">
                     ₹{(Number(a.pendingCommission) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">Pending Payout</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-green-500">
+                  <p className="text-2xl font-bold text-[#FF7A2E]">
                     ₹{(Number(a.commissionBalance) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">Available Balance</p>
@@ -436,7 +436,7 @@ export default function SupplierAnalyticsPage() {
                 </div>
               )}
               {a.pendingCommission > 0 && (
-                <div className="mt-4 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 rounded-lg p-3">
+                <div className="mt-4 flex items-center gap-2 text-xs text-[#FF7A2E] dark:text-[#FF7A2E] bg-[#FF5A00]/10 dark:bg-[#B33D00]/20 border border-[#FF5A00]/50 rounded-lg p-3">
                   <Percent className="w-3.5 h-3.5 shrink-0" />
                   ₹{(Number(a.pendingCommission) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })} pending — payouts are processed within 7 business days of order delivery confirmation.
                 </div>
@@ -455,16 +455,16 @@ export default function SupplierAnalyticsPage() {
               ) : (
                 <>
                   <div className="flex rounded-full overflow-hidden h-4 mb-4 gap-0.5">
-                    {acceptedPct > 0 && <div className="bg-green-500 transition-all" style={{ width: `${acceptedPct}%` }} title={`Accepted ${acceptedPct}%`} />}
-                    {rejectedPct > 0 && <div className="bg-red-400 transition-all" style={{ width: `${rejectedPct}%` }} title={`Rejected ${rejectedPct}%`} />}
-                    {revisedPct > 0 && <div className="bg-[#FF5A00] transition-all" style={{ width: `${revisedPct}%` }} title={`Revision ${revisedPct}%`} />}
-                    {pendingPct > 0 && <div className="bg-yellow-300 transition-all" style={{ width: `${pendingPct}%` }} title={`Pending ${pendingPct}%`} />}
+                    {acceptedPct > 0 && <div className="bg-[#1A0C05] transition-all" style={{ width: `${acceptedPct}%` }} title={`Accepted ${acceptedPct}%`} />}
+                    {rejectedPct > 0 && <div className="bg-[#1A0C05] transition-all" style={{ width: `${rejectedPct}%` }} title={`Rejected ${rejectedPct}%`} />}
+                    {revisedPct > 0 && <div className="bg-[#1A0C05] transition-all" style={{ width: `${revisedPct}%` }} title={`Revision ${revisedPct}%`} />}
+                    {pendingPct > 0 && <div className="bg-[#1A0C05] transition-all" style={{ width: `${pendingPct}%` }} title={`Pending ${pendingPct}%`} />}
                   </div>
                   <div className="flex flex-wrap gap-4 text-xs">
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-500 inline-block" />Accepted ({a.quotesAccepted})</span>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-400 inline-block" />Declined ({a.quotesRejected})</span>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#FF5A00] inline-block" />Revision requested ({a.quotesRevised})</span>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-yellow-300 inline-block" />Pending ({Math.max(0, a.quotesSent - a.quotesAccepted - a.quotesRejected - a.quotesRevised)})</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#C94400] inline-block" />Accepted ({a.quotesAccepted})</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#C94400] inline-block" />Declined ({a.quotesRejected})</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#C94400] inline-block" />Revision requested ({a.quotesRevised})</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#C94400] inline-block" />Pending ({Math.max(0, a.quotesSent - a.quotesAccepted - a.quotesRejected - a.quotesRevised)})</span>
                   </div>
                 </>
               )}
@@ -479,10 +479,10 @@ export default function SupplierAnalyticsPage() {
             <CardContent>
               <div className="space-y-3">
                 {[
-                  { label: 'RFQs Matched & Received', value: a.totalRfqsReceived, max: a.totalRfqsReceived, color: 'bg-primary' },
-                  { label: 'Quotes Sent', value: a.quotesSent, max: a.totalRfqsReceived, color: 'bg-[#FF5A00]' },
-                  { label: 'Quotes Accepted', value: a.quotesAccepted, max: a.totalRfqsReceived, color: 'bg-green-500' },
-                  { label: 'Orders Completed', value: a.ordersCompleted, max: a.totalRfqsReceived, color: 'bg-teal-500' },
+                  { label: 'RFQs Matched & Received', value: a.totalRfqsReceived, max: a.totalRfqsReceived, color: 'bg-[#C94400]' },
+                  { label: 'Quotes Sent', value: a.quotesSent, max: a.totalRfqsReceived, color: 'bg-[#C94400]' },
+                  { label: 'Quotes Accepted', value: a.quotesAccepted, max: a.totalRfqsReceived, color: 'bg-[#C94400]' },
+                  { label: 'Orders Completed', value: a.ordersCompleted, max: a.totalRfqsReceived, color: 'bg-[#C94400]' },
                 ].map(row => (
                   <div key={row.label}>
                     <div className="flex justify-between text-xs mb-1">

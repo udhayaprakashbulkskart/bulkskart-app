@@ -142,9 +142,9 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
         </div>
 
         {/* Require approval */}
-        <div className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${settings.require_approval && !settings.auto_send_enabled ? 'border-amber-400/40 bg-amber-50/30' : 'border-border bg-muted/20'}`}>
-          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-            <Clock className="w-4 h-4 text-amber-600" />
+        <div className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${settings.require_approval && !settings.auto_send_enabled ? 'border-[#FF5A00]/40 bg-[#FF5A00]/30' : 'border-border bg-muted/20'}`}>
+          <div className="w-9 h-9 rounded-full bg-[#FF5A00]/10 flex items-center justify-center shrink-0">
+            <Clock className="w-4 h-4 text-[#FF7A2E]" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
@@ -249,7 +249,7 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
       <Button
         onClick={handleSave}
         disabled={saving}
-        className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 h-9 px-5"
+        className="bg-[#C94400] text-primary-foreground hover:bg-primary/90 gap-2 h-9 px-5"
       >
         {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
         {saving ? 'Saving…' : 'Save Auto-Quote Settings'}

@@ -49,6 +49,7 @@ import { generateSyntheticRequirement } from '@/lib/largeRequirementsDataset';
 import { getIndianBulkOrder, indexFromIndianOrderNumber } from '@/lib/bulkOrdersIndiaDataset';
 import { getBuyerProfileForRequirement, BuyerCompanyProfile } from '@/lib/buyerProfilesPool';
 import { resolveRfqImage } from '@/lib/contentImages';
+import { RFQ_LICENSED_IMAGES } from '@/lib/rfqLicensedImages';
 
 // Default authentic textile images matching the Cotton Sarees reference screenshot (Image 1 & 2)
 const COTTON_SAREES_GALLERY = [
@@ -90,6 +91,8 @@ const PIPELINE_STEPS = [
   { key: 'fulfilled', label: 'Fulfilled', icon: CheckCircle },
   { key: 'closed', label: 'Closed', icon: XCircle }
 ];
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function RequirementDetailsPage() {
   const { rfqId } = useParams<{ rfqId: string }>();
@@ -320,50 +323,12 @@ export default function RequirementDetailsPage() {
     setError(null);
 
     try {
-      let fetchedReq = await getRequirementById(rfqId);
+      // Only real UUIDs can be requirement rows; anything else would just fail in the database.
+      let fetchedReq = UUID_RE.test(rfqId) ? await getRequirementById(rfqId) : null;
 
+      // Never invent a requirement for an unknown ID: unknown IDs fall through to the not-found state.
       if (!fetchedReq) {
-        if (rfqId.toLowerCase().includes('051206') || rfqId.toLowerCase().includes('saree') || rfqId === 'cotton-sarees-5000') {
-          fetchedReq = {
-            id: '00000000-0000-0000-0000-000000000010',
-            buyer_id: '00000000-0000-0000-0000-000000000002',
-            category_id: '158f4042-7fcc-4c77-bcbc-34474341b979',
-            title: 'Cotton Sarees - 5,000 Pieces',
-            description: 'We are looking to purchase 5,000 pieces of cotton sarees with good quality fabric and finishing. Prefer suppliers who can provide bulk rates, multiple design options and timely delivery. Please share product catalog, price, MOQ details and delivery timeline.',
-            specifications: 'Product Name: Cotton Sarees\nQuantity: 5,000 Pieces\nFabric Type: Cotton (as per supplier options)\nDesign: Multiple designs required\nQuality: Good quality with finishing\nColor: Multiple colors (catalog required)\nPackaging: Standard export/retail packaging\nCertification (if any): As per supplier\nSample: Available (required)',
-            quantity: 5000,
-            quantity_unit: 'Pieces',
-            destination_country: 'India',
-            destination_city: 'Surat, Gujarat',
-            deadline: '2026-12-31',
-            budget_min: 250,
-            budget_max: 450,
-            currency: 'INR',
-            attachment_url: COTTON_SAREES_GALLERY[0],
-            status: 'active',
-            quote_count: 12,
-            view_count: 1240,
-            is_verified_buyer: true,
-            created_at: '2026-09-12T10:00:00Z',
-            updated_at: '2026-09-12T10:00:00Z',
-            expires_at: '2026-12-31T23:59:59Z',
-            deal_status: 'active',
-            req_number: 'RFQ-051206',
-            categories: {
-              id: '158f4042-7fcc-4c77-bcbc-34474341b979',
-              name: 'Textiles & Apparel',
-              slug: 'textiles-apparel',
-              parent_id: null,
-              icon: 'Shirt',
-              image_url: null,
-              description: null,
-              sort_order: 1,
-              is_active: true,
-              product_count: 120,
-              created_at: new Date().toISOString()
-            }
-          } as Requirement;
-        } else if (indexFromIndianOrderNumber(rfqId) != null) {
+        if (indexFromIndianOrderNumber(rfqId) != null) {
           const lead = getIndianBulkOrder(indexFromIndianOrderNumber(rfqId)!);
           const qtyMatch = lead.quantity.match(/[\d,]+/);
           const quantity = qtyMatch ? parseInt(qtyMatch[0].replace(/,/g, ''), 10) : 1;
@@ -396,40 +361,13 @@ export default function RequirementDetailsPage() {
             req_number: lead.orderNumber,
           } as Requirement;
         } else {
-          const synthIndex = Math.abs(rfqId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % 1000;
-          const synth = generateSyntheticRequirement(synthIndex);
-          fetchedReq = {
-            id: rfqId,
-            buyer_id: '00000000-0000-0000-0000-000000000002',
-            category_id: '158f4042-7fcc-4c77-bcbc-34474341b979',
-            title: synth.title,
-            description: synth.description || 'Verified commercial requirement looking for reputable B2B manufacturers and suppliers with ready bulk stock and prompt delivery capabilities.',
-            specifications: synth.specifications || null,
-            quantity: synth.quantity,
-            quantity_unit: synth.quantity_unit,
-            destination_country: synth.destination_country || 'India',
-            destination_city: synth.destination_city || 'Mumbai, Maharashtra',
-            deadline: synth.deadline || '2026-12-31',
-            budget_min: synth.budget_min || null,
-            budget_max: synth.budget_max || null,
-            currency: synth.currency || 'INR',
-            attachment_url: synth.attachment_url || null,
-            status: 'active',
-            quote_count: 8,
-            view_count: 850,
-            is_verified_buyer: true,
-            created_at: synth.created_at,
-            updated_at: synth.created_at,
-            expires_at: synth.deadline || null,
-            deal_status: 'active',
-            req_number: synth.req_number || `RFQ-${rfqId.slice(-6).toUpperCase()}`
-          } as Requirement;
+          throw new Error('This requirement was not found. It may have expired or been removed.');
         }
       }
 
       setReq(fetchedReq);
 
-      if (fetchedReq.id) {
+      if (UUID_RE.test(fetchedReq.id)) {
         incrementRequirementViewCount(fetchedReq.id);
       }
 
@@ -471,10 +409,12 @@ export default function RequirementDetailsPage() {
       }
       return [req.attachment_url];
     }
-    if (req?.title?.toLowerCase().includes('saree')) {
+    const reviewed = !!req?.id && Object.prototype.hasOwnProperty.call(RFQ_LICENSED_IMAGES, req.id);
+    if (!reviewed && req?.title?.toLowerCase().includes('saree')) {
       return COTTON_SAREES_GALLERY;
     }
     const resolved = resolveRfqImage({
+      id: req?.id,
       title: req?.title,
       attachment_url: req?.attachment_url,
       category: req?.categories?.name || req?.categories?.slug,
@@ -1066,7 +1006,7 @@ export default function RequirementDetailsPage() {
       <MainLayout>
         <div className="bg-background text-foreground min-h-screen flex items-center justify-center p-4">
           <div className="bg-card border border-border p-8 rounded-2xl max-w-md w-full text-center space-y-4 shadow-xl">
-            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto text-red-400">
+            <div className="w-12 h-12 rounded-full bg-[#FF5A00]/10 border border-[#FF5A00]/30 flex items-center justify-center mx-auto text-[#FF7A2E]">
               <AlertCircle className="w-6 h-6" />
             </div>
             <h2 className="text-xl font-bold text-white">Requirement Not Found</h2>
@@ -1083,7 +1023,7 @@ export default function RequirementDetailsPage() {
               </Button>
               <Button
                 onClick={loadData}
-                className="flex-1 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold"
+                className="flex-1 bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold"
               >
                 Retry
               </Button>
@@ -1153,14 +1093,13 @@ export default function RequirementDetailsPage() {
           />
 
           {/* ── TOP HEADER BLOCK: Status, Views, Date, Actions matching Image 1 ─ */}
-          <div className="bs-glass relative mb-4 overflow-hidden rounded-3xl p-4 sm:p-5 md:p-6">
-            <div className="bs-scan pointer-events-none absolute inset-x-[18%] top-0 h-16 bg-gradient-to-b from-transparent via-primary/25 to-transparent" aria-hidden="true" />
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border">
+          <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 md:p-6 mb-4 shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/30 shadow-sm">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C94400] opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C94400]" />
                   </span>
                   Active
                 </span>
@@ -1245,7 +1184,7 @@ export default function RequirementDetailsPage() {
                       }}
                       className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all min-h-[38px] ${
                         active
-                          ? 'bg-[#FF5A00] text-white shadow-[0_2px_12px_rgba(255,90,0,0.35)]'
+                          ? 'bg-[#C94400] text-white shadow-[0_2px_12px_rgba(255,90,0,0.35)]'
                           : 'bg-card text-foreground/80 hover:text-foreground border border-border hover:border-primary/40'
                       }`}
                     >
@@ -1267,7 +1206,7 @@ export default function RequirementDetailsPage() {
                 <>
                   {/* 1. INTERACTIVE IMAGE GALLERY matching Image 1 */}
                   <div className="bg-card border border-border rounded-2xl p-3 sm:p-4 md:p-5 shadow-xl">
-                    <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-xl overflow-hidden bg-black/60 border border-border group">
+                    <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-xl overflow-hidden bg-[#0A0A0A]/60 border border-border group">
                       <SafeImage
                         src={galleryImages[activeImageIndex] || galleryImages[0]}
                         alt={`${req.title} - Image ${activeImageIndex + 1}`}
@@ -1275,7 +1214,7 @@ export default function RequirementDetailsPage() {
                         onClick={() => setFullscreenImage(true)}
                       />
 
-                      <div className="absolute top-3 right-3 bg-black/75 backdrop-blur-md border border-border text-white text-xs font-mono font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-md">
+                      <div className="absolute top-3 right-3 bg-[#0A0A0A]/75 backdrop-blur-md border border-border text-white text-xs font-mono font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-md">
                         <Maximize2 className="w-3 h-3 text-[#FF5A00]" />
                         <span>{activeImageIndex + 1}/{galleryImages.length}</span>
                       </div>
@@ -1283,14 +1222,14 @@ export default function RequirementDetailsPage() {
                       <button
                         onClick={handlePrevImage}
                         aria-label="Previous image"
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center border border-border transition-all opacity-80 hover:opacity-100 backdrop-blur-sm"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0A0A0A]/60 hover:bg-[#0A0A0A]/90 text-white flex items-center justify-center border border-border transition-all opacity-80 hover:opacity-100 backdrop-blur-sm"
                       >
                         <ChevronLeft className="w-5 h-5" />
                       </button>
                       <button
                         onClick={handleNextImage}
                         aria-label="Next image"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center border border-border transition-all opacity-80 hover:opacity-100 backdrop-blur-sm"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0A0A0A]/60 hover:bg-[#0A0A0A]/90 text-white flex items-center justify-center border border-border transition-all opacity-80 hover:opacity-100 backdrop-blur-sm"
                       >
                         <ChevronRight className="w-5 h-5" />
                       </button>
@@ -1314,7 +1253,7 @@ export default function RequirementDetailsPage() {
                       {galleryImages.length > 5 && (
                         <button
                           onClick={() => setFullscreenImage(true)}
-                          className="aspect-square rounded-lg bg-[#181B26] border border-border text-white/80 hover:text-white flex flex-col items-center justify-center text-xs font-bold transition-all hover:bg-[#222736]"
+                          className="aspect-square rounded-lg bg-[#1A0C05] border border-border text-white/80 hover:text-white flex flex-col items-center justify-center text-xs font-bold transition-all hover:bg-[#1A0C05]"
                         >
                           <span>+{galleryImages.length - 5}</span>
                           <span className="text-[10px] text-white/50">View All</span>
@@ -1444,7 +1383,7 @@ export default function RequirementDetailsPage() {
                         <span>Delivery Location</span>
                       </div>
                       <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Lock className="w-3 h-3 text-amber-500" />
+                        <Lock className="w-3 h-3 text-[#FF7A2E]" />
                         Privacy Protected
                       </span>
                     </div>
@@ -1479,8 +1418,8 @@ export default function RequirementDetailsPage() {
                           </div>
                         </div>
 
-                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-200/90 text-xs flex items-start gap-2">
-                          <Lock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                        <div className="p-3 rounded-xl bg-[#FF5A00]/10 border border-[#FF5A00]/20 text-[#FF7A2E] dark:text-[#FF7A2E]/90 text-xs flex items-start gap-2">
+                          <Lock className="w-4 h-4 text-[#FF7A2E] shrink-0 mt-0.5" />
                           <div>
                             <strong>Full address:</strong> Shared strictly with selected suppliers after quotation approval.
                           </div>
@@ -1503,8 +1442,8 @@ export default function RequirementDetailsPage() {
                       </div>
                       <div className="p-3 rounded-xl bg-muted/40 border border-border">
                         <span className="text-muted-foreground block">Posted By</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold mt-0.5 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                        <span className="text-[#FF7A2E] dark:text-[#FF7A2E] font-bold mt-0.5 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-[#FF7A2E]" />
                           Verified Buyer (Details shared after quote)
                         </span>
                       </div>
@@ -1539,7 +1478,7 @@ export default function RequirementDetailsPage() {
                     </div>
                     <Button
                       onClick={handleOpenSendQuote}
-                      className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs h-10 px-4 rounded-xl shadow-md"
+                      className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-10 px-4 rounded-xl shadow-md"
                     >
                       Send Your Quote
                     </Button>
@@ -1557,7 +1496,7 @@ export default function RequirementDetailsPage() {
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                           <div className="flex items-start gap-3 min-w-0">
-                            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-slate-800 border border-border overflow-hidden flex items-center justify-center font-bold text-white text-sm sm:text-base shrink-0">
+                            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#0A0A0A] border border-border overflow-hidden flex items-center justify-center font-bold text-white text-sm sm:text-base shrink-0">
                               {comp?.logo_url ? (
                                 <SafeImage src={comp.logo_url} alt={comp?.company_name || 'Supplier'} className="w-full h-full object-cover" />
                               ) : (
@@ -1567,7 +1506,7 @@ export default function RequirementDetailsPage() {
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <h4 className="font-bold text-white text-sm sm:text-base leading-snug">{comp?.company_name || 'Verified Supplier'}</h4>
-                                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                                <span className="text-[10px] font-bold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/30 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                                   <CheckCircle2 className="w-2.5 h-2.5" />
                                   Verified
                                 </span>
@@ -1577,8 +1516,8 @@ export default function RequirementDetailsPage() {
                                 <span>•</span>
                                 <span>{comp?.city || 'Surat'}, {comp?.state || 'Gujarat'}</span>
                                 <span>•</span>
-                                <span className="text-amber-400 font-bold flex items-center gap-0.5">
-                                  <Star className="w-3 h-3 fill-amber-400" />
+                                <span className="text-[#FF7A2E] font-bold flex items-center gap-0.5">
+                                  <Star className="w-3 h-3 fill-[#FF5A00]" />
                                   {comp?.rating_avg || 4.8} ({comp?.review_count || 120})
                                 </span>
                               </div>
@@ -1639,14 +1578,14 @@ export default function RequirementDetailsPage() {
                                 setCounterMoq(q.moq);
                                 toast.info('Opened counter-offer negotiation room');
                               }}
-                              className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs h-9 px-4 w-full sm:w-auto justify-center"
+                              className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-9 px-4 w-full sm:w-auto justify-center"
                             >
                               Negotiate / View Quote
                             </Button>
                           </div>
                         ) : isOwnQuote ? (
                           <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
                               <CheckCircle className="w-3.5 h-3.5" /> Your Submitted Proposal
                             </span>
                             <Button
@@ -1665,7 +1604,7 @@ export default function RequirementDetailsPage() {
                         ) : (
                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-2 border-t border-white/5">
                             <div className="flex items-center gap-1.5 text-xs text-white/50">
-                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <ShieldCheck className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
                               <span>Verified Manufacturer Quote · Market Benchmark</span>
                             </div>
                             <Button
@@ -1674,7 +1613,7 @@ export default function RequirementDetailsPage() {
                                 setActiveTab('chat');
                                 toast.info('Opened confidential 1-on-1 thread with Requirement Poster');
                               }}
-                              className="border border-[#FF5A00]/40 bg-[#FF5A00]/10 hover:bg-[#FF5A00]/20 text-[#FF5A00] font-bold text-xs h-8 px-3 gap-1.5 w-full sm:w-auto justify-center"
+                              className="border border-[#FF5A00]/40 bg-[#FF5A00]/10 hover:bg-[#B33D00]/20 text-[#FF5A00] font-bold text-xs h-8 px-3 gap-1.5 w-full sm:w-auto justify-center"
                             >
                               <MessageSquare className="w-3.5 h-3.5" />
                               Chat with Requirement Poster
@@ -1705,7 +1644,7 @@ export default function RequirementDetailsPage() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-[10px] font-mono text-[#FF5A00] bg-[#FF5A00]/10 px-1.5 py-0.5 rounded border border-[#FF5A00]/20 font-bold">RFQ #{rfqCode}</span>
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-medium">Verified Bulk Sourcing</span>
+                          <span className="text-[10px] text-[#FF7A2E] dark:text-[#FF7A2E] bg-[#FF5A00]/10 px-1.5 py-0.5 rounded border border-[#FF5A00]/20 font-medium">Verified Bulk Sourcing</span>
                         </div>
                         <p className="text-xs font-bold text-foreground truncate max-w-full mt-0.5">{req?.title}</p>
                       </div>
@@ -1734,8 +1673,8 @@ export default function RequirementDetailsPage() {
                           <span>{buyerProfile.company_name}</span>
                           <span className="text-xs">{buyerProfile.flag}</span>
                         </h4>
-                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium truncate">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                        <span className="text-[11px] text-[#FF7A2E] dark:text-[#FF7A2E] flex items-center gap-1 font-medium truncate">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#C94400] animate-pulse shrink-0" />
                           {buyerProfile.contact_person} ({buyerProfile.designation}) · Verified Buyer
                         </span>
                       </div>
@@ -1744,7 +1683,7 @@ export default function RequirementDetailsPage() {
                       <Button
                         size="sm"
                         onClick={() => setIsFullScreenChatOpen(true)}
-                        className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 shadow"
+                        className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 shadow"
                       >
                         <Maximize2 className="w-3.5 h-3.5" />
                         <span>Dedicated Full-Screen Chat</span>
@@ -1787,7 +1726,7 @@ export default function RequirementDetailsPage() {
                           <div
                             className={`max-w-[90%] sm:max-w-[75%] p-3.5 rounded-2xl text-xs sm:text-sm shadow-md ${
                               isMe
-                                ? 'bg-[#FF5A00] text-white rounded-tr-none'
+                                ? 'bg-[#1A0C05] text-white rounded-tr-none'
                                 : 'bg-muted text-foreground border border-border rounded-tl-none'
                             }`}
                           >
@@ -1795,16 +1734,16 @@ export default function RequirementDetailsPage() {
 
                             {/* In-chat Quote Card Attachment */}
                             {msg.quoteCard && (
-                              <div className="mt-3 p-3.5 rounded-xl bg-black/40 border border-white/15 text-white space-y-2.5 shadow-inner">
+                              <div className="mt-3 p-3.5 rounded-xl bg-[#0A0A0A]/40 border border-white/15 text-white space-y-2.5 shadow-inner">
                                 <div className="flex items-center justify-between border-b border-white/10 pb-2">
                                   <div className="flex items-center gap-1.5">
-                                    <FileText className="w-4 h-4 text-amber-400" />
-                                    <span className="font-extrabold text-xs uppercase tracking-wider text-amber-300">Commercial Quotation Card</span>
+                                    <FileText className="w-4 h-4 text-[#FF7A2E]" />
+                                    <span className="font-extrabold text-xs uppercase tracking-wider text-[#FF7A2E]">Commercial Quotation Card</span>
                                   </div>
                                   <Badge className={`text-[10px] uppercase font-mono ${
                                     msg.quoteCard.status === 'accepted'
-                                      ? 'bg-emerald-500 text-white'
-                                      : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                      ? 'bg-[#1A0C05] text-white'
+                                      : 'bg-[#FF5A00]/20 text-[#FF7A2E] border-[#FF5A00]/30'
                                   }`}>
                                     {msg.quoteCard.status === 'accepted' ? 'Deal Finalized' : 'Pending Review'}
                                   </Badge>
@@ -1819,7 +1758,7 @@ export default function RequirementDetailsPage() {
                                   </div>
                                   <div className="bg-white/5 p-2 rounded-lg">
                                     <div className="text-[10px] text-white/50">Total Est. Value</div>
-                                    <div className="font-black text-sm text-emerald-400">
+                                    <div className="font-black text-sm text-[#FF7A2E]">
                                       {msg.quoteCard.currency} {msg.quoteCard.totalPrice.toLocaleString()}
                                     </div>
                                   </div>
@@ -1846,7 +1785,7 @@ export default function RequirementDetailsPage() {
                                 {/* Action Buttons on Quote Card */}
                                 <div className="pt-1 flex items-center gap-2 flex-wrap">
                                   {msg.quoteCard.status === 'accepted' ? (
-                                    <div className="w-full p-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-emerald-400 text-xs font-bold flex items-center justify-center gap-1.5">
+                                    <div className="w-full p-2 bg-[#FF5A00]/20 border border-[#FF5A00]/30 rounded-lg text-[#FF7A2E] text-xs font-bold flex items-center justify-center gap-1.5">
                                       <CheckCircle className="w-4 h-4" /> Quotation Accepted by Buyer
                                     </div>
                                   ) : (
@@ -1854,7 +1793,7 @@ export default function RequirementDetailsPage() {
                                       <Button
                                         size="sm"
                                         onClick={() => handleAcceptInChatQuote(msg.id)}
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs h-8 px-3 rounded-lg gap-1 shadow"
+                                        className="bg-[#B33D00] hover:bg-[#C94400] text-white font-bold text-xs h-8 px-3 rounded-lg gap-1 shadow"
                                       >
                                         <Check className="w-3.5 h-3.5" />
                                         Accept Quote
@@ -1886,9 +1825,9 @@ export default function RequirementDetailsPage() {
                             )}
 
                             {msg.attachment && (
-                              <div className="mt-2 p-2.5 rounded-xl bg-black/30 border border-border flex items-center justify-between gap-2 text-xs">
+                              <div className="mt-2 p-2.5 rounded-xl bg-[#0A0A0A]/30 border border-border flex items-center justify-between gap-2 text-xs">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 rounded-lg bg-red-600/30 text-red-400 flex items-center justify-center font-bold text-[10px]">
+                                  <div className="w-8 h-8 rounded-lg bg-[#B33D00]/30 text-[#FF7A2E] flex items-center justify-center font-bold text-[10px]">
                                     PDF
                                   </div>
                                   <div>
@@ -1919,7 +1858,7 @@ export default function RequirementDetailsPage() {
 
                   {/* IN-CHAT QUOTATION BUILDER DRAWER */}
                   {showInChatQuoteBuilder && (
-                    <div className="p-4 bg-[#141722] border-t border-border space-y-3 animate-in fade-in slide-in-from-bottom duration-200">
+                    <div className="p-4 bg-[#C94400] border-t border-border space-y-3 animate-in fade-in slide-in-from-bottom duration-200">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <FileText className="w-4 h-4 text-[#FF5A00]" />
@@ -1942,7 +1881,7 @@ export default function RequirementDetailsPage() {
                             value={inChatPrice}
                             onChange={e => setInChatPrice(e.target.value === '' ? '' : Number(e.target.value))}
                             placeholder="e.g. 280"
-                            className="bg-[#1C2030] border-border text-white h-9 text-xs"
+                            className="bg-[#C94400] border-border text-white h-9 text-xs"
                           />
                         </div>
                         <div>
@@ -1952,7 +1891,7 @@ export default function RequirementDetailsPage() {
                             value={inChatMoq}
                             onChange={e => setInChatMoq(e.target.value === '' ? '' : Number(e.target.value))}
                             placeholder={String(req?.quantity || 1000)}
-                            className="bg-[#1C2030] border-border text-white h-9 text-xs"
+                            className="bg-[#C94400] border-border text-white h-9 text-xs"
                           />
                         </div>
                         <div>
@@ -1962,7 +1901,7 @@ export default function RequirementDetailsPage() {
                             value={inChatLeadDays}
                             onChange={e => setInChatLeadDays(e.target.value === '' ? '' : Number(e.target.value))}
                             placeholder="15"
-                            className="bg-[#1C2030] border-border text-white h-9 text-xs"
+                            className="bg-[#C94400] border-border text-white h-9 text-xs"
                           />
                         </div>
                         <div>
@@ -1971,7 +1910,7 @@ export default function RequirementDetailsPage() {
                             value={inChatDeliveryTerms}
                             onChange={e => setInChatDeliveryTerms(e.target.value)}
                             placeholder="FOB"
-                            className="bg-[#1C2030] border-border text-white h-9 text-xs"
+                            className="bg-[#C94400] border-border text-white h-9 text-xs"
                           />
                         </div>
                       </div>
@@ -1983,7 +1922,7 @@ export default function RequirementDetailsPage() {
                             value={inChatPaymentTerms}
                             onChange={e => setInChatPaymentTerms(e.target.value)}
                             placeholder="30% Advance, 70% against BL"
-                            className="bg-[#1C2030] border-border text-white h-9 text-xs"
+                            className="bg-[#C94400] border-border text-white h-9 text-xs"
                           />
                         </div>
                         <div>
@@ -1992,7 +1931,7 @@ export default function RequirementDetailsPage() {
                             value={inChatNotes}
                             onChange={e => setInChatNotes(e.target.value)}
                             placeholder="Includes free export packing & quality test report"
-                            className="bg-[#1C2030] border-border text-white h-9 text-xs"
+                            className="bg-[#C94400] border-border text-white h-9 text-xs"
                           />
                         </div>
                       </div>
@@ -2009,7 +1948,7 @@ export default function RequirementDetailsPage() {
                         <Button
                           size="sm"
                           onClick={handleSendInChatQuote}
-                          className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs h-8 px-4 rounded-xl gap-1.5"
+                          className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-8 px-4 rounded-xl gap-1.5"
                         >
                           <Send className="w-3.5 h-3.5" />
                           <span>Attach & Send Quotation Card</span>
@@ -2020,15 +1959,15 @@ export default function RequirementDetailsPage() {
 
                   {/* BOTTOM INPUT BAR OR SUBSCRIPTION PAYWALL */}
                   {isSupplierViewer && isPaidSubscription === false ? (
-                    <div className="p-4 bg-amber-500/10 border-t border-amber-500/25 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="p-4 bg-[#FF5A00]/10 border-t border-[#FF5A00]/25 flex flex-col sm:flex-row items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-[#FF5A00]/20 border border-[#FF5A00]/30 flex items-center justify-center text-[#FF7A2E] shrink-0">
                           <Lock className="w-5 h-5" />
                         </div>
                         <div>
                           <div className="text-xs font-bold text-white flex items-center gap-1.5">
                             <span>Subscription Paid Manufacturers Only</span>
-                            <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-mono">Premium Gate</span>
+                            <span className="text-[10px] bg-[#FF5A00]/20 text-[#FF7A2E] px-2 py-0.5 rounded font-mono">Premium Gate</span>
                           </div>
                           <p className="text-[11px] text-white/60 mt-0.5">
                             Only manufacturers with an active paid membership plan are permitted to send messages and quotations to verified buyers.
@@ -2042,7 +1981,7 @@ export default function RequirementDetailsPage() {
                           else setSubDialogReason('no_subscription');
                           setSubscribeDialogOpen(true);
                         }}
-                        className="bg-[#FF5A00] hover:bg-[#e04f00] text-white text-xs font-bold px-4 py-2 rounded-xl shrink-0 gap-1.5 shadow-lg w-full sm:w-auto justify-center"
+                        className="bg-[#C94400] hover:bg-[#B33D00] text-white text-xs font-bold px-4 py-2 rounded-xl shrink-0 gap-1.5 shadow-lg w-full sm:w-auto justify-center"
                       >
                         <Zap className="w-3.5 h-3.5" />
                         <span>Upgrade Subscription (Razorpay)</span>
@@ -2052,7 +1991,7 @@ export default function RequirementDetailsPage() {
                     <div>
                       {/* AI CHAT ASSISTANT (Prompt requirement: suggested replies with Use Reply | Edit | Send) */}
                       {suggestedChatReplies.length > 0 && (
-                        <div className="p-3 bg-[#131622] border-t border-border/80 space-y-2">
+                        <div className="p-3 bg-[#1A0C05] border-t border-border/80 space-y-2">
                           <div className="flex items-center justify-between text-xs">
                             <span className="flex items-center gap-1.5 font-bold text-white/90">
                               <Sparkles className="w-3.5 h-3.5 text-[#FF5A00]" />
@@ -2072,7 +2011,7 @@ export default function RequirementDetailsPage() {
                               {suggestedChatReplies.map(reply => (
                                 <div
                                   key={reply.id}
-                                  className="p-2.5 rounded-xl bg-[#191D2C] border border-white/5 hover:border-[#FF5A00]/30 transition-all text-xs space-y-1.5"
+                                  className="p-2.5 rounded-xl bg-[#1A0C05] border border-white/5 hover:border-[#FF5A00]/30 transition-all text-xs space-y-1.5"
                                 >
                                   <div className="flex items-center justify-between gap-2">
                                     <span className="text-[10px] uppercase font-mono font-bold text-[#FF5A00] bg-[#FF5A00]/10 px-1.5 py-0.5 rounded">
@@ -2096,7 +2035,7 @@ export default function RequirementDetailsPage() {
                                         onClick={() => {
                                           setChatInput(reply.text);
                                         }}
-                                        className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20 px-2 py-0.5 rounded transition-colors"
+                                        className="text-[10px] font-bold text-[#FF7A2E] bg-[#FF5A00]/10 hover:bg-[#B33D00]/20 px-2 py-0.5 rounded transition-colors"
                                       >
                                         Edit
                                       </button>
@@ -2107,7 +2046,7 @@ export default function RequirementDetailsPage() {
                                           setChatInput(reply.text);
                                           // Will be sent by the user, manufacturer always has final control
                                         }}
-                                        className="text-[10px] font-bold text-white bg-[#FF5A00] hover:bg-[#e04f00] px-2.5 py-0.5 rounded transition-colors"
+                                        className="text-[10px] font-bold text-white bg-[#C94400] hover:bg-[#B33D00] px-2.5 py-0.5 rounded transition-colors"
                                       >
                                         Send
                                       </button>
@@ -2130,7 +2069,7 @@ export default function RequirementDetailsPage() {
                         title="Attach Formal Price Quotation"
                         className={`p-2.5 rounded-xl border transition-colors flex items-center gap-1.5 text-xs font-bold ${
                           showInChatQuoteBuilder
-                            ? 'bg-[#FF5A00] text-white border-[#FF5A00]'
+                            ? 'bg-[#1A0C05] text-white border-[#FF5A00]'
                             : 'bg-white/5 hover:bg-white/10 text-[#FF5A00] border-[#FF5A00]/30'
                         }`}
                       >
@@ -2149,12 +2088,12 @@ export default function RequirementDetailsPage() {
                         value={chatInput}
                         onChange={e => setChatInput(e.target.value)}
                         placeholder={`Message ${buyerProfile.contact_person}...`}
-                        className="flex-1 min-w-0 bg-[#181B26] border-border text-white placeholder:text-white/40 h-10 rounded-xl text-xs sm:text-sm"
+                        className="flex-1 min-w-0 bg-[#C94400] border-border text-white placeholder:text-white/40 h-10 rounded-xl text-xs sm:text-sm"
                       />
                       <Button
                         type="submit"
                         disabled={!chatInput.trim()}
-                        className="bg-[#FF5A00] hover:bg-[#e04f00] text-white h-10 px-4 rounded-xl shrink-0"
+                        className="bg-[#C94400] hover:bg-[#B33D00] text-white h-10 px-4 rounded-xl shrink-0"
                       >
                         <Send className="w-4 h-4" />
                       </Button>
@@ -2173,8 +2112,8 @@ export default function RequirementDetailsPage() {
                   </div>
 
                   {negotiationSubmitted ? (
-                    <div className="bg-emerald-950/40 border border-emerald-500/30 p-5 rounded-2xl text-center space-y-2">
-                      <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto" />
+                    <div className="bg-[#B33D00]/40 border border-[#FF5A00]/30 p-5 rounded-2xl text-center space-y-2">
+                      <CheckCircle className="w-8 h-8 text-[#FF7A2E] mx-auto" />
                       <h4 className="text-base font-bold text-white">Counter-Offer Sent to Buyer</h4>
                       <p className="text-xs text-white/70 max-w-md mx-auto">
                         The buyer will receive an instant notification with your counter price of ₹{counterPrice || 240}/Piece. Responses typically arrive within 4 hours.
@@ -2182,7 +2121,7 @@ export default function RequirementDetailsPage() {
                       <Button
                         size="sm"
                         onClick={() => setNegotiationSubmitted(false)}
-                        className="bg-[#FF5A00] hover:bg-[#e04f00] text-white text-xs font-bold mt-2"
+                        className="bg-[#1A0C05] hover:bg-[#1A0C05] text-white text-xs font-bold mt-2"
                       >
                         Edit Counter Offer
                       </Button>
@@ -2250,7 +2189,7 @@ export default function RequirementDetailsPage() {
                           setNegotiationSubmitted(true);
                           toast.success('Counter offer submitted successfully!');
                         }}
-                        className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-11 rounded-xl shadow-lg"
+                        className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-11 rounded-xl shadow-lg"
                       >
                         Submit Counter-Offer
                       </Button>
@@ -2272,7 +2211,7 @@ export default function RequirementDetailsPage() {
                       </p>
                     </div>
                     <div>
-                      <div className="text-emerald-400 font-bold">AI Supplier Matching Completed</div>
+                      <div className="text-[#FF7A2E] font-bold">AI Supplier Matching Completed</div>
                       <div className="text-white/50 text-[11px]">12 Sep 2026, 10:05 AM</div>
                       <p className="text-white/80 mt-0.5">Matched with verified manufacturers in {buyerProfile.sector} sector with audited factory capacity.</p>
                     </div>
@@ -2282,7 +2221,7 @@ export default function RequirementDetailsPage() {
                       <p className="text-white/80 mt-0.5">Initial supplier proposal submitted with competitive delivery schedule.</p>
                     </div>
                     <div>
-                      <div className="text-amber-400 font-bold">Active Negotiation</div>
+                      <div className="text-[#FF7A2E] font-bold">Active Negotiation</div>
                       <div className="text-white/50 text-[11px]">Currently ongoing</div>
                       <p className="text-white/80 mt-0.5">{quotes.length || 12} total quotes submitted, buyer evaluating sample specs.</p>
                     </div>
@@ -2327,13 +2266,13 @@ export default function RequirementDetailsPage() {
                             <img
                               src={prod.image}
                               alt={prod.name}
-                              className="w-12 h-12 rounded-lg object-cover bg-black/40 border border-white/10 shrink-0"
+                              className="w-12 h-12 rounded-lg object-cover bg-[#0A0A0A]/40 border border-white/10 shrink-0"
                             />
                           )}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-1">
                               <h4 className="text-xs font-bold text-white truncate">{prod.name}</h4>
-                              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-mono shrink-0">
+                              <span className="text-[10px] font-bold text-[#FF7A2E] bg-[#FF5A00]/10 px-1.5 py-0.5 rounded font-mono shrink-0">
                                 {prod.matchScore}% Match
                               </span>
                             </div>
@@ -2344,7 +2283,7 @@ export default function RequirementDetailsPage() {
                         </div>
 
                         {/* Specs grid: Match %, Product price, MOQ, Available quantity, Estimated delivery */}
-                        <div className="grid grid-cols-2 gap-1.5 text-[10px] bg-[#171A27] p-2 rounded-lg border border-white/5">
+                        <div className="grid grid-cols-2 gap-1.5 text-[10px] bg-[#1A0C05] p-2 rounded-lg border border-white/5">
                           <div className="text-white/60">
                             MOQ: <span className="font-bold text-white">{prod.moq} {prod.moqUnit}</span>
                           </div>
@@ -2352,7 +2291,7 @@ export default function RequirementDetailsPage() {
                             Available Qty: <span className="font-bold text-white">{prod.availableQuantity.toLocaleString()}</span>
                           </div>
                           <div className="text-white/60 col-span-2">
-                            Estimated Delivery: <span className="font-bold text-emerald-400">{prod.estimatedDeliveryDays} days</span>
+                            Estimated Delivery: <span className="font-bold text-[#FF7A2E]">{prod.estimatedDeliveryDays} days</span>
                           </div>
                         </div>
 
@@ -2360,7 +2299,7 @@ export default function RequirementDetailsPage() {
                         <Button
                           onClick={() => handleOpenAiQuoteModal(prod)}
                           size="sm"
-                          className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs h-9 rounded-xl shadow-md gap-1.5"
+                          className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-9 rounded-xl shadow-md gap-1.5"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
                           <span>Use for Quote</span>
@@ -2395,7 +2334,7 @@ export default function RequirementDetailsPage() {
                     Instantly match your factory catalog products with live buyer RFQs, auto-calculate MOQ margins, and generate 1-click quotations.
                   </p>
 
-                  <div className="space-y-2 text-xs bg-[#171A27] p-3 rounded-xl border border-white/5">
+                  <div className="space-y-2 text-xs bg-[#1A0C05] p-3 rounded-xl border border-white/5">
                     <div className="flex items-center gap-2 text-white/80">
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
                       <span>94%+ Automatic Catalog Spec Match</span>
@@ -2425,7 +2364,7 @@ export default function RequirementDetailsPage() {
                       }
                       setSubscribeDialogOpen(true);
                     }}
-                    className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-[#FF5A00]/20 gap-2"
+                    className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-[#FF5A00]/20 gap-2"
                   >
                     <Sparkles className="w-4 h-4" />
                     <span>Unlock AI Product Match — ₹7,500/mo or AI Add-on</span>
@@ -2437,7 +2376,7 @@ export default function RequirementDetailsPage() {
               <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-xl">
                 <div className="flex items-center justify-between pb-3 border-b border-border">
                   <h3 className="text-base font-bold text-white">Buyer Information</h3>
-                  <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="text-[11px] font-bold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" />
                     Verified Buyer
                   </span>
@@ -2445,7 +2384,7 @@ export default function RequirementDetailsPage() {
 
                 <div className="pt-3.5 space-y-3.5">
                   <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-slate-800 border border-border flex items-center justify-center font-bold text-white text-base shrink-0 shadow-sm">
+                    <div className="w-12 h-12 rounded-xl bg-[#0A0A0A] border border-border flex items-center justify-center font-bold text-white text-base shrink-0 shadow-sm">
                       {buyerProfile.avatar_initials}
                     </div>
                     <div className="min-w-0">
@@ -2470,7 +2409,7 @@ export default function RequirementDetailsPage() {
                       <div className="text-[10px] text-white/50 font-medium">Connected</div>
                     </div>
                     <div>
-                      <div className="text-base font-black text-emerald-400">{buyerProfile.response_rate}</div>
+                      <div className="text-base font-black text-[#FF7A2E]">{buyerProfile.response_rate}</div>
                       <div className="text-[10px] text-white/50 font-medium">Response Rate</div>
                     </div>
                   </div>
@@ -2495,7 +2434,7 @@ export default function RequirementDetailsPage() {
                   <div className="space-y-2 pt-1">
                     <Button
                       onClick={handleOpenSendQuote}
-                      className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-extrabold text-sm h-11 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.4)] flex items-center justify-center gap-2"
+                      className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-extrabold text-sm h-11 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.4)] flex items-center justify-center gap-2"
                     >
                       <span>Send Quote</span>
                       <ArrowRight className="w-4 h-4" />
@@ -2517,8 +2456,8 @@ export default function RequirementDetailsPage() {
               <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-xl">
                 <div className="flex items-center justify-between pb-3 border-b border-border">
                   <h3 className="text-base font-bold text-white">Deal Status</h3>
-                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-bold text-[#FF7A2E] flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#C94400] animate-pulse" />
                     Active
                   </span>
                 </div>
@@ -2533,8 +2472,8 @@ export default function RequirementDetailsPage() {
                           <div
                             className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all ${
                               isActive
-                                ? 'bg-[#FF5A00] text-white border-[#FF5A00] shadow-[0_0_12px_rgba(255,90,0,0.5)]'
-                                : 'bg-[#181B26] text-white/50 border-border'
+                                ? 'bg-[#C94400] text-white border-[#FF5A00] shadow-[0_0_12px_rgba(255,90,0,0.5)]'
+                                : 'bg-[#C94400] text-white/50 border-border'
                             }`}
                           >
                             <Icon className="w-4 h-4" />
@@ -2552,7 +2491,7 @@ export default function RequirementDetailsPage() {
                       const Icon = step.icon;
                       return (
                         <div key={step.key} className="flex flex-col items-center">
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center border bg-[#181B26] text-white/40 border-border">
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center border bg-[#C94400] text-white/40 border-border">
                             <Icon className="w-4 h-4" />
                           </div>
                           <span className="text-[11px] mt-1.5 font-medium text-white/50">
@@ -2613,9 +2552,9 @@ export default function RequirementDetailsPage() {
                     <Link
                       key={sReq.id}
                       to={`/requirement/${sReq.id}`}
-                      className="flex items-center gap-3 p-2.5 rounded-xl bg-[#141722] hover:bg-[#1E2232] border border-white/5 hover:border-[#FF5A00]/40 transition-all group"
+                      className="flex items-center gap-3 p-2.5 rounded-xl bg-[#1A0C05] hover:bg-[#1A0C05] border border-white/5 hover:border-[#FF5A00]/40 transition-all group"
                     >
-                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-black/50 shrink-0 border border-border">
+                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-[#0A0A0A]/50 shrink-0 border border-border">
                         <SafeImage src={sReq.image} alt={sReq.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -2679,11 +2618,11 @@ export default function RequirementDetailsPage() {
                   ].map((sup, idx) => (
                     <div
                       key={idx}
-                      className="p-3 rounded-xl bg-[#141722] border border-white/5 space-y-2.5"
+                      className="p-3 rounded-xl bg-[#1A0C05] border border-white/5 space-y-2.5"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-9 h-9 rounded-lg bg-slate-800 border border-border flex items-center justify-center font-bold text-white text-xs shrink-0">
+                          <div className="w-9 h-9 rounded-lg bg-[#0A0A0A] border border-border flex items-center justify-center font-bold text-white text-xs shrink-0">
                             {sup.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
@@ -2693,14 +2632,14 @@ export default function RequirementDetailsPage() {
                             </div>
                           </div>
                         </div>
-                        <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded shrink-0">
+                        <span className="text-[9px] font-bold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/30 px-1.5 py-0.5 rounded shrink-0">
                           Verified
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-amber-400 font-bold flex items-center gap-1 text-[11px]">
-                          <Star className="w-3 h-3 fill-amber-400" />
+                        <span className="text-[#FF7A2E] font-bold flex items-center gap-1 text-[11px]">
+                          <Star className="w-3 h-3 fill-[#FF5A00]" />
                           {sup.rating} ({sup.reviews})
                         </span>
                         <Button
@@ -2713,7 +2652,7 @@ export default function RequirementDetailsPage() {
                             }
                             toast.success(`Contact request sent to ${sup.name}`);
                           }}
-                          className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-[11px] h-7 px-3 rounded-lg"
+                          className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-[11px] h-7 px-3 rounded-lg"
                         >
                           Contact Supplier
                         </Button>
@@ -2788,7 +2727,7 @@ export default function RequirementDetailsPage() {
                     key={prod.id}
                     className="bg-card border border-border hover:border-[#FF5A00]/40 rounded-xl overflow-hidden transition-all group flex flex-col shadow-md"
                   >
-                    <div className="aspect-square relative bg-black/40 overflow-hidden">
+                    <div className="aspect-square relative bg-[#0A0A0A]/40 overflow-hidden">
                       <SafeImage
                         src={prod.image}
                         alt={prod.name}
@@ -2799,9 +2738,9 @@ export default function RequirementDetailsPage() {
                           setLikedProducts(prev => ({ ...prev, [prod.id]: !isLiked }));
                           toast.success(!isLiked ? 'Added to favorites' : 'Removed from favorites');
                         }}
-                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center border border-border transition-all"
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[#0A0A0A]/60 hover:bg-[#0A0A0A]/90 text-white flex items-center justify-center border border-border transition-all"
                       >
-                        <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+                        <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-[#FF5A00] text-[#FF7A2E]' : 'text-white'}`} />
                       </button>
                     </div>
 
@@ -2811,7 +2750,7 @@ export default function RequirementDetailsPage() {
                           {prod.name}
                         </h4>
                         <div className="text-[10px] text-white/50 mt-0.5">
-                          MOQ: <span className="text-emerald-400 font-semibold">{prod.moq}</span>
+                          MOQ: <span className="text-[#FF7A2E] font-semibold">{prod.moq}</span>
                         </div>
                       </div>
                       <div className="text-xs font-extrabold text-[#FF5A00] mt-1.5 truncate">
@@ -2840,7 +2779,7 @@ export default function RequirementDetailsPage() {
 
           <Button
             onClick={handleOpenSendQuote}
-            className="flex-1 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-extrabold text-xs h-11 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.4)] flex items-center justify-center gap-1.5"
+            className="flex-1 bg-[#C94400] hover:bg-[#B33D00] text-white font-extrabold text-xs h-11 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.4)] flex items-center justify-center gap-1.5"
           >
             <span>Send Quote</span>
             <ArrowRight className="w-4 h-4" />
@@ -2850,7 +2789,7 @@ export default function RequirementDetailsPage() {
 
       {/* ── FULLSCREEN IMAGE ZOOM MODAL ──────────────────────────────────── */}
       {fullscreenImage && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-4 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 bg-[#0A0A0A]/95 flex flex-col justify-between p-4 backdrop-blur-md">
           <div className="flex items-center justify-between text-white pb-2 border-b border-border">
             <div className="text-sm font-bold truncate max-w-md">
               {req.title} • Image {activeImageIndex + 1} of {galleryImages.length}

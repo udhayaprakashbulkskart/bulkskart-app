@@ -117,13 +117,13 @@ export default function SupplierDashboard() {
 
   const statsCards = [
     { label: 'Listed Products', value: stats.totalProducts, icon: Package, color: 'text-primary', to: '/dashboard/supplier/products' },
-    { label: 'Quotes Sent', value: stats.quotesSent, icon: FileText, color: 'text-green-500', to: '/dashboard/supplier/quotations' },
+    { label: 'Quotes Sent', value: stats.quotesSent, icon: FileText, color: 'text-[#FF7A2E]', to: '/dashboard/supplier/quotations' },
     { label: 'Active Orders', value: stats.activeOrders, icon: TrendingUp, color: 'text-[#FF5A00]', to: '/dashboard/supplier/orders' },
-    { label: 'Completed Orders', value: stats.completedOrders, icon: CheckCircle2, color: 'text-green-600', to: '/dashboard/supplier/orders' },
-    { label: 'Response Rate', value: `${stats.responseRate}%`, icon: BarChart3, color: 'text-indigo-500', to: '/dashboard/supplier/analytics' },
+    { label: 'Completed Orders', value: stats.completedOrders, icon: CheckCircle2, color: 'text-[#FF7A2E]', to: '/dashboard/supplier/orders' },
+    { label: 'Response Rate', value: `${stats.responseRate}%`, icon: BarChart3, color: 'text-[#FF7A2E]', to: '/dashboard/supplier/analytics' },
     { label: 'Avg Response Time', value: stats.avgResponseHours > 0 ? `${stats.avgResponseHours}h` : '—', icon: Clock, color: 'text-orange-500', to: '/dashboard/supplier/analytics' },
-    { label: 'Wallet Balance', value: `₹${Number(stats.walletBalance).toLocaleString()}`, icon: Wallet, color: 'text-teal-500', to: '/dashboard/supplier/wallet' },
-    { label: 'RFQ Leads Left', value: stats.leadsLeft, sub: `/ ${stats.maxLeads}`, icon: BarChart3, color: 'text-yellow-500', to: '/dashboard/supplier/rfqs' },
+    { label: 'Wallet Balance', value: `₹${Number(stats.walletBalance).toLocaleString()}`, icon: Wallet, color: 'text-[#FF7A2E]', to: '/dashboard/supplier/wallet' },
+    { label: 'RFQ Leads Left', value: stats.leadsLeft, sub: `/ ${stats.maxLeads}`, icon: BarChart3, color: 'text-[#FF7A2E]', to: '/dashboard/supplier/rfqs' },
   ];
 
   return (
@@ -136,12 +136,12 @@ export default function SupplierDashboard() {
       <div className="flex-1 min-w-0 p-3 md:p-4 lg:p-5">
         <div className="max-w-[1400px] w-full mx-auto">
           {/* Header */}
-          <div className="bs-glass mb-4 flex items-center justify-between gap-3 flex-wrap rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-base md:text-xl font-bold text-foreground truncate max-w-[280px] sm:max-w-md">{company?.company_name ?? 'Your Dashboard'}</h1>
                 {company?.is_verified && (
-                  <Badge className="bg-green-100 text-green-700 border-green-300 text-[10px] px-1.5 py-0 gap-0.5 shrink-0">
+                  <Badge className="bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40 text-[10px] px-1.5 py-0 gap-0.5 shrink-0">
                     <ShieldCheck className="w-2.5 h-2.5" /> Verified
                   </Badge>
                 )}
@@ -153,12 +153,12 @@ export default function SupplierDashboard() {
                 <Link to="/dashboard/supplier/notifications">
                   <Button variant="outline" size="sm" className="gap-1.5 relative">
                     <Bell className="w-4 h-4" />
-                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold">{stats.unreadNotifs}</span>
+                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#C94400] text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold">{stats.unreadNotifs}</span>
                   </Button>
                 </Link>
               )}
               <Link to="/dashboard/supplier/products" className="hidden md:block">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 text-sm">
+                <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2 text-sm">
                   <Plus className="w-4 h-4" /> Add Product
                 </Button>
               </Link>
@@ -167,7 +167,7 @@ export default function SupplierDashboard() {
 
           {/* Mandatory Business Details Onboarding Banner */}
           {(!company || !(company as any)?.onboarding_completed) && (
-            <div className="mb-4 bg-gradient-to-r from-primary/10 via-orange-500/10 to-amber-500/5 border-2 border-primary/40 rounded-2xl p-4 sm:p-5 shadow-sm">
+            <div className="mb-4 bg-gradient-to-r from-primary/10 via-orange-500/10 to-[#B33D00]/5 border-2 border-primary/40 rounded-2xl p-4 sm:p-5 shadow-sm">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5">
@@ -190,7 +190,7 @@ export default function SupplierDashboard() {
                   </div>
                 </div>
                 <Link to="/business-setup" className="shrink-0 w-full sm:w-auto">
-                  <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90 font-bold text-xs h-9 px-4 rounded-xl shadow-md gap-1.5">
+                  <Button size="sm" className="w-full bg-[#C94400] text-white hover:bg-primary/90 font-bold text-xs h-9 px-4 rounded-xl shadow-md gap-1.5">
                     <Building2 className="w-3.5 h-3.5" />
                     {!company ? 'Start Setup Wizard' : 'Resume Profile Setup'}
                   </Button>
@@ -201,11 +201,11 @@ export default function SupplierDashboard() {
 
           {/* Verification banners */}
           {company?.verification_status === 'pending' && (
-            <div className="mb-4 flex items-start gap-3 bg-yellow-50 border border-yellow-200 rounded-xl p-3 md:p-4 text-sm">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-yellow-600" />
+            <div className="mb-4 flex items-start gap-3 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-xl p-3 md:p-4 text-sm">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-[#FF7A2E]" />
               <div>
-                <p className="font-semibold text-yellow-800">Verification in progress</p>
-                <p className="text-xs mt-0.5 text-yellow-700">Your documents are under review. You'll be notified when approved.</p>
+                <p className="font-semibold text-[#FF7A2E]">Verification in progress</p>
+                <p className="text-xs mt-0.5 text-[#FF7A2E]">Your documents are under review. You'll be notified when approved.</p>
               </div>
             </div>
           )}
@@ -217,33 +217,33 @@ export default function SupplierDashboard() {
                 <p className="text-xs mt-0.5">Upload GST, PAN, and bank documents to get verified and accept more orders.</p>
               </div>
               <Link to="/dashboard/supplier/verification" className="shrink-0">
-                <Button size="sm" className="bg-primary text-primary-foreground text-xs">Verify Now</Button>
+                <Button size="sm" className="bg-[#1A0C05] text-primary-foreground text-xs">Verify Now</Button>
               </Link>
             </div>
           )}
 
           {/* Open disputes */}
           {stats.openDisputes > 0 && (
-            <div className="mb-4 flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-3 text-sm">
-              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-              <span className="text-red-700">{stats.openDisputes} open dispute{stats.openDisputes > 1 ? 's' : ''}</span>
+            <div className="mb-4 flex items-center gap-3 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-xl p-3 text-sm">
+              <AlertTriangle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
+              <span className="text-[#FF7A2E]">{stats.openDisputes} open dispute{stats.openDisputes > 1 ? 's' : ''}</span>
               <Link to="/dashboard/supplier/disputes" className="ml-auto shrink-0">
-                <Button variant="outline" size="sm" className="text-xs border-red-300 text-red-600 hover:bg-red-50">View</Button>
+                <Button variant="outline" size="sm" className="text-xs border-[#FF5A00]/40 text-[#FF7A2E] hover:bg-[#B33D00]/10">View</Button>
               </Link>
             </div>
           )}
 
           {/* Subscription banner */}
           {!subscription && (
-            <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border-2 border-amber-500/30 rounded-2xl p-4 shadow-sm">
+            <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-[#C94400]/10 via-orange-500/10 to-[#B33D00]/5 border-2 border-[#FF5A00]/30 rounded-2xl p-4 shadow-sm">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-xl bg-[#FF5A00]/20 text-[#FF7A2E] flex items-center justify-center shrink-0 mt-0.5">
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-black text-foreground text-sm">Action Required: Unpaid Manufacturer Account</p>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30 uppercase">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF5A00]/20 text-[#FF7A2E] border border-[#FF5A00]/30 uppercase">
                       Contacts Locked
                     </span>
                   </div>
@@ -254,7 +254,7 @@ export default function SupplierDashboard() {
               </div>
               <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                 <Link to="/dashboard/supplier/subscription" className="w-full sm:w-auto">
-                  <Button size="sm" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md gap-1.5">
+                  <Button size="sm" className="w-full bg-gradient-to-r from-[#C94400] to-orange-500 hover:from-[#C94400] hover:to-orange-600 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" /> Pay Subscription Now
                   </Button>
                 </Link>
@@ -264,15 +264,15 @@ export default function SupplierDashboard() {
 
           {/* Wallet summary */}
           {stats.walletBalance > 0 && (
-            <div className="mb-4 flex items-center gap-4 bg-teal-50 border border-teal-200 rounded-xl p-3 md:p-4 text-sm flex-wrap">
-              <Wallet className="w-5 h-5 text-teal-600 shrink-0" />
+            <div className="mb-4 flex items-center gap-4 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-xl p-3 md:p-4 text-sm flex-wrap">
+              <Wallet className="w-5 h-5 text-[#FF7A2E] shrink-0" />
               <div className="flex-1 min-w-0">
-                <span className="font-semibold text-teal-800">Wallet: ₹{Number(stats.walletBalance).toLocaleString()}</span>
-                <span className="text-teal-600 ml-3">Withdrawable: ₹{Number(stats.withdrawableBalance).toLocaleString()}</span>
+                <span className="font-semibold text-[#FF7A2E]">Wallet: ₹{Number(stats.walletBalance).toLocaleString()}</span>
+                <span className="text-[#FF7A2E] ml-3">Withdrawable: ₹{Number(stats.withdrawableBalance).toLocaleString()}</span>
               </div>
               {stats.withdrawableBalance > 0 && (
                 <Link to="/dashboard/supplier/wallet" className="shrink-0">
-                  <Button size="sm" variant="outline" className="text-xs border-teal-300 text-teal-700">Withdraw</Button>
+                  <Button size="sm" variant="outline" className="text-xs border-[#FF5A00]/40 text-[#FF7A2E]">Withdraw</Button>
                 </Link>
               )}
             </div>
@@ -294,7 +294,7 @@ export default function SupplierDashboard() {
                       <Icon className={`w-4 h-4 md:w-5 md:h-5 ${s.color}`} />
                     </div>
                   </div>
-                  <p className="text-xl md:text-2xl font-bold text-foreground">{loading ? <span className="inline-block h-7 w-16 animate-pulse rounded-md bg-muted" /> : s.value}<span className="text-xs md:text-sm font-normal text-muted-foreground">{loading ? '' : (s.sub ?? '')}</span></p>
+                  <p className="text-xl md:text-2xl font-bold text-foreground">{loading ? '—' : s.value}<span className="text-xs md:text-sm font-normal text-muted-foreground">{s.sub ?? ''}</span></p>
                   <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
                 </Link>
               );

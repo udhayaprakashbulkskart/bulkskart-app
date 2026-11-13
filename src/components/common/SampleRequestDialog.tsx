@@ -68,18 +68,18 @@ export default function SampleRequestDialog({
             <Package className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground mb-4">Please log in as a buyer to request samples.</p>
             <Link to="/auth">
-              <Button className="bg-primary text-primary-foreground">Login / Register</Button>
+              <Button className="bg-[#1A0C05] text-primary-foreground">Login / Register</Button>
             </Link>
           </div>
         ) : done ? (
           <div className="text-center py-8">
-            <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
+            <CheckCircle2 className="w-12 h-12 text-[#FF7A2E] mx-auto mb-3" />
             <p className="text-base font-bold text-foreground mb-1">Sample Request Sent!</p>
             <p className="text-sm text-muted-foreground mb-4">
               Your request has been sent to <span className="text-foreground font-medium">{supplierName}</span>.
               They will review and respond within 1–2 business days.
             </p>
-            <Button onClick={handleClose} className="bg-primary text-primary-foreground">Close</Button>
+            <Button onClick={handleClose} className="bg-[#1A0C05] text-primary-foreground">Close</Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 mt-1">
@@ -128,7 +128,7 @@ export default function SampleRequestDialog({
               />
             </div>
 
-            <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 rounded-lg p-2.5 text-xs text-amber-700 dark:text-amber-400">
+            <div className="flex items-start gap-2 bg-[#FF5A00]/10 dark:bg-[#B33D00]/20 border border-[#FF5A00]/50 rounded-lg p-2.5 text-xs text-[#FF7A2E] dark:text-[#FF7A2E]">
               <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <p>Sample pricing and shipping costs will be communicated by the supplier. Samples may or may not be free.</p>
             </div>
@@ -136,7 +136,7 @@ export default function SampleRequestDialog({
             <Button
               type="submit"
               disabled={submitting}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90"
             >
               {submitting
                 ? <><RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Sending…</>

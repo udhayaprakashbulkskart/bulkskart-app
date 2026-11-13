@@ -227,7 +227,7 @@ export default function PostRequirementPage() {
       <MainLayout>
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
           <div className="p-8 rounded-3xl bg-card border border-border shadow-md space-y-5">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-600">
+            <div className="w-16 h-16 rounded-2xl bg-[#FF5A00]/15 border border-[#FF5A00]/30 flex items-center justify-center mx-auto text-[#FF7A2E]">
               <CheckCircle2 className="w-9 h-9" />
             </div>
 
@@ -259,7 +259,7 @@ export default function PostRequirementPage() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
               <Button
                 onClick={() => navigate(`/auctions/reverse`)}
-                className="bg-[#FF5A1F] hover:bg-[#e04f1a] text-white font-bold h-11 px-6 rounded-xl shadow-sm"
+                className="bg-[#C94400] hover:bg-[#e04f1a] text-white font-bold h-11 px-6 rounded-xl shadow-sm"
               >
                 View in Live Reverse Auctions <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
@@ -306,7 +306,7 @@ export default function PostRequirementPage() {
         description="Submit your product specs, order quantity, delivery timeline and budget. Receive competitive quotations from verified manufacturers within 24 hours."
       />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 md:py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         
         {/* Header Breadcrumbs & Title */}
         <div className="mb-6">
@@ -369,7 +369,7 @@ export default function PostRequirementPage() {
                 </Button>
               </Link>
               <Link to="/register?redirect=/post-requirement" className="flex-1 sm:flex-initial">
-                <Button size="sm" className="w-full text-xs font-bold bg-[#FF5A00] hover:bg-[#e04e00] text-white h-8.5 rounded-lg shadow-xs">
+                <Button size="sm" className="w-full text-xs font-bold bg-[#C94400] hover:bg-[#B33D00] text-white h-8.5 rounded-lg shadow-xs">
                   <UserPlus className="w-3.5 h-3.5 mr-1" /> Create Free Account
                 </Button>
               </Link>
@@ -377,8 +377,7 @@ export default function PostRequirementPage() {
           </div>
         )}
 
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <form onSubmit={handleSubmit} className="bs-glass space-y-6 rounded-3xl p-4 sm:p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           
           {/* Card 1: Product Identity & Reference Upload */}
           <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
@@ -679,7 +678,7 @@ export default function PostRequirementPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="flex-1 sm:flex-none h-11 px-6 rounded-xl bg-[#FF5A1F] hover:bg-[#e04f1a] text-white font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2"
+                className="flex-1 sm:flex-none h-11 px-6 rounded-xl bg-[#C94400] hover:bg-[#e04f1a] text-white font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2"
               >
                 {loading ? (
                   <>
@@ -696,26 +695,6 @@ export default function PostRequirementPage() {
             </div>
           </div>
         </form>
-        <aside className="bs-glass sticky top-24 hidden rounded-3xl p-4 lg:block">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Live brief</p>
-          <p className="mt-2 text-sm font-bold text-foreground">{form.title || 'Untitled requirement'}</p>
-          <dl className="mt-4 space-y-3 text-xs">
-            <div className="flex items-center justify-between gap-3 border-b border-border pb-2">
-              <dt className="text-muted-foreground">Quantity</dt>
-              <dd className="font-semibold text-foreground">{form.quantity ? `${form.quantity} ${form.quantityUnit}` : '—'}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-3 border-b border-border pb-2">
-              <dt className="text-muted-foreground">Destination</dt>
-              <dd className="font-semibold text-foreground">{form.destinationCity ? `${form.destinationCity}, ` : ''}{form.destinationCountry || '—'}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <dt className="text-muted-foreground">Window</dt>
-              <dd className="font-semibold text-foreground">{form.closingDuration || '—'}</dd>
-            </div>
-          </dl>
-          <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">This summary updates as you type. Publishing still uses the same form.</p>
-        </aside>
-        </div>
       </div>
     </MainLayout>
   );

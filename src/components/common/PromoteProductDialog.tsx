@@ -78,21 +78,21 @@ const PROMOTION_TYPES: {
   },
   {
     type: 'boost',
-    icon: <Zap className="w-5 h-5 text-amber-500" />,
+    icon: <Zap className="w-5 h-5 text-[#FF7A2E]" />,
     label: 'Boost Product',
     tagline: 'Top Category Ranking',
     desc: 'Rank higher in category search results with a verified "Sponsored" badge, attracting buyers specifically searching for your item.',
     badge: 'Sponsored',
-    badgeColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    badgeColor: 'bg-[#FF5A00]/15 text-[#FF7A2E] border-[#FF5A00]/30',
   },
   {
     type: 'campaign',
-    icon: <BarChart2 className="w-5 h-5 text-indigo-400" />,
+    icon: <BarChart2 className="w-5 h-5 text-[#FF7A2E]" />,
     label: 'Promotion Campaign',
     tagline: 'Custom Targeted Exposure',
     desc: 'Targeted multi-channel promotion with custom geographic country filters, target industry categories, and automated conversion tracking.',
     badge: 'Campaign',
-    badgeColor: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
+    badgeColor: 'bg-[#FF5A00]/15 text-[#FF7A2E] border-[#FF5A00]/30',
   },
 ];
 
@@ -207,9 +207,9 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all shrink-0 ${
                     isActive
-                      ? 'bg-[#FF5A00] text-white shadow-md'
+                      ? 'bg-[#C94400] text-white shadow-md'
                       : isDone
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                        ? 'bg-[#FF5A00]/20 text-[#FF7A2E] border border-[#FF5A00]/40'
                         : 'bg-muted text-muted-foreground'
                   }`}
                 >
@@ -272,10 +272,10 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
                     <div className="shrink-0 mt-1">
                       <div
                         className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          isSelected ? 'border-[#FF5A00] bg-[#FF5A00]' : 'border-muted-foreground/40'
+                          isSelected ? 'border-[#FF5A00] bg-[#C94400]' : 'border-muted-foreground/40'
                         }`}
                       >
-                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#161616]" />}
                       </div>
                     </div>
                   </div>
@@ -285,7 +285,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
 
             <Button
               onClick={() => setStep(2)}
-              className="w-full h-10 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs sm:text-sm mt-3 gap-2 rounded-xl"
+              className="w-full h-10 bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs sm:text-sm mt-3 gap-2 rounded-xl"
             >
               Continue to Duration &amp; Budget <ChevronRight className="w-4 h-4" />
             </Button>
@@ -364,7 +364,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
                   <div className="flex items-center justify-center gap-1 text-muted-foreground text-[10px]">
                     <Users className="w-3 h-3" /> RFQ Leads
                   </div>
-                  <p className="text-xs sm:text-sm font-bold text-emerald-400 mt-0.5">
+                  <p className="text-xs sm:text-sm font-bold text-[#FF7A2E] mt-0.5">
                     ~{selectedPlan.est_leads}+
                   </p>
                 </div>
@@ -441,7 +441,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
               </Button>
               <Button
                 onClick={() => setStep(3)}
-                className="flex-1 h-9 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs gap-2 rounded-xl"
+                className="flex-1 h-9 bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs gap-2 rounded-xl"
               >
                 Review Order &amp; Pay <ChevronRight className="w-3.5 h-3.5" />
               </Button>
@@ -454,7 +454,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
           <div className="space-y-4">
             {paidSuccess ? (
               <div className="flex flex-col items-center justify-center py-8 text-center space-y-3">
-                <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                <div className="w-14 h-14 rounded-full bg-[#FF5A00]/20 text-[#FF7A2E] flex items-center justify-center border border-[#FF5A00]/30">
                   <CheckCircle className="w-7 h-7" />
                 </div>
                 <h3 className="text-base font-bold text-foreground">Promotion Activated!</h3>
@@ -526,7 +526,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
 
                 {/* Gateway Assurance */}
                 <div className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-lg bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/20 flex items-center justify-center shrink-0">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -551,7 +551,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
                   <Button
                     onClick={handlePayWithRazorpay}
                     disabled={rzpLoading}
-                    className="flex-1 h-10 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs sm:text-sm gap-2 rounded-xl shadow-md"
+                    className="flex-1 h-10 bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs sm:text-sm gap-2 rounded-xl shadow-md"
                   >
                     {rzpLoading ? (
                       <>

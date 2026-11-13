@@ -18,17 +18,17 @@ type NotifType = {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  rfq_matched: 'bg-orange-100 text-orange-700 border-orange-200',
-  rfq_match:   'bg-orange-100 text-orange-700 border-orange-200',
+  rfq_matched: 'bg-[#FF5A00]/10 text-orange-700 border-[#FF5A00]/30',
+  rfq_match:   'bg-[#FF5A00]/10 text-orange-700 border-[#FF5A00]/30',
   quote_received: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
-  quote_accepted: 'bg-green-100 text-green-700 border-green-200',
-  quote_rejected: 'bg-red-100 text-red-700 border-red-200',
-  order_status: 'bg-purple-100 text-purple-700 border-purple-200',
-  verification: 'bg-teal-100 text-teal-700 border-teal-200',
-  subscription: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  product_update: 'bg-pink-100 text-pink-700 border-pink-200',
-  dispute: 'bg-red-100 text-red-800 border-red-200',
-  deal_status: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+  quote_accepted: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  quote_rejected: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  order_status: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  verification: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  subscription: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  product_update: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  dispute: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  deal_status: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
   quotation: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
   info: 'bg-muted text-muted-foreground border-border',
 };
@@ -36,12 +36,12 @@ const TYPE_COLORS: Record<string, string> = {
 function UrgencyBadge({ label }: { label: string | null }) {
   if (!label) return null;
   if (label === 'urgent') return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 shrink-0">
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/40 shrink-0">
       <Flame className="w-2.5 h-2.5" /> URGENT
     </span>
   );
   if (label === 'new') return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 shrink-0">
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/40 shrink-0">
       <Zap className="w-2.5 h-2.5" /> NEW
     </span>
   );
@@ -141,12 +141,12 @@ export default function NotificationsPage() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
 
         {/* Header */}
-        <div className="bs-glass flex items-center justify-between gap-4 flex-wrap rounded-3xl p-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <Bell className="w-6 h-6 text-primary" />
             <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
             {unreadCount > 0 && (
-              <Badge className="bg-primary text-primary-foreground">{unreadCount} new</Badge>
+              <Badge className="bg-[#1A0C05] text-primary-foreground">{unreadCount} new</Badge>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -168,7 +168,7 @@ export default function NotificationsPage() {
 
         {/* RFQ match summary banner */}
         {notifs.filter(n => isRfqMatch(n.type) && !n.is_read).length > 0 && (
-          <div className="flex items-start gap-3 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+          <div className="flex items-start gap-3 bg-[#FF5A00]/10 border border-[#FF5A00]/30 rounded-xl px-4 py-3">
             <Flame className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-orange-800">
@@ -180,7 +180,7 @@ export default function NotificationsPage() {
         )}
 
         {/* AI Sales Assistant Banner */}
-        <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-[#FF5A00]/15 via-orange-500/10 to-[#FF5A00]/5 border-2 border-[#FF5A00]/30 rounded-2xl shadow-sm">
+        <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-[#C94400]/15 via-orange-500/10 to-[#FF5A00]/5 border-2 border-[#FF5A00]/30 rounded-2xl shadow-sm">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-[#FF5A00]/20 text-[#FF5A00] flex items-center justify-center shrink-0">
               <Sparkles className="w-5 h-5" />
@@ -198,7 +198,7 @@ export default function NotificationsPage() {
             </div>
           </div>
           <Link to="/dashboard/supplier/ai-assistant" className="shrink-0 ml-2">
-            <Button size="sm" className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs h-8 px-3 rounded-xl gap-1">
+            <Button size="sm" className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-8 px-3 rounded-xl gap-1">
               <span>View Matches</span>
               <ArrowRight className="w-3 h-3" />
             </Button>
@@ -219,7 +219,7 @@ export default function NotificationsPage() {
               onClick={() => setFilterTab(tab.id as typeof filterTab)}
               className={`px-3 py-1.5 rounded-full font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
                 filterTab === tab.id
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-[#C94400] text-primary-foreground shadow-sm'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
               }`}
             >
@@ -273,7 +273,7 @@ export default function NotificationsPage() {
                     key={n.id}
                     className={`rounded-xl border flex items-start gap-3 transition-colors hover:bg-muted/40 ${
                       !n.is_read ? 'bg-primary/5 border-primary/20' : 'bg-card border-border'
-                    } ${isUrgent ? 'border-l-4 border-l-red-500 bg-red-500/[0.02]' : ''}`}
+                    } ${isUrgent ? 'border-l-4 border-l-[#FF5A00]/40 bg-[#FF5A00]/[0.02]' : ''}`}
                   >
                     <div
                       className="flex-1 min-w-0 p-3.5 cursor-pointer"
@@ -292,18 +292,18 @@ export default function NotificationsPage() {
                             </span>
                           )}
                           {isUrgent && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full bg-red-600 text-white shadow-xs animate-pulse">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full bg-[#B33D00] text-white shadow-xs animate-pulse">
                               🚨 URGENT
                             </span>
                           )}
                           {isRfqMatch(n.type) && !isUrgent && <UrgencyBadge label={n.urgency_label} />}
                           {n.type === 'subscription' && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/40">
                               ⚡ ACTION REQUIRED
                             </span>
                           )}
                         </div>
-                        {!n.is_read && <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />}
+                        {!n.is_read && <span className="w-2.5 h-2.5 rounded-full bg-[#C94400] shrink-0" />}
                       </div>
 
                       {/* Title */}
@@ -327,7 +327,7 @@ export default function NotificationsPage() {
                     {isRfqMatch(n.type) && (n.link || n.reference_id) && (
                       <Button
                         size="sm"
-                        className="h-7 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground gap-1 font-bold"
+                        className="h-7 text-xs px-3 bg-[#C94400] hover:bg-primary/90 text-primary-foreground gap-1 font-bold"
                         onClick={e => { e.stopPropagation(); handleApplyFast(n); }}
                       >
                         Apply Fast <ArrowRight className="w-3 h-3" />
@@ -338,7 +338,7 @@ export default function NotificationsPage() {
                         to="/pricing"
                         onClick={e => { e.stopPropagation(); if (!n.is_read) markRead(n.id); }}
                       >
-                        <Button size="sm" className="h-7 text-xs px-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold gap-1 shadow-sm">
+                        <Button size="sm" className="h-7 text-xs px-3 bg-gradient-to-r from-[#C94400] to-orange-500 hover:from-[#C94400] hover:to-orange-600 text-white font-bold gap-1 shadow-sm">
                           Upgrade Now <ArrowRight className="w-3 h-3" />
                         </Button>
                       </Link>
@@ -358,7 +358,7 @@ export default function NotificationsPage() {
                 {/* Delete */}
                 <button
                   onClick={e => { e.stopPropagation(); deleteNotif(n.id); }}
-                  className="shrink-0 p-3 text-muted-foreground hover:text-red-500 transition-colors"
+                  className="shrink-0 p-3 text-muted-foreground hover:text-[#FF7A2E] transition-colors"
                   aria-label="Delete notification"
                 >
                   <Trash2 className="w-4 h-4" />

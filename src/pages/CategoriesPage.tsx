@@ -43,7 +43,7 @@ export const ALL_CATEGORIES_DATA: CategoryCardData[] = [
     icon: Factory,
     productCount: '8,900+ Products',
     manufacturerCount: '280+ Steel Plants',
-    heroImage: 'https://cdn.pixabay.com/photo/2016/11/29/09/32/welding-1868731_1280.jpg',
+    heroImage: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     subcategories: ['TMT Steel Bars', 'Hollow Sections', 'Stainless Steel Coils', 'Mild Steel Plates', 'Wire Rods', 'Pipes & Fittings'],
   },
   {
@@ -76,7 +76,7 @@ export const ALL_CATEGORIES_DATA: CategoryCardData[] = [
     icon: FlaskConical,
     productCount: '4,100+ Products',
     manufacturerCount: '160+ Chemical Plants',
-    heroImage: 'https://cdn.pixabay.com/photo/2014/12/10/20/56/laboratory-563423_1280.jpg',
+    heroImage: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     subcategories: ['Ethanol & Solvents', 'Sulfuric & Nitric Acids', 'Caustic Soda Flakes', 'Dyes & Pigments', 'Water Treatment', 'Agro Chemicals'],
   },
   {
@@ -87,7 +87,7 @@ export const ALL_CATEGORIES_DATA: CategoryCardData[] = [
     icon: Package,
     productCount: '7,300+ Products',
     manufacturerCount: '310+ Packaging Units',
-    heroImage: 'https://cdn.pixabay.com/photo/2016/11/21/14/53/boxes-1845814_1280.jpg',
+    heroImage: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     subcategories: ['Corrugated Boxes', 'Kraft Paper Reels', 'Stretch Film Rolls', 'Printed Poly Pouches', 'Wooden Pallets', 'Bubble Wrap Rolls'],
   },
   {
@@ -98,7 +98,7 @@ export const ALL_CATEGORIES_DATA: CategoryCardData[] = [
     icon: Sparkles,
     productCount: '9,500+ Products',
     manufacturerCount: '250+ Certified Factories',
-    heroImage: 'https://cdn.pixabay.com/photo/2016/11/29/08/41/cable-1868478_1280.jpg',
+    heroImage: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     subcategories: ['Power Cables', 'Distribution Transformers', 'Solar PV Modules', 'Circuit Breakers', 'LED Industrial Lighting', 'Semiconductors'],
   },
   {
@@ -109,7 +109,7 @@ export const ALL_CATEGORIES_DATA: CategoryCardData[] = [
     icon: Globe,
     productCount: '11,200+ Products',
     manufacturerCount: '480+ Agro Processors',
-    heroImage: 'https://cdn.pixabay.com/photo/2016/09/10/11/42/wheat-1659021_1280.jpg',
+    heroImage: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     subcategories: ['Basmati Rice', 'Refined Sugar', 'Turmeric & Spices', 'Edible Soybean Oil', 'Wheat & Maize', 'Coffee Beans'],
   },
 ];
@@ -132,9 +132,8 @@ export default function CategoriesPage() {
         canonical="https://www.bulkskart.com/categories"
       />
 
-      <div className="relative bg-[#0B0F19] min-h-screen text-slate-100 py-8 sm:py-12 px-3.5 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="bs-hero-grid pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
-        <div className="relative z-10 max-w-7xl mx-auto">
+      <div className="bg-[#0B0F19] min-h-screen text-slate-100 py-8 sm:py-12 px-3.5 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
           
           {/* Header Banner */}
           <div className="text-center max-w-3xl mx-auto mb-10">
@@ -145,19 +144,19 @@ export default function CategoriesPage() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
               All Industrial Categories
             </h1>
-            <p className="text-slate-400 text-sm sm:text-base mt-2 max-w-2xl mx-auto">
+            <p className="text-neutral-400 text-sm sm:text-base mt-2 max-w-2xl mx-auto">
               Source bulk commodities, machinery, structural metals, and chemical polymers directly from verified global manufacturing plants.
             </p>
 
             {/* Search Input */}
             <div className="relative max-w-xl mx-auto mt-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
               <Input
                 type="text"
                 placeholder="Search categories, raw materials, or products..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-12 pr-4 py-3 bg-[#111726] border-slate-700 text-white placeholder:text-slate-500 rounded-xl focus:border-[#FF5A00] focus:ring-[#FF5A00]"
+                className="pl-12 pr-4 py-3 bg-[#C94400] border-[#2A2A2A] text-white placeholder:text-neutral-400 rounded-xl focus:border-[#FF5A00] focus:ring-[#FF5A00]"
               />
             </div>
           </div>
@@ -169,30 +168,30 @@ export default function CategoriesPage() {
               return (
                 <div
                   key={cat.id}
-                  className="rounded-3xl bg-[#0F172A]/90 border border-slate-800 hover:border-[#FF5A00]/60 transition-all duration-300 overflow-hidden shadow-xl hover:-translate-y-1 group flex flex-col justify-between"
+                  className="rounded-3xl bg-[#1A0C05] border border-[#2A2A2A] hover:border-[#FF5A00]/60 transition-all duration-300 overflow-hidden shadow-xl hover:-translate-y-1 group flex flex-col justify-between"
                 >
                   {/* Category Image */}
-                  <div className="relative h-44 w-full overflow-hidden bg-slate-900">
+                  <div className="relative h-44 w-full overflow-hidden bg-[#0A0A0A]">
                     <img
                       src={cat.heroImage}
                       alt={cat.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#2A1205] via-[#C94400]/40 to-transparent" />
                     
                     {/* Floating Badge */}
                     <div className="absolute top-3 left-3 flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-xl bg-slate-900/90 border border-slate-700/80 flex items-center justify-center text-[#FF5A00]">
+                      <div className="w-9 h-9 rounded-xl bg-[#0A0A0A]/90 border border-[#2A2A2A]/80 flex items-center justify-center text-[#FF5A00]">
                         <Icon className="w-5 h-5" />
                       </div>
                     </div>
 
                     <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs">
-                      <span className="font-bold text-[#FF5A00] bg-slate-950/80 px-2.5 py-1 rounded-full border border-[#FF5A00]/30">
+                      <span className="font-bold text-[#FF5A00] bg-[#0A0A0A]/80 px-2.5 py-1 rounded-full border border-[#FF5A00]/30">
                         {cat.productCount}
                       </span>
-                      <span className="text-slate-300 bg-slate-950/80 px-2.5 py-1 rounded-full border border-slate-800">
+                      <span className="text-slate-300 bg-[#0A0A0A]/80 px-2.5 py-1 rounded-full border border-[#2A2A2A]">
                         {cat.manufacturerCount}
                       </span>
                     </div>
@@ -204,7 +203,7 @@ export default function CategoriesPage() {
                       <h2 className="text-lg font-bold text-white group-hover:text-[#FF5A00] transition-colors">
                         {cat.name}
                       </h2>
-                      <p className="text-xs text-slate-400 mt-1.5 leading-relaxed line-clamp-2">
+                      <p className="text-xs text-neutral-400 mt-1.5 leading-relaxed line-clamp-2">
                         {cat.description}
                       </p>
 
@@ -214,7 +213,7 @@ export default function CategoriesPage() {
                           <Link
                             key={sub}
                             to={`/products?q=${encodeURIComponent(sub)}`}
-                            className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-[#FF5A00]/20 text-slate-300 hover:text-[#FF5A00] border border-slate-700/60 transition-colors"
+                            className="text-[11px] px-2.5 py-1 rounded-lg bg-[#0A0A0A]/80 hover:bg-[#B33D00]/20 text-slate-300 hover:text-[#FF5A00] border border-[#2A2A2A]/60 transition-colors"
                           >
                             {sub}
                           </Link>
@@ -223,12 +222,12 @@ export default function CategoriesPage() {
                     </div>
 
                     {/* Action Links */}
-                    <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between gap-3">
+                    <div className="mt-6 pt-4 border-t border-[#2A2A2A]/80 flex items-center justify-between gap-3">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => navigate(`/manufacturers?industry=${encodeURIComponent(cat.name)}`)}
-                        className="text-xs border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-white"
+                        className="text-xs border-[#2A2A2A] text-slate-200 hover:bg-[#0A0A0A] hover:text-white"
                       >
                         <Building2 className="w-3.5 h-3.5 mr-1 text-[#FF5A00]" />
                         Manufacturers
@@ -237,7 +236,7 @@ export default function CategoriesPage() {
                       <Button
                         size="sm"
                         onClick={() => navigate(`/products?category=${cat.slug}`)}
-                        className="text-xs bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold"
+                        className="text-xs bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold"
                       >
                         <span>Browse Catalog</span>
                         <ArrowRight className="w-3.5 h-3.5 ml-1" />

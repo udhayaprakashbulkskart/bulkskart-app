@@ -95,9 +95,9 @@ export default function SupplierRFQsPage() {
       />
       <div className="flex-1 min-w-0 p-3 md:p-4 lg:p-5 overflow-y-auto">
         <div className="max-w-[1400px] w-full mx-auto">
-          <div className="bs-glass mb-3 flex flex-col gap-1 rounded-3xl p-4 md:mb-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between mb-3 md:mb-4">
             <div>
-              <h1 className="text-lg md:text-xl font-black text-foreground">RFQ Leads</h1>
+              <h1 className="text-lg md:text-xl font-bold text-foreground">RFQ Leads</h1>
               <p className="text-xs md:text-sm text-muted-foreground">Live buyer leads. Refresh the page for a new set.</p>
             </div>
             <div className="flex items-center gap-2 self-start md:self-auto">
@@ -138,7 +138,7 @@ export default function SupplierRFQsPage() {
                 </div>
               </div>
               <Link to="/dashboard/supplier/subscription" className="shrink-0">
-                <Button size="sm" className="bg-primary text-primary-foreground text-xs w-full sm:w-auto">View Plans</Button>
+                <Button size="sm" className="bg-[#1A0C05] text-primary-foreground text-xs w-full sm:w-auto">View Plans</Button>
               </Link>
             </div>
           )}
@@ -147,7 +147,7 @@ export default function SupplierRFQsPage() {
           {!loading && pendingAQs.length > 0 && (
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
-                <div className="flex items-center gap-1.5 bg-amber-100 text-amber-700 border border-amber-300 rounded-full px-3 py-1 text-xs font-bold">
+                <div className="flex items-center gap-1.5 bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/40 rounded-full px-3 py-1 text-xs font-bold">
                   <Clock className="w-3.5 h-3.5" />
                   {pendingAQs.length} Auto-Quote{pendingAQs.length > 1 ? 's' : ''} Pending Your Approval
                 </div>
@@ -157,14 +157,14 @@ export default function SupplierRFQsPage() {
                   const req = aq.requirements;
                   const fmt = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: aq.currency, maximumFractionDigits: 0 }).format(n);
                   return (
-                    <div key={aq.id} className="bg-card border border-amber-300/50 rounded-xl p-4">
+                    <div key={aq.id} className="bg-card border border-[#FF5A00]/50 rounded-xl p-4">
                       <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-1.5 py-0.5">
                               <Zap className="w-2.5 h-2.5" /> AUTO-GENERATED
                             </span>
-                            <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">Pending Approval</Badge>
+                            <Badge className="text-[10px] bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40">Pending Approval</Badge>
                           </div>
                           <p className="text-sm font-semibold text-foreground truncate">{aq.product_name}</p>
                           {req && (
@@ -197,7 +197,7 @@ export default function SupplierRFQsPage() {
                           size="sm"
                           onClick={() => handleApproveAQ(aq)}
                           disabled={approvingId === aq.id || !!dismissingId}
-                          className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white gap-1.5"
+                          className="h-8 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white gap-1.5"
                         >
                           {approvingId === aq.id
                             ? <><RefreshCw className="w-3 h-3 animate-spin" /> Approving…</>
@@ -208,7 +208,7 @@ export default function SupplierRFQsPage() {
                           variant="outline"
                           onClick={() => handleDismissAQ(aq.id)}
                           disabled={dismissingId === aq.id || !!approvingId}
-                          className="h-8 text-xs border-red-300 text-red-600 hover:bg-red-50 gap-1.5"
+                          className="h-8 text-xs border-[#FF5A00]/40 text-[#FF7A2E] hover:bg-[#B33D00]/10 gap-1.5"
                         >
                           {dismissingId === aq.id
                             ? <RefreshCw className="w-3 h-3 animate-spin" />
@@ -231,7 +231,7 @@ export default function SupplierRFQsPage() {
                     <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
                       <p className="text-sm font-semibold text-foreground line-clamp-1">{lead.title}</p>
                       {lead.verified && <span className="verified-badge text-[10px] shrink-0"><Shield className="w-2.5 h-2.5" />Verified</span>}
-                      <span className="text-[10px] font-semibold text-emerald-500 shrink-0">{lead.postedLabel}</span>
+                      <span className="text-[10px] font-semibold text-[#FF7A2E] shrink-0">{lead.postedLabel}</span>
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><Package className="w-3 h-3" />{lead.quantity.toLocaleString('en-IN')} {lead.quantityUnit}</span>
@@ -259,11 +259,11 @@ export default function SupplierRFQsPage() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {sentIds.has(lead.id) ? (
-                      <Badge variant="outline" className="text-xs text-green-400 border-green-400/30">Quote noted</Badge>
+                      <Badge variant="outline" className="text-xs text-[#FF7A2E] border-[#FF5A00]/30">Quote noted</Badge>
                     ) : canViewFull ? (
                       <Dialog onOpenChange={open => { if (open) setSelectedLead(lead); else setSelectedLead(null); }}>
                         <DialogTrigger asChild>
-                          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs gap-1">
+                          <Button size="sm" className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 text-xs gap-1">
                             <Send className="w-3 h-3" /> Send Quote
                           </Button>
                         </DialogTrigger>
@@ -310,7 +310,7 @@ export default function SupplierRFQsPage() {
                               <Label className="text-xs text-muted-foreground">Notes</Label>
                               <Textarea value={quoteForm.notes} onChange={e => setQF('notes', e.target.value)} rows={2} placeholder="Any additional information..." className="bg-input border-border resize-none" />
                             </div>
-                            <Button type="submit" disabled={sending} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                            <Button type="submit" disabled={sending} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90">
                               {sending ? 'Sending...' : 'Send Quotation'}
                             </Button>
                           </form>

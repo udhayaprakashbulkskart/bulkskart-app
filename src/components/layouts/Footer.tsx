@@ -7,7 +7,7 @@ import { WHATSAPP_CHAT_URL, WHATSAPP_DISPLAY } from '@/lib/supportContact';
 const footerLinks = {
   Products: [
     { label: 'Browse Products', href: '/products' },
-    { label: 'Categories', href: '/products' },
+    { label: 'Categories', href: '/categories' },
     { label: 'Manufacturers', href: '/manufacturers' },
     { label: 'Countries', href: '/manufacturers' },
   ],
@@ -15,7 +15,7 @@ const footerLinks = {
     { label: 'Supplier Registration', href: '/auth?tab=supplier' },
     { label: 'Subscription Plans', href: '/pricing' },
     { label: 'Supplier Resources', href: '/how-it-works' },
-    { label: 'Business Stories', href: '/how-it-works' },
+    { label: 'Business Stories', href: '/blog' },
   ],
   'For Buyers': [
     { label: 'Post Requirement', href: '/post-requirement' },
@@ -49,7 +49,7 @@ const socialLinks = [
 
 export default function Footer() {
   return (
-    <footer className="relative mt-auto w-full max-w-[100vw] overflow-x-hidden border-t border-border bg-card/80 backdrop-blur-xl mb-[4.75rem] lg:mb-0">
+    <footer className="bg-muted border-t border-border w-full max-w-[100vw] overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-6 sm:py-8 md:py-10">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 md:gap-5 mb-6 md:mb-10">
           {/* Brand column */}
@@ -98,7 +98,6 @@ export default function Footer() {
         <div className="border-t border-border pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4">
           <div>
             <div className="text-xs font-semibold text-foreground mb-0.5">Subscribe to Updates</div>
-            <p className="text-xs text-muted-foreground">Get the latest bulk trade opportunities</p>
           </div>
           <form
             className="flex gap-2 w-full md:max-w-xs"
@@ -111,7 +110,7 @@ export default function Footer() {
               placeholder="Enter your email"
               className="flex-1 min-w-0 px-3 py-2 text-sm rounded-md bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
-            <button type="submit" aria-label="Subscribe to newsletter updates" className="px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shrink-0">
+            <button type="submit" aria-label="Subscribe to newsletter updates" className="px-3 py-2 rounded-md bg-[#C94400] text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shrink-0">
               Subscribe
             </button>
           </form>
@@ -119,6 +118,7 @@ export default function Footer() {
 
         <div className="border-t border-border mt-5 pt-4 flex flex-col md:flex-row items-center justify-between gap-2 text-center md:text-left">
           <p className="text-xs text-muted-foreground">© 2026 Tech Pod AI Database Private Limited · BulkSkart. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">Global Trade · A Stronger Tomorrow</p>
         </div>
       </div>
     </footer>

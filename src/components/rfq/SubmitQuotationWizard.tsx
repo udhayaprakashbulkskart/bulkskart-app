@@ -176,9 +176,9 @@ export default function SubmitQuotationWizard({
           {/* Stepper Pills */}
           <div className="flex items-center justify-center gap-6 text-xs font-bold">
             {/* Step 1 */}
-            <div className={`flex items-center gap-1.5 ${step === 1 ? 'text-[#FF5A1F]' : step > 1 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+            <div className={`flex items-center gap-1.5 ${step === 1 ? 'text-[#FF5A1F]' : step > 1 ? 'text-[#FF7A2E]' : 'text-muted-foreground'}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                step === 1 ? 'bg-[#FF5A1F] text-white' : step > 1 ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'
+                step === 1 ? 'bg-[#C94400] text-white' : step > 1 ? 'bg-[#B33D00] text-white' : 'bg-muted text-muted-foreground'
               }`}>
                 {step > 1 ? <Check className="w-3.5 h-3.5" /> : '1'}
               </div>
@@ -188,9 +188,9 @@ export default function SubmitQuotationWizard({
             <div className="w-8 h-0.5 bg-border" />
 
             {/* Step 2 */}
-            <div className={`flex items-center gap-1.5 ${step === 2 ? 'text-[#FF5A1F]' : step > 2 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+            <div className={`flex items-center gap-1.5 ${step === 2 ? 'text-[#FF5A1F]' : step > 2 ? 'text-[#FF7A2E]' : 'text-muted-foreground'}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                step === 2 ? 'bg-[#FF5A1F] text-white' : step > 2 ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'
+                step === 2 ? 'bg-[#C94400] text-white' : step > 2 ? 'bg-[#B33D00] text-white' : 'bg-muted text-muted-foreground'
               }`}>
                 {step > 2 ? <Check className="w-3.5 h-3.5" /> : '2'}
               </div>
@@ -200,9 +200,9 @@ export default function SubmitQuotationWizard({
             <div className="w-8 h-0.5 bg-border" />
 
             {/* Step 3 */}
-            <div className={`flex items-center gap-1.5 ${step === 3 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+            <div className={`flex items-center gap-1.5 ${step === 3 ? 'text-[#FF7A2E]' : 'text-muted-foreground'}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                step === 3 ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'
+                step === 3 ? 'bg-[#B33D00] text-white' : 'bg-muted text-muted-foreground'
               }`}>
                 3
               </div>
@@ -242,12 +242,12 @@ export default function SubmitQuotationWizard({
                 </div>
                 {/* Target Range feedback */}
                 {isWithinTarget ? (
-                  <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <p className="text-[11px] font-bold text-[#FF7A2E] dark:text-[#FF7A2E] flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                     Within buyer's target range (₹{targetMin} – ₹{targetMax})
                   </p>
                 ) : (
-                  <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <p className="text-[11px] font-semibold text-[#FF7A2E] dark:text-[#FF7A2E] flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     Buyer's target range is ₹{targetMin} – ₹{targetMax}
                   </p>
@@ -284,7 +284,7 @@ export default function SubmitQuotationWizard({
                   />
                   <Calendar className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 </div>
-                <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <p className="text-[11px] font-bold text-[#FF7A2E] dark:text-[#FF7A2E] flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                   Delivery within {deliveryLeadDays} days
                 </p>
@@ -344,7 +344,7 @@ export default function SubmitQuotationWizard({
               </div>
 
               {/* Total Quotation Value Highlight Box */}
-              <div className="p-4 rounded-2xl bg-orange-50/70 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 text-center">
+              <div className="p-4 rounded-2xl bg-[#FF5A00]/70 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 text-center">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
                   Total Quotation Value
                 </span>
@@ -368,7 +368,7 @@ export default function SubmitQuotationWizard({
 
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="p-2.5 rounded-xl border border-dashed border-border bg-background/50 hover:bg-muted/50 transition-colors flex items-center gap-2 cursor-pointer">
-                    <FileText className="w-4 h-4 text-red-500 shrink-0" />
+                    <FileText className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                     <div className="min-w-0">
                       <div className="text-[11px] font-bold text-foreground truncate">Product Catalog</div>
                       <div className="text-[9px] text-muted-foreground">PDF, JPG, PNG</div>
@@ -376,7 +376,7 @@ export default function SubmitQuotationWizard({
                   </div>
 
                   <div className="p-2.5 rounded-xl border border-dashed border-border bg-background/50 hover:bg-muted/50 transition-colors flex items-center gap-2 cursor-pointer">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <ShieldCheck className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                     <div className="min-w-0">
                       <div className="text-[11px] font-bold text-foreground truncate">Quality Certificate</div>
                       <div className="text-[9px] text-muted-foreground">PDF, JPG, PNG</div>
@@ -391,7 +391,7 @@ export default function SubmitQuotationWizard({
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl border border-dashed border-[#FF5A1F]/50 bg-[#FF5A1F]/5 hover:bg-[#FF5A1F]/10 transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-[#FF5A1F]">
+                  <div className="p-2.5 rounded-xl border border-dashed border-[#FF5A1F]/50 bg-[#FF5A1F]/5 hover:bg-[#B33D00]/10 transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-[#FF5A1F]">
                     <span className="text-xs font-bold">+ Upload More</span>
                   </div>
                 </div>
@@ -400,7 +400,7 @@ export default function SubmitQuotationWizard({
               {/* Submit CTA for Step 1 */}
               <Button
                 type="submit"
-                className="w-full bg-[#FF5A1F] hover:bg-[#e04e17] text-white font-bold text-sm h-12 rounded-xl shadow-lg transition-transform active:scale-[0.98] mt-2"
+                className="w-full bg-[#C94400] hover:bg-[#e04e17] text-white font-bold text-sm h-12 rounded-xl shadow-lg transition-transform active:scale-[0.98] mt-2"
               >
                 Next: Review Quotation <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
@@ -515,7 +515,7 @@ export default function SubmitQuotationWizard({
                   {documents.map((doc, idx) => (
                     <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-muted/40 border border-border/50 text-xs">
                       <div className="flex items-center gap-2 min-w-0">
-                        <FileText className="w-4 h-4 text-red-500 shrink-0" />
+                        <FileText className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                         <span className="font-bold text-foreground truncate">{doc.name}</span>
                       </div>
                       <span className="text-[10px] text-muted-foreground shrink-0">{doc.size}</span>
@@ -525,7 +525,7 @@ export default function SubmitQuotationWizard({
               </div>
 
               {/* Binding Agreement Checkbox */}
-              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-orange-50/50 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 cursor-pointer">
+              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-[#FF5A00]/50 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={termsAgreed}
@@ -550,7 +550,7 @@ export default function SubmitQuotationWizard({
                 <Button
                   onClick={handleFinalSubmit}
                   disabled={submitting || !termsAgreed}
-                  className="flex-1 bg-[#FF5A1F] hover:bg-[#e04e17] text-white font-bold text-sm h-12 rounded-xl shadow-lg transition-transform active:scale-[0.98]"
+                  className="flex-1 bg-[#C94400] hover:bg-[#e04e17] text-white font-bold text-sm h-12 rounded-xl shadow-lg transition-transform active:scale-[0.98]"
                 >
                   {submitting ? 'Submitting...' : 'Submit Quotation'} <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Button>
@@ -566,11 +566,11 @@ export default function SubmitQuotationWizard({
               
               {/* Graphic Icon (Green Checkmark with Paper Plane) */}
               <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full bg-emerald-500/15 animate-ping" />
-                <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-lg relative z-10">
+                <div className="absolute inset-0 rounded-full bg-[#FF5A00]/15 animate-ping" />
+                <div className="w-16 h-16 rounded-full bg-[#C94400] flex items-center justify-center text-white shadow-lg relative z-10">
                   <Check className="w-9 h-9 stroke-[3]" />
                 </div>
-                <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-[#FF5A1F] text-white shadow">
+                <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-[#C94400] text-white shadow">
                   <Send className="w-3.5 h-3.5" />
                 </div>
               </div>
@@ -622,7 +622,7 @@ export default function SubmitQuotationWizard({
                     onOpenChange(false);
                     window.location.href = '/my-quotations';
                   }}
-                  className="w-full bg-[#FF5A1F] hover:bg-[#e04e17] text-white font-bold text-sm h-12 rounded-xl shadow-lg"
+                  className="w-full bg-[#C94400] hover:bg-[#e04e17] text-white font-bold text-sm h-12 rounded-xl shadow-lg"
                 >
                   View Quotation
                 </Button>
@@ -636,24 +636,24 @@ export default function SubmitQuotationWizard({
               </div>
 
               {/* Live Closing Countdown Footer matching Screen 5 */}
-              <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 mt-3">
-                <span className="text-[11px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider flex items-center justify-center gap-1.5 mb-2">
+              <div className="p-3.5 rounded-2xl bg-[#FF5A00]/10 dark:bg-[#B33D00]/20 border border-[#FF5A00]/40 dark:border-[#FF5A00]/40 mt-3">
+                <span className="text-[11px] font-bold text-[#FF7A2E] dark:text-[#FF7A2E] uppercase tracking-wider flex items-center justify-center gap-1.5 mb-2">
                   <Clock className="w-3.5 h-3.5 animate-spin" />
                   Auction Closes In
                 </span>
                 <div className="flex items-center justify-center gap-2 font-mono">
-                  <div className="bg-white dark:bg-black/60 px-3 py-1.5 rounded-xl border border-red-300 dark:border-red-900 shadow-sm">
+                  <div className="bg-[#161616] dark:bg-[#0A0A0A]/60 px-3 py-1.5 rounded-xl border border-[#FF5A00]/40 dark:border-[#FF5A00]/40 shadow-sm">
                     <span className="text-lg font-bold text-foreground">{hours.toString().padStart(2, '0')}</span>
                     <span className="block text-[9px] text-muted-foreground font-sans font-semibold">Hours</span>
                   </div>
-                  <span className="font-bold text-red-500 text-lg">:</span>
-                  <div className="bg-white dark:bg-black/60 px-3 py-1.5 rounded-xl border border-red-300 dark:border-red-900 shadow-sm">
+                  <span className="font-bold text-[#FF7A2E] text-lg">:</span>
+                  <div className="bg-[#161616] dark:bg-[#0A0A0A]/60 px-3 py-1.5 rounded-xl border border-[#FF5A00]/40 dark:border-[#FF5A00]/40 shadow-sm">
                     <span className="text-lg font-bold text-foreground">{minutes.toString().padStart(2, '0')}</span>
                     <span className="block text-[9px] text-muted-foreground font-sans font-semibold">Minutes</span>
                   </div>
-                  <span className="font-bold text-red-500 text-lg">:</span>
-                  <div className="bg-white dark:bg-black/60 px-3 py-1.5 rounded-xl border border-red-300 dark:border-red-900 shadow-sm">
-                    <span className="text-lg font-bold text-red-600 dark:text-red-400">{seconds.toString().padStart(2, '0')}</span>
+                  <span className="font-bold text-[#FF7A2E] text-lg">:</span>
+                  <div className="bg-[#161616] dark:bg-[#0A0A0A]/60 px-3 py-1.5 rounded-xl border border-[#FF5A00]/40 dark:border-[#FF5A00]/40 shadow-sm">
+                    <span className="text-lg font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">{seconds.toString().padStart(2, '0')}</span>
                     <span className="block text-[9px] text-muted-foreground font-sans font-semibold">Seconds</span>
                   </div>
                 </div>

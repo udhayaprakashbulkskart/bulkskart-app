@@ -55,19 +55,19 @@ type AdminStats = {
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  high: 'bg-red-100 text-red-700 border-red-300',
-  medium: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+  high: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  medium: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
   low: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  verified: 'bg-green-100 text-green-700',
-  pending: 'bg-yellow-100 text-yellow-700',
+  verified: 'bg-[#FF5A00]/10 text-[#FF7A2E]',
+  pending: 'bg-[#FF5A00]/10 text-[#FF7A2E]',
   unverified: 'bg-muted text-muted-foreground',
-  rejected: 'bg-red-100 text-red-700',
-  open: 'bg-yellow-100 text-yellow-700',
+  rejected: 'bg-[#FF5A00]/10 text-[#FF7A2E]',
+  open: 'bg-[#FF5A00]/10 text-[#FF7A2E]',
   under_review: 'bg-orange-500/10 text-[#FF5A00]',
-  resolved: 'bg-green-100 text-green-700',
+  resolved: 'bg-[#FF5A00]/10 text-[#FF7A2E]',
   closed: 'bg-muted text-muted-foreground',
 };
 
@@ -211,18 +211,18 @@ export default function AdminDashboardFull() {
   const statCards = [
     { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-primary' },
     { label: 'Companies', value: stats.totalCompanies, icon: Building2, color: 'text-[#FF5A00]' },
-    { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, color: 'text-yellow-500' },
-    { label: 'Active RFQs', value: stats.activeReqs, icon: FileText, color: 'text-green-500' },
-    { label: 'Total Orders', value: stats.totalOrders, icon: Package, color: 'text-indigo-500' },
-    { label: 'Open Disputes', value: stats.openDisputes, icon: AlertTriangle, color: 'text-red-500' },
-    { label: 'Pending Withdrawals', value: stats.pendingWithdrawals, icon: Wallet, color: 'text-teal-500' },
+    { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, color: 'text-[#FF7A2E]' },
+    { label: 'Active RFQs', value: stats.activeReqs, icon: FileText, color: 'text-[#FF7A2E]' },
+    { label: 'Total Orders', value: stats.totalOrders, icon: Package, color: 'text-[#FF7A2E]' },
+    { label: 'Open Disputes', value: stats.openDisputes, icon: AlertTriangle, color: 'text-[#FF7A2E]' },
+    { label: 'Pending Withdrawals', value: stats.pendingWithdrawals, icon: Wallet, color: 'text-[#FF7A2E]' },
   ];
 
   return (
     <DashboardLayout>
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
-          <div className="bs-glass mb-6 flex items-center justify-between gap-4 flex-wrap rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Admin Control Panel</h1>
               <p className="text-sm text-muted-foreground">Platform management — verifications, disputes, analytics</p>
@@ -257,20 +257,20 @@ export default function AdminDashboardFull() {
                 <TabsTrigger value="verifications">
                   Verifications
                   {stats.pendingVerifications > 0 && (
-                    <span className="ml-1.5 bg-yellow-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingVerifications}</span>
+                    <span className="ml-1.5 bg-[#C94400] text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingVerifications}</span>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="disputes">
                   Disputes
                   {stats.openDisputes > 0 && (
-                    <span className="ml-1.5 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.openDisputes}</span>
+                    <span className="ml-1.5 bg-[#C94400] text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.openDisputes}</span>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="fraud">Fraud &amp; Abuse</TabsTrigger>
                 <TabsTrigger value="withdrawals">
                   Withdrawals
                   {stats.pendingWithdrawals > 0 && (
-                    <span className="ml-1.5 bg-teal-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingWithdrawals}</span>
+                    <span className="ml-1.5 bg-[#C94400] text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingWithdrawals}</span>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="companies">All Companies</TabsTrigger>
@@ -289,7 +289,7 @@ export default function AdminDashboardFull() {
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-yellow-500" /> Pending Verifications
+                      <Shield className="w-4 h-4 text-[#FF7A2E]" /> Pending Verifications
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -300,10 +300,10 @@ export default function AdminDashboardFull() {
                           <p className="text-xs text-muted-foreground">{c.profiles?.email}</p>
                         </div>
                         <div className="flex gap-1 shrink-0">
-                          <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => approveVerification(c.id)} disabled={saving === c.id}>
+                          <Button size="sm" className="h-7 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white" onClick={() => approveVerification(c.id)} disabled={saving === c.id}>
                             <CheckCircle className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="outline" className="h-7 text-xs border-red-300 text-red-600" onClick={() => setRejectId(c.id)}>
+                          <Button size="sm" variant="outline" className="h-7 text-xs border-[#FF5A00]/40 text-[#FF7A2E]" onClick={() => setRejectId(c.id)}>
                             <XCircle className="w-3 h-3" />
                           </Button>
                         </div>
@@ -322,7 +322,7 @@ export default function AdminDashboardFull() {
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-red-500" /> Open Disputes
+                      <AlertTriangle className="w-4 h-4 text-[#FF7A2E]" /> Open Disputes
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -374,7 +374,7 @@ export default function AdminDashboardFull() {
                   <p className="text-sm font-medium text-destructive">Rejection reason for {companies.find(c => c.id === rejectId)?.company_name}</p>
                   <Input value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Enter rejection reason…" className="bg-background" />
                   <div className="flex gap-2">
-                    <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => rejectVerification(rejectId, rejectReason)} disabled={!rejectReason.trim() || saving === rejectId}>
+                    <Button size="sm" className="bg-[#B33D00] hover:bg-[#1A0C05] text-white" onClick={() => rejectVerification(rejectId, rejectReason)} disabled={!rejectReason.trim() || saving === rejectId}>
                       Confirm Reject
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => { setRejectId(null); setRejectReason(''); }}>Cancel</Button>
@@ -415,11 +415,11 @@ export default function AdminDashboardFull() {
                         <td className="px-3 py-3 text-xs">{c.gst_number || '—'}</td>
                         <td className="px-3 py-3">
                           <div className="flex gap-1 flex-wrap">
-                            {c.gst_doc_url && <a href={c.gst_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded">GST</a>}
+                            {c.gst_doc_url && <a href={c.gst_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-[#FF5A00]/10 text-[#FF7A2E] rounded">GST</a>}
                             {c.pan_doc_url && <a href={c.pan_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-500/10 text-[#FF5A00] rounded">PAN</a>}
-                            {c.reg_doc_url && <a href={c.reg_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded">REG</a>}
-                            {c.factory_doc_url && <a href={c.factory_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">Factory</a>}
-                            {c.bank_doc_url && <a href={c.bank_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-teal-100 text-teal-700 rounded">Bank</a>}
+                            {c.reg_doc_url && <a href={c.reg_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-[#FF5A00]/10 text-[#FF7A2E] rounded">REG</a>}
+                            {c.factory_doc_url && <a href={c.factory_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-[#FF5A00]/10 text-orange-700 rounded">Factory</a>}
+                            {c.bank_doc_url && <a href={c.bank_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-[#FF5A00]/10 text-[#FF7A2E] rounded">Bank</a>}
                             {!c.gst_doc_url && !c.pan_doc_url && <span className="text-xs text-muted-foreground">None uploaded</span>}
                           </div>
                           {c.bank_account_name && <p className="text-xs text-muted-foreground mt-0.5">{c.bank_account_name} · {c.bank_ifsc}</p>}
@@ -428,16 +428,16 @@ export default function AdminDashboardFull() {
                           <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[c.verification_status] || 'bg-muted text-muted-foreground'}`}>
                             {c.verification_status}
                           </span>
-                          {c.rejection_reason && <p className="text-xs text-red-600 mt-0.5 max-w-[120px] truncate">{c.rejection_reason}</p>}
+                          {c.rejection_reason && <p className="text-xs text-[#FF7A2E] mt-0.5 max-w-[120px] truncate">{c.rejection_reason}</p>}
                         </td>
                         <td className="px-3 py-3">
                           {c.verification_status === 'pending' && (
                             <div className="flex gap-1">
-                              <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white px-2"
+                              <Button size="sm" className="h-7 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white px-2"
                                 onClick={() => approveVerification(c.id)} disabled={saving === c.id}>
                                 {saving === c.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
                               </Button>
-                              <Button size="sm" variant="outline" className="h-7 text-xs border-red-300 text-red-600 px-2"
+                              <Button size="sm" variant="outline" className="h-7 text-xs border-[#FF5A00]/40 text-[#FF7A2E] px-2"
                                 onClick={() => setRejectId(c.id)}>
                                 <XCircle className="w-3 h-3" />
                               </Button>
@@ -491,13 +491,13 @@ export default function AdminDashboardFull() {
                             }}>
                               Start Review
                             </Button>
-                            <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
+                            <Button size="sm" className="h-7 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
                               Resolve
                             </Button>
                           </div>
                         )}
                         {d.status === 'under_review' && (
-                          <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white shrink-0" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
+                          <Button size="sm" className="h-7 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white shrink-0" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
                             Mark Resolved
                           </Button>
                         )}
@@ -526,7 +526,7 @@ export default function AdminDashboardFull() {
                             <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${SEVERITY_COLORS[f.severity]}`}>
                               {f.severity.toUpperCase()}
                             </span>
-                            {f.is_resolved && <span className="text-xs text-green-600">✓ Resolved</span>}
+                            {f.is_resolved && <span className="text-xs text-[#FF7A2E]">✓ Resolved</span>}
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">{f.description}</p>
                           <p className="text-xs text-muted-foreground mt-1">{f.profiles?.full_name} · {f.profiles?.email}</p>
@@ -577,10 +577,10 @@ export default function AdminDashboardFull() {
                         <td className="px-3 py-3">
                           {w.status === 'pending' && (
                             <div className="flex gap-1">
-                              <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => approveWithdrawal(w.id)}>
+                              <Button size="sm" className="h-7 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white" onClick={() => approveWithdrawal(w.id)}>
                                 <CheckCircle className="w-3 h-3" />
                               </Button>
-                              <Button size="sm" variant="outline" className="h-7 text-xs border-red-300 text-red-600" onClick={() => rejectWithdrawal(w.id)}>
+                              <Button size="sm" variant="outline" className="h-7 text-xs border-[#FF5A00]/40 text-[#FF7A2E]" onClick={() => rejectWithdrawal(w.id)}>
                                 <XCircle className="w-3 h-3" />
                               </Button>
                             </div>

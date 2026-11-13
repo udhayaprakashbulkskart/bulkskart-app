@@ -169,12 +169,16 @@ export default function ForwardAuctionDetailPage() {
             setBidHistory([]);
           }
 
-          // Fetch real supplier quotations from database for this tender/auction
-          const { data: quoteData } = await supabase
-            .from('quotations')
-            .select('*')
-            .or(`rfq_id.eq.${data.id},rfq_id.eq.${data.requirement_id || data.id}`)
-            .order('created_at', { ascending: false });
+          // Quotations hang off the requirement, not the auction id.
+          // quotations has requirement_id; it does not have rfq_id.
+          const linkedRequirementId = data.requirement_id as string | null | undefined;
+          const { data: quoteData } = linkedRequirementId
+            ? await supabase
+              .from('quotations')
+              .select('*')
+              .eq('requirement_id', linkedRequirementId)
+              .order('created_at', { ascending: false })
+            : { data: [] };
 
           if (quoteData && quoteData.length > 0 && isMounted) {
             setQuotations(quoteData.map((q: any) => ({
@@ -627,7 +631,7 @@ export default function ForwardAuctionDetailPage() {
             This live auction does not exist or has already concluded.
           </p>
           <Link to="/auctions">
-            <Button className="bg-[#FF5A1F] hover:bg-[#e04f00] text-white">
+            <Button className="bg-[#1A0C05] hover:bg-[#1A0C05] text-white">
               Browse Live Auctions
             </Button>
           </Link>
@@ -678,7 +682,7 @@ export default function ForwardAuctionDetailPage() {
                 onClick={() => setIsFullPageChat(!isFullPageChat)}
                 className={`h-8 px-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
                   isFullPageChat
-                    ? 'bg-[#FF5A1F] text-white hover:bg-[#e04f1a] shadow-sm'
+                    ? 'bg-[#C94400] text-white hover:bg-[#e04f1a] shadow-sm'
                     : 'border-border text-foreground hover:bg-muted'
                 }`}
               >
@@ -703,7 +707,7 @@ export default function ForwardAuctionDetailPage() {
                   setSecondsRemaining(5);
                   toast.info('Simulating final 5 seconds to test 60-min SOLD conclusion!');
                 }}
-                className="h-8 text-[11px] font-semibold border-orange-200 dark:border-orange-900 text-[#FF5A1F] hidden sm:flex items-center gap-1"
+                className="h-8 text-[11px] font-semibold border-[#FF5A00]/30 dark:border-orange-900 text-[#FF5A1F] hidden sm:flex items-center gap-1"
               >
                 <Clock className="w-3.5 h-3.5" /> Test Expiration
               </Button>
@@ -727,7 +731,7 @@ export default function ForwardAuctionDetailPage() {
         {isFullPageChat ? (
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4 pb-8 space-y-4">
             {/* Top Compact Lot Summary & Quick Bid Bar */}
-            <div className="bs-glass relative flex flex-col lg:flex-row lg:items-center justify-between gap-4 overflow-hidden rounded-3xl p-4">
+            <div className="p-4 rounded-3xl bg-card border border-border shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted border border-border shrink-0">
                   <SafeImage
@@ -738,13 +742,13 @@ export default function ForwardAuctionDetailPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FF5A1F] text-white">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#C94400] text-white">
                       60-Min Live Auction
                     </span>
                     <span className="text-[11px] font-mono font-bold text-muted-foreground">
                       {auction.auction_number}
                     </span>
-                    <Badge className="bg-emerald-600 text-white text-[9px]">
+                    <Badge className="bg-[#B33D00] text-white text-[9px]">
                       Verified Manufacturer
                     </Badge>
                   </div>
@@ -760,7 +764,7 @@ export default function ForwardAuctionDetailPage() {
               {/* Status & Quick Bid Form */}
               <div className="flex flex-wrap items-center gap-3 shrink-0">
                 {/* Timer */}
-                <div className="px-3.5 py-1.5 rounded-2xl bg-orange-50 dark:bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 flex items-center gap-2">
+                <div className="px-3.5 py-1.5 rounded-2xl bg-[#FF5A00]/10 dark:bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-[#FF5A1F] animate-pulse" />
                   <div>
                     <div className="text-[9px] font-semibold text-muted-foreground uppercase">Countdown</div>
@@ -772,7 +776,7 @@ export default function ForwardAuctionDetailPage() {
 
                 {/* Leading Bid */}
                 <div className="px-3.5 py-1.5 rounded-2xl bg-muted/50 border border-border flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  <TrendingUp className="w-4 h-4 text-[#FF7A2E]" />
                   <div>
                     <div className="text-[9px] font-semibold text-muted-foreground uppercase">Leading Bid</div>
                     <div className="text-xs sm:text-sm font-black text-foreground">
@@ -801,7 +805,7 @@ export default function ForwardAuctionDetailPage() {
                     type="submit"
                     disabled={isSoldConcluded || submittingBid}
                     size="sm"
-                    className="h-9 px-3.5 bg-[#FF5A1F] hover:bg-[#e04f1a] text-white rounded-xl text-xs font-bold shadow-sm"
+                    className="h-9 px-3.5 bg-[#C94400] hover:bg-[#e04f1a] text-white rounded-xl text-xs font-bold shadow-sm"
                   >
                     {!user ? 'Sign in to participate' : submittingBid ? 'Submitting...' : 'Submit Bid'}
                   </Button>
@@ -832,24 +836,23 @@ export default function ForwardAuctionDetailPage() {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-5">
           
           {/* ── 60-Minute Live Reverse Auction Title Banner ── */}
-          <div className="bs-glass relative mb-5 overflow-hidden rounded-3xl p-4">
-            <div className="bs-scan pointer-events-none absolute inset-x-[12%] top-0 h-14 bg-gradient-to-b from-transparent via-[#FF5A00]/20 to-transparent" aria-hidden="true" />
+          <div className="mb-5 p-4 rounded-3xl bg-card border border-border shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FF5A1F] text-white flex items-center gap-1 shadow-sm">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#C94400] text-white flex items-center gap-1 shadow-sm">
                     <Flame className="w-3 h-3 fill-white" /> 60-Minute Live Reverse Auction
                   </span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-muted border border-border text-foreground">
                     {auction.auction_number}
                   </span>
                   {isSoldConcluded ? (
-                    <Badge className="bg-emerald-600 text-white font-bold text-[10px]">
+                    <Badge className="bg-[#B33D00] text-white font-bold text-[10px]">
                       SOLD / CONCLUDED
                     </Badge>
                   ) : (
-                    <Badge className="bg-red-600 text-white font-bold text-[10px] flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" /> LIVE BIDDING
+                    <Badge className="bg-[#B33D00] text-white font-bold text-[10px] flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#161616] animate-ping" /> LIVE BIDDING
                     </Badge>
                   )}
                 </div>
@@ -876,7 +879,7 @@ export default function ForwardAuctionDetailPage() {
                     className="text-xs sm:text-sm font-bold text-foreground hover:text-[#FF5A1F] transition-colors flex items-center gap-1"
                   >
                     <span>{auction.manufacturer_name}</span>
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
                   </button>
                 </div>
               </div>
@@ -885,18 +888,18 @@ export default function ForwardAuctionDetailPage() {
 
           {/* ── 60-Minute Auction Sold / Concluded Banner (When Timer Expires) ── */}
           {isSoldConcluded && (
-            <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-emerald-900/30 to-zinc-900 border-2 border-emerald-500/50 shadow-lg text-white">
+            <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#C94400]/40 via-[#C94400]/30 to-zinc-900 border-2 border-[#FF5A00]/50 shadow-lg text-white">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
                 <div className="flex items-start gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                  <div className="w-12 h-12 rounded-2xl bg-[#C94400] text-white flex items-center justify-center shrink-0 shadow-md">
                     <CheckCircle2 className="w-7 h-7" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                      <span className="text-xs font-bold text-[#FF7A2E] uppercase tracking-wider">
                         60-Minute Auction Concluded
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-emerald-500 text-white text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded bg-[#C94400] text-white text-[10px] font-bold">
                         LOT SOLD OUT
                       </span>
                     </div>
@@ -916,14 +919,14 @@ export default function ForwardAuctionDetailPage() {
                         description: `Order for ${auction.total_quantity} ${auction.quantity_unit} awarded to ${auction.highest_bidder_name}. Ready for Escrow settlement.`
                       });
                     }}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-10 px-4 rounded-xl flex items-center gap-1.5 shadow-md"
+                    className="bg-[#B33D00] hover:bg-[#B33D00] text-white font-bold text-xs h-10 px-4 rounded-xl flex items-center gap-1.5 shadow-md"
                   >
                     <ShoppingCart className="w-4 h-4" /> View Purchase Order
                   </Button>
 
                   <Button
                     onClick={handleSwitchToNextLot}
-                    className="bg-[#FF5A1F] hover:bg-[#e04f1a] text-white font-bold text-xs h-10 px-4 rounded-xl flex items-center gap-1.5 shadow-md"
+                    className="bg-[#C94400] hover:bg-[#e04f1a] text-white font-bold text-xs h-10 px-4 rounded-xl flex items-center gap-1.5 shadow-md"
                   >
                     <Sparkles className="w-4 h-4" /> View Next Live 60-Min Lot
                   </Button>
@@ -949,18 +952,18 @@ export default function ForwardAuctionDetailPage() {
                   
                   {/* Floating Countdown Badge */}
                   <div className="absolute top-4 left-4 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-red-600 text-white shadow-lg">
-                      <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-[#B33D00] text-white shadow-lg">
+                      <span className="w-2 h-2 rounded-full bg-[#161616] animate-ping" />
                       LIVE 60-MIN SALE
                     </span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-black/80 backdrop-blur-md text-white shadow-lg border border-white/20">
-                      <Clock className="w-3.5 h-3.5 text-red-400" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-[#0A0A0A]/80 backdrop-blur-md text-white shadow-lg border border-white/20">
+                      <Clock className="w-3.5 h-3.5 text-[#FF7A2E]" />
                       {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
                     </span>
                   </div>
 
                   {/* Anti-Sniping Indicator */}
-                  <div className="absolute bottom-4 left-4 bg-black/75 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-xl flex items-center gap-1 border border-white/10">
+                  <div className="absolute bottom-4 left-4 bg-[#0A0A0A]/75 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-xl flex items-center gap-1 border border-white/10">
                     <ShieldCheck className="w-3.5 h-3.5 text-[#FF5A1F]" />
                     <span>+2 Min Anti-Sniping Active</span>
                   </div>
@@ -1023,7 +1026,7 @@ export default function ForwardAuctionDetailPage() {
                   </div>
                   <div className="p-2.5 rounded-xl bg-muted/20 border border-border/40">
                     <span className="text-muted-foreground block font-medium">Escrow Protection</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+                    <span className="font-bold text-[#FF7A2E] dark:text-[#FF7A2E] mt-0.5 flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                       100% Escrow Protected
                     </span>
@@ -1039,7 +1042,7 @@ export default function ForwardAuctionDetailPage() {
                     onClick={() => setActiveTab('bids')}
                     className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 ${
                       activeTab === 'bids'
-                        ? 'bg-[#FF5A1F] text-white shadow-sm'
+                        ? 'bg-[#C94400] text-white shadow-sm'
                         : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                     }`}
                   >
@@ -1052,13 +1055,13 @@ export default function ForwardAuctionDetailPage() {
                     onClick={() => setActiveTab('quotes')}
                     className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 ${
                       activeTab === 'quotes'
-                        ? 'bg-[#FF5A1F] text-white shadow-sm'
+                        ? 'bg-[#C94400] text-white shadow-sm'
                         : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     <Receipt className="w-4 h-4" />
                     Supplier Quotations ({quotations.length})
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-[#C94400] animate-pulse" />
                   </button>
 
                   <button
@@ -1066,13 +1069,13 @@ export default function ForwardAuctionDetailPage() {
                     onClick={() => setActiveTab('chat')}
                     className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shrink-0 ${
                       activeTab === 'chat'
-                        ? 'bg-[#FF5A1F] text-white shadow-sm'
+                        ? 'bg-[#C94400] text-white shadow-sm'
                         : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     <MessageSquare className="w-4 h-4" />
                     Live Auction Room Chat
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-[#C94400] animate-pulse" />
                   </button>
                 </div>
 
@@ -1085,8 +1088,8 @@ export default function ForwardAuctionDetailPage() {
                         <span>•</span>
                         <span>Click on any bidder to inspect profile</span>
                       </div>
-                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live Stream
+                      <span className="text-xs font-semibold text-[#FF7A2E] dark:text-[#FF7A2E] flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#C94400] animate-pulse" /> Live Stream
                       </span>
                     </div>
 
@@ -1107,7 +1110,7 @@ export default function ForwardAuctionDetailPage() {
                                 type="button"
                                 onClick={() => handleOpenBidder(bid.bidder_name)}
                                 className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 cursor-pointer hover:scale-105 transition-transform ${
-                                  bid.status === 'winning' ? 'bg-[#FF5A1F] text-white' : 'bg-muted text-muted-foreground'
+                                  bid.status === 'winning' ? 'bg-[#C94400] text-white' : 'bg-muted text-muted-foreground'
                                 }`}
                               >
                                 {bid.bidder_name.charAt(0)}
@@ -1122,7 +1125,7 @@ export default function ForwardAuctionDetailPage() {
                                     {bid.bidder_name}
                                   </button>
                                   {bid.status === 'winning' && (
-                                    <Badge className="bg-emerald-600 text-white text-[9px] h-4 px-1.5">
+                                    <Badge className="bg-[#B33D00] text-white text-[9px] h-4 px-1.5">
                                       Leading Bid
                                     </Badge>
                                   )}
@@ -1169,7 +1172,7 @@ export default function ForwardAuctionDetailPage() {
                           Compare commercial bids, freight terms, lead time, and award purchase orders
                         </p>
                       </div>
-                      <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 text-xs w-fit">
+                      <Badge className="bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/30 text-xs w-fit">
                         Competitive Sourcing
                       </Badge>
                     </div>
@@ -1200,7 +1203,7 @@ export default function ForwardAuctionDetailPage() {
                                     {quote.supplier_name}
                                   </span>
                                   {quote.is_shortlisted && (
-                                    <Badge className="bg-[#FF5A1F] text-white text-[10px] font-bold">
+                                    <Badge className="bg-[#1A0C05] text-white text-[10px] font-bold">
                                       ★ Shortlisted
                                     </Badge>
                                   )}
@@ -1237,7 +1240,7 @@ export default function ForwardAuctionDetailPage() {
                               </div>
                               <div className="bg-background/80 p-2 rounded-xl border border-border/50">
                                 <span className="text-muted-foreground block text-[10px]">Freight:</span>
-                                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                <span className="font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">
                                   {quote.freight_included ? 'Included (Door)' : 'Extra at actuals'}
                                 </span>
                               </div>
@@ -1253,7 +1256,7 @@ export default function ForwardAuctionDetailPage() {
                                 <Button
                                   size="sm"
                                   onClick={() => setAuthDialogOpen(true)}
-                                  className="h-8 px-3 text-xs font-bold bg-[#FF5A1F] hover:bg-[#e04f1a] text-white rounded-xl shadow-xs"
+                                  className="h-8 px-3 text-xs font-bold bg-[#C94400] hover:bg-[#e04f1a] text-white rounded-xl shadow-xs"
                                 >
                                   Sign in to participate
                                 </Button>
@@ -1270,7 +1273,7 @@ export default function ForwardAuctionDetailPage() {
                                   <Button
                                     size="sm"
                                     onClick={() => handleOpenAwardDialog(quote)}
-                                    className="h-8 px-4 text-xs font-bold bg-[#FF5A1F] hover:bg-[#e04f1a] text-white rounded-xl shadow-xs"
+                                    className="h-8 px-4 text-xs font-bold bg-[#C94400] hover:bg-[#e04f1a] text-white rounded-xl shadow-xs"
                                   >
                                     Accept & Award PO
                                   </Button>
@@ -1311,19 +1314,19 @@ export default function ForwardAuctionDetailPage() {
                     </h2>
                   </div>
                   {isSoldConcluded ? (
-                    <Badge className="bg-emerald-600 text-white font-bold text-xs">
+                    <Badge className="bg-[#B33D00] text-white font-bold text-xs">
                       SOLD
                     </Badge>
                   ) : (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-600/10 text-red-600 dark:text-red-400 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
+                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#B33D00]/10 text-[#FF7A2E] dark:text-[#FF7A2E] flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#C94400] animate-ping" />
                       LIVE
                     </span>
                   )}
                 </div>
 
                 {/* Price Display */}
-                <div className="p-4 rounded-2xl bg-orange-50/50 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 mb-4">
+                <div className="p-4 rounded-2xl bg-[#FF5A00]/50 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 mb-4">
                   <div className="text-xs text-muted-foreground font-semibold flex items-center justify-between">
                     <span>Current Leading Bid</span>
                     {auction.highest_bidder_name ? (
@@ -1363,18 +1366,18 @@ export default function ForwardAuctionDetailPage() {
                 {/* Countdown Timer Display */}
                 <div className={`p-3.5 rounded-2xl border mb-5 flex items-center justify-between text-xs ${
                   isSoldConcluded
-                    ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-500/40'
+                    ? 'bg-[#FF5A00]/10 dark:bg-[#B33D00]/30 border-[#FF5A00]/40'
                     : 'bg-muted/40 border-border/60'
                 }`}>
                   <div className="flex items-center gap-2">
-                    <Clock className={`w-4 h-4 ${isSoldConcluded ? 'text-emerald-500' : 'text-[#FF5A1F]'}`} />
+                    <Clock className={`w-4 h-4 ${isSoldConcluded ? 'text-[#FF7A2E]' : 'text-[#FF5A1F]'}`} />
                     <span className="font-semibold text-foreground">
                       {isSoldConcluded ? 'Auction Status:' : 'Closing In (60-Min Window):'}
                     </span>
                   </div>
                   <span className="font-mono font-bold text-sm text-foreground">
                     {isSoldConcluded ? (
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">SOLD OUT</span>
+                      <span className="text-[#FF7A2E] dark:text-[#FF7A2E] font-bold">SOLD OUT</span>
                     ) : (
                       `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
                     )}
@@ -1456,15 +1459,15 @@ export default function ForwardAuctionDetailPage() {
                     <Button
                       type="button"
                       onClick={handleSwitchToNextLot}
-                      className="w-full h-12 rounded-xl text-sm font-bold bg-[#FF5A1F] hover:bg-[#e04f1a] text-white shadow-lg flex items-center justify-center gap-2"
+                      className="w-full h-12 rounded-xl text-sm font-bold bg-[#C94400] hover:bg-[#e04f1a] text-white shadow-lg flex items-center justify-center gap-2"
                     >
                       <Sparkles className="w-4 h-4" />
                       Browse Next Live 60-Min Lot
                     </Button>
                   ) : !user ? (
                     <div className="space-y-2.5">
-                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-500 dark:text-amber-400">
-                        <Lock className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+                      <div className="p-3.5 rounded-xl bg-[#FF5A00]/10 border border-[#FF5A00]/30 flex items-start gap-2.5 text-xs text-[#FF7A2E] dark:text-[#FF7A2E]">
+                        <Lock className="w-4 h-4 shrink-0 mt-0.5 text-[#FF7A2E]" />
                         <div>
                           <p className="font-bold text-foreground">Verified Buyer Login Required</p>
                           <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
@@ -1475,7 +1478,7 @@ export default function ForwardAuctionDetailPage() {
                       <Button
                         type="button"
                         onClick={() => setAuthDialogOpen(true)}
-                        className="w-full h-12 rounded-xl text-sm font-bold bg-[#FF5A1F] hover:bg-[#e04e17] text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                        className="w-full h-12 rounded-xl text-sm font-bold bg-[#C94400] hover:bg-[#e04e17] text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <LogIn className="w-4 h-4" />
                         Sign in to participate
@@ -1485,7 +1488,7 @@ export default function ForwardAuctionDetailPage() {
                     <Button
                       type="submit"
                       disabled={submittingBid}
-                      className="w-full h-12 rounded-xl text-sm font-bold bg-[#FF5A1F] hover:bg-[#e04e17] text-white shadow-lg flex items-center justify-center gap-2"
+                      className="w-full h-12 rounded-xl text-sm font-bold bg-[#C94400] hover:bg-[#e04e17] text-white shadow-lg flex items-center justify-center gap-2"
                     >
                       {submittingBid ? (
                         'Broadcasting Real-Time Bid...'
@@ -1508,13 +1511,13 @@ export default function ForwardAuctionDetailPage() {
                 </div>
 
                 {/* 24-Hour Compulsory Subscription & Verified Tax Invoice Card */}
-                <div className="mt-3.5 p-3.5 rounded-2xl bg-orange-50/60 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 space-y-2">
+                <div className="mt-3.5 p-3.5 rounded-2xl bg-[#FF5A00]/60 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-foreground">
                     <span className="flex items-center gap-1.5 text-[#FF5A1F]">
                       <Receipt className="w-3.5 h-3.5" />
                       ₹5,000 Participation Fee Paid (₹5,900 Total)
                     </span>
-                    <Badge className="bg-emerald-600 text-white text-[9px]">
+                    <Badge className="bg-[#B33D00] text-white text-[9px]">
                       Verified Manufacturer
                     </Badge>
                   </div>
@@ -1548,7 +1551,7 @@ export default function ForwardAuctionDetailPage() {
 
       {/* ── Purchase Order Award Modal ── */}
       {awardOrderDialogOpen && selectedQuoteForAward && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setAwardOrderDialogOpen(false)}
@@ -1558,7 +1561,7 @@ export default function ForwardAuctionDetailPage() {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center font-bold shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-[#FF5A00]/15 text-[#FF7A2E] flex items-center justify-center font-bold shrink-0">
                 <Receipt className="w-6 h-6" />
               </div>
               <div>
@@ -1571,7 +1574,7 @@ export default function ForwardAuctionDetailPage() {
             <div className="p-4 rounded-2xl bg-muted/40 border border-border/70 space-y-2 text-xs">
               <div className="flex justify-between items-center pb-2 border-b border-border/50">
                 <span className="font-mono font-bold text-foreground">PO-BS-RFQ-{auction.auction_number.replace(/\D/g, '') || '1042'}-89</span>
-                <span className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold text-[10px]">
+                <span className="bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/30 px-2 py-0.5 rounded-full font-bold text-[10px]">
                   Verified B2B Purchase Order
                 </span>
               </div>
@@ -1603,7 +1606,7 @@ export default function ForwardAuctionDetailPage() {
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Freight & Handling:</span>
-                <span className="font-mono font-semibold text-emerald-500">
+                <span className="font-mono font-semibold text-[#FF7A2E]">
                   {selectedQuoteForAward.freight_included ? '₹0 (Included Door Delivery)' : 'To be billed at actuals'}
                 </span>
               </div>
@@ -1638,7 +1641,7 @@ export default function ForwardAuctionDetailPage() {
               <Button
                 onClick={handleConfirmAwardOrder}
                 disabled={isAwardingOrder}
-                className="flex-1 h-11 rounded-xl bg-[#FF5A1F] hover:bg-[#e04f1a] text-white font-bold text-xs shadow-md"
+                className="flex-1 h-11 rounded-xl bg-[#C94400] hover:bg-[#e04f1a] text-white font-bold text-xs shadow-md"
               >
                 {isAwardingOrder ? 'Generating & Signing PO...' : 'Confirm & Release Purchase Order'}
               </Button>
@@ -1683,7 +1686,7 @@ export default function ForwardAuctionDetailPage() {
                   setAuthDialogOpen(false);
                   navigate(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
                 }}
-                className="w-full h-11 bg-[#FF5A1F] hover:bg-[#e04e17] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm"
+                className="w-full h-11 bg-[#C94400] hover:bg-[#e04e17] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm"
               >
                 <LogIn className="w-4 h-4" />
                 Log In with Verified Account

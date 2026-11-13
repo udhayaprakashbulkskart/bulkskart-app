@@ -81,7 +81,7 @@ export default function SubscribeToContactDialog({ open, onClose, reason = 'no_s
         <DialogHeader>
           <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${
             isNotRegistered
-              ? 'bg-amber-500/15 border border-amber-500/30 text-amber-500'
+              ? 'bg-[#FF5A00]/15 border border-[#FF5A00]/30 text-[#FF7A2E]'
               : isAiMatching
               ? 'bg-[#FF5A00]/20 border border-[#FF5A00]/40 text-[#FF5A00]'
               : 'bg-[#FF5A00]/15 border border-[#FF5A00]/30 text-[#FF5A00]'
@@ -104,13 +104,13 @@ export default function SubscribeToContactDialog({ open, onClose, reason = 'no_s
 
         {/* Highlighted AI / Quotation Package Banner */}
         {(isAiMatching || isQuotation || reason === 'no_subscription') && (
-          <div className="bg-gradient-to-r from-[#FF5A00]/20 via-[#FF5A00]/10 to-transparent border border-[#FF5A00]/40 rounded-xl p-3 sm:p-3.5 space-y-2 mt-1">
+          <div className="bg-gradient-to-r from-[#C94400]/20 via-[#C94400]/10 to-transparent border border-[#FF5A00]/40 rounded-xl p-3 sm:p-3.5 space-y-2 mt-1">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-[#FF5A00]" />
                 <span className="text-xs font-black text-foreground">Recommended: ₹7,500 Business Package</span>
               </div>
-              <Badge className="bg-[#FF5A00] text-white border-none text-[10px] font-bold">
+              <Badge className="bg-[#1A0C05] text-white border-none text-[10px] font-bold">
                 AI Included
               </Badge>
             </div>
@@ -125,8 +125,8 @@ export default function SubscribeToContactDialog({ open, onClose, reason = 'no_s
           <div className="space-y-2 mt-2">
             {REGISTRATION_STEPS.map((step, i) => (
               <div key={i} className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3.5 py-2.5">
-                <div className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0">
-                  <step.icon className="w-3.5 h-3.5 text-amber-500" />
+                <div className="w-7 h-7 rounded-full bg-[#FF5A00]/20 border border-[#FF5A00]/30 flex items-center justify-center shrink-0">
+                  <step.icon className="w-3.5 h-3.5 text-[#FF7A2E]" />
                 </div>
                 <span className="text-xs text-foreground font-medium">{step.label}</span>
               </div>
@@ -148,7 +148,7 @@ export default function SubscribeToContactDialog({ open, onClose, reason = 'no_s
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     {p.popular && (
-                      <Badge className="bg-[#FF5A00] text-white text-[10px] font-bold px-1.5 py-0.5 border-none">
+                      <Badge className="bg-[#C94400] text-white text-[10px] font-bold px-1.5 py-0.5 border-none">
                         AI Enabled
                       </Badge>
                     )}
@@ -177,7 +177,7 @@ export default function SubscribeToContactDialog({ open, onClose, reason = 'no_s
           {isLoggedOut ? (
             <>
               <Link to="/auth?tab=supplier" onClick={onClose} className="w-full">
-                <Button className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-11 rounded-xl text-xs gap-2 shadow-lg">
+                <Button className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-11 rounded-xl text-xs gap-2 shadow-lg">
                   Login / Register as Manufacturer <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
@@ -192,7 +192,7 @@ export default function SubscribeToContactDialog({ open, onClose, reason = 'no_s
           ) : isNotRegistered ? (
             <>
               <Link to="/dashboard/supplier/profile" onClick={onClose} className="w-full">
-                <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold h-11 rounded-xl text-xs gap-2">
+                <Button className="w-full bg-[#B33D00] hover:bg-[#B33D00] text-white font-bold h-11 rounded-xl text-xs gap-2">
                   Complete Business Registration <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
@@ -207,7 +207,7 @@ export default function SubscribeToContactDialog({ open, onClose, reason = 'no_s
           ) : (
             <>
               <Link to="/pricing" onClick={onClose} className="w-full">
-                <Button className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-extrabold h-11 rounded-xl text-xs gap-2 shadow-lg shadow-[#FF5A00]/25">
+                <Button className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-extrabold h-11 rounded-xl text-xs gap-2 shadow-lg shadow-[#FF5A00]/25">
                   <Sparkles className="w-4 h-4" />
                   {isAiMatching
                     ? 'Unlock AI Business Plan (₹7,500/mo) →'

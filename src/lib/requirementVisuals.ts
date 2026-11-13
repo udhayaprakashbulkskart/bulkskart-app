@@ -32,6 +32,7 @@ export function getRequirementVisualInfo(req: Requirement, index = 0): Requireme
 
   // 1. Resolve requirement-specific image (uploaded reference photo or exact commodity photo)
   const image = resolveRfqImage({
+    id: req.id,
     title: req.title,
     attachment_url: req.attachment_url,
     imageUrl: (req as any).imageUrl,
@@ -92,24 +93,24 @@ export function getRequirementVisualInfo(req: Requirement, index = 0): Requireme
   let tag: RequirementVisualInfo['tag'] = {
     label: 'URGENT',
     type: 'urgent',
-    bgClass: 'bg-[#ff3b30]',
+    bgClass: 'bg-[#C94400]',
     textClass: 'text-white',
   };
 
   if (titleLower.includes('saree') || titleLower.includes('cnc') || tagMod === 0) {
-    tag = { label: 'URGENT', type: 'urgent', bgClass: 'bg-[#ff3b30]', textClass: 'text-white' };
+    tag = { label: 'URGENT', type: 'urgent', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
   } else if (titleLower.includes('t-shirt') || titleLower.includes('jute') || titleLower.includes('ldpe') || tagMod === 1) {
-    tag = { label: 'NEW', type: 'new', bgClass: 'bg-[#FF5A00]', textClass: 'text-white' };
+    tag = { label: 'NEW', type: 'new', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
   } else if (titleLower.includes('chilli') || tagMod === 2) {
-    tag = { label: 'EXPIRING', type: 'expiring', bgClass: 'bg-[#e5a800]', textClass: 'text-white' };
+    tag = { label: 'EXPIRING', type: 'expiring', bgClass: 'bg-[#B33D00]', textClass: 'text-white' };
   } else if (titleLower.includes('corrugated') || tagMod === 3) {
-    tag = { label: 'LIVE', type: 'live', bgClass: 'bg-[#ff3b30]', textClass: 'text-white' };
+    tag = { label: 'LIVE', type: 'live', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
   } else if (titleLower.includes('rice') || tagMod === 4) {
-    tag = { label: 'BULK ORDER', type: 'bulk', bgClass: 'bg-[#7c3aed]', textClass: 'text-white' };
+    tag = { label: 'BULK ORDER', type: 'bulk', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
   } else if (titleLower.includes('steel') || tagMod === 5) {
-    tag = { label: 'REGULAR', type: 'regular', bgClass: 'bg-[#2563eb]', textClass: 'text-white' };
+    tag = { label: 'REGULAR', type: 'regular', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
   } else {
-    tag = { label: 'EXPORT', type: 'export', bgClass: 'bg-[#d97706]', textClass: 'text-white' };
+    tag = { label: 'EXPORT', type: 'export', bgClass: 'bg-[#1E1E1E]', textClass: 'text-[#FF7A2E]' };
   }
 
   // 6. Verification and order attributes

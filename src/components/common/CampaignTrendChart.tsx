@@ -146,9 +146,9 @@ export default function CampaignTrendChart({ campaign }: Props) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
         {[
           { icon: <Eye className="w-3.5 h-3.5" />,               label: 'Impressions', val: totalImpr.toLocaleString('en-IN'),   color: 'text-primary' },
-          { icon: <TrendingUp className="w-3.5 h-3.5" />,         label: 'Views',       val: totalViews.toLocaleString('en-IN'),  color: 'text-sky-500' },
-          { icon: <MousePointerClick className="w-3.5 h-3.5" />,  label: 'Clicks',      val: totalClicks.toLocaleString('en-IN'), color: 'text-violet-500' },
-          { icon: <Users className="w-3.5 h-3.5" />,              label: 'CTR',         val: `${ctr}%`,                          color: 'text-green-600' },
+          { icon: <TrendingUp className="w-3.5 h-3.5" />,         label: 'Views',       val: totalViews.toLocaleString('en-IN'),  color: 'text-[#FF7A2E]' },
+          { icon: <MousePointerClick className="w-3.5 h-3.5" />,  label: 'Clicks',      val: totalClicks.toLocaleString('en-IN'), color: 'text-[#FF7A2E]' },
+          { icon: <Users className="w-3.5 h-3.5" />,              label: 'CTR',         val: `${ctr}%`,                          color: 'text-[#FF7A2E]' },
         ].map(m => (
           <div key={m.label} className="bg-card border border-border rounded-lg p-2.5 flex items-center gap-2">
             <div className={`${m.color} shrink-0`}>{m.icon}</div>
@@ -177,8 +177,8 @@ export default function CampaignTrendChart({ campaign }: Props) {
           </button>
         ))}
         {campaign.status === 'active' && (
-          <span className="ml-auto text-[10px] text-green-600 font-medium self-center flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
+          <span className="ml-auto text-[10px] text-[#FF7A2E] font-medium self-center flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C94400] animate-pulse inline-block" />
             Live — updates daily
           </span>
         )}

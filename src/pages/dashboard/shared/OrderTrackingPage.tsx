@@ -25,11 +25,11 @@ import PageMeta from '@/components/common/PageMeta';
 // ---------- Status meta (badge colours) ----------
 const STATUS_META: Record<PipelineStatus, { label: string; cls: string }> = {
   pending:    { label: 'Pending',    cls: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30' },
-  confirmed:  { label: 'Confirmed',  cls: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
-  processing: { label: 'Processing', cls: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
-  shipped:    { label: 'Shipped',    cls: 'bg-purple-100 text-purple-700 border-purple-300' },
-  delivered:  { label: 'Delivered',  cls: 'bg-green-100 text-green-700 border-green-300' },
-  cancelled:  { label: 'Cancelled',  cls: 'bg-red-100 text-red-700 border-red-300' },
+  confirmed:  { label: 'Confirmed',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  processing: { label: 'Processing', cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  shipped:    { label: 'Shipped',    cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  delivered:  { label: 'Delivered',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  cancelled:  { label: 'Cancelled',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
 };
 
 // ---------- Pipeline transitions ----------
@@ -237,7 +237,7 @@ export default function OrderTrackingPage() {
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
 
           {/* Back + header */}
-          <div className="bs-glass flex items-center gap-3 rounded-3xl p-3">
+          <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="shrink-0">
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -288,7 +288,7 @@ export default function OrderTrackingPage() {
                   {canAdvance && advanceMeta && (
                     <Button
                       onClick={() => setShowAdvance(true)}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+                      className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2"
                     >
                       <advanceMeta.icon className="w-4 h-4" />
                       {advanceMeta.label}
@@ -316,7 +316,7 @@ export default function OrderTrackingPage() {
                   <p className="font-medium text-sm">Negotiation Room</p>
                   <p className="text-xs text-muted-foreground">Chat with the other party about this order</p>
                 </div>
-                <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0">
+                <Button asChild className="bg-[#1A0C05] hover:bg-primary/90 text-primary-foreground shrink-0">
                   <Link to={`${dashBase}/negotiation/${convId}`}>
                     <MessageSquare className="w-4 h-4 mr-2" /> Open Chat
                   </Link>
@@ -368,7 +368,7 @@ export default function OrderTrackingPage() {
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowAdvance(false)} className="border-border">Cancel</Button>
-              <Button onClick={handleAdvance} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button onClick={handleAdvance} disabled={saving} className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90">
                 {saving ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
                 Confirm
               </Button>

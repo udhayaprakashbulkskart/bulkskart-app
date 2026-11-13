@@ -209,14 +209,14 @@ export default function SupplierProductsPage() {
       />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl w-full mx-auto">
-          <div className="bs-glass mb-6 flex items-center justify-between rounded-3xl p-4">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-xl font-black text-foreground">My Products</h1>
+              <h1 className="text-xl font-bold text-foreground">My Products</h1>
               <p className="text-sm text-muted-foreground">Manage your product listings</p>
             </div>
             <Button
               onClick={handleAddProductClick}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 text-sm font-semibold"
+              className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2 text-sm font-semibold"
             >
               <Plus className="w-4 h-4" /> Add Product
             </Button>
@@ -355,7 +355,7 @@ export default function SupplierProductsPage() {
                       <p className="text-[11px] text-muted-foreground">Direct PDF link. Buyers can download it from your product page.</p>
                     </div>
                   </div>
-                  <Button type="submit" disabled={saving} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Button type="submit" disabled={saving} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90">
                     {saving ? 'Saving...' : editingId ? 'Update Product' : 'Add Product'}
                   </Button>
                 </form>
@@ -379,7 +379,7 @@ export default function SupplierProductsPage() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Button
                   onClick={handleAddProductClick}
-                  className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 gap-2 font-bold px-6"
+                  className="w-full sm:w-auto bg-[#C94400] text-primary-foreground hover:bg-primary/90 gap-2 font-bold px-6"
                 >
                   <Plus className="w-4 h-4" /> Add Your First Product
                 </Button>
@@ -394,7 +394,7 @@ export default function SupplierProductsPage() {
                 )}
               </div>
               {!isPaidSubscriber && (
-                <div className="mt-6 pt-4 border-t border-border flex items-center justify-center gap-2 text-xs text-amber-500 font-medium">
+                <div className="mt-6 pt-4 border-t border-border flex items-center justify-center gap-2 text-xs text-[#FF7A2E] font-medium">
                   <Lock className="w-3.5 h-3.5" />
                   <span>Active supplier subscription required to upload &amp; publish product listings</span>
                 </div>
@@ -414,7 +414,7 @@ export default function SupplierProductsPage() {
                     />
                     {/* Multi-photo badge */}
                     {p.images && p.images.length > 1 && (
-                      <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-md font-medium z-10 border border-white/10">
+                      <span className="absolute bottom-2 right-2 bg-[#0A0A0A]/75 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-md font-medium z-10 border border-white/10">
                         +{p.images.length - 1} photos
                       </span>
                     )}
@@ -423,13 +423,13 @@ export default function SupplierProductsPage() {
                     {(p.is_featured || (p as Product & { is_sponsored?: boolean }).is_sponsored) && (
                       <div className="absolute top-2 left-2 flex gap-1.5 z-10 flex-wrap">
                         {p.is_featured && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-[#FF5A00] rounded-md px-2 py-0.5 shadow-sm">
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-[#C94400] rounded-md px-2 py-0.5 shadow-sm">
                             <Star className="w-2.5 h-2.5 fill-white" /> Featured
                           </span>
                         )}
                         {(p as Product & { is_sponsored?: boolean }).is_sponsored && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-amber-950 bg-amber-400 rounded-md px-2 py-0.5 shadow-sm">
-                            <Zap className="w-2.5 h-2.5 fill-amber-950" /> Sponsored
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-[#FF7A2E] bg-[#C94400] rounded-md px-2 py-0.5 shadow-sm">
+                            <Zap className="w-2.5 h-2.5 fill-[#FF5A00]" /> Sponsored
                           </span>
                         )}
                       </div>
@@ -485,7 +485,7 @@ export default function SupplierProductsPage() {
                       <Button
                         onClick={() => setPromoteProduct(p)}
                         size="sm"
-                        className="w-full text-xs h-8 bg-[#FF5A00]/15 text-[#FF5A00] border border-[#FF5A00]/30 hover:bg-[#FF5A00]/25 gap-1.5 px-2 font-semibold justify-center"
+                        className="w-full text-xs h-8 bg-[#FF5A00]/15 text-[#FF5A00] border border-[#FF5A00]/30 hover:bg-[#B33D00]/25 gap-1.5 px-2 font-semibold justify-center"
                         variant="ghost"
                       >
                         <Star className="w-3.5 h-3.5 shrink-0 text-[#FF5A00]" /> Promote
@@ -559,15 +559,15 @@ export default function SupplierProductsPage() {
             </p>
             <div className="space-y-2 text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                <CheckCircle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                 <span>Upload unlimited product catalogs &amp; multiple high-res photos</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                <CheckCircle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                 <span>Verified Manufacturer badge &amp; priority search placement</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                <CheckCircle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                 <span>Unlock direct WhatsApp numbers &amp; buyer RFQ contact details</span>
               </div>
             </div>
@@ -588,7 +588,7 @@ export default function SupplierProductsPage() {
                 setPaywallOpen(false);
                 navigate('/dashboard/supplier/subscription');
               }}
-              className="flex-1 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold gap-2"
+              className="flex-1 bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold gap-2"
             >
               <Sparkles className="w-4 h-4" /> View Plans &amp; Subscribe
             </Button>

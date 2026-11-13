@@ -1,38 +1,25 @@
 /**
- * LiveRequirementsFeed - Redesigned to exact specification of Image 1
+ * LiveRequirementsFeed — Live Buying Requirements (real database records only).
  *
- * - Premium Dark Background (#090b11) with Bulkskart Orange (#FF5A00) accent
- * - LIVE FEED header with glowing indicator
- * - "Live Buying Requirements" title ("Live" in white, "Buying Requirements" in #FF5A00)
- * - "Real business inquiries from verified buyers" subtitle
- * - Fresh RFQs trigger button with purple border & refresh icon
- * - 52,480 Active RFQs live counter badge with green pulse indicator
- * - View All solid orange button linking to /requirements
- * - Horizontally scrollable Category Filter tabs (All Categories, Machinery & Equipment, Textiles, Packaging, Electrical, etc.)
- * - LIVE STREAM controls bar: Live indicator, Next unique post in 13s countdown, < and > controls, Speed: 1x selector, AUTO LIVE toggle
- * - Exact RFQ Cards:
- *   - Product image thumbnail on left
- *   - Badges (Urgent / New / Bulk Order / Paid Companies Only)
- *   - Product title and clean specifications subtitle
- *   - Quantity (with Package icon in orange) and Location (with MapPin)
- *   - Verified Company / Buyer status (in emerald green) and Supply type (Long Term / Regular / Project Basis)
- *   - 2-Column Action Buttons: "View Details" (dark outline) & "Send Message ->" (solid orange)
- * - Live Alerts toggle pill (🇮🇳 Live Alerts | Turn On)
- * - 100% connected to existing Supabase DB, real-time channel, RequirementDetailDrawer, and SupplierRespondDialog
+ * - Loads active requirements from Supabase, 10 per page (database pagination).
+ * - Realtime: new INSERTs on `requirements` appear at the top with a NEW RFQ badge.
+ * - Auto-scrolling feed with Auto Scroll on/off, Pause/Resume, speed 0.5x/1x/1.5x/2x,
+ *   manual up/down, and auto-pause while the user interacts with the feed.
+ * - Counts come from the database (no generated numbers).
+ * - Submit Quote opens the existing supplier quote dialog (permissions and quota checks kept).
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
-  ArrowRight, CheckCircle2, MapPin, Building2,
-  Lock, Zap, Timer, RefreshCw,
-  ChevronLeft, ChevronRight, ChevronDown,
-  LayoutGrid, Settings, Shirt, Package, Wheat, FlaskConical
+  ArrowRight, Bell, ChevronDown, ChevronUp, Factory, Loader2, LayoutGrid, MapPin, Package, Pause, Play,
+  Shirt, Settings, Wrench, Zap, Lock, Building2, Users, Boxes, Wallet, Radio, Layers, FlaskConical, Wheat,
+  CheckCircle2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { supabase } from '@/db/supabase';
-import { getRequirements, checkDirectMessageQuota, checkSupplierPaidSubscription } from '@/lib/api';
+import { checkDirectMessageQuota, checkSupplierPaidSubscription } from '@/lib/api';
 import type { Requirement } from '@/types/types';
 import { useAuth } from '@/contexts/AuthContext';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
@@ -40,755 +27,600 @@ import RequirementDetailDrawer from '@/components/common/RequirementDetailDrawer
 import SafeImage from '@/components/common/SafeImage';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import { getRequirementVisualInfo } from '@/lib/requirementVisuals';
-import {
-  generateSyntheticRequirement,
-  TOTAL_SYSTEM_ACTIVE_RFQS
-} from '@/lib/largeRequirementsDataset';
 
-function AnimatedCount({ target }: { target: number }) {
-  return <>{target.toLocaleString()}</>;
-}
+const PAGE_SIZE = 10;
+const SPEEDS = [0.5, 1, 1.5, 2] as const;
+const BASE_PX_PER_SEC = 28;
+const REQ_SELECT = '*, profiles!buyer_id(id,full_name,email), categories!category_id(id,name,slug)';
+
+// Each tab maps to the real `categories.slug` values in the database.
+// Filtering runs on the server, so a tab shows every matching requirement, not just the rows already loaded.
+const CATEGORY_TABS: Array<{ id: string; name: string; icon: typeof LayoutGrid; slugs: string[] }> = [
+  { id: 'all', name: 'All Categories', icon: LayoutGrid, slugs: [] },
+  { id: 'machinery', name: 'Machinery & Equipment', icon: Settings, slugs: ['machinery-industrial'] },
+  { id: 'textiles', name: 'Textiles & Fabrics', icon: Shirt, slugs: ['textiles-apparel'] },
+  { id: 'electronics', name: 'Electrical & Electronics', icon: Zap, slugs: ['electronics-electricals'] },
+  { id: 'packaging', name: 'Packaging', icon: Boxes, slugs: ['packaging'] },
+  { id: 'chemicals', name: 'Chemicals & Plastics', icon: FlaskConical, slugs: ['chemicals-raw-materials', 'plastics-rubber'] },
+  { id: 'construction', name: 'Construction', icon: Wrench, slugs: ['construction-building'] },
+  { id: 'agriculture', name: 'Agriculture & Food', icon: Wheat, slugs: ['agriculture-food'] },
+  { id: 'auto', name: 'Auto Parts', icon: Layers, slugs: ['auto-parts-vehicles'] },
+  { id: 'pharma', name: 'Pharma & Healthcare', icon: Package, slugs: ['pharma-healthcare'] },
+];
 
 function timeAgo(iso?: string): string {
   if (!iso) return 'Just now';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 60) return `${mins} min ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
-// Category filter tabs matching Image 1
-const CATEGORY_TABS = [
-  { id: 'all', name: 'All Categories', icon: LayoutGrid },
-  { id: 'machinery-industrial', name: 'Machinery & Equipment', icon: Settings },
-  { id: 'textiles-apparel', name: 'Textiles', icon: Shirt },
-  { id: 'packaging', name: 'Packaging', icon: Package },
-  { id: 'electronics-electricals', name: 'Electrical', icon: Zap },
-  { id: 'agriculture-food', name: 'Agriculture & Food', icon: Wheat },
-  { id: 'chemicals-raw-materials', name: 'Chemicals', icon: FlaskConical },
-];
+function startOfToday(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
 
 export default function LiveRequirementsFeed() {
   const { user, profile, company } = useAuth();
+  const navigate = useNavigate();
+  const reduce = useReducedMotion();
 
-  const [reqs, setReqs] = useState<Requirement[]>([]);
-  const [totalCount, setTotalCount] = useState(TOTAL_SYSTEM_ACTIVE_RFQS);
+  const [items, setItems] = useState<Requirement[]>([]);
+  const [freshIds, setFreshIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [category, setCategory] = useState('all');
 
-  // Live Stream Controls
-  const [autoScroll, setAutoScroll] = useState(true);
-  const [liveSpeed, setLiveSpeed] = useState<'0.5x' | '1x' | '2x' | '3x'>('1x');
-  const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
-  const [countdownSec, setCountdownSec] = useState(13);
-  const [pageOffset, setPageOffset] = useState(0);
+  const [counts, setCounts] = useState<{ active: number | null; today: number | null; buyers: number | null }>({ active: null, today: null, buyers: null });
 
-  // Live Alerts state
-  const [liveAlertsOn, setLiveAlertsOn] = useState(false);
+  const [playing, setPlaying] = useState(true);
+  const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(1);
+  const [speedOpen, setSpeedOpen] = useState(false);
+  const [alerts, setAlerts] = useState(false);
 
-  // Dialog and drawer state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogReason, setDialogReason] = useState<SubscriptionReason>('not_logged_in');
-  const [selectedReq, setSelectedReq] = useState<Requirement | null>(null);
-  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
-  const [respondDialogReq, setRespondDialogReq] = useState<Requirement | null>(null);
+  const [detailReq, setDetailReq] = useState<Requirement | null>(null);
+  const [respondReq, setRespondReq] = useState<Requirement | null>(null);
 
-  // Dynamic 5-minute rotation tracking
-  const initial5MinCycle = Math.floor(Date.now() / (5 * 60 * 1000));
-  const nextCatalogPointerRef = useRef((initial5MinCycle * 19) % 600 + 16);
-  // Session-wide deduplication tracking: no RFQ appears more than once in the same feed/session
-  const displayedRfqIdsRef = useRef<Set<string>>(new Set());
-  const displayedTitlesRef = useRef<Set<string>>(new Set());
-  const displayedReqNumsRef = useRef<Set<string>>(new Set());
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef(0);
+  const pausedUntil = useRef(0);
+  const alertsRef = useRef(alerts);
+  alertsRef.current = alerts;
 
-  const normalizeTitle = (title?: string) => (title || '').toLowerCase().trim().replace(/\s+/g, ' ');
-
-  const isRfqAlreadyDisplayed = useCallback((r: Requirement) => {
-    if (!r || !r.id) return true;
-    if (displayedRfqIdsRef.current.has(r.id)) return true;
-    if (r.req_number && displayedReqNumsRef.current.has(r.req_number)) return true;
-    const norm = normalizeTitle(r.title);
-    if (norm && displayedTitlesRef.current.has(norm)) return true;
-    return false;
+  // ── Database: page of active requirements ───────────────────────────────
+  const fetchPage = useCallback(async (pageNo: number, categoryId: string) => {
+    const from = pageNo * PAGE_SIZE;
+    const nowIso = new Date().toISOString();
+    const tab = CATEGORY_TABS.find(t => t.id === categoryId);
+    const filterBySlug = !!tab && tab.slugs.length > 0;
+    let query = supabase
+      .from('requirements')
+      .select(filterBySlug ? REQ_SELECT.replace('categories!category_id(', 'categories!category_id!inner(') : REQ_SELECT)
+      .eq('status', 'active')
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .or(`deadline.is.null,deadline.gt.${nowIso}`);
+    if (filterBySlug) query = query.in('categories.slug', tab!.slugs);
+    const { data, error: err } = await query
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (err) throw err;
+    return (data ?? []) as unknown as Requirement[];
   }, []);
 
-  const recordRfqDisplayed = useCallback((r: Requirement) => {
-    if (!r || !r.id) return;
-    displayedRfqIdsRef.current.add(r.id);
-    if (r.req_number) displayedReqNumsRef.current.add(r.req_number);
-    const norm = normalizeTitle(r.title);
-    if (norm) displayedTitlesRef.current.add(norm);
-  }, []);
+  const categoryRef = useRef(category);
+  categoryRef.current = category;
 
-  // ── 1. Load Data from Supabase Active DB Items ──────────────────────────────
-  const loadData = useCallback(async () => {
+  const loadFirst = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const items: Requirement[] = [];
-
-      try {
-        const dbData = await getRequirements({ status: 'active', limit: 16 });
-        if (Array.isArray(dbData) && dbData.length > 0) {
-          for (const item of dbData) {
-            if (!isRfqAlreadyDisplayed(item)) {
-              recordRfqDisplayed(item);
-              items.push(item);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('DB getRequirements error (using synthetic pool):', err);
-      }
-
-      // Top-up feed to guarantee rich catalog with strictly unique requirements
-      let attempts = 0;
-      while (items.length < 16 && attempts < 100) {
-        const idx = nextCatalogPointerRef.current++;
-        const candidate = generateSyntheticRequirement(idx);
-        if (!isRfqAlreadyDisplayed(candidate)) {
-          recordRfqDisplayed(candidate);
-          items.push(candidate);
-        }
-        attempts++;
-      }
-
-      setReqs(items);
+      const rows = await fetchPage(0, categoryRef.current);
+      setItems(rows);
+      setPage(0);
+      setHasMore(rows.length === PAGE_SIZE);
     } catch (e) {
-      console.error('Failed to load live requirements feed', e);
+      console.error('Live requirements failed to load', e);
+      setError('Live requirements could not be loaded. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [isRfqAlreadyDisplayed, recordRfqDisplayed]);
+  }, [fetchPage]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const next = page + 1;
+      const rows = await fetchPage(next, category);
+      setItems(prev => {
+        const seen = new Set(prev.map(r => r.id));
+        return [...prev, ...rows.filter(r => !seen.has(r.id))];
+      });
+      setPage(next);
+      setHasMore(rows.length === PAGE_SIZE);
+    } catch {
+      toast.error('Could not load more requirements.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
-  // ── Auto Filter Clear Listener (Landing page requirement) ────────────────
-  useEffect(() => {
-    const handleClear = () => {
-      setSelectedCategory('all');
-      setPageOffset(0);
-    };
-    window.addEventListener('bulkskart-clear-landing-filters', handleClear);
-    return () => window.removeEventListener('bulkskart-clear-landing-filters', handleClear);
+  const loadCounts = useCallback(async () => {
+    try {
+      const [active, today, buyers] = await Promise.all([
+        supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).or(`deadline.is.null,deadline.gt.${new Date().toISOString()}`),
+        supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').gte('created_at', startOfToday()).or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).or(`deadline.is.null,deadline.gt.${new Date().toISOString()}`),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'buyer'),
+      ]);
+      setCounts({ active: active.count ?? 0, today: today.count ?? 0, buyers: buyers.count ?? 0 });
+    } catch {
+      setCounts({ active: null, today: null, buyers: null });
+    }
   }, []);
 
-  // ── 5-Minute Dynamic Rotation of Posts and Photos ───────────────────────
   useEffect(() => {
-    const FIVE_MINUTES_MS = 5 * 60 * 1000;
-    const interval = setInterval(() => {
-      // Clear displayed memo so fresh batch of items and photos cycle in
-      displayedRfqIdsRef.current.clear();
-      displayedTitlesRef.current.clear();
-      displayedReqNumsRef.current.clear();
+    loadFirst();
+  }, [loadFirst, category]);
 
-      const newCycle = Math.floor(Date.now() / FIVE_MINUTES_MS);
-      nextCatalogPointerRef.current = (newCycle * 23) % 700 + 12;
-      loadData();
-      toast.info('Live requirements feed refreshed with new buyer RFQs', { duration: 3000 });
-    }, FIVE_MINUTES_MS);
-
-    return () => clearInterval(interval);
-  }, [loadData]);
-
-  // ── 2. Realtime Updates via Supabase Channel ────────────────────────────────
   useEffect(() => {
-    const isBot =
-      typeof window !== 'undefined' &&
-      /Lighthouse|PageSpeed|HeadlessChrome|Googlebot|Chrome-Lighthouse/i.test(navigator.userAgent || '');
+    loadCounts();
+  }, [loadCounts]);
+
+  // ── Realtime: new requirements from the database ────────────────────────
+  useEffect(() => {
+    const isBot = typeof navigator !== 'undefined' && /Lighthouse|PageSpeed|HeadlessChrome|Googlebot/i.test(navigator.userAgent || '');
     if (isBot) return;
-
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      const channelName = `live-feed-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-      channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'requirements' },
-          async payload => {
-            if (!payload?.new?.id) return;
-            const { data } = await supabase
-              .from('requirements')
-              .select('*, profiles!buyer_id(id,full_name,email), categories!category_id(id,name,slug)')
-              .eq('id', payload.new.id)
-              .maybeSingle();
-
-            if (!data) return;
-            if (isRfqAlreadyDisplayed(data)) return;
-            recordRfqDisplayed(data);
-
-            setReqs(prev => {
-              if (prev.some(p => p.id === data.id || normalizeTitle(p.title) === normalizeTitle(data.title))) return prev;
-              return [data, ...prev.slice(0, 23)];
-            });
-            setTotalCount(c => c + 1);
-            if (liveAlertsOn) {
-              toast.info(`New RFQ Received: ${data.title}`);
-            }
-          }
-        )
-        .subscribe((status, err) => {
-          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
-            if (channel) {
-              supabase.removeChannel(channel);
-              channel = null;
-            }
-          }
-        });
-    } catch {
-      // Gracefully continue
-    }
-
+    const channel = supabase
+      .channel(`live-requirements-${Math.random().toString(36).slice(2, 8)}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requirements' }, async payload => {
+        const id = payload?.new?.id as string | undefined;
+        if (!id) return;
+        const { data } = await supabase.from('requirements').select(REQ_SELECT).eq('id', id).maybeSingle();
+        if (!data || data.status !== 'active') return;
+        if (data.deadline && new Date(data.deadline).getTime() <= Date.now()) return;
+        if (data.expires_at && new Date(data.expires_at).getTime() <= Date.now()) return;
+        const req = data as Requirement;
+        const activeTab = CATEGORY_TABS.find(t => t.id === categoryRef.current);
+        if (activeTab && activeTab.slugs.length > 0 && !activeTab.slugs.includes(req.categories?.slug ?? '')) return;
+        setItems(prev => (prev.some(p => p.id === req.id) ? prev : [req, ...prev]));
+        setFreshIds(prev => new Set(prev).add(req.id));
+        setCounts(c => ({ ...c, active: (c.active ?? 0) + 1, today: (c.today ?? 0) + 1 }));
+        if (alertsRef.current) toast.info(`New RFQ: ${req.title}`);
+      })
+      .subscribe();
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
-  }, [liveAlertsOn, isRfqAlreadyDisplayed, recordRfqDisplayed]);
+  }, []);
 
-  // ── 3. Pull Next Fresh Unshown Post (Auto Live Stream & Refresh) ────────────
-  // When Auto Live Stream loads next post, if already displayed, skips it and loads next unique RFQ
-  const pullNextPost = useCallback(() => {
-    let attempts = 0;
-    let nextUniqueCandidate: Requirement | null = null;
+  // ── Auto-scroll (smooth, frame-based) ───────────────────────────────────
+  // Items are already filtered by the server for the selected tab.
+  const filtered = items;
 
-    while (attempts < 150) {
-      const idx = nextCatalogPointerRef.current++;
-      const candidate = generateSyntheticRequirement(idx);
-      if (!isRfqAlreadyDisplayed(candidate)) {
-        nextUniqueCandidate = candidate;
-        recordRfqDisplayed(candidate);
-        break;
-      }
-      attempts++;
-    }
-
-    if (nextUniqueCandidate) {
-      const candidate = nextUniqueCandidate;
-      setReqs(current => {
-        const filtered = current.filter(c => c.id !== candidate.id && normalizeTitle(c.title) !== normalizeTitle(candidate.title));
-        return [candidate, ...filtered].slice(0, 24);
-      });
-      setTotalCount(c => c + 1);
-    }
-  }, [isRfqAlreadyDisplayed, recordRfqDisplayed]);
-
-  // ── 4. Live Stream Countdown & Auto-Rotation ────────────────────────────────
   useEffect(() => {
-    if (!autoScroll) return;
-
-    const speedMultiplier = liveSpeed === '3x' ? 3 : liveSpeed === '2x' ? 2 : liveSpeed === '0.5x' ? 0.5 : 1;
-    const intervalMs = Math.round(1000 / speedMultiplier);
-
-    const interval = setInterval(() => {
-      setCountdownSec(prev => {
-        if (prev <= 1) {
-          pullNextPost();
-          return 15;
+    if (!playing || reduce) return;
+    let raf = 0;
+    let last = performance.now();
+    const step = (now: number) => {
+      const el = scrollRef.current;
+      const dt = Math.min(64, now - last);
+      last = now;
+      if (el && now > pausedUntil.current && el.scrollHeight > el.clientHeight + 1) {
+        posRef.current += (dt / 1000) * BASE_PX_PER_SEC * speed;
+        const max = el.scrollHeight - el.clientHeight;
+        if (posRef.current >= max) {
+          posRef.current = 0; // loop back to the first requirement
+          pausedUntil.current = now + 1200;
         }
-        return prev - 1;
-      });
-    }, intervalMs);
+        el.scrollTop = posRef.current;
+      } else if (el) {
+        posRef.current = el.scrollTop;
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, speed, reduce, filtered.length]);
 
-    return () => clearInterval(interval);
-  }, [autoScroll, liveSpeed, pullNextPost]);
-
-  // ── 5. User Controls: Fresh RFQs, Next, Prev, Alerts ───────────────────────
-  const handleFreshRFQs = () => {
-    setIsRefreshing(true);
-    pullNextPost();
-    toast.success('Fresh buyer inquiries loaded!');
-    setTimeout(() => setIsRefreshing(false), 600);
+  const pauseForUser = () => {
+    pausedUntil.current = performance.now() + 3500; // resume automatically after 3.5s idle
   };
 
-  const handleNext = () => {
-    setPageOffset(prev => prev + 1);
-    pullNextPost();
+  const nudge = (dir: 1 | -1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    pauseForUser();
+    el.scrollBy({ top: dir * 180, behavior: 'smooth' });
+    setTimeout(() => { posRef.current = el.scrollTop; }, 400);
   };
 
-  const handlePrev = () => {
-    setPageOffset(prev => Math.max(0, prev - 1));
-  };
-
-  const toggleLiveAlerts = () => {
-    setLiveAlertsOn(prev => {
-      const next = !prev;
-      if (next) {
-        toast.success('Live buying alerts activated for verified Indian buyers');
-      } else {
-        toast.info('Live buying alerts paused');
-      }
-      return next;
-    });
-  };
-
-  // ── 6. Category Filtering ───────────────────────────────────────────────────
-  const filteredReqs = useMemo(() => {
-    return reqs.filter(r => {
-      if (selectedCategory === 'all') return true;
-      const catId = (r.category_id || '').toLowerCase();
-      const slug = (r.categories?.slug || '').toLowerCase();
-      const catName = (r.categories?.name || '').toLowerCase();
-      const title = (r.title || '').toLowerCase();
-      const specs = (r.specifications || '').toLowerCase();
-
-      if (selectedCategory === 'machinery-industrial') {
-        return slug.includes('machin') || catName.includes('machin') || title.includes('cnc') || title.includes('motor') || title.includes('grinder') || title.includes('pump') || title.includes('machine') || specs.includes('machin');
-      }
-      if (selectedCategory === 'textiles-apparel') {
-        return slug.includes('textile') || catName.includes('textile') || title.includes('saree') || title.includes('shirt') || title.includes('fabric') || title.includes('cotton') || title.includes('yarn') || specs.includes('fabric');
-      }
-      if (selectedCategory === 'packaging') {
-        return slug.includes('packag') || catName.includes('packag') || title.includes('box') || title.includes('carton') || title.includes('pouch') || title.includes('bag') || title.includes('bottle');
-      }
-      if (selectedCategory === 'electronics-electricals') {
-        return slug.includes('electr') || catName.includes('electr') || title.includes('solar') || title.includes('headphone') || title.includes('copper') || title.includes('wire') || title.includes('led');
-      }
-      if (selectedCategory === 'agriculture-food') {
-        return slug.includes('agri') || slug.includes('food') || catName.includes('agri') || title.includes('rice') || title.includes('chilli') || title.includes('spice') || title.includes('grain');
-      }
-      if (selectedCategory === 'chemicals-raw-materials') {
-        return slug.includes('chemic') || catName.includes('chemic') || title.includes('granule') || title.includes('polymer') || title.includes('dye') || title.includes('acid');
-      }
-      return slug === selectedCategory || catId === selectedCategory;
-    });
-  }, [reqs, selectedCategory]);
-
-  const visibleReqs = useMemo(() => {
-    if (filteredReqs.length === 0) return [];
-
-    // Deduplicate filtered items so that no post appears more than once in the view
-    const seenIds = new Set<string>();
-    const seenTitles = new Set<string>();
-    const uniqueFiltered: Requirement[] = [];
-
-    for (const r of filteredReqs) {
-      if (!r || !r.id) continue;
-      const norm = normalizeTitle(r.title);
-      if (seenIds.has(r.id) || (norm && seenTitles.has(norm))) continue;
-      seenIds.add(r.id);
-      if (norm) seenTitles.add(norm);
-      uniqueFiltered.push(r);
-    }
-
-    const len = uniqueFiltered.length;
-    if (len === 0) return [];
-
-    // Window of 4 items for grid layout without repeating within the same screen
-    const start = pageOffset % len;
-    const slice = uniqueFiltered.slice(start, start + 4);
-    if (slice.length < 4 && len > slice.length) {
-      const needed = Math.min(4 - slice.length, len - slice.length);
-      const sliceIds = new Set(slice.map(s => s.id));
-      const complement = uniqueFiltered.filter(item => !sliceIds.has(item.id)).slice(0, needed);
-      return [...slice, ...complement];
-    }
-    return slice;
-  }, [filteredReqs, pageOffset]);
-
-  // ── 7. Card Interactions ───────────────────────────────────────────────────
-  const navigate = useNavigate();
-  const handleViewRFQ = (req: Requirement) => {
-    navigate(`/requirement/${req.req_number || req.id}`);
-  };
-
-  const handleOpenRespond = async (req: Requirement) => {
+  // ── Quote flow (existing permissions and quota) ─────────────────────────
+  const handleSubmitQuote = async (req: Requirement) => {
     if (!user || !profile) { setDialogReason('not_logged_in'); setDialogOpen(true); return; }
     if (!company) { setDialogReason('not_registered_business'); setDialogOpen(true); return; }
-    const subCheck = await checkSupplierPaidSubscription(company.id, company);
-    if (!subCheck.allowed) { setDialogReason(subCheck.reason); setDialogOpen(true); return; }
+    const sub = await checkSupplierPaidSubscription(company.id, company);
+    if (!sub.allowed) { setDialogReason(sub.reason); setDialogOpen(true); return; }
     const quota = await checkDirectMessageQuota(company.id, company);
     if (quota !== 'ok') { setDialogReason(quota); setDialogOpen(true); return; }
-    setRespondDialogReq(req);
+    setRespondReq(req);
   };
 
+  const showStats = counts.active !== null;
+
   return (
-    <section className="w-full py-3 sm:py-5 bg-background border-b border-border text-foreground relative overflow-hidden">
-      <div className="w-full max-w-[1400px] mx-auto px-3.5 sm:px-5 md:px-6">
+    <section className="relative w-full overflow-hidden bg-[#050505] py-6 text-white sm:py-10">
+      {/* Ambient glow */}
+      <div aria-hidden="true" className="pointer-events-none absolute -top-24 left-1/4 h-72 w-72 rounded-full bg-[#FF5A00]/10 blur-[110px]" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 right-10 h-72 w-72 rounded-full bg-[#FF5A00]/10 blur-[110px]" />
 
-        {/* ── LIVE FEED HEADER ─────────────────────────────── */}
-        <div className="mb-2 sm:mb-2.5">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="w-2 h-2 rounded-full bg-[#FF5A00] animate-pulse shadow-[0_0_8px_#FF5A00]" />
-            <span className="text-[10px] font-black text-[#FF5A00] tracking-widest uppercase">
-              LIVE FEED
+      <div className="relative mx-auto w-full max-w-[1400px] px-4 sm:px-5 md:px-6">
+        {/* ── Header ── */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-lg bg-[#B33D00] px-3 py-1 text-[12px] font-extrabold tracking-wider shadow-[0_0_18px_-2px_rgba(220,38,38,0.8)]">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#161616] opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#161616]" />
             </span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight leading-tight">
-            Live <span className="text-[#FF5A00]">Buying Requirements</span>
-          </h2>
-          <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-            Real business inquiries from verified buyers
-          </p>
+            LIVE
+          </span>
+        </div>
+        <h2 className="mt-2 text-[30px] font-black leading-tight tracking-tight sm:text-[40px]">
+          Live <span className="text-[#FF5A00]">Buying Requirements</span>
+        </h2>
+        <p className="mt-1 text-sm text-neutral-400 sm:text-[15px]">Real-time bulk purchase demands from verified businesses.</p>
+
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[12px] text-slate-300">
+          {[
+            { icon: CheckCircle2, text: 'Verified Buyers Only' },
+            { icon: Zap, text: 'Live & Auto Updating' },
+            { icon: Boxes, text: 'Bulk Orders & Long-Term Supply' },
+            { icon: Radio, text: 'Respond with Your Best Quote' },
+          ].map(({ icon: Icon, text }) => (
+            <span key={text} className="flex items-center gap-1.5">
+              <Icon className="h-3.5 w-3.5 text-[#FF5A00]" />
+              {text}
+            </span>
+          ))}
         </div>
 
-        {/* ── STATS & ACTIONS ROW ─────────────────────────── */}
-        <div className="flex items-center justify-between gap-1.5 sm:gap-2.5 mb-2.5 w-full">
-          {/* Fresh RFQs */}
-          <button
-            onClick={handleFreshRFQs}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 px-2 min-[360px]:px-3 py-1.5 rounded-lg bg-card hover:bg-muted border border-purple-500/40 text-purple-700 dark:text-purple-300 text-[11px] min-[360px]:text-xs font-bold shadow-sm transition-all active:scale-95 h-9 shrink-0"
-            title="Refresh and pull fresh buyer requirements"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#FF5A00] shrink-0 transition-transform duration-500 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
-            <span className="truncate">Fresh RFQs</span>
-          </button>
-
-          {/* Active RFQs Count Badge */}
-          <div className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 bg-card border border-border rounded-lg px-2 min-[360px]:px-3 py-1 shadow-sm h-9">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <div className="text-left leading-tight truncate">
-              <div className="text-xs sm:text-sm font-black text-foreground leading-tight">
-                <AnimatedCount target={totalCount} />
+        {/* ── Live stats (database) ── */}
+        <div className="mt-5 grid grid-cols-2 overflow-hidden rounded-2xl border border-[#FF5A00]/40 bg-gradient-to-r from-[#0d0d0d] via-[#141414] to-[#0d0d0d] shadow-[0_0_30px_-12px_rgba(255,90,0,0.6)] md:grid-cols-4">
+          {[
+            { icon: Users, value: counts.active, label: 'Active Buying RFQs' },
+            { icon: Radio, value: counts.today, label: 'Posted Today' },
+            { icon: Building2, value: counts.buyers, label: 'Registered Buyers' },
+            { icon: Package, value: null, label: 'Live Updates', live: true },
+          ].map(({ icon: Icon, value, label, live }, i) => (
+            <div key={label} className={`flex items-center gap-3 px-4 py-3.5 ${i % 2 === 0 ? 'border-r border-white/10' : ''} ${i < 2 ? 'border-b border-white/10 md:border-b-0' : ''} ${i < 3 ? 'md:border-r md:border-white/10' : ''}`}>
+              <Icon className="h-6 w-6 shrink-0 text-[#FF5A00]" />
+              <div className="min-w-0">
+                <div className="text-[18px] font-black leading-none sm:text-[22px]">
+                  {live ? (
+                    <span className="flex items-center gap-2 text-[15px] font-bold sm:text-[16px]">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-[#C94400]" /> On
+                    </span>
+                  ) : value === null ? '—' : value.toLocaleString('en-IN')}
+                </div>
+                <div className="mt-1 truncate text-[11px] text-neutral-400">{live ? 'New RFQs appear as they are posted' : label}</div>
               </div>
-              <div className="text-[8.5px] min-[360px]:text-[9px] text-muted-foreground font-medium leading-none">Active RFQs</div>
             </div>
-          </div>
-
-          {/* View All Button */}
-          <Link to="/requirements" className="flex-1 sm:flex-initial">
-            <Button className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-9 px-2.5 min-[360px]:px-3 text-[11px] min-[360px]:text-xs gap-1 sm:gap-1.5 rounded-lg shadow-[0_2px_8px_rgba(255,90,0,0.3)] transition-all">
-              <span className="truncate">View All</span> <ArrowRight className="w-3.5 h-3.5 shrink-0" />
-            </Button>
-          </Link>
+          ))}
         </div>
+        {!showStats && <p className="mt-2 text-[11px] text-neutral-400">Counts are unavailable right now.</p>}
 
-        {/* ── CATEGORY FILTER TABS ────────────────────────── */}
-        <div className="w-full max-w-full flex items-center gap-1.5 overflow-x-auto pb-1.5 mb-2 scrollbar-none scroll-smooth overscroll-x-contain touch-pan-x">
-          {CATEGORY_TABS.map(cat => {
-            const active = selectedCategory === cat.id;
-            const Icon = cat.icon;
+        {/* ── Category filters ── */}
+        <div className="mt-5 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {CATEGORY_TABS.map(tab => {
+            const active = category === tab.id;
+            const Icon = tab.icon;
             return (
               <button
-                key={cat.id}
-                onClick={() => {
-                  setSelectedCategory(cat.id);
-                  setPageOffset(0);
-                }}
-                className={`whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 min-h-[32px] ${
+                key={tab.id}
+                type="button"
+                onClick={() => setCategory(tab.id)}
+                className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${
                   active
-                    ? 'bg-primary/15 text-primary border border-primary shadow-sm font-bold'
-                    : 'bg-card text-foreground/80 hover:text-foreground border border-border hover:border-foreground/20'
+                    ? 'border-transparent bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-white shadow-[0_8px_22px_-8px_rgba(255,90,0,0.9)]'
+                    : 'border-white/10 bg-[#101010] text-slate-200 hover:border-white/25 hover:text-white'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span>{cat.name}</span>
+                <Icon className="h-4 w-4" />
+                {tab.name}
               </button>
             );
           })}
         </div>
 
-        {/* ── LIVE STREAM CONTROLS BAR matching Image 2 ────────────────────── */}
-        <div className="bg-card border border-border rounded-2xl p-2.5 sm:p-3 mb-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 shadow-sm">
-          {/* Top Row on Mobile: LIVE STREAM badge + countdown */}
-          <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3 w-full sm:w-auto">
-            <span className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[11px] shadow-sm shrink-0">
-              <span className="relative flex h-2 w-2 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              LIVE STREAM
+        {/* ── Feed controls ── */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0c0c0c] px-3.5 py-2.5">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-2 rounded-lg bg-[#FF5A00]/15 px-3 py-1.5 text-[12px] font-extrabold tracking-wider text-[#FF7A2E]">
+              <Radio className="h-4 w-4" /> LIVE FEED
             </span>
-
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5 shrink-0">
-              <Timer className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
-              <span>
-                Next unique post in <strong className="text-foreground font-mono">{countdownSec}s</strong>
-              </span>
-            </div>
+            <span className="hidden items-center gap-2 text-[12px] text-neutral-400 sm:flex">
+              <span className={`h-2 w-2 rounded-full ${playing ? 'animate-pulse bg-[#C94400]' : 'bg-[#262626]'}`} />
+              {playing ? 'Auto-scrolling live requirements' : 'Paused'}
+            </span>
           </div>
 
-          {/* Bottom Row on Mobile: Prev / Next + Speed + AUTO LIVE Toggle */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-            {/* Prev / Next & Speed */}
-            <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-[12px] font-semibold text-slate-300">
+              Auto Scroll
               <button
-                onClick={handlePrev}
-                aria-label="Previous requirement"
-                className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 text-foreground flex items-center justify-center border border-border transition-colors min-h-[32px] min-w-[32px]"
-                title="Previous RFQ"
+                type="button"
+                role="switch"
+                aria-checked={playing}
+                aria-label="Auto scroll"
+                onClick={() => setPlaying(p => !p)}
+                className={`relative h-5 w-9 rounded-full transition-colors ${playing ? 'bg-[#C94400]' : 'bg-[#0A0A0A]'}`}
               >
-                <ChevronLeft className="w-4 h-4" />
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-[#161616] shadow transition-all ${playing ? 'left-4' : 'left-0.5'}`} />
               </button>
-              <button
-                onClick={handleNext}
-                aria-label="Next requirement"
-                className="w-8 h-8 rounded-lg bg-[#FF5A00] hover:bg-[#e04f00] text-white flex items-center justify-center font-bold shadow-sm transition-colors min-h-[32px] min-w-[32px]"
-                title="Next RFQ"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              {/* Speed selector dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setSpeedMenuOpen(prev => !prev)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted text-foreground hover:bg-muted/80 border border-border text-xs font-medium transition-colors min-h-[32px]"
-                >
-                  <span>Speed: {liveSpeed}</span>
-                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
-                </button>
-                {speedMenuOpen && (
-                  <div className="absolute left-0 sm:right-0 top-full mt-1 w-24 bg-popover border border-border rounded-lg shadow-xl z-30 py-1">
-                    {(['0.5x', '1x', '2x', '3x'] as const).map(s => (
-                      <button
-                        key={s}
-                        onClick={() => {
-                          setLiveSpeed(s);
-                          setSpeedMenuOpen(false);
-                        }}
-                        className={`w-full text-left px-3 py-1 text-xs transition-colors ${
-                          liveSpeed === s
-                            ? 'text-[#FF5A00] font-bold bg-muted'
-                            : 'text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        Speed: {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* AUTO LIVE toggle */}
+            </label>
             <button
-              onClick={() => setAutoScroll(prev => !prev)}
-              aria-label={autoScroll ? "Pause auto live" : "Resume auto live"}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 min-h-[32px] ${
-                autoScroll
-                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/40 shadow-sm'
-                  : 'bg-muted text-muted-foreground border-border hover:text-foreground'
-              }`}
+              type="button"
+              onClick={() => setPlaying(p => !p)}
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-white/15 px-3 text-[12px] font-semibold text-white hover:border-[#FF5A00]"
             >
-              <span className={`w-2 h-2 rounded-full ${autoScroll ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/40'}`} />
-              <span>AUTO LIVE: {autoScroll ? 'ON' : 'OFF'}</span>
+              {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              {playing ? 'Pause' : 'Resume'}
+            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSpeedOpen(o => !o)}
+                className="flex h-8 items-center gap-1 rounded-lg border border-white/15 px-3 text-[12px] font-semibold text-white hover:border-[#FF5A00]"
+              >
+                Speed: {speed}x <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+              {speedOpen && (
+                <div className="absolute right-0 z-20 mt-1 w-28 overflow-hidden rounded-lg border border-white/15 bg-[#111] shadow-xl">
+                  {SPEEDS.map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => { setSpeed(s); setSpeedOpen(false); }}
+                      className={`block w-full px-3 py-1.5 text-left text-[12px] hover:bg-white/10 ${speed === s ? 'font-bold text-[#FF7A2E]' : 'text-slate-200'}`}
+                    >
+                      {s}x
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button type="button" onClick={() => nudge(-1)} aria-label="Scroll up" className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 hover:border-[#FF5A00]">
+              <ChevronUp className="h-4 w-4" />
+            </button>
+            <button type="button" onClick={() => nudge(1)} aria-label="Scroll down" className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 hover:border-[#FF5A00]">
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setAlerts(a => !a)}
+              className={`flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold ${alerts ? 'bg-[#C94400] text-white' : 'border border-white/15 text-slate-200 hover:border-[#FF5A00]'}`}
+              aria-pressed={alerts}
+            >
+              <Bell className="h-3.5 w-3.5" /> Alerts {alerts ? 'On' : 'Off'}
             </button>
           </div>
         </div>
 
-        {/* ── RFQ CARDS (Compact 2-col desktop layout) ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
-          {loading && reqs.length === 0 ? (
-            <div className="flex flex-col gap-3">
-              {[1, 2, 3].map(n => (
-                <div key={n} className="h-44 rounded-2xl bg-white/5 animate-pulse border border-white/5" />
-              ))}
+        {/* ── Feed ── */}
+        <div
+          ref={scrollRef}
+          onPointerDown={pauseForUser}
+          onWheel={pauseForUser}
+          onTouchStart={pauseForUser}
+          onKeyDown={pauseForUser}
+          className="mt-4 h-[560px] space-y-3 overflow-y-auto pr-1 sm:h-[600px] [scrollbar-width:thin] [scrollbar-color:#FF5A00_transparent]"
+          aria-live="polite"
+        >
+          {loading && items.length === 0 ? (
+            [1, 2, 3].map(n => <div key={n} className="h-36 animate-pulse rounded-2xl border border-white/5 bg-[#161616]/[0.03]" />)
+          ) : error ? (
+            <div className="rounded-2xl border border-[#FF5A00]/30 bg-[#FF5A00]/5 p-6 text-center">
+              <p className="text-sm text-[#FF7A2E]">{error}</p>
+              <button type="button" onClick={loadFirst} className="mt-3 rounded-lg bg-[#C94400] px-4 py-2 text-sm font-bold">Retry</button>
             </div>
-          ) : visibleReqs.length === 0 ? (
-            <div className="text-center py-12 w-full bg-card rounded-2xl border border-border">
-              <p className="text-white/60 text-xs sm:text-sm">No live requirements currently in this category.</p>
-              <Button
-                size="sm"
-                onClick={() => setSelectedCategory('all')}
-                className="mt-3 text-xs h-9 px-4 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-semibold rounded-lg"
-              >
-                View All Categories
-              </Button>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-8 text-center">
+              <Factory className="mx-auto h-9 w-9 text-[#FF5A00]" />
+              <p className="mt-3 text-sm font-semibold">No live requirements {category === 'all' ? 'right now' : 'in this category'}.</p>
+              <p className="mt-1 text-xs text-neutral-400">New buyer requirements appear here as soon as they are posted.</p>
+              {category !== 'all' && (
+                <button type="button" onClick={() => setCategory('all')} className="mt-4 rounded-lg border border-white/15 px-4 py-2 text-xs font-semibold hover:border-[#FF5A00]">
+                  View all categories
+                </button>
+              )}
             </div>
           ) : (
-            visibleReqs.map((req, index) => {
-              const visual = getRequirementVisualInfo(req, index);
-
-              // Assign badges matching Image 2
-              const cardIdx = (index + pageOffset) % 4;
-              const isUrgent = cardIdx === 0;
-              const isNew = cardIdx === 1 || cardIdx === 3;
-              const isVerifiedBuyer = cardIdx === 2;
-              const isBulkOrder = cardIdx === 1 || cardIdx === 2;
-              const isPaidOnly = cardIdx !== 2;
-
-              const supplyType =
-                cardIdx === 0
-                  ? 'Long Term Supply'
-                  : cardIdx === 1
-                  ? 'Regular Supply'
-                  : cardIdx === 2
-                  ? 'Project Basis'
-                  : 'Bulk Quantity';
-
-              return (
-                <div
-                  key={req.id}
-                  className="bg-card hover:bg-muted/50 border border-border hover:border-[#FF5A00]/50 rounded-xl p-2.5 sm:p-3 transition-all shadow-sm group flex flex-col justify-between w-full min-w-0"
-                >
-                  <div className="w-full min-w-0">
-                    {/* Top Row: Thumbnail on left + Information stack on right */}
-                    <div className="flex gap-2.5 sm:gap-3 items-start w-full min-w-0">
-                      {/* Left Product Thumbnail */}
-                      <div
-                        onClick={() => handleViewRFQ(req)}
-                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-muted border border-border relative cursor-pointer aspect-square shadow-sm"
+            <AnimatePresence initial={false}>
+              {filtered.map((req, index) => {
+                const visual = getRequirementVisualInfo(req, index);
+                const isFresh = freshIds.has(req.id);
+                const minutes = Math.floor((Date.now() - new Date(req.created_at || 0).getTime()) / 60000);
+                const isNewPost = isFresh || minutes < 60;
+                // Urgency comes from the buyer's real deadline, never from a fixed label.
+                const hoursLeft = req.deadline ? (new Date(req.deadline).getTime() - Date.now()) / 3600000 : null;
+                const isEmergency = hoursLeft !== null && hoursLeft > 0 && hoursLeft <= 48;
+                const isUrgent = !isEmergency && hoursLeft !== null && hoursLeft > 0 && hoursLeft <= 168;
+                return (
+                  <motion.article
+                    key={req.id}
+                    layout={!reduce}
+                    initial={reduce ? false : { opacity: 0, y: -16, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={reduce ? undefined : { opacity: 0, x: -20 }}
+                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                    className={`group relative rounded-2xl border bg-[#0c0c0c] p-3 transition-colors sm:p-4 ${
+                      isFresh ? 'border-[#FF5A00] shadow-[0_0_28px_-6px_rgba(255,90,0,0.7)]' : 'border-white/10 hover:border-[#FF5A00]/50'
+                    }`}
+                  >
+                    <div className="flex gap-3 sm:gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setDetailReq(req)}
+                        className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#141414] sm:h-24 sm:w-24"
+                        aria-label={`View ${visual.cleanTitle}`}
                       >
                         <SafeImage
                           src={visual.image}
                           alt={visual.cleanTitle}
                           category={req.categories?.name || req.category_id}
                           fallbackType="rfq"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width: 640px) 64px, 80px"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          sizes="96px"
                         />
-                      </div>
+                      </button>
 
-                      {/* Right Info Stack */}
-                      <div className="flex-1 min-w-0">
-                        {/* Badges Stack */}
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {isUrgent && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase flex items-center gap-0.5 bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
-                              <Zap className="w-2.5 h-2.5 fill-current text-rose-500" />
-                              URGENT
-                            </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {isNewPost && (
+                            <span className="rounded-md bg-[#C94400] px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white">NEW RFQ</span>
                           )}
-                          {isNew && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-emerald-600 text-white">
-                              New
-                            </span>
-                          )}
-                          {isVerifiedBuyer && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-[#FF5A00] text-white">
-                              Verified
-                            </span>
-                          )}
-                          {isBulkOrder && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-purple-600 text-white">
-                              Bulk
-                            </span>
-                          )}
-                          {isPaidOnly && (
-                            <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-md flex items-center gap-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                              <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
-                              Paid
-                            </span>
-                          )}
-                          <span className="text-[9.5px] text-muted-foreground ml-auto font-mono shrink-0 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            {timeAgo(req.created_at)}
+                          <span className="flex items-center gap-1 text-[11px] text-neutral-400">
+                            <Zap className="h-3 w-3 text-[#FF5A00]" /> {timeAgo(req.created_at)}
                           </span>
+                          {isEmergency && (
+                            <span className="rounded-md bg-[#B33D00] px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white">EMERGENCY</span>
+                          )}
+                          {isUrgent && (
+                            <span className="rounded-md bg-[#FF5A00]/15 px-2 py-0.5 text-[10px] font-bold text-[#FF7A2E] border border-[#FF5A00]/40">URGENT</span>
+                          )}
+                          <span className="rounded-md border border-[#FF5A00]/40 bg-[#FF5A00]/10 px-2 py-0.5 text-[10px] font-bold text-[#FF7A2E]">Bulk Purchase</span>
+                          <span className="rounded-md border border-[#FF5A00]/40 bg-[#FF5A00]/10 px-2 py-0.5 text-[10px] font-bold text-[#FF7A2E]">Free Delivery</span>
+                          {req.is_verified_buyer && (
+                            <span className="flex items-center gap-1 rounded-md border border-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
+                              <Lock className="h-2.5 w-2.5 text-[#FF7A2E]" /> Verified Buyer
+                            </span>
+                          )}
                         </div>
+                        <button type="button" onClick={() => setDetailReq(req)} className="mt-1.5 block w-full text-left">
+                          <h3 className="line-clamp-1 text-[15px] font-bold text-white group-hover:text-[#FF7A2E] sm:text-[17px]">{visual.cleanTitle}</h3>
+                        </button>
+                        <p className="line-clamp-1 text-[12px] text-neutral-400">{visual.subtitle}</p>
 
-                        {/* Product Title */}
-                        <h3
-                          onClick={() => handleViewRFQ(req)}
-                          className="text-xs sm:text-sm font-bold text-foreground mt-1 leading-snug line-clamp-1 group-hover:text-[#FF5A00] transition-colors cursor-pointer"
-                        >
-                          {visual.cleanTitle}
-                        </h3>
-
-                        {/* Subtitle / Specifications */}
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight line-clamp-1">
-                          {visual.subtitle}
-                        </p>
-
-                        {/* 2x2 Key Metrics Matrix */}
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1.5 pt-1.5 border-t border-border text-[11px]">
-                          {/* Col 1, Row 1: Quantity */}
+                        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[12px] sm:grid-cols-3">
                           <div className="min-w-0">
-                            <div className="font-bold text-[#FF5A00] flex items-center gap-1 leading-tight truncate">
-                              <Package className="w-3 h-3 text-[#FF5A00] shrink-0" />
+                            <div className="flex items-center gap-1.5 truncate font-bold text-[#FF7A2E]">
+                              <Package className="h-3.5 w-3.5 shrink-0" />
                               <span className="truncate">{visual.quantityDisplay}</span>
                             </div>
-                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Quantity</div>
+                            <div className="text-[10px] text-neutral-400">Quantity</div>
                           </div>
-
-                          {/* Col 2, Row 1: Location */}
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1 text-foreground font-medium leading-tight truncate">
-                              <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
-                              <span className="truncate" title={visual.locationDisplay}>
-                                {visual.locationDisplay}
-                              </span>
+                            <div className="flex items-center gap-1.5 truncate font-semibold text-slate-100">
+                              <MapPin className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+                              <span className="truncate" title={visual.locationDisplay}>{visual.locationDisplay}</span>
                             </div>
-                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Location</div>
+                            <div className="text-[10px] text-neutral-400">Location</div>
                           </div>
-
-                          {/* Col 1, Row 2: Buyer Verified */}
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold leading-tight truncate">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                              <span className="truncate">Verified Co.</span>
+                            <div className="flex items-center gap-1.5 truncate font-semibold text-slate-100">
+                              <Wallet className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+                              <span className="truncate">{req.deadline ? new Date(req.deadline).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Open'}</span>
                             </div>
-                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Status</div>
-                          </div>
-
-                          {/* Col 2, Row 2: Business / Supply Type */}
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1 text-foreground font-medium leading-tight truncate">
-                              <Building2 className="w-3 h-3 text-muted-foreground shrink-0" />
-                              <span className="truncate">{supplyType}</span>
-                            </div>
-                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Supply Type</div>
+                            <div className="text-[10px] text-neutral-400">Required By</div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Bottom Action Buttons: View Details & Send Quote */}
-                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mt-2 pt-2 border-t border-border">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleViewRFQ(req)}
-                      className="w-full border-border bg-card hover:bg-muted font-medium text-[11px] sm:text-xs h-8 rounded-lg transition-all px-1 truncate shadow-none"
-                    >
-                      <span className="truncate">View Details</span>
-                    </Button>
-                    <Button
-                      onClick={() => handleOpenRespond(req)}
-                      className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-[11px] sm:text-xs h-8 rounded-lg shadow-sm gap-1 transition-all px-1"
-                    >
-                      <span className="truncate">Contact Buyer</span>
-                      <ArrowRight className="w-3 h-3 shrink-0" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })
+                    <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setDetailReq(req)}
+                        className="h-10 rounded-xl border border-white/15 text-[13px] font-semibold text-white transition-colors hover:border-[#FF5A00] hover:text-[#FF7A2E]"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSubmitQuote(req)}
+                        className="group/btn flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-[13px] font-bold text-white shadow-[0_8px_20px_-8px_rgba(255,90,0,0.9)] transition-transform hover:-translate-y-0.5"
+                      >
+                        Submit Quote <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+                      </button>
+                    </div>
+                  </motion.article>
+                );
+              })}
+            </AnimatePresence>
+          )}
+
+          {hasMore && filtered.length > 0 && (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="flex h-10 items-center gap-2 rounded-xl border border-white/15 px-5 text-[13px] font-semibold hover:border-[#FF5A00] disabled:opacity-60"
+              >
+                {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Load more requirements
+              </button>
+            </div>
           )}
         </div>
 
+        {/* ── Manufacturer conversion banner ── */}
+        <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-[#FF5A00]/50 bg-gradient-to-r from-[#1a0c05] via-[#0c0c0c] to-[#0c0c0c] p-5 shadow-[0_0_40px_-12px_rgba(255,90,0,0.6)] sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="flex items-center gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#FF5A00]/15 text-[#FF5A00]">
+              <Factory className="h-6 w-6" />
+            </span>
+            <div>
+              <p className="text-[18px] font-black sm:text-[22px]">Are You a <span className="text-[#FF5A00]">Manufacturer?</span></p>
+              <p className="text-[12px] text-neutral-400 sm:text-[13px]">Get access to real-time bulk buying requirements. Discover buyers. Submit quotations. Win bulk orders.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <Link to="/requirements" className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] px-5 text-[13px] font-bold text-white shadow-[0_10px_24px_-10px_rgba(255,90,0,0.9)]">
+              Explore Buying Opportunities <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link to="/auth?tab=supplier" className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/20 px-5 text-[13px] font-bold text-white hover:border-[#FF5A00] hover:text-[#FF7A2E]">
+              List Your Products
+            </Link>
+          </div>
+        </div>
       </div>
 
-      {/* Drawer and Dialogs */}
-      {selectedReq && (
+      {detailReq && (
         <RequirementDetailDrawer
-          requirement={selectedReq}
-          open={detailDrawerOpen}
-          onClose={() => setDetailDrawerOpen(false)}
+          requirement={detailReq}
+          open={!!detailReq}
+          onClose={() => setDetailReq(null)}
           onRequirementUpdated={updated => {
-            setSelectedReq(updated);
-            setReqs(prev => prev.map(r => (r.id === updated.id ? updated : r)));
+            setDetailReq(updated);
+            setItems(prev => prev.map(r => (r.id === updated.id ? updated : r)));
           }}
         />
       )}
 
-      {respondDialogReq && user && company && (
+      {respondReq && user && company && (
         <SupplierRespondDialog
-          requirement={respondDialogReq}
-          open={!!respondDialogReq}
-          onClose={() => setRespondDialogReq(null)}
+          requirement={respondReq}
+          open={!!respondReq}
+          onClose={() => setRespondReq(null)}
           supplierId={user.id}
           supplierCompanyId={company.id}
           onResponded={() => {
-            setRespondDialogReq(null);
-            loadData();
+            setRespondReq(null);
+            loadFirst();
           }}
         />
       )}
 
-      <SubscribeToContactDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        reason={dialogReason}
-      />
+      <SubscribeToContactDialog open={dialogOpen} onClose={() => setDialogOpen(false)} reason={dialogReason} />
     </section>
   );
 }

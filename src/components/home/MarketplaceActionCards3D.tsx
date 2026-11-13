@@ -23,7 +23,7 @@ export default function MarketplaceActionCards3D() {
       description: 'Create custom RFQs and broadcast specs to verified factories.',
       badgeIcon: FileText,
       path: '/post-requirement',
-      image: 'https://cdn.pixabay.com/photo/2016/11/21/14/53/boxes-1845814_1280.jpg', // Warehouse logistics
+      image: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg', // Warehouse logistics
     },
     {
       id: 2,
@@ -39,7 +39,7 @@ export default function MarketplaceActionCards3D() {
       description: 'Real-time supplier price bidding for bulk contract awards.',
       badgeIcon: Gavel,
       path: '/auctions/reverse',
-      image: 'https://cdn.pixabay.com/photo/2016/11/29/09/32/welding-1868731_1280.jpg', // Gavel & live trading
+      image: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg', // Gavel & live trading
     },
     {
       id: 4,
@@ -70,7 +70,7 @@ export default function MarketplaceActionCards3D() {
             <div
               key={card.id}
               onClick={() => navigate(card.path)}
-              className="group relative min-h-[160px] sm:min-h-[175px] h-auto rounded-2xl overflow-hidden border border-slate-800/90 bg-slate-900/95 shadow-md hover:shadow-xl hover:border-[#FF5A00]/70 cursor-pointer transition-all duration-300 flex flex-col justify-between p-3 sm:p-3.5 active:scale-[0.98] w-full"
+              className="group relative min-h-[160px] sm:min-h-[175px] h-auto rounded-2xl overflow-hidden border border-[#2A2A2A]/90 bg-[#0A0A0A]/95 shadow-md hover:shadow-xl hover:border-[#FF5A00]/70 cursor-pointer transition-all duration-300 flex flex-col justify-between p-3 sm:p-3.5 active:scale-[0.98] w-full"
             >
               {/* Background Industrial Image with Dark Gradient Overlays */}
               <div className="absolute inset-0 z-0">
@@ -84,7 +84,7 @@ export default function MarketplaceActionCards3D() {
 
               {/* Top Row: Feature Icon in Orange Rounded Square */}
               <div className="relative z-10 flex items-start justify-between">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#FF5A00] text-white flex items-center justify-center shadow-md shadow-orange-950/40 group-hover:scale-105 transition-transform duration-200 shrink-0">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#C94400] text-white flex items-center justify-center shadow-md shadow-orange-950/40 group-hover:scale-105 transition-transform duration-200 shrink-0">
                   <BadgeIcon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
                 </div>
               </div>
@@ -101,7 +101,7 @@ export default function MarketplaceActionCards3D() {
                 </div>
 
                 {/* Small Circular Orange Arrow Button at Bottom Right */}
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#FF5A00] group-hover:bg-[#e04e00] text-white flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:translate-x-0.5">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#C94400] group-hover:bg-[#B33D00] text-white flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:translate-x-0.5">
                   <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
                 </div>
               </div>

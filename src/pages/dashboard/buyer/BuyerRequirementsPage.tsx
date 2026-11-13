@@ -52,13 +52,13 @@ export default function BuyerRequirementsPage() {
       />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl w-full mx-auto">
-          <div className="bs-glass mb-6 flex items-center justify-between rounded-3xl p-4">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-xl font-black text-foreground">My Requirements</h1>
+              <h1 className="text-xl font-bold text-foreground">My Requirements</h1>
               <p className="text-sm text-muted-foreground">All your posted bulk requirements</p>
             </div>
             <Link to="/post-requirement" className="hidden md:block">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 text-sm">
+              <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2 text-sm">
                 <Plus className="w-4 h-4" /> Post New
               </Button>
             </Link>
@@ -90,7 +90,7 @@ export default function BuyerRequirementsPage() {
                 <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground mb-3">No requirements found.</p>
                 <Link to="/post-requirement">
-                  <Button size="sm" className="bg-primary text-primary-foreground">Post a Requirement</Button>
+                  <Button size="sm" className="bg-[#1A0C05] text-primary-foreground">Post a Requirement</Button>
                 </Link>
               </div>
             ) : (
@@ -120,7 +120,7 @@ export default function BuyerRequirementsPage() {
                           {req.deadline ? new Date(req.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'text-green-400 border-green-400/30' : 'text-muted-foreground'}`}>
+                          <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'text-[#FF7A2E] border-[#FF5A00]/30' : 'text-muted-foreground'}`}>
                             {req.status}
                           </Badge>
                         </td>

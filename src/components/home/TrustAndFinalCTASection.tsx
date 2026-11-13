@@ -5,7 +5,6 @@ import {
   Truck, ArrowRight, FileText, ShoppingBag, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import SectionHeader from '@/components/home/SectionHeader';
 
 export default function TrustAndFinalCTASection() {
   const trustPoints = [
@@ -41,7 +40,7 @@ export default function TrustAndFinalCTASection() {
           return (
             <div
               key={idx}
-              className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-2.5 backdrop-blur-xs"
+              className="p-5 rounded-2xl bg-[#0A0A0A]/60 border border-[#2A2A2A]/80 space-y-2.5 backdrop-blur-xs"
             >
               <div className="w-10 h-10 rounded-xl bg-orange-500/15 text-[#FF5A1F] flex items-center justify-center">
                 <Icon className="w-5 h-5" />
@@ -49,7 +48,7 @@ export default function TrustAndFinalCTASection() {
               <h3 className="font-bold text-white text-base">
                 {item.title}
               </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-neutral-400 leading-relaxed">
                 {item.desc}
               </p>
             </div>
@@ -63,21 +62,25 @@ export default function TrustAndFinalCTASection() {
         {/* Glow circles */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#FF5A1F]/15 blur-[120px] pointer-events-none" />
 
-        <div className="relative z-10">
-          <SectionHeader
-            tone="dark"
-            align="center"
-            eyebrow="Global B2B Wholesale"
-            icon={<Sparkles className="h-3.5 w-3.5" />}
-            title="Start Your Bulk Trading Journey Today"
-            subtitle="Join 50,000+ verified manufacturers and enterprise buyers securing high-volume orders with guaranteed escrow protection."
-          />
+        <div className="relative z-10 max-w-2xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0A0A0A] text-[11px] font-bold text-[#FF5A1F] uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5" />
+            Global B2B Wholesale
+          </div>
+
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Start Your Bulk Trading Journey Today
+          </h2>
+
+          <p className="text-sm sm:text-base text-slate-300 font-normal text-pretty">
+            Join 50,000+ verified manufacturers and enterprise buyers securing high-volume orders with guaranteed escrow protection.
+          </p>
         </div>
 
         <div className="relative z-10 flex items-center justify-center gap-3.5 pt-2 flex-wrap">
           <Button
             asChild
-            className="h-12 px-7 rounded-xl bg-[#FF5A1F] hover:bg-[#e04f1a] text-white font-bold text-sm shadow-xl shadow-orange-950/50 transition-transform active:scale-95"
+            className="h-12 px-7 rounded-xl bg-[#C94400] hover:bg-[#e04f1a] text-white font-bold text-sm shadow-xl shadow-orange-950/50 transition-transform active:scale-95"
           >
             <Link to="/post-requirement" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
@@ -88,7 +91,7 @@ export default function TrustAndFinalCTASection() {
           <Button
             asChild
             variant="ghost"
-            className="h-12 px-7 rounded-xl bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 font-bold text-sm shadow-md transition-transform active:scale-95"
+            className="h-12 px-7 rounded-xl bg-[#0A0A0A] hover:bg-[#0A0A0A] text-white border border-[#2A2A2A] font-bold text-sm shadow-md transition-transform active:scale-95"
           >
             <Link to="/products" className="flex items-center gap-2">
               <ShoppingBag className="w-4 h-4 text-[#FF5A1F]" />

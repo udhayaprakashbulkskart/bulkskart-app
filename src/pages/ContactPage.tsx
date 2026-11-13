@@ -104,7 +104,7 @@ export default function ContactPage() {
       />
 
       {/* Hero */}
-      <div className="bg-[#1a1a2e] text-white py-12 px-4">
+      <div className="bg-[#C94400] text-white py-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-4">
             <MessageSquare className="w-3.5 h-3.5 text-[#FF5A00]" />
@@ -127,8 +127,8 @@ export default function ContactPage() {
             <p className="text-sm text-muted-foreground mb-5">Fill in the form and we'll respond within 24 hours.</p>
 
             {sent ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-4 bg-green-50 border border-green-200 rounded-xl text-center">
-                <CheckCircle2 className="w-12 h-12 text-green-500" />
+              <div className="flex flex-col items-center justify-center py-16 gap-4 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-xl text-center">
+                <CheckCircle2 className="w-12 h-12 text-[#FF7A2E]" />
                 <h3 className="text-lg font-bold text-foreground">Message Sent!</h3>
                 <p className="text-sm text-muted-foreground max-w-xs">Thank you for reaching out. Our team will get back to you within 24 hours.</p>
                 <Button variant="outline" onClick={() => { setSent(false); setForm({ name: '', email: '', subject: '', message: '' }); }}>
@@ -162,7 +162,7 @@ export default function ContactPage() {
                     required
                   />
                 </div>
-                <Button type="submit" disabled={sending} className="w-full bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-11 gap-2">
+                <Button type="submit" disabled={sending} className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-11 gap-2">
                   {sending ? (
                     <span className="flex items-center gap-2"><Send className="w-4 h-4 animate-pulse" /> Sending...</span>
                   ) : (
@@ -199,7 +199,7 @@ export default function ContactPage() {
                   href={WHATSAPP_MESSAGE_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-center gap-2 h-11 rounded-lg bg-[#25D366] hover:bg-[#1ebe5d] text-white text-sm font-bold transition-colors"
+                  className="flex items-center justify-center gap-2 h-11 rounded-lg bg-[#C94400] hover:bg-[#C94400] text-white text-sm font-bold transition-colors"
                 >
                   <MessageSquare className="w-4 h-4" />
                   Message BulkSkart on WhatsApp

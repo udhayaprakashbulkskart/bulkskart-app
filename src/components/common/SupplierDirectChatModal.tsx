@@ -216,7 +216,7 @@ export default function SupplierDirectChatModal({
                 <DialogDescription className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
                   <span>{company.city || company.country || 'Verified Factory'}</span>
                   <span>•</span>
-                  <span className="text-emerald-400 flex items-center gap-1">
+                  <span className="text-[#FF7A2E] flex items-center gap-1">
                     <Clock className="w-3 h-3" /> Typically replies in ~2h
                   </span>
                 </DialogDescription>
@@ -254,11 +254,11 @@ export default function SupplierDirectChatModal({
         {/* Body: Live Conversation View or Initial Inquiry Form */}
         {conversationStarted ? (
           <div className="p-5 space-y-4">
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-2.5 text-xs text-emerald-400">
+            <div className="p-3 bg-[#FF5A00]/10 border border-[#FF5A00]/20 rounded-lg flex items-center gap-2.5 text-xs text-[#FF7A2E]">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <div>
                 <p className="font-semibold">Message delivered to supplier dashboard inbox</p>
-                <p className="text-emerald-400/80 text-[11px]">The sales desk of {company.company_name} has received your inquiry at {email}.</p>
+                <p className="text-[#FF7A2E]/80 text-[11px]">The sales desk of {company.company_name} has received your inquiry at {email}.</p>
               </div>
             </div>
 
@@ -276,7 +276,7 @@ export default function SupplierDirectChatModal({
                   <div
                     className={`p-3 rounded-2xl max-w-[85%] text-xs whitespace-pre-wrap leading-relaxed shadow-sm ${
                       msg.sender === 'buyer'
-                        ? 'bg-primary text-primary-foreground rounded-tr-none'
+                        ? 'bg-[#1A0C05] text-primary-foreground rounded-tr-none'
                         : 'bg-muted text-foreground border border-border rounded-tl-none'
                     }`}
                   >
@@ -300,7 +300,7 @@ export default function SupplierDirectChatModal({
                   type="submit"
                   size="sm"
                   disabled={!followUpText.trim() || followUpSending}
-                  className="absolute right-1 top-1 bottom-1 h-8 px-3 bg-primary text-primary-foreground font-semibold gap-1 text-xs"
+                  className="absolute right-1 top-1 bottom-1 h-8 px-3 bg-[#C94400] text-primary-foreground font-semibold gap-1 text-xs"
                 >
                   {followUpSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   Send
@@ -429,7 +429,7 @@ export default function SupplierDirectChatModal({
             {/* Message Body */}
             <div>
               <label className="text-xs font-semibold text-foreground block mb-1">
-                Message / Specifications <span className="text-red-400">*</span>
+                Message / Specifications <span className="text-[#FF7A2E]">*</span>
               </label>
               <Textarea
                 value={message}
@@ -461,7 +461,7 @@ export default function SupplierDirectChatModal({
                   type="submit"
                   size="sm"
                   disabled={submitting}
-                  className="flex-1 md:flex-none h-9 px-5 bg-primary text-primary-foreground hover:bg-primary/90 font-bold gap-1.5 text-xs shadow-md"
+                  className="flex-1 md:flex-none h-9 px-5 bg-[#C94400] text-primary-foreground hover:bg-primary/90 font-bold gap-1.5 text-xs shadow-md"
                 >
                   {submitting ? (
                     <>

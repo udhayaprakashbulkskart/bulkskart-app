@@ -23,7 +23,8 @@ import {
   MessageSquare, RefreshCw, Sparkles, AlertCircle, ChevronRight,
   Search, SlidersHorizontal, Filter, X, Building2, MapPin,
   ShieldCheck, ChevronDown, CheckCircle2, Globe, Layers, ArrowUpDown,
-  Zap, PackageCheck, ExternalLink, Loader2
+  Zap, PackageCheck, ExternalLink, Loader2,
+  Truck, LayoutGrid, Wrench, Cpu, Shirt, Home, Network, Box, Wallet
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -332,6 +333,56 @@ function getInitialDisplayProducts(seed = createVisitSeed()): DisplayProduct[] {
     seed
   );
   return pickProductBatch(shuffled, 0, LANDING_DISPLAY_COUNT);
+}
+
+const FEATURE_STRIP = [
+  { icon: ShieldCheck, label: 'Verified', sub: 'Manufacturers', color: 'text-[#FF5A00]' },
+  { icon: Box, label: 'Bulk', sub: 'Pricing', color: 'text-[#FF5A00]' },
+  { icon: Layers, label: 'MOQ', sub: 'Min. 10 Pieces', color: 'text-[#FF5A00]' },
+  { icon: Truck, label: 'Free', sub: 'Delivery', color: 'text-[#FF7A2E]' },
+];
+
+/** Gold laurel wreath for the section title (desktop only). */
+function FeaturedLaurel({ side }: { side: 'left' | 'right' }) {
+  const id = `featured-laurel-${side}`;
+  return (
+    <svg
+      viewBox="0 0 40 80"
+      aria-hidden="true"
+      className="hidden h-16 w-9 shrink-0 sm:block"
+      style={side === 'right' ? { transform: 'scaleX(-1)' } : undefined}
+    >
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#F7C35A" />
+          <stop offset="1" stopColor="#B7791F" />
+        </linearGradient>
+      </defs>
+      <path d="M30 4 C 10 18, 8 46, 30 76" fill="none" stroke={`url(#${id})`} strokeWidth="2.2" strokeLinecap="round" />
+      {[14, 26, 38, 50, 62].map((y, i) => (
+        <ellipse
+          key={y}
+          cx={i % 2 ? 14 : 20}
+          cy={y}
+          rx="6"
+          ry="2.6"
+          transform={`rotate(${i % 2 ? -35 : 35} ${i % 2 ? 14 : 20} ${y})`}
+          fill={`url(#${id})`}
+        />
+      ))}
+    </svg>
+  );
+}
+
+/** Icon for a category pill, chosen from its label. */
+function categoryIcon(label: string) {
+  const l = label.toLowerCase();
+  if (l.includes('all')) return LayoutGrid;
+  if (l.includes('machin')) return Wrench;
+  if (l.includes('electr')) return Cpu;
+  if (l.includes('apparel') || l.includes('textile')) return Shirt;
+  if (l.includes('home') || l.includes('garden')) return Home;
+  return Box;
 }
 
 export default function FeaturedProductsSection() {
@@ -803,67 +854,90 @@ export default function FeaturedProductsSection() {
 
       <div className="w-full max-w-[1440px] mx-auto px-3.5 sm:px-5 md:px-6 relative z-10">
 
-        {/* ── 1. SECTION HEADER ────────────────────────── */}
-        <div className="mb-4 sm:mb-5">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
-            <div className="flex items-start gap-2.5">
-              <span className="w-1.5 h-7 md:h-8 bg-gradient-to-b from-[#FF5A00] to-[#FF7A00] rounded-full inline-block shrink-0 mt-1 shadow-[0_0_10px_#FF5A00]" />
+        {/* ── 1. SECTION HEADER — reference design: laurels, shield badge, title, subtitle, feature strip ── */}
+        <div className="mb-5 text-center sm:mb-6">
+          <div className="flex items-center justify-center gap-3 sm:gap-4">
+            <FeaturedLaurel side="left" />
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7A2E] to-[#C2410C] shadow-[0_0_40px_-6px_rgba(255,90,0,0.85)] sm:h-16 sm:w-16">
+              <ShieldCheck className="h-7 w-7 text-white sm:h-8 sm:w-8" strokeWidth={2.4} />
+            </div>
+            <h2 className="text-[30px] font-black leading-none tracking-tight sm:text-[40px]">
+              <span className="text-white">Verified </span>
+              <span className="text-[#FF5A00]">Bulk Products</span>
+            </h2>
+            <FeaturedLaurel side="right" />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[12px] text-slate-300 sm:text-[14px]">
+            <span>100% Verified Manufacturers</span>
+            <span className="text-neutral-300">•</span>
+            <span>Wholesale Only</span>
+            <span className="text-neutral-300">•</span>
+            <span>Min. Order 10 Pieces</span>
+            <span className="text-neutral-300">•</span>
+            <span className="flex items-center gap-1.5 font-semibold text-[#FF7A2E]">
+              <Truck className="h-4 w-4" />
+              Free Delivery
+            </span>
+          </div>
+
+          {/* Live rotation, item count and quick actions */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <span className="rounded-full border border-white/10 bg-[#161616]/[0.04] px-3 py-1 font-mono text-[11px] text-slate-300">
+              {totalCount.toLocaleString()}+ Items
+            </span>
+            {isDefaultBrowse && (
+              <span className="flex items-center gap-1.5 rounded-full border border-[#FF5A00]/35 bg-[#FF5A00]/10 px-3 py-1 text-[11px] font-semibold tabular-nums text-[#FF7A2E]">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#C94400]" />
+                Live 30s Rotation · {secondsLeft}s
+              </span>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                visitSeedRef.current = createVisitSeed();
+                if (isDefaultBrowse && catalogPool.length > 0) {
+                  const reshuffled = shuffleWithSeed(catalogPool, visitSeedRef.current);
+                  setCatalogPool(reshuffled);
+                  setRotationOffset(visitSeedRef.current % Math.max(1, reshuffled.length));
+                  setSecondsLeft(ROTATION_SECONDS);
+                  setIsRotating(true);
+                  if (rotateAnimRef.current) clearTimeout(rotateAnimRef.current);
+                  rotateAnimRef.current = setTimeout(() => setIsRotating(false), 420);
+                }
+                fetchProducts(1, false);
+              }}
+              disabled={loading}
+              className="h-8 rounded-full border-white/15 bg-[#161616]/[0.04] px-3 text-xs text-slate-200 hover:bg-white/10"
+              title="Shuffle & refresh featured catalog"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading || isRotating ? 'animate-spin text-[#FF5A00]' : ''}`} />
+              <span className="ml-1.5 hidden sm:inline">Refresh</span>
+            </Button>
+            <Link
+              to="/products"
+              className="group flex h-8 items-center gap-1.5 rounded-full border border-[#FF5A00]/50 px-3 text-xs font-bold text-[#FF7A2E] transition-all hover:border-[#FF5A00] hover:bg-[#B33D00]/10 sm:text-sm"
+            >
+              <span>View All ({totalCount.toLocaleString()})</span>
+              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Feature strip */}
+        <div className="mb-5 grid grid-cols-2 overflow-hidden rounded-2xl border border-[#FF5A00]/25 bg-gradient-to-r from-[#0d1320] via-[#FF5A00]/[0.06] to-[#0d1320] shadow-[0_0_24px_-14px_rgba(255,90,0,0.25)] lg:grid-cols-4">
+          {FEATURE_STRIP.map(({ icon: Icon, label, sub, color }, i) => (
+            <div
+              key={label}
+              className={`flex items-center gap-3 px-4 py-4 sm:px-6 ${i % 2 === 0 ? 'border-r border-white/10' : ''} ${i < 2 ? 'border-b border-white/10 lg:border-b-0' : ''} ${i < 3 ? 'lg:border-r lg:border-white/10' : 'lg:border-r-0'}`}
+            >
+              <Icon className={`h-7 w-7 shrink-0 sm:h-8 sm:w-8 ${color}`} strokeWidth={1.8} />
               <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground tracking-tight leading-tight">
-                    Featured <span className="text-[#FF5A00]">Products</span>
-                  </h2>
-                  <span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-mono border border-border">
-                    {totalCount.toLocaleString()}+ Items
-                  </span>
-                  {isDefaultBrowse && (
-                    <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm tabular-nums">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Live 30s Rotation · {secondsLeft}s
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                  Direct wholesale catalog from verified global factories — fresh batch every 30 seconds
-                </p>
+                <div className="text-[15px] font-black leading-tight text-white sm:text-[17px]">{label}</div>
+                <div className="mt-0.5 text-[11px] text-neutral-400 sm:text-[12px]">{sub}</div>
               </div>
             </div>
-
-            {/* Quick Actions & Links */}
-            <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  visitSeedRef.current = createVisitSeed();
-                  if (isDefaultBrowse && catalogPool.length > 0) {
-                    const reshuffled = shuffleWithSeed(catalogPool, visitSeedRef.current);
-                    setCatalogPool(reshuffled);
-                    setRotationOffset(visitSeedRef.current % Math.max(1, reshuffled.length));
-                    setSecondsLeft(ROTATION_SECONDS);
-                    setIsRotating(true);
-                    if (rotateAnimRef.current) clearTimeout(rotateAnimRef.current);
-                    rotateAnimRef.current = setTimeout(() => setIsRotating(false), 420);
-                  }
-                  fetchProducts(1, false);
-                }}
-                disabled={loading}
-                className="h-8 px-2.5 bg-card border-border hover:bg-muted text-xs rounded-lg"
-                title="Shuffle & refresh featured catalog"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading || isRotating ? 'animate-spin text-[#FF5A00]' : ''}`} />
-                <span className="hidden sm:inline ml-1.5">Refresh</span>
-              </Button>
-
-              <Link
-                to="/products"
-                className="h-8 border border-[#FF5A00]/50 hover:border-[#FF5A00] text-[#FF5A00] hover:bg-[#FF5A00]/10 font-bold text-xs sm:text-sm px-3 rounded-lg flex items-center gap-1.5 transition-all group"
-              >
-                <span>View All ({totalCount.toLocaleString()})</span>
-                <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </Link>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* ── 2. DYNAMIC CATEGORY PILL NAVIGATION ───────────────────────────── */}
@@ -871,7 +945,7 @@ export default function FeaturedProductsSection() {
           {/* Scroll left button */}
           <button
             onClick={() => scrollCategories('left')}
-            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-card border border-border text-foreground items-center justify-center hover:bg-[#FF5A00] hover:text-white hover:border-[#FF5A00] transition-colors shadow-lg"
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-card border border-border text-foreground items-center justify-center hover:bg-[#C94400] hover:text-white hover:border-[#FF5A00] transition-colors shadow-lg"
             aria-label="Scroll categories left"
           >
             <ChevronRight className="w-4 h-4 rotate-180" />
@@ -885,6 +959,7 @@ export default function FeaturedProductsSection() {
           >
             {MARKETPLACE_CATEGORIES.map(cat => {
               const active = selectedCategory === cat.id;
+              const Icon = categoryIcon(cat.label);
               return (
                 <button
                   key={cat.id}
@@ -893,12 +968,13 @@ export default function FeaturedProductsSection() {
                     setSelectedSubCategory('all');
                     setPage(1);
                   }}
-                  className={`whitespace-nowrap flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm transition-all shrink-0 font-medium ${
+                  className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${
                     active
-                      ? 'bg-gradient-to-r from-[#FF5A00] to-[#e04f00] text-white font-bold shadow-[0_0_14px_rgba(255,90,0,0.35)] border border-[#FF5A00]'
-                      : 'bg-card text-foreground/80 hover:text-foreground border border-border hover:border-foreground/20 hover:bg-muted'
+                      ? 'border-transparent bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-white shadow-[0_8px_24px_-8px_rgba(255,90,0,0.8)]'
+                      : 'border-white/10 bg-[#0d1320] text-slate-200 hover:border-white/25 hover:text-white'
                   }`}
                 >
+                  <Icon className="h-4 w-4 shrink-0" />
                   <span>{cat.label}</span>
                 </button>
               );
@@ -908,7 +984,7 @@ export default function FeaturedProductsSection() {
           {/* Scroll right button */}
           <button
             onClick={() => scrollCategories('right')}
-            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-card border border-border text-foreground items-center justify-center hover:bg-[#FF5A00] hover:text-white hover:border-[#FF5A00] transition-colors shadow-lg"
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-card border border-border text-foreground items-center justify-center hover:bg-[#C94400] hover:text-white hover:border-[#FF5A00] transition-colors shadow-lg"
             aria-label="Scroll categories right"
           >
             <ChevronRight className="w-4 h-4" />
@@ -1030,7 +1106,7 @@ export default function FeaturedProductsSection() {
                     size="sm"
                     className={`h-9 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 flex-1 sm:flex-initial ${
                       activeFilterCount > 0
-                        ? 'bg-[#FF5A00] text-white border-[#FF5A00]'
+                        ? 'bg-[#C94400] text-white border-[#FF5A00]'
                         : 'bg-card text-foreground border-border hover:bg-muted'
                     }`}
                   >
@@ -1142,7 +1218,7 @@ export default function FeaturedProductsSection() {
                     {/* Verified Only Toggle */}
                     <div className="pt-2 border-t border-border flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                        <ShieldCheck className="w-4 h-4 text-[#FF7A2E]" />
                         <span className="text-foreground font-medium">Verified Suppliers Only</span>
                       </div>
                       <input
@@ -1173,7 +1249,7 @@ export default function FeaturedProductsSection() {
                     <div className="pt-4 border-t border-border space-y-2">
                       <Button
                         onClick={() => setMobileFilterOpen(false)}
-                        className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-9 rounded-lg"
+                        className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-9 rounded-lg"
                       >
                         Apply Filters ({totalCount.toLocaleString()} Results)
                       </Button>
@@ -1228,7 +1304,7 @@ export default function FeaturedProductsSection() {
             <p className="text-muted-foreground text-xs mb-4">{error}</p>
             <Button
               onClick={() => fetchProducts(1, false)}
-              className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs h-8 px-4 rounded-lg"
+              className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-8 px-4 rounded-lg"
             >
               Retry Loading Catalog
             </Button>
@@ -1243,7 +1319,7 @@ export default function FeaturedProductsSection() {
             </p>
             <Button
               onClick={handleResetFilters}
-              className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs sm:text-sm h-9 px-5 rounded-lg shadow-lg shadow-[#FF5A00]/20"
+              className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs sm:text-sm h-9 px-5 rounded-lg shadow-lg shadow-[#FF5A00]/20"
             >
               Clear All Filters
             </Button>
@@ -1278,7 +1354,7 @@ export default function FeaturedProductsSection() {
                             className="w-full h-full object-cover"
                             sizes="165px"
                           />
-                          <span className="absolute top-1 left-1 bg-[#FF5A00] text-white text-[8.5px] font-bold px-1.5 py-0.2 rounded shadow">
+                          <span className="absolute top-1 left-1 bg-[#C94400] text-white text-[8.5px] font-bold px-1.5 py-0.2 rounded shadow">
                             {product.badgeLabel}
                           </span>
                         </div>
@@ -1292,14 +1368,18 @@ export default function FeaturedProductsSection() {
                             <div className="text-[#FF5A00] font-black text-xs leading-none">
                               {minFormatted}
                             </div>
-                            <div className="text-[9.5px] text-amber-500 font-semibold mt-0.5 truncate">
+                            <div className="text-[9.5px] text-[#FF7A2E] font-semibold mt-0.5 truncate">
                               {product.moq}
+                            </div>
+                            <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#F7C35A] via-[#E0A526] to-[#B7791F] px-1.5 py-0.5 text-[9px] font-extrabold text-[#2a1600] shadow-[0_0_10px_-2px_rgba(224,165,38,0.9)]">
+                              <Wallet className="h-2.5 w-2.5" />
+                              Loan Eligible
                             </div>
                           </div>
                           <Button
                             onClick={() => openQuoteModal(product)}
                             size="sm"
-                            className="w-full h-7 mt-2 bg-[#FF5A00] hover:bg-[#e04f00] text-white text-[10px] font-bold rounded-lg p-0"
+                            className="w-full h-7 mt-2 bg-[#C94400] hover:bg-[#B33D00] text-white text-[10px] font-bold rounded-lg p-0"
                           >
                             Get Best Price
                           </Button>
@@ -1325,10 +1405,10 @@ export default function FeaturedProductsSection() {
               return (
                 <div
                   key={`${product.id}-${rotationOffset}`}
-                  className="group bg-card hover:bg-muted/40 border border-border hover:border-[#FF5A00]/50 rounded-xl overflow-hidden transition-all duration-300 flex flex-col shadow-sm hover:shadow-[0_8px_24px_rgba(255,90,0,0.12)] relative animate-in fade-in duration-300"
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#FF5A00]/35 bg-gradient-to-b from-[#0e1522] to-[#0a0f1a] shadow-[0_18px_50px_-22px_rgba(255,90,0,0.55)] transition-all duration-300 hover:-translate-y-1 hover:border-[#FF5A00] animate-in fade-in duration-300"
                 >
                     {/* ── Product Image Container ── */}
-                    <div className="relative aspect-square w-full bg-muted overflow-hidden">
+                    <div className="relative aspect-square w-full overflow-hidden bg-[#0a0f1a]">
                       <SafeImage
                         src={product.img}
                         alt={product.name}
@@ -1342,147 +1422,114 @@ export default function FeaturedProductsSection() {
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
                       />
 
-                    <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/25 to-transparent pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#0a0f1a] to-transparent pointer-events-none" />
 
-                    {/* Top-Left Dynamic Badge */}
-                    <div className="absolute top-1.5 left-1.5 z-10">
-                      <span className={`inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded shadow ${
-                        product.badgeType === 'best_seller'
-                          ? 'bg-amber-500 text-black'
-                          : product.badgeType === 'bulk_deal'
-                          ? 'bg-[#FF5A00] text-white'
-                          : product.badgeType === 'new_arrival'
-                          ? 'bg-[#FF5A00] text-white'
-                          : 'bg-emerald-600 text-white'
-                      }`}>
-                        {product.badgeType === 'best_seller' && <Crown className="w-2.5 h-2.5" />}
-                        {product.badgeType === 'bulk_deal' && <Tag className="w-2.5 h-2.5" />}
-                        {product.badgeType === 'new_arrival' && <Sparkles className="w-2.5 h-2.5" />}
-                        {product.badgeType === 'popular' && <Flame className="w-2.5 h-2.5" />}
-                        <span>{product.badgeLabel}</span>
+                    {/* Top-left: Verified Product badge (reference design) */}
+                    <div className="absolute left-2.5 top-2.5 z-10">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#C94400] to-[#B33D00] px-2.5 py-1 text-[10px] font-bold text-white shadow-lg sm:text-[11px]">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Verified Product
                       </span>
                     </div>
 
-                    {/* Top-Right Wishlist Button */}
+                    {/* Top-right: save button */}
                     <button
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         toggleFavorite(product.id, product.name);
                       }}
-                      className="absolute top-1.5 right-1.5 z-10 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all"
+                      className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-[#0A0A0A]/50 backdrop-blur-md transition-transform hover:scale-110"
                       aria-label="Save to wishlist"
                     >
                       <Heart
-                        className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${
-                          isFav ? 'fill-red-500 text-red-500' : 'text-white/80 hover:text-white'
-                        }`}
+                        className={`h-4 w-4 ${isFav ? 'fill-[#FF5A00] text-[#FF5A00]' : 'text-white'}`}
                       />
                     </button>
-
-                    {/* Bottom-right image badge: Origin Country (without overlapping bottom-left Representative image tag) */}
-                    <div className="absolute bottom-1.5 right-1.5 z-10 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] text-white font-medium">
-                      <span>{product.countryFlag || '🌐'}</span>
-                      <span className="truncate max-w-[80px]">{product.country}</span>
-                    </div>
                   </div>
 
-                  {/* ── Product Card Body ── */}
-                  <div className="p-2 sm:p-2.5 md:p-3 flex-1 flex flex-col">
+                  {/* ── Product Card Body (reference design) ── */}
+                  <div className="flex flex-1 flex-col p-3 sm:p-3.5">
                     {/* Product Title */}
                     <Link
                       to={product.slug ? `/products/${product.slug}` : `/products/${product.id}`}
-                      className="block group-hover:text-[#FF5A00] transition-colors"
+                      className="block transition-colors group-hover:text-[#FF7A2E]"
                     >
                       <h3
-                        className="font-bold text-foreground text-xs sm:text-[13px] md:text-sm leading-snug line-clamp-2 min-h-[2.4em] mb-1"
+                        className="min-h-[2.6em] line-clamp-2 text-[14px] font-bold leading-snug text-white sm:text-[15px]"
                         title={product.name}
                       >
                         {product.name}
                       </h3>
                     </Link>
 
-                    {/* Price Range */}
-                    <div className="mb-1.5">
-                      {(() => {
-                        const isIndia =
-                          countryFilter === 'India' ||
-                          product.country === 'India' ||
-                          countryConfig.code === 'IN' ||
-                          countryConfig.currency === 'INR' ||
-                          currencyInfo.currency === 'INR';
-                        const inrRate = currencyInfo.rate || 83.5;
-                        const minFormatted = isIndia
-                          ? `₹${Math.round(product.inrMin || (product.usdMin * inrRate)).toLocaleString('en-IN')}`
-                          : formatPrice(product.usdMin);
-                        const maxFormatted = isIndia
-                          ? `₹${Math.round(product.inrMax || (product.usdMax * inrRate)).toLocaleString('en-IN')}`
-                          : formatPrice(product.usdMax);
+                    {/* Price */}
+                    {(() => {
+                      const isIndia =
+                        countryFilter === 'India' ||
+                        product.country === 'India' ||
+                        countryConfig.code === 'IN' ||
+                        countryConfig.currency === 'INR' ||
+                        currencyInfo.currency === 'INR';
+                      const inrRate = currencyInfo.rate || 83.5;
+                      const minFormatted = isIndia
+                        ? `₹${Math.round(product.inrMin || (product.usdMin * inrRate)).toLocaleString('en-IN')}`
+                        : formatPrice(product.usdMin);
+                      const maxFormatted = isIndia
+                        ? `₹${Math.round(product.inrMax || (product.usdMax * inrRate)).toLocaleString('en-IN')}`
+                        : formatPrice(product.usdMax);
 
-                        return (
-                          <div className="text-[#FF5A00] font-black text-xs sm:text-sm md:text-[15px] leading-tight flex items-center flex-wrap gap-1">
-                            <span>{minFormatted}</span>
-                            {product.usdMax && product.usdMax !== product.usdMin && (
-                              <span className="text-muted-foreground font-semibold text-[10px] sm:text-xs">
-                                - {maxFormatted}
-                              </span>
-                            )}
-                            {isIndia && (
-                              <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.2 rounded border border-emerald-500/20">
-                                INR
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()}
-                      <div className="text-[10px] text-muted-foreground font-medium mt-0.5 flex items-center justify-between">
-                        <span className="text-amber-600 dark:text-amber-400 font-semibold">{product.moq}</span>
-                        <span className="text-muted-foreground">Wholesale</span>
-                      </div>
-                    </div>
-
-                    {/* Supplier info & verification badge */}
-                    <div className="pt-1.5 border-t border-border mb-2">
-                      <div className="flex items-center gap-1 text-[11px] text-foreground font-medium truncate">
-                        <Building2 className="w-3 h-3 text-muted-foreground shrink-0" />
-                        <span className="truncate" title={product.supplierName}>{product.supplierName}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-0.5">
-                        {/* Rating */}
-                        <div className="flex items-center gap-0.5 text-amber-500 font-semibold">
-                          <Star className="w-2.5 h-2.5 fill-amber-500" />
-                          <span>{product.rating.toFixed(1)}</span>
-                          <span className="text-muted-foreground">({product.reviewCount})</span>
+                      return (
+                        <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5">
+                          <span className="text-[17px] font-black leading-none text-[#FF7A2E] sm:text-[19px]">{minFormatted}</span>
+                          {product.usdMax && product.usdMax !== product.usdMin && (
+                            <span className="text-[11px] font-semibold text-neutral-400">– {maxFormatted}</span>
+                          )}
+                          <span className="text-[11px] text-neutral-400">/ Piece</span>
                         </div>
+                      );
+                    })()}
 
-                        {/* Verified badge */}
-                        {product.isVerifiedSupplier && (
-                          <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium text-[9px] bg-emerald-500/10 px-1 py-0.2 rounded border border-emerald-500/20">
-                            <ShieldCheck className="w-2.5 h-2.5" />
-                            <span>Verified</span>
-                          </span>
-                        )}
+                    {/* MOQ pill */}
+                    <div className="mt-2.5 inline-flex w-fit items-center gap-1.5 rounded-lg border border-[#FF5A00]/50 bg-[#FF5A00]/5 px-2.5 py-1 text-[12px] text-slate-200">
+                      <Box className="h-3.5 w-3.5 text-[#FF7A2E]" />
+                      <span className="font-bold text-[#FF7A2E]">{product.moq}</span>
+                    </div>
+
+                    {/* Free delivery + loan eligibility pills */}
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <div className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-[#FF5A00]/50 bg-[#FF5A00]/10 px-2.5 py-1 text-[12px] font-bold text-[#FF7A2E]">
+                        <Truck className="h-3.5 w-3.5" />
+                        Free Delivery
+                      </div>
+                      <div className="inline-flex w-fit items-center gap-1.5 rounded-full bg-gradient-to-r from-[#F7C35A] via-[#E0A526] to-[#B7791F] px-2.5 py-1 text-[12px] font-extrabold text-[#2a1600] shadow-[0_0_16px_-2px_rgba(224,165,38,0.9)] ring-1 ring-[#F7C35A]/60">
+                        <Wallet className="h-3.5 w-3.5" />
+                        Loan Eligible
                       </div>
                     </div>
 
-                    {/* ── Action Buttons ── */}
-                    {/* View Details + Get Quote (#FF5A00 brand button) */}
-                    <div className="mt-auto grid grid-cols-2 gap-1.5 pt-1">
-                      <Link
-                        to={product.slug ? `/products/${product.slug}` : `/products/${product.id}`}
-                        className="h-7 sm:h-7.5 border border-border hover:border-primary text-foreground bg-card hover:bg-muted text-[10px] sm:text-[11px] font-semibold rounded-lg flex items-center justify-center transition-colors text-center px-1"
-                      >
-                        Details
-                      </Link>
-
-                      <Button
-                        onClick={() => openQuoteModal(product)}
-                        className="h-7 sm:h-7.5 bg-[#FF5A00] hover:bg-[#e04f00] text-white text-[10px] sm:text-[11px] font-bold rounded-lg shadow-sm hover:shadow-[0_0_10px_rgba(255,90,0,0.5)] transition-all px-1"
-                      >
-                        Get Best Price
-                      </Button>
+                    {/* Supplier + country */}
+                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/10 pt-2.5 text-[12px]">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <Building2 className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+                        <span className="truncate text-slate-200" title={product.supplierName}>{product.supplierName}</span>
+                        {product.isVerifiedSupplier && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[#FF7A2E]" />}
+                      </div>
+                      <span className="flex shrink-0 items-center gap-1 text-slate-300">
+                        <span className="text-[13px] leading-none">{product.countryFlag || '🌐'}</span>
+                        <span className="max-w-[80px] truncate">{product.country}</span>
+                      </span>
                     </div>
+
+                    {/* Primary action */}
+                    <Button
+                      onClick={() => openQuoteModal(product)}
+                      className="group/btn mt-3 h-10 w-full rounded-xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-[13px] font-bold text-white shadow-[0_10px_24px_-10px_rgba(255,90,0,0.9)] transition-transform hover:opacity-95 active:scale-[0.98]"
+                    >
+                      <PackageCheck className="mr-2 h-4 w-4" />
+                      <span className="truncate">Buy in Bulk</span>
+                      <ArrowRight className="ml-auto h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+                    </Button>
                   </div>
                 </div>
               );
@@ -1502,7 +1549,7 @@ export default function FeaturedProductsSection() {
               <Button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs sm:text-sm h-10 px-6 sm:px-8 rounded-full shadow-lg shadow-[#FF5A00]/25 transition-all flex items-center gap-2 group"
+                className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs sm:text-sm h-10 px-6 sm:px-8 rounded-full shadow-lg shadow-[#FF5A00]/25 transition-all flex items-center gap-2 group"
               >
                 {loadingMore ? (
                   <>
@@ -1518,7 +1565,7 @@ export default function FeaturedProductsSection() {
               </Button>
             ) : (
               <div className="text-xs text-muted-foreground flex items-center gap-1.5 bg-card px-4 py-2 rounded-full border border-border">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#FF7A2E]" />
                 <span>You've reached the end of the filtered catalog. Explore more in the complete Products Directory.</span>
               </div>
             )}

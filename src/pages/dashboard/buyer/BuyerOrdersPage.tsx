@@ -15,11 +15,11 @@ import OrderStatusTimeline from '@/components/common/OrderStatusTimeline';
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   pending:    { label: 'Pending',    cls: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30' },
-  confirmed:  { label: 'Confirmed',  cls: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
-  processing: { label: 'Processing', cls: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
-  shipped:    { label: 'Shipped',    cls: 'bg-purple-100 text-purple-700 border-purple-300' },
-  delivered:  { label: 'Delivered',  cls: 'bg-green-100 text-green-700 border-green-300' },
-  cancelled:  { label: 'Cancelled',  cls: 'bg-red-100 text-red-700 border-red-300' },
+  confirmed:  { label: 'Confirmed',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  processing: { label: 'Processing', cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  shipped:    { label: 'Shipped',    cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  delivered:  { label: 'Delivered',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  cancelled:  { label: 'Cancelled',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
 };
 
 function pipelineStatus(o: OrderRow): PipelineStatus {
@@ -66,9 +66,8 @@ export default function BuyerOrdersPage() {
       <PageMeta title="My Orders — Buyer | BulkSkart" description="" robots="noindex, nofollow" />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
-          <div className="bs-glass mb-6 rounded-3xl p-4">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Fulfilment</p>
-            <h1 className="text-2xl font-black text-foreground">My Orders</h1>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-foreground">My Orders</h1>
             <p className="text-sm text-muted-foreground">Track your orders from placement to delivery</p>
           </div>
 
@@ -76,7 +75,7 @@ export default function BuyerOrdersPage() {
             {(['all', 'active', 'delivered', 'cancelled'] as const).map(f => (
               <button key={f} onClick={() => setFilter(f)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  filter === f ? 'bg-primary text-primary-foreground border-primary'
+                  filter === f ? 'bg-[#C94400] text-primary-foreground border-primary'
                     : 'bg-card text-muted-foreground border-border hover:border-primary/40'}`}>
                 {f.charAt(0).toUpperCase() + f.slice(1)}
                 <span className="ml-1.5 opacity-70">({counts[f]})</span>
@@ -92,7 +91,7 @@ export default function BuyerOrdersPage() {
               <p className="font-semibold text-foreground mb-1">No orders yet</p>
               <p className="text-sm text-muted-foreground mb-4">Accept a supplier quote to create your first order.</p>
               <Link to="/dashboard/buyer/quotes">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+                <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
                   <ArrowRight className="w-4 h-4" /> Browse Received Quotes
                 </Button>
               </Link>
@@ -122,7 +121,7 @@ export default function BuyerOrdersPage() {
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-foreground">{order.requirements?.title ?? 'Order'}</p>
-                            {order.companies?.verification_status === 'verified' && <ShieldCheck className="w-3.5 h-3.5 text-green-500" />}
+                            {order.companies?.verification_status === 'verified' && <ShieldCheck className="w-3.5 h-3.5 text-[#FF7A2E]" />}
                           </div>
                           <p className="text-xs text-muted-foreground">{order.companies?.company_name ?? '—'}</p>
                         </div>

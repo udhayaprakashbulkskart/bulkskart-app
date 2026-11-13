@@ -148,7 +148,7 @@ export default function ProductReviewsAndRatingSection({
             type="button"
             variant="outline"
             onClick={() => setShowReportModal(true)}
-            className="border-red-500/30 text-red-500 hover:bg-red-500/10 text-xs h-9 rounded-xl flex items-center gap-1.5"
+            className="border-[#FF5A00]/30 text-[#FF7A2E] hover:bg-[#B33D00]/10 text-xs h-9 rounded-xl flex items-center gap-1.5"
           >
             <Flag className="w-3.5 h-3.5" />
             <span>Report Product</span>
@@ -178,7 +178,7 @@ export default function ProductReviewsAndRatingSection({
             <div>
               <Button
                 onClick={() => setShowAuthModal(true)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 rounded-xl px-5"
+                className="bg-[#C94400] hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 rounded-xl px-5"
               >
                 Log In to Review
               </Button>
@@ -225,7 +225,7 @@ export default function ProductReviewsAndRatingSection({
               <Button
                 type="submit"
                 disabled={submitting}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 rounded-xl px-4"
+                className="bg-[#C94400] hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 rounded-xl px-4"
               >
                 {submitting ? (
                   <>
@@ -271,7 +271,7 @@ export default function ProductReviewsAndRatingSection({
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-bold text-foreground">{rev.userName}</span>
                       {rev.isVerifiedBuyer && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#FF7A2E] dark:text-[#FF7A2E]">
                           <CheckCircle2 className="w-3 h-3" /> Verified Buyer
                         </span>
                       )}
@@ -312,7 +312,7 @@ export default function ProductReviewsAndRatingSection({
 
       {/* ── Auth Required Modal ── */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md bg-[#0B132B] border-slate-700 text-white p-6 rounded-2xl shadow-2xl">
+        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md bg-[#1A0C05] border-[#2A2A2A] text-white p-6 rounded-2xl shadow-2xl">
           <DialogHeader className="mb-2">
             <div className="w-11 h-11 rounded-2xl bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 text-[#FF5A1F] flex items-center justify-center mx-auto mb-2">
               <Lock className="w-6 h-6" />
@@ -320,7 +320,7 @@ export default function ProductReviewsAndRatingSection({
             <DialogTitle className="text-center text-base sm:text-lg font-bold text-white">
               Login Required
             </DialogTitle>
-            <DialogDescription className="text-center text-xs text-slate-400 mt-1">
+            <DialogDescription className="text-center text-xs text-neutral-400 mt-1">
               To ensure authentic reviews and protect marketplace integrity, only logged-in users can rate products and post comments.
             </DialogDescription>
           </DialogHeader>
@@ -331,7 +331,7 @@ export default function ProductReviewsAndRatingSection({
                 setShowAuthModal(false);
                 navigate(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
               }}
-              className="w-full bg-[#FF5A1F] hover:bg-[#e04f1a] text-white font-semibold text-xs h-10 rounded-xl"
+              className="w-full bg-[#C94400] hover:bg-[#e04f1a] text-white font-semibold text-xs h-10 rounded-xl"
             >
               Log In to Your Account
             </Button>
@@ -341,7 +341,7 @@ export default function ProductReviewsAndRatingSection({
                 setShowAuthModal(false);
                 navigate(`/register?returnUrl=${encodeURIComponent(window.location.pathname)}`);
               }}
-              className="w-full border-slate-700 bg-transparent text-slate-300 hover:bg-slate-800 text-xs h-10 rounded-xl"
+              className="w-full border-[#2A2A2A] bg-transparent text-slate-300 hover:bg-[#0A0A0A] text-xs h-10 rounded-xl"
             >
               Create Free Account
             </Button>

@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
-  Package, Send, Sparkles, ShieldCheck, Clock, CheckCircle2,
-  Globe2, ArrowRight, Building2, HelpCircle
+  Package, Send, ShieldCheck, Zap, Globe2, Building2, FileText, Factory, Flame, Layers,
+  Boxes, Wrench, MapPin, Ship, Handshake, Scale,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import SectionHeader from '@/components/home/SectionHeader';
 
 const POPULAR_CATEGORIES = [
   'Machinery & Equipment',
@@ -22,9 +19,21 @@ const POPULAR_CATEGORIES = [
   'Agricultural Commodities',
 ];
 
+
+const FEATURES = [
+  { icon: ShieldCheck, label: 'Zero Buyer', sub: 'Commission' },
+  { icon: Zap, label: 'Quotes in', sub: '~4 Hours' },
+  { icon: Globe2, label: 'Global', sub: 'Suppliers' },
+  { icon: Handshake, label: 'Verified', sub: 'Manufacturers' },
+];
+
+const inputClass =
+  'h-12 w-full rounded-xl border border-white/10 bg-[#0c0c0c] px-4 text-[14px] text-white placeholder:text-neutral-400 transition-colors focus:border-[#FF5A00] focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/25';
+
 export default function PostRequirementsHomeSection() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const reduce = useReducedMotion();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Industrial Fasteners & Hardware');
   const [quantity, setQuantity] = useState('');
@@ -61,181 +70,201 @@ export default function PostRequirementsHomeSection() {
     navigate(`/post-requirement?${params.toString()}`);
   };
 
+  const quick = [
+    { label: '5-Ply Shipping Boxes', icon: Boxes, values: { t: 'Corrugated 5-Ply Shipping Boxes 40x30x30 cm', c: 'Packaging & Corrugated Boxes', q: '10000', u: 'Pieces' } },
+    { label: 'SS 304 Flanges', icon: Wrench, values: { t: 'Grade 304 Stainless Steel Flanges ANSI B16.5', c: 'Steel, Aluminum & Metals', q: '500', u: 'Pieces' } },
+    { label: 'Cotton Yarn 30s', icon: Layers, values: { t: '100% Combed Cotton Ring-Spun Yarn 30s', c: 'Textiles & Apparel Fabrics', q: '20', u: 'Metric Tons' } },
+  ];
+
   return (
-    <section className="relative z-20 pt-10 pb-4 md:pt-14 md:pb-6 bg-[#0B0F19] border-t border-border/80">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-5 md:px-6">
-        
-        {/* Section Header */}
-        <div className="mb-8">
-          <SectionHeader
-            eyebrow="Direct Factory Sourcing"
-            icon={<Sparkles className="h-3.5 w-3.5" />}
-            title="Post Buying Requirement"
-            subtitle="Tell verified global manufacturers what you need. Receive genuine wholesale quotations with CIF/FOB pricing within hours."
-            action={
-              /* Sourcing guarantee badges */
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
-                  <span>Zero Buyer Commission</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="h-4 w-4 shrink-0 text-primary" />
-                  <span>Quotes in ~4 Hours</span>
-                </div>
-              </div>
-            }
-          />
+    <section className="relative isolate overflow-hidden border-t border-white/10 bg-[#070707] py-10 text-white md:py-14">
+      <div aria-hidden="true" className="pointer-events-none absolute -top-32 right-10 h-96 w-96 rounded-full bg-[#FF5A00]/10 blur-[120px]" />
+
+      <div className="relative mx-auto max-w-[1400px] px-4 sm:px-5 md:px-6">
+        {/* Hero header */}
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0c0c0c]">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0c0c0c] via-[#0c0c0c]/85 to-transparent" />
+
+          <div className="relative p-6 md:p-10">
+            <motion.span
+              initial={reduce ? false : { opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 rounded-full border border-[#FF5A00]/50 bg-[#FF5A00]/10 px-3.5 py-1.5 text-[12px] font-bold text-[#FF7A2E]"
+            >
+              <Factory className="h-4 w-4" /> Direct Factory Sourcing
+            </motion.span>
+
+            <motion.h2
+              initial={reduce ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.6 }}
+              className="mt-4 text-[32px] font-black leading-[1.05] tracking-tight sm:text-[42px]"
+            >
+              Post Buying <span className="text-[#FF5A00]">Requirement</span>
+            </motion.h2>
+            <motion.p
+              initial={reduce ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="mt-3 max-w-xl text-[14px] leading-relaxed text-slate-300 sm:text-[15px]"
+            >
+              Tell verified global manufacturers what you need. Receive genuine wholesale quotations with CIF/FOB pricing within hours.
+            </motion.p>
+
+            <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-0 md:divide-x md:divide-white/10">
+              {FEATURES.map(({ icon: Icon, label, sub }, i) => (
+                <motion.div
+                  key={label}
+                  initial={reduce ? false : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.08 }}
+                  className="flex items-center gap-3 md:px-5"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FF5A00]/15 text-[#FF5A00]">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="text-[12px] font-semibold leading-tight text-slate-200">{label}<span className="block text-neutral-400">{sub}</span></span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Interactive Post Requirement Card */}
-        <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        {/* Form card */}
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 22 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-6 overflow-hidden rounded-3xl border border-[#FF5A00]/35 bg-gradient-to-b from-[#141414] to-[#0a0a0a] shadow-[0_20px_60px_-24px_rgba(255,90,0,0.5)]"
+        >
+          <div className="flex items-center">
+            <span className="flex items-center gap-2.5 rounded-br-2xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] px-5 py-3.5 text-[14px] font-bold text-white">
+              <FileText className="h-5 w-5" /> Create a RFQ (Request for Quotation)
+            </span>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              
-              {/* Product / Requirement Title */}
-              <div className="md:col-span-5 space-y-1.5">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Package className="w-3.5 h-3.5 text-primary" /> Product / Item Required <span className="text-destructive">*</span>
+          <form onSubmit={handleSubmit} className="space-y-5 p-5 md:p-7">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <label className="flex items-center gap-2 text-[13px] font-bold text-white">
+                  <Package className="h-4 w-4 text-[#FF5A00]" /> Product / Item Required <span className="text-[#FF5A00]">*</span>
                 </label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Stainless Steel Hex Bolts DIN 933 M12"
-                  required
-                  className="bg-background border-border text-foreground text-sm h-11"
-                />
+                <div className="relative">
+                  <input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. Stainless Steel Hex Bolts DIN 933 M12"
+                    required
+                    className={`${inputClass} pr-11`}
+                  />
+                  <Flame className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#FF5A00]" />
+                </div>
               </div>
 
-              {/* Category Dropdown */}
-              <div className="md:col-span-4 space-y-1.5">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-primary" /> Industry Category
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-[13px] font-bold text-white">
+                  <Layers className="h-4 w-4 text-[#FF5A00]" /> Industry Category
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full bg-background border border-border rounded-md px-3 text-sm h-11 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  className={`${inputClass} appearance-none`}
                 >
                   {POPULAR_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
+                    <option key={cat} value={cat} className="bg-[#0c0c0c]">{cat}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Quantity & Unit */}
-              <div className="md:col-span-3 space-y-1.5">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  Target Quantity & Unit
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-[13px] font-bold text-white">
+                  <Boxes className="h-4 w-4 text-[#FF5A00]" /> Target Quantity & Unit
                 </label>
-                <div className="flex gap-2">
-                  <Input
+                <div className="flex gap-2.5">
+                  <input
                     type="number"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="e.g. 5000"
-                    className="bg-background border-border text-foreground text-sm h-11 flex-1"
+                    placeholder="e.g. 5,000"
+                    className={`${inputClass} flex-1`}
                   />
                   <select
                     value={unit}
                     onChange={(e) => setUnit(e.target.value)}
-                    className="bg-background border border-border rounded-md px-2.5 text-xs text-foreground h-11 focus:outline-none"
+                    className="h-12 w-28 rounded-xl border border-white/10 bg-[#0c0c0c] px-3 text-[14px] text-white focus:border-[#FF5A00] focus:outline-none"
                   >
-                    <option value="Pieces">Pcs</option>
-                    <option value="Metric Tons">MT</option>
-                    <option value="Kilograms">Kg</option>
-                    <option value="Meters">Mtr</option>
-                    <option value="Sets">Sets</option>
+                    <option value="Pieces" className="bg-[#0c0c0c]">Pcs</option>
+                    <option value="Metric Tons" className="bg-[#0c0c0c]">MT</option>
+                    <option value="Kilograms" className="bg-[#0c0c0c]">Kg</option>
+                    <option value="Meters" className="bg-[#0c0c0c]">Mtr</option>
+                    <option value="Sets" className="bg-[#0c0c0c]">Sets</option>
                   </select>
                 </div>
               </div>
-            </div>
 
-            {/* Row 2: Destination Port & Specifications */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              <div className="md:col-span-4 space-y-1.5">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Globe2 className="w-3.5 h-3.5 text-primary" /> Destination Country / Port
+              <div className="space-y-2 md:col-span-2">
+                <label className="flex items-center gap-2 text-[13px] font-bold text-white">
+                  <Ship className="h-4 w-4 text-[#FF5A00]" /> Destination Country / Port
                 </label>
-                <Input
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                  placeholder="e.g. Nhava Sheva (India), Rotterdam (EU), Houston (US)"
-                  className="bg-background border-border text-foreground text-sm h-11"
-                />
+                <div className="relative">
+                  <input
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    placeholder="e.g. Nhava Sheva (India), Rotterdam (EU), Houston (US)"
+                    className={`${inputClass} pr-11`}
+                  />
+                  <MapPin className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#FF5A00]" />
+                </div>
               </div>
 
-              <div className="md:col-span-8 space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  Specifications & Trade Terms (Optional)
+              <div className="space-y-2 md:col-span-2">
+                <label className="flex items-center gap-2 text-[13px] font-bold text-white">
+                  <FileText className="h-4 w-4 text-[#FF5A00]" /> Specifications & Trade Terms <span className="text-[12px] font-normal text-neutral-400">(Optional)</span>
                 </label>
-                <Input
+                <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Include material grades, custom OEM branding, target unit rate, or packing instructions..."
-                  className="bg-background border-border text-foreground text-sm h-11"
+                  rows={3}
+                  placeholder="Include material grades, custom OEM branding, packaging, Incoterms (FOB/CIF), delivery timeline, etc."
+                  className="w-full resize-none rounded-xl border border-white/10 bg-[#0c0c0c] px-4 py-3 text-[14px] text-white placeholder:text-neutral-400 transition-colors focus:border-[#FF5A00] focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/25"
                 />
               </div>
             </div>
 
-            {/* Row 3: Submit Action & Quick Pre-fills */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border/60">
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">Popular RFQs:</span>
+            <div className="flex flex-wrap items-center gap-2.5 border-t border-white/10 pt-5">
+              <span className="flex items-center gap-1.5 text-[13px] font-bold text-white">
+                <Flame className="h-4 w-4 text-[#FF5A00]" /> Popular RFQs:
+              </span>
+              {quick.map(({ label, icon: Icon, values }) => (
                 <button
+                  key={label}
                   type="button"
                   onClick={() => {
-                    setTitle('Corrugated 5-Ply Shipping Boxes 40x30x30 cm');
-                    setCategory('Packaging & Corrugated Boxes');
-                    setQuantity('10000');
-                    setUnit('Pieces');
+                    setTitle(values.t);
+                    setCategory(values.c);
+                    setQuantity(values.q);
+                    setUnit(values.u);
                   }}
-                  className="px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
+                  className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#141414] px-3.5 py-2 text-[12px] font-semibold text-slate-200 transition-all hover:-translate-y-0.5 hover:border-[#FF5A00]/60 hover:text-white"
                 >
-                  5-Ply Shipping Boxes
+                  <Icon className="h-4 w-4 text-[#FF5A00]" /> {label}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTitle('Grade 304 Stainless Steel Flanges ANSI B16.5');
-                    setCategory('Steel, Aluminum & Metals');
-                    setQuantity('500');
-                    setUnit('Pieces');
-                  }}
-                  className="px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
-                >
-                  SS 304 Flanges
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTitle('100% Combed Cotton Ring-Spun Yarn 30s');
-                    setCategory('Textiles & Apparel Fabrics');
-                    setQuantity('20');
-                    setUnit('Metric Tons');
-                  }}
-                  className="px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
-                >
-                  Cotton Yarn 30s
-                </button>
-              </div>
-
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full sm:w-auto h-11 px-8 bg-primary text-primary-foreground font-bold hover:bg-primary/90 gap-2 shadow-lg"
-              >
-                <span>Post Requirement Now</span>
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+              ))}
             </div>
-          </form>
-        </div>
 
+            <button
+              type="submit"
+              className="group flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-[16px] font-black text-white shadow-[0_14px_34px_-10px_rgba(255,90,0,0.9)] transition-transform hover:-translate-y-0.5 active:scale-[0.99]"
+            >
+              <Send className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+              Post Requirement Now
+            </button>
+            <p className="flex items-center justify-center gap-2 text-[12px] text-neutral-400">
+              <Scale className="h-3.5 w-3.5" /> Your requirement goes only to verified manufacturers.
+            </p>
+          </form>
+        </motion.div>
       </div>
     </section>
   );

@@ -111,7 +111,7 @@ export default function SitemapPage() {
       />
       <Header />
 
-      <section className="bg-[#1a1a2e] text-white py-10 px-4">
+      <section className="bg-[#C94400] text-white py-10 px-4">
         <div className="max-w-5xl mx-auto">
           <Breadcrumbs
             items={[{ name: 'Platform Sitemap' }]}
@@ -173,7 +173,7 @@ export default function SitemapPage() {
                 <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50 text-[11px]">
                   <code className="text-primary font-mono">{sm.path}</code>
                   <span className="text-muted-foreground font-medium flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Active
+                    <CheckCircle2 className="w-3 h-3 text-[#FF7A2E]" /> Active
                   </span>
                 </div>
               </a>
@@ -182,7 +182,7 @@ export default function SitemapPage() {
 
           <div className="bg-card border border-border rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div className="flex items-start gap-2.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+              <ShieldCheck className="w-4 h-4 text-[#FF7A2E] shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-foreground">Robots.txt Directives</p>
                 <p className="text-muted-foreground text-[11px] mt-0.5">
@@ -237,7 +237,7 @@ export default function SitemapPage() {
                         to={href}
                         className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 group"
                       >
-                        <span className="w-1 h-1 rounded-full bg-border group-hover:bg-primary transition-colors shrink-0" />
+                        <span className="w-1 h-1 rounded-full bg-border group-hover:bg-[#B33D00] transition-colors shrink-0" />
                         {label}
                       </Link>
                     </li>
@@ -278,7 +278,7 @@ export default function SitemapPage() {
               onClick={() => setSelectedCountry('All')}
               className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                 selectedCountry === 'All'
-                  ? 'bg-primary text-primary-foreground border-primary'
+                  ? 'bg-[#C94400] text-primary-foreground border-primary'
                   : 'bg-card text-muted-foreground hover:text-foreground border-border'
               }`}
             >
@@ -291,7 +291,7 @@ export default function SitemapPage() {
                 onClick={() => setSelectedCountry(country)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors flex items-center gap-1 ${
                   selectedCountry === country
-                    ? 'bg-primary text-primary-foreground border-primary'
+                    ? 'bg-[#C94400] text-primary-foreground border-primary'
                     : 'bg-card text-muted-foreground hover:text-foreground border-border'
                 }`}
               >

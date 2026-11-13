@@ -34,6 +34,7 @@ import {
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import type { Requirement } from '@/types/types';
 import { toast } from 'sonner';
+import { isGenericImage } from '@/lib/contentImages';
 
 export type AlertAppearance = 'modal' | 'pill';
 const ROTATE_MS = 18000;
@@ -300,19 +301,19 @@ export default function LiveBuyerOrderAlert() {
     {
       id: 'whatsapp',
       label: 'WhatsApp',
-      className: 'bg-[#25D366] text-white',
+      className: 'bg-[#C94400] text-white',
       href: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
     },
     {
       id: 'facebook',
       label: 'Facebook',
-      className: 'bg-[#1877F2] text-white',
+      className: 'bg-[#C94400] text-white',
       href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
     },
     {
       id: 'linkedin',
       label: 'LinkedIn',
-      className: 'bg-[#0A66C2] text-white',
+      className: 'bg-[#C94400] text-white',
       href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
     },
     {
@@ -324,7 +325,7 @@ export default function LiveBuyerOrderAlert() {
     {
       id: 'telegram',
       label: 'Telegram',
-      className: 'bg-[#229ED9] text-white',
+      className: 'bg-[#C94400] text-white',
       href: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
     },
   ];
@@ -350,8 +351,8 @@ export default function LiveBuyerOrderAlert() {
           className="flex items-center gap-2 rounded-full bg-card border border-border shadow-lg px-3 py-1.5 text-xs font-semibold text-foreground hover:border-[#FF5A00]/50"
         >
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C94400] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C94400]" />
           </span>
           New buy leads
           <ChevronRight className="w-3.5 h-3.5 text-[#FF5A00]" />
@@ -370,13 +371,13 @@ export default function LiveBuyerOrderAlert() {
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="relative rounded-2xl bg-card text-card-foreground border border-border shadow-[0_16px_40px_rgba(15,23,42,0.18)] overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-[#FF5A00] via-amber-400 to-emerald-500" />
+          <div className="h-1 bg-gradient-to-r from-[#C94400] via-[#C94400] to-[#B33D00]" />
           <div className="p-3.5">
             <div className="flex items-center justify-between gap-2 mb-2.5">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C94400] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C94400]" />
                 </span>
                 <span className="text-[11px] font-bold uppercase tracking-wide text-[#FF5A00]">New buy lead</span>
                 <span className="text-[11px] text-muted-foreground">· {postedLabel}</span>
@@ -417,7 +418,11 @@ export default function LiveBuyerOrderAlert() {
                 className="w-[84px] h-[84px] rounded-xl overflow-hidden bg-muted shrink-0 border border-border"
               >
                 <img
-                  src={photoFailed ? FALLBACK_PHOTO : currentOrder.imageUrl}
+                  src={
+                    photoFailed || !currentOrder.imageUrl || isGenericImage(currentOrder.imageUrl)
+                      ? FALLBACK_PHOTO
+                      : currentOrder.imageUrl
+                  }
                   alt={currentOrder.title}
                   className="w-full h-full object-cover"
                   onError={() => setPhotoFailed(true)}
@@ -429,7 +434,7 @@ export default function LiveBuyerOrderAlert() {
                 <div className="flex items-center gap-1.5 mt-1.5">
                   <img src={avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover" />
                   <span className="text-[11px] font-semibold truncate">{currentOrder.buyerName}</span>
-                  <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className="w-3 h-3 text-[#FF7A2E] shrink-0" />
                 </div>
                 <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1 mt-0.5">
                   <Building2 className="w-3 h-3 shrink-0" />
@@ -463,7 +468,7 @@ export default function LiveBuyerOrderAlert() {
               <button
                 type="button"
                 onClick={() => setShareOpen(true)}
-                className="h-9 px-2.5 rounded-lg border border-[#FF5A00]/40 bg-[#FF5A00]/10 text-[#FF5A00] text-xs font-bold flex items-center justify-center gap-1 hover:bg-[#FF5A00]/15"
+                className="h-9 px-2.5 rounded-lg border border-[#FF5A00]/40 bg-[#FF5A00]/10 text-[#FF5A00] text-xs font-bold flex items-center justify-center gap-1 hover:bg-[#B33D00]/15"
                 aria-label="Share this lead"
               >
                 <Share2 className="w-3.5 h-3.5" />
@@ -479,7 +484,7 @@ export default function LiveBuyerOrderAlert() {
               <button
                 type="button"
                 onClick={handleActionClick}
-                className="h-9 rounded-lg bg-[#FF5A00] hover:bg-[#e04f00] text-white text-xs font-bold flex items-center justify-center gap-1"
+                className="h-9 rounded-lg bg-[#C94400] hover:bg-[#B33D00] text-white text-xs font-bold flex items-center justify-center gap-1"
               >
                 Contact
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -489,7 +494,7 @@ export default function LiveBuyerOrderAlert() {
 
           {shareOpen && (
             <div className="absolute inset-0 z-10 bg-card text-card-foreground flex flex-col">
-              <div className="h-1 bg-gradient-to-r from-[#FF5A00] via-amber-400 to-emerald-500" />
+              <div className="h-1 bg-gradient-to-r from-[#C94400] via-[#C94400] to-[#B33D00]" />
               <div className="p-3.5 flex flex-col gap-3 min-h-0">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -514,7 +519,7 @@ export default function LiveBuyerOrderAlert() {
                     onClick={copyShareUrl}
                     className="h-7 px-2 rounded-md bg-background border border-border text-[11px] font-bold shrink-0 inline-flex items-center gap-1"
                   >
-                    {copied ? <Check className="w-3 h-3 text-emerald-500" /> : null}
+                    {copied ? <Check className="w-3 h-3 text-[#FF7A2E]" /> : null}
                     {copied ? 'Copied' : 'Copy'}
                   </button>
                 </div>

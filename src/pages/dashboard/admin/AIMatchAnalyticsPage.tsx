@@ -119,9 +119,8 @@ export default function AIMatchAnalyticsPage() {
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-6xl w-full mx-auto space-y-6">
           {/* Header */}
-          <div className="bs-glass relative overflow-hidden rounded-3xl p-4">
-            <div className="bs-scan pointer-events-none absolute inset-x-[20%] top-0 h-12 bg-gradient-to-b from-transparent via-primary/20 to-transparent" aria-hidden="true" />
-            <h1 className="relative text-xl font-black text-foreground flex items-center gap-2">
+          <div>
+            <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
               <Zap className="w-5 h-5 text-primary" />
               AI Match Analytics
             </h1>
@@ -138,10 +137,10 @@ export default function AIMatchAnalyticsPage() {
             <>
               {/* KPI cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <StatCard label="RFQs Processed" value={totalRfqs} icon={Target} color="bg-primary" />
-                <StatCard label="Total Matches" value={totalMatches} sub={`~${avgPerRfq} per RFQ`} icon={Users} color="bg-[#FF5A00]" />
-                <StatCard label="Avg Match Score" value={`${avgScore}/100`} icon={Activity} color="bg-purple-500" />
-                <StatCard label="Overall Response Rate" value={`${overallResponseRate}%`} sub={`${responded} quoted`} icon={TrendingUp} color="bg-green-600" />
+                <StatCard label="RFQs Processed" value={totalRfqs} icon={Target} color="bg-[#C94400]" />
+                <StatCard label="Total Matches" value={totalMatches} sub={`~${avgPerRfq} per RFQ`} icon={Users} color="bg-[#C94400]" />
+                <StatCard label="Avg Match Score" value={`${avgScore}/100`} icon={Activity} color="bg-[#C94400]" />
+                <StatCard label="Overall Response Rate" value={`${overallResponseRate}%`} sub={`${responded} quoted`} icon={TrendingUp} color="bg-[#B33D00]" />
               </div>
 
               {/* Score distribution chart */}
@@ -209,11 +208,11 @@ export default function AIMatchAnalyticsPage() {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                     {[
-                      { label: 'Category Match', weight: 30, color: 'bg-primary' },
-                      { label: 'Location Match', weight: 20, color: 'bg-[#FF5A00]' },
-                      { label: 'MOQ Compatibility', weight: 20, color: 'bg-purple-500' },
+                      { label: 'Category Match', weight: 30, color: 'bg-[#C94400]' },
+                      { label: 'Location Match', weight: 20, color: 'bg-[#C94400]' },
+                      { label: 'MOQ Compatibility', weight: 20, color: 'bg-[#C94400]' },
                       { label: 'Capacity Match', weight: 15, color: 'bg-orange-500' },
-                      { label: 'Supplier Rating', weight: 15, color: 'bg-green-500' },
+                      { label: 'Supplier Rating', weight: 15, color: 'bg-[#C94400]' },
                     ].map(w => (
                       <div key={w.label} className="bg-muted/40 border border-border rounded-lg p-3 text-center">
                         <p className="text-xs text-muted-foreground">{w.label}</p>
@@ -263,7 +262,7 @@ export default function AIMatchAnalyticsPage() {
                               </td>
                               <td className="px-4 py-2.5 text-right text-foreground">{r.quoted}</td>
                               <td className="px-4 py-2.5 text-right">
-                                <span className={r.count > 0 && Math.round((r.quoted / r.count) * 100) >= 50 ? 'text-green-600' : 'text-muted-foreground'}>
+                                <span className={r.count > 0 && Math.round((r.quoted / r.count) * 100) >= 50 ? 'text-[#FF7A2E]' : 'text-muted-foreground'}>
                                   {r.count > 0 ? `${Math.round((r.quoted / r.count) * 100)}%` : '—'}
                                 </span>
                               </td>

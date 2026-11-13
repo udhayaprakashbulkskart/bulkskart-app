@@ -83,7 +83,7 @@ export default function DeleteAccountPage() {
           <h2 className="text-xl font-bold text-foreground">Sign In Required</h2>
           <p className="text-sm text-muted-foreground">You must be signed in to manage or delete your account.</p>
           <Link to="/auth">
-            <Button className="bg-primary text-white">Go to Sign In</Button>
+            <Button className="bg-[#1A0C05] text-white">Go to Sign In</Button>
           </Link>
         </div>
       </MainLayout>
@@ -214,10 +214,10 @@ export default function DeleteAccountPage() {
             <Loader2 className="w-4 h-4 animate-spin text-primary" /> Checking ongoing trade orders...
           </div>
         ) : hasActiveOrders ? (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="bg-[#FF5A00]/10 border border-[#FF5A00]/30 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-[#FF7A2E] shrink-0 mt-0.5" />
             <div className="space-y-1 text-xs">
-              <p className="font-bold text-amber-600 dark:text-amber-400">
+              <p className="font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">
                 Ongoing Orders Detected ({activeOrderCount} active orders)
               </p>
               <p className="text-muted-foreground">
@@ -225,7 +225,7 @@ export default function DeleteAccountPage() {
               </p>
               <div className="pt-2">
                 <Link to={profile?.role === 'supplier' ? '/dashboard/supplier/orders' : '/dashboard/buyer/orders'}>
-                  <Button size="sm" variant="outline" className="border-amber-500/30 text-amber-600 dark:text-amber-400 h-8 text-xs">
+                  <Button size="sm" variant="outline" className="border-[#FF5A00]/30 text-[#FF7A2E] dark:text-[#FF7A2E] h-8 text-xs">
                     View Active Orders
                   </Button>
                 </Link>

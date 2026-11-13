@@ -1,0 +1,73 @@
+/* Diwali firecracker bursts. Each burst cycles: launch, flash, sparks fly out, fade, wait. */
+
+.bs-burst-centre {
+  position: absolute;
+  width: 0;
+  height: 0;
+  animation-name: bs-burst-cycle;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: opacity;
+}
+
+/* Only the sparks and flash animate; the cycle wrapper just holds the timing. */
+@keyframes bs-burst-cycle {
+  0%, 100% { opacity: 1; }
+}
+
+.bs-burst-flash {
+  position: absolute;
+  left: -14px;
+  top: -14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #FFE7C2 0%, #FF9A3D 40%, rgba(255, 90, 0, 0) 70%);
+  opacity: 0;
+  animation-name: bs-flash;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+}
+
+.bs-spark {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  opacity: 0;
+  animation-name: bs-spark;
+  animation-timing-function: cubic-bezier(0.16, 0.8, 0.3, 1);
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+.bs-spark-orange { background: #FF5A00; box-shadow: 0 0 6px 2px rgba(255, 90, 0, 0.8); }
+.bs-spark-gold   { background: #FFC24A; box-shadow: 0 0 6px 2px rgba(255, 194, 74, 0.8); }
+.bs-spark-ember  { background: #FF7A2E; box-shadow: 0 0 6px 2px rgba(255, 122, 46, 0.8); }
+
+/* Launch window: the burst happens in the first ~24% of the cycle, then the sparks stay hidden. */
+@keyframes bs-flash {
+  0%   { opacity: 0; transform: scale(0.3); }
+  3%   { opacity: 1; transform: scale(1.2); }
+  10%  { opacity: 0; transform: scale(2.2); }
+  100% { opacity: 0; transform: scale(2.2); }
+}
+
+@keyframes bs-spark {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0.4); }
+  3%   { opacity: 1; transform: translate(0, 0) scale(1); }
+  20%  { opacity: 1; transform: translate(calc(var(--dx) * 0.8), calc(var(--dy) * 0.8)) scale(0.9); }
+  26%  { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-burst-centre,
+  .bs-burst-flash,
+  .bs-spark {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}

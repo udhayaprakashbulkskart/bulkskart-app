@@ -17,10 +17,10 @@ export default function PaymentSuccessPage() {
         keywords="payment confirmed, supplier subscription, BulkSkart plan, activate account"
       />
       <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-120px)] px-4 py-12">
-        <div className="bs-glass w-full max-w-md rounded-3xl p-8 text-center">
+        <div className="w-full max-w-md text-center">
           <div className="flex flex-col items-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-green-100 border-2 border-green-300 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="w-16 h-16 rounded-full bg-[#FF5A00]/10 border-2 border-[#FF5A00]/40 flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-[#FF7A2E]" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-foreground">Payment Successful!</h2>
@@ -36,14 +36,14 @@ export default function PaymentSuccessPage() {
                 'RFQ lead quota reset — ready to use',
               ].map(item => (
                 <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  <CheckCircle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                   {item}
                 </div>
               ))}
             </div>
             <div className="flex flex-col gap-2 w-full">
               <Link to="/requirements">
-                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+                <Button className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
                   Browse Live Requirements <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>

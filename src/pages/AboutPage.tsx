@@ -43,7 +43,7 @@ export default function AboutPage() {
       <Header />
 
       {/* Hero */}
-      <section className="bg-[#1a1a2e] text-white py-14 px-4">
+      <section className="bg-[#C94400] text-white py-14 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-5">
             <Globe className="w-3.5 h-3.5 text-primary" />
@@ -82,7 +82,7 @@ export default function AboutPage() {
               From real-time RFQ matching and AI-powered quotations to secure escrow payments and end-to-end order tracking, every feature we ship exists to reduce friction and build trust between buyers and suppliers.
             </p>
             <Link to="/how-it-works">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+              <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
                 How It Works <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -109,7 +109,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
             {TEAM.map(({ name, role, initials }) => (
               <div key={name} className="bg-card border border-border rounded-xl p-4 text-center">
-                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-black text-lg mx-auto mb-3">
+                <div className="w-12 h-12 rounded-full bg-[#C94400] flex items-center justify-center text-primary-foreground font-black text-lg mx-auto mb-3">
                   {initials}
                 </div>
                 <div className="text-sm font-bold text-foreground">{name}</div>
@@ -127,8 +127,8 @@ export default function AboutPage() {
           <h2 className="text-[20px] md:text-[26px] font-black text-foreground mb-3">Ready to Trade Smarter?</h2>
           <p className="text-muted-foreground text-sm mb-6">Join thousands of manufacturers and buyers already on BulkSkart.</p>
           <div className="flex flex-col md:flex-row gap-3 justify-center">
-            <Link to="/auth?tab=register"><Button className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-11 px-8 gap-2 rounded-xl shadow-[0_2px_0_#922f00]"><Factory className="w-4 h-4" /> Join as Supplier</Button></Link>
-            <Link to="/post-requirement"><Button className="bg-[#FF5A00] hover:bg-[#e04e00] text-white h-11 px-8 gap-2 font-bold rounded-xl shadow-[0_2px_0_#922f00]"><Users className="w-4 h-4" /> Post a Requirement</Button></Link>
+            <Link to="/auth?tab=register"><Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-11 px-8 gap-2 rounded-xl shadow-[0_2px_0_#922f00]"><Factory className="w-4 h-4" /> Join as Supplier</Button></Link>
+            <Link to="/post-requirement"><Button className="bg-[#C94400] hover:bg-[#B33D00] text-white h-11 px-8 gap-2 font-bold rounded-xl shadow-[0_2px_0_#922f00]"><Users className="w-4 h-4" /> Post a Requirement</Button></Link>
           </div>
         </div>
       </section>

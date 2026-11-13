@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { getProductBySlug, getSimilarProducts } from '@/lib/api';
 import type { Product } from '@/types/types';
 import SafeImage from '@/components/common/SafeImage';
+import ProductImageCredit from '@/components/common/ProductImageCredit';
 import { resolveCompanyBranding, resolveProductImage } from '@/lib/contentImages';
 import {
   matchProductImage,
@@ -152,7 +153,7 @@ export default function ProductDetailPage() {
         <h2 className="text-xl font-bold text-foreground">Product Not Found</h2>
         <p className="text-sm text-muted-foreground">The product listing you are looking for may have been removed or updated.</p>
         <Link to="/products">
-          <Button className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-10 px-5 rounded-xl">
+          <Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 px-5 rounded-xl">
             Browse All Products
           </Button>
         </Link>
@@ -266,7 +267,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
           <div className="flex gap-3 mt-4">
-            <Button type="button" onClick={() => setShowCallModal(false)} className="flex-1 bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-10 rounded-xl shadow-[0_2px_0_#922f00]">Close</Button>
+            <Button type="button" onClick={() => setShowCallModal(false)} className="flex-1 bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 rounded-xl shadow-[0_2px_0_#922f00]">Close</Button>
           </div>
         </div>
       </DialogContent>
@@ -329,7 +330,7 @@ export default function ProductDetailPage() {
           <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2">
             <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <input className="flex-1 min-w-0 text-sm outline-none bg-transparent text-foreground placeholder:text-muted-foreground" placeholder="Search products, suppliers, categories..." />
-            <button className="bg-primary p-1 rounded shrink-0">
+            <button className="bg-[#1A0C05] p-1 rounded shrink-0">
               <Search className="w-3.5 h-3.5 text-white" />
             </button>
           </div>
@@ -357,7 +358,7 @@ export default function ProductDetailPage() {
           />
 
           {/* ── MAIN CONTENT GRID ───────────────────────────────────── */}
-          <div className="grid md:grid-cols-[1fr_360px] gap-6 md:gap-8 items-start">
+          <div className="grid md:grid-cols-[1fr_360px] gap-6 md:gap-8">
 
             {/* LEFT ─ images + tabs + content */}
             <div className="min-w-0">
@@ -365,7 +366,7 @@ export default function ProductDetailPage() {
               {/* Badges row (desktop only) */}
               <div className="hidden md:flex items-center gap-2 mb-3">
                 {isVerified && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-full px-2.5 py-1">
                     <CheckCircle className="w-3.5 h-3.5" /> Verified Supplier
                   </span>
                 )}
@@ -387,22 +388,23 @@ export default function ProductDetailPage() {
                       type="product"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs rounded px-2 py-0.5 z-10">
+                    <div className="absolute bottom-3 right-3 bg-[#0A0A0A]/60 text-white text-xs rounded px-2 py-0.5 z-10">
                       {imgIdx + 1} / {images.length}
                     </div>
                     {images.length > 1 && (
                       <>
                         <button onClick={() => setImgIdx(i => (i - 1 + images.length) % images.length)}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-[#0A0A0A]/50 hover:bg-[#0A0A0A]/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
                           <ChevronRight className="w-4 h-4 rotate-180" />
                         </button>
                         <button onClick={() => setImgIdx(i => (i + 1) % images.length)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#0A0A0A]/50 hover:bg-[#0A0A0A]/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
                           <ChevronRight className="w-4 h-4" />
                         </button>
                       </>
                     )}
                   </div>
+                  <ProductImageCredit productId={product.id} imageUrl={images[imgIdx]} />
                   {images.length > 1 && (
                     <div className="flex gap-2 overflow-x-auto pb-1 mb-4">
                       {images.map((img, i) => (
@@ -410,7 +412,7 @@ export default function ProductDetailPage() {
                           className={`relative w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${imgIdx === i ? 'border-primary ring-2 ring-primary/40 shadow-md' : 'border-border opacity-70 hover:opacity-100'}`}>
                           <SafeImage src={img} alt={`${product.name} thumbnail ${i + 1}`} category={product.categories?.name} type="product" className="w-full h-full object-cover" />
                           {i === 0 && (
-                            <span className="absolute bottom-0 inset-x-0 bg-primary/90 text-[9px] font-bold text-white text-center py-0.5 uppercase tracking-wider">
+                            <span className="absolute bottom-0 inset-x-0 bg-[#C94400] text-[9px] font-bold text-white text-center py-0.5 uppercase tracking-wider">
                               Primary
                             </span>
                           )}
@@ -460,7 +462,7 @@ export default function ProductDetailPage() {
                 <h1 className="text-xl font-black text-foreground mb-2 leading-tight">{product.name}</h1>
 
                 {isVerified && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1 mb-3">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-full px-2.5 py-1 mb-3">
                     <CheckCircle className="w-3.5 h-3.5" /> Verified Supplier
                   </span>
                 )}
@@ -477,13 +479,13 @@ export default function ProductDetailPage() {
                   <button
                     type="button"
                     onClick={() => setShowReportModal(true)}
-                    className="ml-auto inline-flex items-center gap-1 text-[11px] text-red-500 hover:text-red-600 transition-colors px-2 py-0.5 rounded-lg hover:bg-red-500/10"
+                    className="ml-auto inline-flex items-center gap-1 text-[11px] text-[#FF7A2E] hover:text-[#FF7A2E] transition-colors px-2 py-0.5 rounded-lg hover:bg-[#B33D00]/10"
                     title="Report this Product"
                   >
                     <Flag className="w-3 h-3" /> Report
                   </button>
                   <button onClick={() => setWishlist(w => !w)} className="p-1">
-                    <Heart className={`w-4 h-4 transition-colors ${wishlist ? 'text-red-500 fill-red-500' : 'text-muted-foreground'}`} />
+                    <Heart className={`w-4 h-4 transition-colors ${wishlist ? 'text-[#FF7A2E] fill-[#FF5A00]' : 'text-muted-foreground'}`} />
                   </button>
                   <button className="p-1"><Share2 className="w-4 h-4 text-muted-foreground" /></button>
                 </div>
@@ -538,7 +540,7 @@ export default function ProductDetailPage() {
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {isVerified && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#FF7A2E] dark:text-[#FF7A2E] bg-[#FF5A00]/10 dark:bg-[#B33D00]/50 border border-[#FF5A00]/40 dark:border-[#FF5A00]/40 rounded px-2 py-0.5">
                         <CheckCircle className="w-3 h-3" /> Verified
                       </span>
                     )}
@@ -558,7 +560,7 @@ export default function ProductDetailPage() {
                 {/* CTA buttons mobile */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <Link to={profile?.role === 'buyer' ? '/post-requirement' : '/auth'} className="col-span-2">
-                    <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-12 text-base gap-2 rounded-xl shadow-lg">
+                    <Button className="w-full bg-[#C94400] hover:bg-primary/90 text-white font-bold h-12 text-base gap-2 rounded-xl shadow-lg">
                       <Mail className="w-5 h-5" /> Get Quotes
                     </Button>
                   </Link>
@@ -675,8 +677,8 @@ export default function ProductDetailPage() {
                           url ? (
                             <a key={label} href={url} target="_blank" rel="noreferrer"
                               className="flex items-center gap-2 bg-card border border-border hover:border-primary/40 rounded-xl p-3 text-left transition-colors group">
-                              <div className="w-8 h-8 bg-red-50 border border-red-100 rounded-lg flex items-center justify-center shrink-0">
-                                <FileText className="w-4 h-4 text-red-500" />
+                              <div className="w-8 h-8 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-lg flex items-center justify-center shrink-0">
+                                <FileText className="w-4 h-4 text-[#FF7A2E]" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-semibold text-foreground truncate">{label}</p>
@@ -868,7 +870,7 @@ export default function ProductDetailPage() {
                       <p className="text-sm font-black leading-snug mb-2">Powering Industries<br /><span className="text-primary">Worldwide</span></p>
                       <p className="text-[10px] text-muted-foreground mb-3">Reliable · Efficient · Scalable</p>
                       <Link to="/post-requirement">
-                        <button className="text-[10px] font-bold bg-primary text-white rounded-lg px-3 py-1.5 flex items-center gap-1">
+                        <button className="text-[10px] font-bold bg-[#C94400] text-white rounded-lg px-3 py-1.5 flex items-center gap-1">
                           Request a Custom Quote <ChevronRight className="w-3 h-3" />
                         </button>
                       </Link>
@@ -932,7 +934,7 @@ export default function ProductDetailPage() {
                     <p className="text-sm text-muted-foreground">Get the best price for your requirements.</p>
                   </div>
                   <Link to={profile?.role === 'buyer' ? '/post-requirement' : '/auth'} className="shrink-0 w-full md:w-auto">
-                    <Button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white font-bold px-6 h-11 gap-2 rounded-xl">
+                    <Button className="w-full md:w-auto bg-[#C94400] hover:bg-primary/90 text-white font-bold px-6 h-11 gap-2 rounded-xl">
                       <Mail className="w-4 h-4" /> Request Bulk Quote
                     </Button>
                   </Link>
@@ -942,13 +944,13 @@ export default function ProductDetailPage() {
 
             {/* RIGHT ─ sidebar (desktop only) ─────────────────────────── */}
             <div className="hidden md:block">
-              <div className="bs-glass sticky top-[80px] space-y-4 rounded-3xl p-4">
+              <div className="sticky top-[80px] space-y-4">
 
                 {/* Product title + badges */}
                 <div className="bg-card border border-border rounded-xl p-3 md:p-4">
                   <div className="flex items-start gap-2 mb-2">
                     {isVerified && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-full px-2 py-0.5">
                         <CheckCircle className="w-3 h-3" /> Verified Supplier
                       </span>
                     )}
@@ -977,13 +979,13 @@ export default function ProductDetailPage() {
                       <button
                         type="button"
                         onClick={() => setShowReportModal(true)}
-                        className="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-600 transition-colors px-2 py-1 rounded-lg hover:bg-red-500/10"
+                        className="inline-flex items-center gap-1 text-xs text-[#FF7A2E] hover:text-[#FF7A2E] transition-colors px-2 py-1 rounded-lg hover:bg-[#B33D00]/10"
                         title="Report this Product"
                       >
                         <Flag className="w-3 h-3" /> Report
                       </button>
                       <button onClick={() => setWishlist(w => !w)} className="p-1">
-                        <Heart className={`w-4 h-4 ${wishlist ? 'text-red-500 fill-red-500' : 'text-muted-foreground'}`} />
+                        <Heart className={`w-4 h-4 ${wishlist ? 'text-[#FF7A2E] fill-[#FF5A00]' : 'text-muted-foreground'}`} />
                       </button>
                       <button className="p-1"><Share2 className="w-4 h-4 text-muted-foreground" /></button>
                     </div>
@@ -1018,7 +1020,7 @@ export default function ProductDetailPage() {
 
                   {/* CTA */}
                   <Link to={profile?.role === 'buyer' ? '/post-requirement' : '/auth'} className="block mb-2">
-                    <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-12 text-base gap-2 rounded-xl shadow-lg">
+                    <Button className="w-full bg-[#C94400] hover:bg-primary/90 text-white font-bold h-12 text-base gap-2 rounded-xl shadow-lg">
                       <Mail className="w-5 h-5" /> Get Quotes
                     </Button>
                   </Link>
@@ -1078,7 +1080,7 @@ export default function ProductDetailPage() {
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {isVerified && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded px-2 py-0.5">
                         <CheckCircle className="w-3 h-3" /> Verified
                       </span>
                     )}
@@ -1118,7 +1120,7 @@ export default function ProductDetailPage() {
                       View Company Profile
                     </Button>
                   </Link>
-                  <Button onClick={handleCallClick} className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-9 text-xs rounded-lg">
+                  <Button onClick={handleCallClick} className="w-full bg-[#C94400] hover:bg-primary/90 text-white font-bold h-9 text-xs rounded-lg">
                     Contact Supplier
                   </Button>
                 </div>
@@ -1131,7 +1133,7 @@ export default function ProductDetailPage() {
                   </div>
                   <p className="text-xs text-muted-foreground mb-3">Get best price for your requirements.</p>
                   <Link to={profile?.role === 'buyer' ? '/post-requirement' : '/auth'}>
-                    <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-9 text-xs gap-2 rounded-lg">
+                    <Button className="w-full bg-[#C94400] hover:bg-primary/90 text-white font-bold h-9 text-xs gap-2 rounded-lg">
                       <Mail className="w-3.5 h-3.5" /> Request Bulk Quote
                     </Button>
                   </Link>
@@ -1171,7 +1173,7 @@ export default function ProductDetailPage() {
             <p className="text-[10px] text-primary font-semibold truncate">{priceDisplay}</p>
           </div>
           <Link to={profile?.role === 'buyer' ? '/post-requirement' : '/auth'}>
-            <Button className="bg-primary hover:bg-primary/90 text-white font-bold h-10 px-5 gap-1.5 rounded-xl text-sm shrink-0">
+            <Button className="bg-[#C94400] hover:bg-primary/90 text-white font-bold h-10 px-5 gap-1.5 rounded-xl text-sm shrink-0">
               <Mail className="w-4 h-4" /> Get Quote
             </Button>
           </Link>

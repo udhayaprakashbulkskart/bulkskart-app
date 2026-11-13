@@ -80,8 +80,8 @@ export default function AdminDashboard() {
   const statsCards = [
     { label: 'Registered Users', value: stats.totalUsers, icon: Users, color: 'text-primary' },
     { label: 'Companies', value: stats.totalCompanies, icon: Building2, color: 'text-[#FF5A00]' },
-    { label: 'Pending Verifications', value: stats.pendingVerifications, icon: ShieldCheck, color: 'text-yellow-400' },
-    { label: 'Active Requirements', value: stats.activeReqs, icon: BarChart3, color: 'text-green-400' },
+    { label: 'Pending Verifications', value: stats.pendingVerifications, icon: ShieldCheck, color: 'text-[#FF7A2E]' },
+    { label: 'Active Requirements', value: stats.activeReqs, icon: BarChart3, color: 'text-[#FF7A2E]' },
   ];
 
   if (profile?.role !== 'admin') {
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
             <Button
               onClick={handleSendSubscriptionAlerts}
               disabled={sendingAlerts}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-bold gap-2 text-xs h-9 shadow-md"
+              className="bg-[#B33D00] hover:bg-[#B33D00] text-white font-bold gap-2 text-xs h-9 shadow-md"
             >
               <CreditCard className="w-4 h-4" />
               {sendingAlerts ? 'Sending Alerts…' : 'Notify Unpaid Manufacturers'}
@@ -127,7 +127,7 @@ export default function AdminDashboard() {
                       <Icon className={`w-5 h-5 ${s.color}`} />
                     </div>
                     {s.label === 'Pending Verifications' && stats.pendingVerifications > 0 && (
-                      <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">Action needed</Badge>
+                      <Badge className="bg-[#FF5A00]/20 text-[#FF7A2E] border-[#FF5A00]/30 text-xs">Action needed</Badge>
                     )}
                   </div>
                   <p className="text-2xl font-bold text-foreground">{loading ? '—' : s.value}</p>
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="overview" className="text-xs">All Companies</TabsTrigger>
               <TabsTrigger value="pending" className="text-xs">
                 Pending Verification
-                {stats.pendingVerifications > 0 && <span className="ml-1.5 bg-yellow-500/20 text-yellow-400 text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">{stats.pendingVerifications}</span>}
+                {stats.pendingVerifications > 0 && <span className="ml-1.5 bg-[#FF5A00]/20 text-[#FF7A2E] text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">{stats.pendingVerifications}</span>}
               </TabsTrigger>
             </TabsList>
 
@@ -189,8 +189,8 @@ function CompanyTable({ companies, loading, onVerify, emptyMessage }: {
   emptyMessage?: string;
 }) {
   const statusColor = (s: string) => {
-    if (s === 'verified') return 'text-green-400 border-green-400/30';
-    if (s === 'pending') return 'text-yellow-400 border-yellow-400/30';
+    if (s === 'verified') return 'text-[#FF7A2E] border-[#FF5A00]/30';
+    if (s === 'pending') return 'text-[#FF7A2E] border-[#FF5A00]/30';
     if (s === 'rejected') return 'text-destructive border-destructive/30';
     return 'text-muted-foreground';
   };
@@ -245,7 +245,7 @@ function CompanyTable({ companies, loading, onVerify, emptyMessage }: {
                   <div className="flex items-center gap-1.5">
                     {c.verification_status === 'pending' && (
                       <>
-                        <Button onClick={() => onVerify(c.id, 'verified')} size="sm" variant="ghost" className="text-green-400 border border-green-400/20 hover:bg-green-400/10 h-7 text-xs gap-1">
+                        <Button onClick={() => onVerify(c.id, 'verified')} size="sm" variant="ghost" className="text-[#FF7A2E] border border-[#FF5A00]/20 hover:bg-[#B33D00]/10 h-7 text-xs gap-1">
                           <CheckCircle className="w-3 h-3" /> Verify
                         </Button>
                         <Button onClick={() => onVerify(c.id, 'rejected')} size="sm" variant="ghost" className="text-destructive border border-destructive/20 hover:bg-destructive/10 h-7 text-xs">

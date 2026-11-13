@@ -139,13 +139,12 @@ export default function ShippingCalculatorPage() {
         ]}
       />
       <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
-        <div className="bs-glass mb-8 rounded-3xl p-6 text-center">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-primary">Logistics</p>
-          <h1 className="text-2xl md:text-3xl font-black text-foreground mb-2">Shipping & Freight Calculator</h1>
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Shipping & Freight Calculator</h1>
           <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto">
             Delivery is free on every order placed on BulkSkart. These estimates show the freight cost the platform covers, so you can compare routes before you order.
           </p>
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#FF5A00]/40 bg-[#FF5A00]/10 px-3 py-1.5 text-xs font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">
             <Truck className="h-3.5 w-3.5" />
             Your delivery charge on every order: ₹0
           </div>
@@ -231,7 +230,7 @@ export default function ShippingCalculatorPage() {
                       </Select>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+                  <Button type="submit" className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
                     <Calculator className="w-4 h-4" /> Calculate Estimates
                   </Button>
                 </form>
@@ -271,7 +270,7 @@ export default function ShippingCalculatorPage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">You pay ₹0</p>
+                              <p className="text-sm font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">You pay ₹0</p>
                               <p className="text-[10px] text-muted-foreground line-through">Market ₹{r.costMin.toLocaleString()}–{r.costMax.toLocaleString()}</p>
                             </div>
                           </div>
@@ -285,9 +284,9 @@ export default function ShippingCalculatorPage() {
                   <span>Market ranges are the freight BulkSkart covers. Your delivery charge on an order placed here is ₹0. Carrier rates still vary by route and cargo.</span>
                 </div>
                 {rfqSent ? (
-                  <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/20 border border-green-300/50 rounded-xl p-3">
-                    <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-                    <p className="text-sm text-green-700 dark:text-green-400">Freight RFQ sent! Logistics partners will contact you shortly.</p>
+                  <div className="flex items-center gap-2 bg-[#FF5A00]/10 dark:bg-[#B33D00]/20 border border-[#FF5A00]/50 rounded-xl p-3">
+                    <CheckCircle2 className="w-4 h-4 text-[#FF7A2E] shrink-0" />
+                    <p className="text-sm text-[#FF7A2E] dark:text-[#FF7A2E]">Freight RFQ sent! Logistics partners will contact you shortly.</p>
                   </div>
                 ) : (
                   <Button onClick={handleFreightRFQ} disabled={submitting} className="w-full bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 gap-2 text-sm" variant="ghost">

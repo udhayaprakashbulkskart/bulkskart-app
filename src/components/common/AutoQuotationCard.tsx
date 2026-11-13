@@ -69,11 +69,11 @@ interface Props {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   sent:              { label: 'Quote Received',     color: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',     icon: <FileText className="w-3 h-3" /> },
-  accepted:          { label: 'Accepted',           color: 'bg-green-100 text-green-700 border-green-200',  icon: <CheckCircle className="w-3 h-3" /> },
-  rejected:          { label: 'Rejected',           color: 'bg-red-100 text-red-700 border-red-200',        icon: <XCircle className="w-3 h-3" /> },
-  revised_requested: { label: 'Counter Offer Sent', color: 'bg-violet-100 text-violet-700 border-violet-200', icon: <ArrowLeftRight className="w-3 h-3" /> },
+  accepted:          { label: 'Accepted',           color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',  icon: <CheckCircle className="w-3 h-3" /> },
+  rejected:          { label: 'Rejected',           color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',        icon: <XCircle className="w-3 h-3" /> },
+  revised_requested: { label: 'Counter Offer Sent', color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40', icon: <ArrowLeftRight className="w-3 h-3" /> },
   expired:           { label: 'Expired',            color: 'bg-muted text-muted-foreground border-border',  icon: <Clock className="w-3 h-3" /> },
-  pending_approval:  { label: 'Pending Approval',   color: 'bg-purple-100 text-purple-700 border-purple-200', icon: <Clock className="w-3 h-3" /> },
+  pending_approval:  { label: 'Pending Approval',   color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40', icon: <Clock className="w-3 h-3" /> },
   draft:             { label: 'Draft',              color: 'bg-muted text-muted-foreground border-border',  icon: <FileText className="w-3 h-3" /> },
 };
 
@@ -169,9 +169,9 @@ export default function AutoQuotationCard({
 
   return (
     <div className={`bg-card border rounded-xl overflow-hidden transition-shadow hover:shadow-md ${
-      quote.status === 'accepted' ? 'border-green-400/50' :
-      quote.status === 'rejected' ? 'border-red-300/50' :
-      quote.status === 'revised_requested' ? 'border-violet-300/50' :
+      quote.status === 'accepted' ? 'border-[#FF5A00]/50' :
+      quote.status === 'rejected' ? 'border-[#FF5A00]/50' :
+      quote.status === 'revised_requested' ? 'border-[#FF5A00]/50' :
       'border-border'
     }`}>
       {/* Header */}
@@ -250,11 +250,11 @@ export default function AutoQuotationCard({
           </div>
           {/* Counter offer highlight */}
           {quote.counter_offer_price && (
-            <div className="flex justify-between font-bold text-sm bg-violet-50 border border-violet-200 rounded-md px-2 py-1.5 mt-1">
-              <span className="flex items-center gap-1.5 text-violet-700">
+            <div className="flex justify-between font-bold text-sm bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-md px-2 py-1.5 mt-1">
+              <span className="flex items-center gap-1.5 text-[#FF7A2E]">
                 <ArrowLeftRight className="w-3.5 h-3.5" /> Your Counter Offer
               </span>
-              <span className="text-violet-700">{fmt(quote.counter_offer_price, quote.currency)}</span>
+              <span className="text-[#FF7A2E]">{fmt(quote.counter_offer_price, quote.currency)}</span>
             </div>
           )}
         </div>
@@ -288,7 +288,7 @@ export default function AutoQuotationCard({
 
         {/* Counter offer message */}
         {quote.counter_offer_message && (
-          <div className="mt-2 flex items-start gap-1.5 text-xs text-violet-700 bg-violet-50 border border-violet-200 rounded px-2 py-1.5">
+          <div className="mt-2 flex items-start gap-1.5 text-xs text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded px-2 py-1.5">
             <MessageSquare className="w-3 h-3 shrink-0 mt-0.5" />
             <span>{quote.counter_offer_message}</span>
           </div>
@@ -296,7 +296,7 @@ export default function AutoQuotationCard({
 
         {/* Buyer notes (revision requests) */}
         {quote.buyer_notes && !quote.counter_offer_message && (
-          <div className="mt-2 flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+          <div className="mt-2 flex items-start gap-1.5 text-xs text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded px-2 py-1.5">
             <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
             <span>{quote.buyer_notes}</span>
           </div>
@@ -307,18 +307,18 @@ export default function AutoQuotationCard({
       {!isFinal && quote.status === 'sent' && (
         <div className="px-4 pb-4 flex flex-wrap gap-2">
           <Button size="sm" onClick={handleAccept} disabled={!!busy}
-            className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white gap-1.5">
+            className="h-8 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white gap-1.5">
             {busy === 'accept' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
             Accept
           </Button>
           <Button size="sm" onClick={handleReject} disabled={!!busy} variant="outline"
-            className="h-8 text-xs border-red-300 text-red-600 hover:bg-red-50 gap-1.5">
+            className="h-8 text-xs border-[#FF5A00]/40 text-[#FF7A2E] hover:bg-[#B33D00]/10 gap-1.5">
             {busy === 'reject' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
             Reject
           </Button>
           {/* Counter Offer — primary negotiate action */}
           <Button size="sm" onClick={() => setCounterOpen(true)} disabled={!!busy}
-            className="h-8 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1.5">
+            className="h-8 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white gap-1.5">
             <ArrowLeftRight className="w-3 h-3" /> Counter Offer
           </Button>
           <Button size="sm" onClick={() => setReviseOpen(true)} disabled={!!busy} variant="outline"
@@ -335,7 +335,7 @@ export default function AutoQuotationCard({
       {/* Actions — counter offer sent, waiting supplier */}
       {quote.status === 'revised_requested' && (
         <div className="px-4 pb-4 flex flex-wrap gap-2 items-center">
-          <span className="flex items-center gap-1.5 text-xs text-violet-700 bg-violet-50 border border-violet-200 rounded-full px-3 py-1">
+          <span className="flex items-center gap-1.5 text-xs text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-full px-3 py-1">
             <ArrowLeftRight className="w-3 h-3" /> Counter offer sent — awaiting supplier response
           </span>
           <Button size="sm" onClick={handleDownload} variant="ghost"
@@ -359,7 +359,7 @@ export default function AutoQuotationCard({
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md bg-card border-border">
           <DialogHeader>
             <DialogTitle className="text-foreground text-sm flex items-center gap-2">
-              <ArrowLeftRight className="w-4 h-4 text-violet-600" />
+              <ArrowLeftRight className="w-4 h-4 text-[#FF7A2E]" />
               Make a Counter Offer
             </DialogTitle>
           </DialogHeader>
@@ -400,7 +400,7 @@ export default function AutoQuotationCard({
               />
             </div>
             {counterPrice && !isNaN(parseFloat(counterPrice)) && parseFloat(counterPrice) > 0 && (
-              <p className={`text-xs font-medium ${parseFloat(counterPrice) < quote.total_amount ? 'text-green-600' : 'text-destructive'}`}>
+              <p className={`text-xs font-medium ${parseFloat(counterPrice) < quote.total_amount ? 'text-[#FF7A2E]' : 'text-destructive'}`}>
                 {parseFloat(counterPrice) < quote.total_amount
                   ? `${fmt(quote.total_amount - parseFloat(counterPrice), quote.currency)} savings (${((1 - parseFloat(counterPrice) / quote.total_amount) * 100).toFixed(1)}% off)`
                   : 'Counter offer must be lower than the quoted total'}
@@ -430,7 +430,7 @@ export default function AutoQuotationCard({
             <Button
               onClick={handleCounterOffer}
               disabled={busy === 'counter' || !counterPrice || parseFloat(counterPrice) >= quote.total_amount}
-              className="flex-1 h-9 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1.5"
+              className="flex-1 h-9 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white gap-1.5"
             >
               {busy === 'counter'
                 ? <><RefreshCw className="w-3 h-3 animate-spin" /> Sending…</>
@@ -459,7 +459,7 @@ export default function AutoQuotationCard({
           <div className="flex gap-2 mt-2">
             <Button variant="outline" className="flex-1 h-9 text-xs" onClick={() => setReviseOpen(false)}>Cancel</Button>
             <Button onClick={handleRevise} disabled={busy === 'revise'}
-              className="flex-1 h-9 text-xs bg-primary text-primary-foreground">
+              className="flex-1 h-9 text-xs bg-[#C94400] text-primary-foreground">
               {busy === 'revise' ? <RefreshCw className="w-3 h-3 animate-spin mr-1" /> : null}
               Send Request
             </Button>

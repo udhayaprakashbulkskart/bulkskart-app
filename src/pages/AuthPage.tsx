@@ -82,12 +82,12 @@ const TAB_CONTEXT: Record<string, { heading: string; sub: string; stats: { label
 
 // Floating mock activity cards cycling on the panel
 const ACTIVITY_ITEMS = [
-  { icon: Package,    color: 'bg-[#FF5A00]',   text: 'New RFQ: 500 MT Basmati Rice — UAE Buyer' },
-  { icon: BadgeCheck, color: 'bg-green-500',  text: 'Sunrise Machinery verified — Pune' },
-  { icon: TrendingUp, color: 'bg-primary',    text: '12 quotes received on Cotton Fabric RFQ' },
-  { icon: Zap,        color: 'bg-amber-500',  text: 'New RFQ: 10,000 Pcs LED Bulb — Germany' },
-  { icon: Users,      color: 'bg-purple-500', text: '3 new suppliers matched to your RFQ' },
-  { icon: Package,    color: 'bg-teal-500',   text: 'New RFQ: 50 Tons Groundnut Oil — Singapore' },
+  { icon: Package,    color: 'bg-[#C94400]',   text: 'New RFQ: 500 MT Basmati Rice — UAE Buyer' },
+  { icon: BadgeCheck, color: 'bg-[#C94400]',  text: 'Sunrise Machinery verified — Pune' },
+  { icon: TrendingUp, color: 'bg-[#C94400]',    text: '12 quotes received on Cotton Fabric RFQ' },
+  { icon: Zap,        color: 'bg-[#C94400]',  text: 'New RFQ: 10,000 Pcs LED Bulb — Germany' },
+  { icon: Users,      color: 'bg-[#C94400]', text: '3 new suppliers matched to your RFQ' },
+  { icon: Package,    color: 'bg-[#C94400]',   text: 'New RFQ: 50 Tons Groundnut Oil — Singapore' },
 ];
 
 // ── Left panel component ───────────────────────────────────────────────────────
@@ -100,7 +100,6 @@ function AuthLeftPanel({ tab }: { tab: string }) {
 
   // Cycle background image every 4s
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const t = setInterval(() => {
       setFadeSlide(false);
       setTimeout(() => {
@@ -113,7 +112,6 @@ function AuthLeftPanel({ tab }: { tab: string }) {
 
   // Cycle activity card every 3s
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const t = setInterval(() => {
       setFadeActivity(false);
       setTimeout(() => {
@@ -157,7 +155,7 @@ function AuthLeftPanel({ tab }: { tab: string }) {
           <button
             key={i}
             onClick={() => setSlideIdx(i)}
-            className={`rounded-full transition-all duration-300 ${i === slideIdx ? 'w-4 h-1.5 bg-primary' : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'}`}
+            className={`rounded-full transition-all duration-300 ${i === slideIdx ? 'w-4 h-1.5 bg-[#C94400]' : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'}`}
           />
         ))}
       </div>
@@ -208,8 +206,8 @@ function AuthLeftPanel({ tab }: { tab: string }) {
             <p className="text-[9px] text-white/35 mt-0.5">Just now · BulkSkart Live</p>
           </div>
           <span className="relative flex h-2 w-2 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C94400] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C94400]" />
           </span>
         </div>
       </div>
@@ -592,18 +590,18 @@ export default function AuthPage() {
       <AuthLeftPanel tab={activeTab} />
 
       {/* Right — auth forms */}
-      <div className="flex-1 min-w-0 h-screen overflow-y-auto flex items-start sm:items-center justify-center p-4 sm:p-6 md:p-8 bg-transparent">
-        <div className="bs-glass w-full max-w-md rounded-3xl px-5 py-6 sm:px-7 my-auto">
+      <div className="flex-1 min-w-0 h-screen overflow-y-auto flex items-start sm:items-center justify-center p-4 sm:p-6 md:p-8 bg-background">
+        <div className="w-full max-w-md py-6 my-auto">
           {/* Mobile logo */}
           <div className="md:hidden flex items-center mb-6 justify-center">
             <BrandLogo size="md" variant="auto" linkTo="/" />
           </div>
 
           <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'login' | 'buyer' | 'supplier')}>
-            <TabsList className="mb-6 grid h-12 w-full grid-cols-3 rounded-2xl border border-border bg-muted p-1">
-              <TabsTrigger value="login" className="h-10 rounded-xl text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Login</TabsTrigger>
-              <TabsTrigger value="buyer" className="h-10 rounded-xl text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Buyer</TabsTrigger>
-              <TabsTrigger value="supplier" className="h-10 rounded-xl text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Supplier</TabsTrigger>
+            <TabsList className="w-full bg-muted border border-border mb-6 grid grid-cols-3">
+              <TabsTrigger value="login" className="text-xs data-[state=active]:bg-[#C94400] data-[state=active]:text-white">Login</TabsTrigger>
+              <TabsTrigger value="buyer" className="text-xs data-[state=active]:bg-[#C94400] data-[state=active]:text-white">Buyer</TabsTrigger>
+              <TabsTrigger value="supplier" className="text-xs data-[state=active]:bg-[#C94400] data-[state=active]:text-white">Supplier</TabsTrigger>
             </TabsList>
 
             {/* ===== LOGIN ===== */}
@@ -671,7 +669,7 @@ export default function AuthPage() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
+                <Button type="submit" disabled={loading} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 font-bold">
                   {loading ? 'Signing in...' : 'Sign In'}
                 </Button>
 
@@ -768,7 +766,7 @@ export default function AuthPage() {
                   </label>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-2 font-bold">
+                <Button type="submit" disabled={loading} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 mt-2 font-bold">
                   {loading ? 'Creating account...' : 'Create Buyer Account — Free'}
                 </Button>
                 <p className="text-xs text-center text-muted-foreground">
@@ -886,7 +884,7 @@ export default function AuthPage() {
                   </label>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-2 font-bold">
+                <Button type="submit" disabled={loading} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 mt-2 font-bold">
                   {loading ? 'Creating account...' : 'Register as Supplier'}
                 </Button>
                 <p className="text-xs text-center text-muted-foreground">
@@ -912,7 +910,7 @@ export default function AuthPage() {
               type="button"
               onClick={() => setPolicyTab('terms')}
               className={`text-xs px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                policyTab === 'terms' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+                policyTab === 'terms' ? 'bg-[#C94400] text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               User Agreement
@@ -921,7 +919,7 @@ export default function AuthPage() {
               type="button"
               onClick={() => setPolicyTab('privacy')}
               className={`text-xs px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                policyTab === 'privacy' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+                policyTab === 'privacy' ? 'bg-[#C94400] text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               Privacy Policy
@@ -971,7 +969,7 @@ export default function AuthPage() {
                 if (activeTab === 'supplier') setSupplierAgreed(true);
                 setPolicyOpen(false);
               }}
-              className="bg-primary text-primary-foreground font-semibold text-xs h-9 px-4"
+              className="bg-[#C94400] text-primary-foreground font-semibold text-xs h-9 px-4"
             >
               Accept &amp; Close
             </Button>
@@ -987,7 +985,7 @@ export default function AuthPage() {
           </DialogHeader>
           {forgotSent ? (
             <div className="py-4 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-full bg-[#FF5A00]/20 text-[#FF7A2E] flex items-center justify-center mx-auto">
                 <CheckCircle className="w-6 h-6" />
               </div>
               <p className="text-sm font-semibold text-white">Reset Link Dispatched</p>
@@ -997,7 +995,7 @@ export default function AuthPage() {
               <Button
                 type="button"
                 onClick={() => setForgotOpen(false)}
-                className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-10 rounded-xl mt-2"
+                className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 rounded-xl mt-2"
               >
                 Back to Sign In
               </Button>
@@ -1030,7 +1028,7 @@ export default function AuthPage() {
                 <Button
                   type="submit"
                   disabled={forgotLoading}
-                  className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold"
+                  className="bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold"
                 >
                   {forgotLoading ? 'Sending...' : 'Send Reset Link'}
                 </Button>

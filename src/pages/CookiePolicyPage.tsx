@@ -46,7 +46,7 @@ export default function CookiePolicyPage() {
       />
       <Header />
 
-      <section className="bg-[#1a1a2e] text-white py-12 px-4">
+      <section className="bg-[#C94400] text-white py-12 px-4">
         <div className="max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-5">
             <Cookie className="w-3.5 h-3.5 text-primary" />
@@ -73,7 +73,7 @@ export default function CookiePolicyPage() {
                 <div key={name} className="bg-card border border-border rounded-xl p-4">
                   <div className="flex items-center justify-between gap-3 mb-2">
                     <span className="text-[14px] font-bold text-foreground">{name}</span>
-                    <span className={`text-[10px] font-semibold border rounded-full px-2 py-0.5 ${canDisable ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800' : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'}`}>
+                    <span className={`text-[10px] font-semibold border rounded-full px-2 py-0.5 ${canDisable ? 'bg-[#FF5A00]/10 text-[#FF7A2E] dark:text-[#FF7A2E] border-[#FF5A00]/40 dark:border-[#FF5A00]/40' : 'bg-[#FF5A00]/10 text-[#FF7A2E] dark:text-[#FF7A2E] border-[#FF5A00]/40 dark:border-[#FF5A00]/40'}`}>
                       {canDisable ? 'Optional' : 'Required'}
                     </span>
                   </div>

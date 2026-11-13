@@ -164,7 +164,7 @@ export default function AIQuotationModal({
           {product && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs border-t border-border pt-1.5 gap-1">
               <span className="text-muted-foreground shrink-0">Matched Catalog Item:</span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400 min-w-0 sm:text-right truncate flex items-center gap-1">
+              <span className="font-semibold text-[#FF7A2E] dark:text-[#FF7A2E] min-w-0 sm:text-right truncate flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">{product.name} ({product.matchScore}% Match)</span>
               </span>
@@ -288,7 +288,7 @@ export default function AIQuotationModal({
               </Button>
               <Button
                 type="submit"
-                className="w-full sm:flex-1 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-extrabold text-xs h-11 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.4)] gap-1.5"
+                className="w-full sm:flex-1 bg-[#C94400] hover:bg-[#B33D00] text-white font-extrabold text-xs h-11 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.4)] gap-1.5"
               >
                 <Eye className="w-4 h-4" />
                 <span>Preview Quote →</span>
@@ -340,12 +340,12 @@ export default function AIQuotationModal({
 
               <div className="text-xs pt-1 border-t border-white/5">
                 <span className="text-white/50 block mb-0.5">Manufacturer Notes:</span>
-                <p className="text-white/80 text-xs italic bg-black/20 p-2.5 rounded-lg break-words">{notes}</p>
+                <p className="text-white/80 text-xs italic bg-[#0A0A0A]/20 p-2.5 rounded-lg break-words">{notes}</p>
               </div>
             </div>
 
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-2.5 text-xs text-amber-300">
-              <ShieldCheck className="w-4 h-4 shrink-0 text-amber-400" />
+            <div className="p-3 bg-[#FF5A00]/10 border border-[#FF5A00]/30 rounded-xl flex items-center gap-2.5 text-xs text-[#FF7A2E]">
+              <ShieldCheck className="w-4 h-4 shrink-0 text-[#FF7A2E]" />
               <span className="leading-relaxed">
                 Confirmation Guard: By clicking Send Quote, you confirm this formal offer will be submitted to the buyer procurement desk.
               </span>
@@ -365,7 +365,7 @@ export default function AIQuotationModal({
                 type="button"
                 onClick={handleConfirmAndSendQuote}
                 disabled={isSubmitting}
-                className="w-full sm:flex-1 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-extrabold text-xs h-11 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.4)] gap-1.5"
+                className="w-full sm:flex-1 bg-[#C94400] hover:bg-[#B33D00] text-white font-extrabold text-xs h-11 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.4)] gap-1.5"
               >
                 <Send className="w-4 h-4" />
                 <span>{isSubmitting ? 'Sending...' : 'Confirm & Send Quote'}</span>

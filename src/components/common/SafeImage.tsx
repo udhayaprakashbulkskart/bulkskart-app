@@ -107,16 +107,19 @@ export default function SafeImage({
   const isProduct = effectiveFallbackType === 'product';
 
   // For products: ensure we always have an authentic commodity photo (never empty, never blank placeholder)
+  const usable = (url?: string | null) => (url && !isGenericImage(url) ? url : '');
+
   const getInitialUrl = () => {
+    const direct = usable(src);
     if (isProduct) {
-      if (src && !isGenericImage(src)) {
-        return toWebPUrl(src);
-      }
-      const matched = resolveProductImage({ name: alt, title: alt, category, image: src });
+      if (direct) return toWebPUrl(direct);
+      const matched = usable(resolveProductImage({ name: alt, title: alt, category, image: src }));
       return toWebPUrl(matched) || generateIsolatedProductFallback(alt, category || undefined);
     }
-    const nonProduct = src || fallbackSrc || getCategoryFallbackImage(category, alt, effectiveFallbackType);
-    return toWebPUrl(nonProduct) || getCategoryFallbackImage(category, alt, effectiveFallbackType);
+    const nonProduct = direct
+      || usable(fallbackSrc)
+      || usable(getCategoryFallbackImage(category, alt, effectiveFallbackType));
+    return toWebPUrl(nonProduct) || generateIsolatedProductFallback(alt, category || undefined);
   };
 
   const initialUrl = getInitialUrl();
@@ -180,21 +183,21 @@ export default function SafeImage({
       setErrorCount(1);
       if (isProduct) {
         const fallback = resolveProductImage({ name: alt, title: alt, category });
-        if (fallback && fallback !== imgSrc) {
+        if (fallback && fallback !== imgSrc && !isGenericImage(fallback)) {
           setImgSrc(fallback);
           setLoading(false);
           return;
         }
       } else if (effectiveFallbackType === 'company') {
         const brandLogo = resolveCompanyBranding({ company_name: alt, industry: category || undefined }).logo;
-        if (brandLogo && brandLogo !== imgSrc) {
+        if (brandLogo && brandLogo !== imgSrc && !isGenericImage(brandLogo)) {
           setImgSrc(brandLogo);
           setLoading(false);
           return;
         }
       } else if (effectiveFallbackType === 'rfq') {
         const rfqImg = resolveRfqImage({ title: alt, category });
-        if (rfqImg && rfqImg !== imgSrc) {
+        if (rfqImg && rfqImg !== imgSrc && !isGenericImage(rfqImg)) {
           setImgSrc(rfqImg);
           setLoading(false);
           return;
@@ -208,11 +211,12 @@ export default function SafeImage({
       setHasError(false);
     } else {
       const fallbackCat = getCategoryFallbackImage(category, alt, effectiveFallbackType);
-      if (fallbackCat && fallbackCat !== imgSrc) {
+      if (fallbackCat && fallbackCat !== imgSrc && !isGenericImage(fallbackCat)) {
         setImgSrc(fallbackCat);
         setHasError(false);
       } else {
-        setHasError(true);
+        setImgSrc(generateIsolatedProductFallback(alt, category || undefined));
+        setHasError(false);
       }
     }
     setLoading(false);
@@ -224,7 +228,7 @@ export default function SafeImage({
 
   if (hasError && !imgSrc) {
     return (
-      <div className={`bg-slate-900 border border-slate-800 flex flex-col items-center justify-center text-slate-400 p-2 text-center text-xs ${className}`}>
+      <div className={`bg-[#0A0A0A] border border-[#2A2A2A] flex flex-col items-center justify-center text-neutral-400 p-2 text-center text-xs ${className}`}>
         {effectiveFallbackType === 'company' ? (
           <Building2 className="w-6 h-6 mb-1 text-[#FF5A00]" />
         ) : (

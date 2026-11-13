@@ -14,7 +14,7 @@ const RULES: ImageRule[] = [
     urls: [
       'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
-      'https://cdn.pixabay.com/photo/2016/11/21/14/53/boxes-1845814_1280.jpg',
+      'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
       'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=800&q=80',
     ],
   },
@@ -24,7 +24,7 @@ const RULES: ImageRule[] = [
       'https://images.unsplash.com/photo-1606744837616-56c9a5c6a6eb?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1558171813-4c0887533814?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=800&q=80',
-      'https://cdn.pixabay.com/photo/2016/11/19/18/06/cotton-1840424_1280.jpg',
+      'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     ],
   },
   {
@@ -50,7 +50,7 @@ const RULES: ImageRule[] = [
       'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1504328345608-5c56ce5c6f0f?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1565793298595-6a381b3f1f4d?auto=format&fit=crop&w=800&q=80',
-      'https://cdn.pixabay.com/photo/2016/11/29/09/32/welding-1868731_1280.jpg',
+      'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     ],
   },
   {
@@ -113,7 +113,7 @@ const FALLBACK_POOL = [
   'https://images.unsplash.com/photo-1615906655593-ad0386982a0f?auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=800&q=80',
-  'https://cdn.pixabay.com/photo/2016/11/29/09/32/welding-1868731_1280.jpg',
+  'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
   'https://images.unsplash.com/photo-1565814329452-7811bc3270c0?auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1504328345608-5c56ce5c6f0f?auto=format&fit=crop&w=800&q=80',

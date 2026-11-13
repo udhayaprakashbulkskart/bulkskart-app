@@ -1,18 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
-  Flame, Clock, MapPin, Users, ArrowRight,
-  TrendingUp, CheckCircle2, ShieldCheck, ChevronRight, ChevronLeft,
-  Pause, Play, RefreshCw, Sparkles
+  Flame, Clock, MapPin, ArrowRight, ChevronLeft, ChevronRight, Sparkles, Gavel, FileText, Package, MessageSquare, Timer,
 } from 'lucide-react';
 import SafeImage from '@/components/common/SafeImage';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/db/supabase';
 import CreateReverseAuctionDialog from '@/components/auctions/CreateReverseAuctionDialog';
-import { getSimulatedAuctions } from '@/data/simulatedLiveAuctions';
-import { assignDistinctAuctionImages, resolveAuctionImage } from '@/lib/auctionImageResolver';
+import { resolveAuctionImage } from '@/lib/auctionImageResolver';
 
 export interface ReverseAuctionCardItem {
   id: string;
@@ -24,455 +19,310 @@ export interface ReverseAuctionCardItem {
   priceRange: string;
   location: string;
   quotedCount: number;
-  initialSeconds: number;
+  endTime: number; // epoch ms, from the database
   image: string;
 }
 
-function simulatedAsRailCards(): ReverseAuctionCardItem[] {
-  const mapped = getSimulatedAuctions().map((a) => ({
-    id: a.id,
-    auctionNumber: a.auction_number,
-    auctionType: a.auction_type,
-    title: a.title,
-    category: a.auction_type === 'forward' ? 'Surplus Liquidation' : 'Industrial Bulk',
-    quantity: `${a.total_quantity.toLocaleString('en-IN')} ${a.quantity_unit}`,
-    priceRange: `₹${a.starting_price.toLocaleString('en-IN')} / ${a.quantity_unit}`,
-    location: a.delivery_location,
-    quotedCount: a.total_bids,
-    initialSeconds: Math.max(
-      0,
-      Math.floor((new Date(a.end_time).getTime() - Date.now()) / 1000)
-    ),
-    image: resolveAuctionImage({ id: a.id, title: a.title, existing: a.images }),
-  }));
-  return assignDistinctAuctionImages(mapped);
-}
-
-const FALLBACK_AUCTIONS: ReverseAuctionCardItem[] = simulatedAsRailCards();
-
+const PER_PAGE = 3;
 const CYCLE_SECONDS = 25;
-/** 3 roomier cards fit laptop screens better than a cramped 4-up row */
-const ITEMS_PER_PAGE = 3;
-const MAX_RAIL_SECONDS = 24 * 60 * 60;
 
 function isUuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim());
 }
 
-function friendlyCategory(raw: unknown, auctionType: 'reverse' | 'forward'): string {
-  const value = String(raw || '').trim();
-  if (!value || isUuidLike(value)) {
-    return auctionType === 'forward' ? 'Surplus Liquidation' : 'Industrial Bulk';
-  }
-  return value;
+function formatCountdown(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function formatTime(totalSeconds: number): string {
-  if (totalSeconds <= 0) return '00:00:00';
-  const capped = Math.min(totalSeconds, MAX_RAIL_SECONDS);
-  const hours = Math.floor(capped / 3600);
-  const minutes = Math.floor((capped % 3600) / 60);
-  const seconds = capped % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+// Maps a database auction row to the card shape. Only real fields are used.
+function mapAuctionRow(d: any): ReverseAuctionCardItem {
+  const auctionNumber = String(d.auction_number || '').trim();
+  return {
+    id: d.id,
+    auctionNumber: auctionNumber && !isUuidLike(auctionNumber) ? auctionNumber : `AUC-${String(d.id).replace(/-/g, '').slice(0, 6).toUpperCase()}`,
+    auctionType: d.auction_type === 'forward' ? 'forward' : 'reverse',
+    title: d.title,
+    category: d.category_name && !isUuidLike(String(d.category_name)) ? d.category_name : 'Bulk Lot',
+    quantity: d.total_quantity ? `${Number(d.total_quantity).toLocaleString('en-IN')} ${d.quantity_unit || 'Units'}` : 'Bulk Lot',
+    priceRange: d.starting_price ? `₹${Number(d.starting_price).toLocaleString('en-IN')} / ${d.quantity_unit || 'unit'}` : 'Competitive bidding',
+    location: d.delivery_location || 'Pan-India',
+    quotedCount: Number(d.total_bids) || 0,
+    endTime: new Date(d.end_time).getTime(),
+    image: resolveAuctionImage({ id: d.id, title: d.title || '', existing: d.images?.[0] }),
+  };
 }
 
 export default function LiveReverseAuctionsRail() {
   const navigate = useNavigate();
-  const [allAuctions, setAllAuctions] = useState<ReverseAuctionCardItem[]>(FALLBACK_AUCTIONS);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const reduce = useReducedMotion();
+  const [auctions, setAuctions] = useState<ReverseAuctionCardItem[]>([]);
+  const [recentEnded, setRecentEnded] = useState<ReverseAuctionCardItem[]>([]);
+  const [requestCount, setRequestCount] = useState<number | null>(null);
+  const [liveCount, setLiveCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'live' | 'requests'>('live');
   const [page, setPage] = useState(0);
-  const [secondsRemaining, setSecondsRemaining] = useState(CYCLE_SECONDS);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const [secondsLeft, setSecondsLeft] = useState(CYCLE_SECONDS);
+  const [paused, setPaused] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const [timers, setTimers] = useState<Record<string, number>>(() => {
-    const nextTimers: Record<string, number> = {};
-    FALLBACK_AUCTIONS.forEach(a => {
-      nextTimers[a.id] = a.initialSeconds;
-    });
-    return nextTimers;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(allAuctions.length / ITEMS_PER_PAGE));
-
-  useEffect(() => {
-    if (page > totalPages - 1) setPage(0);
-  }, [page, totalPages]);
-
-  // Query live database auctions (synced with Auctions Hub)
-  const fetchLiveAuctions = useCallback(async () => {
+  // Real open auctions only: status live AND end time still in the future.
+  const load = useCallback(async () => {
+    setLoading(true);
     try {
-      setIsSyncing(true);
-      const currentTime = Date.now();
-      const { data, error } = await supabase
-        .from('auctions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(60);
-
-      if (!error && data && data.length > 0) {
-        // Filter out explicitly concluded or cancelled auctions
-        const validAuctions = data.filter((d: any) => 
-          d.status !== 'cancelled' && d.status !== 'sold' && d.status !== 'unsold'
-        );
-
-        const listToMap = validAuctions.length > 0 ? validAuctions : data;
-
-        const mappedFromDb: ReverseAuctionCardItem[] = listToMap.map((d: any, idx: number) => {
-          const end = d.end_time ? new Date(d.end_time).getTime() : 0;
-          let remaining = Math.max(0, Math.floor((end - currentTime) / 1000));
-          // Keep live feel inside a 24h window; never dump raw UUID category ids onto the UI
-          if (remaining <= 0 || remaining > MAX_RAIL_SECONDS) {
-            remaining = ((idx * 2741) % (6 * 3600)) + 45 * 60;
-          }
-
-          const auctionType: 'reverse' | 'forward' = d.auction_type === 'forward' ? 'forward' : 'reverse';
-          const defaultImg = auctionType === 'forward'
-            ? 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80'
-            : 'https://cdn.pixabay.com/photo/2016/11/29/09/32/welding-1868731_1280.jpg';
-
-          const auctionNumber = String(d.auction_number || '').trim();
-          const safeNumber =
-            auctionNumber && !isUuidLike(auctionNumber)
-              ? auctionNumber
-              : `AUC-${String(d.id).replace(/-/g, '').slice(0, 6).toUpperCase()}`;
-
-          return {
-            id: d.id,
-            auctionNumber: safeNumber,
-            auctionType,
-            title: d.title,
-            category: friendlyCategory(d.category_name || d.category || d.category_id, auctionType),
-            quantity: d.total_quantity ? `${d.total_quantity.toLocaleString()} ${d.quantity_unit || 'Units'}` : 'Bulk Lot',
-            priceRange: d.starting_price
-              ? `₹${Number(d.starting_price).toLocaleString('en-IN')} / ${d.quantity_unit || 'unit'}`
-              : 'Competitive Bidding',
-            location: d.delivery_location || 'Pan-India',
-            quotedCount: Number(d.total_bids) || (idx % 6) + 1,
-            initialSeconds: Math.min(remaining, MAX_RAIL_SECONDS),
-            image: resolveAuctionImage({
-              id: d.id,
-              title: d.title || '',
-              existing: d.images?.[0] || defaultImg,
-            }),
-          };
-        });
-
-        const sims = simulatedAsRailCards();
-        const merged = assignDistinctAuctionImages([
-          ...mappedFromDb,
-          ...sims.filter((s) => !mappedFromDb.some((d) => d.id === s.id)),
-        ]);
-        setAllAuctions(merged);
-        const nextTimers: Record<string, number> = {};
-        merged.forEach((a) => {
-          nextTimers[a.id] = a.initialSeconds;
-        });
-        setTimers(nextTimers);
-      } else {
-        const sims = simulatedAsRailCards();
-        setAllAuctions(sims);
-        const nextTimers: Record<string, number> = {};
-        sims.forEach((a) => {
-          nextTimers[a.id] = a.initialSeconds;
-        });
-        setTimers(nextTimers);
-      }
-    } catch (err) {
-      console.error('Error fetching live auctions for 24h rail:', err);
-      const sims = simulatedAsRailCards();
-      setAllAuctions(sims);
-      const nextTimers: Record<string, number> = {};
-      sims.forEach((a) => {
-        nextTimers[a.id] = a.initialSeconds;
-      });
-      setTimers(nextTimers);
+      const nowIso = new Date().toISOString();
+      const [open, openCount, reqCount, ended] = await Promise.all([
+        supabase.from('auctions').select('*').eq('status', 'live').gt('end_time', nowIso).order('end_time', { ascending: true }).limit(24),
+        supabase.from('auctions').select('id', { count: 'exact', head: true }).eq('status', 'live').gt('end_time', nowIso),
+        supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${nowIso}`).or(`deadline.is.null,deadline.gt.${nowIso}`),
+        // Recent completed auctions: shown only when nothing is live. Real records, labelled as ended.
+        supabase.from('auctions').select('*').eq('status', 'completed').order('end_time', { ascending: false }).limit(6),
+      ]);
+      setAuctions(((open.data ?? []) as any[]).map(mapAuctionRow));
+      setRecentEnded(((ended.data ?? []) as any[]).map(mapAuctionRow));
+      setLiveCount(openCount.error ? null : openCount.count ?? 0);
+      setRequestCount(reqCount.error ? null : reqCount.count ?? 0);
+      setPage(0);
+    } catch {
+      setAuctions([]);
+      setRecentEnded([]);
+      setLiveCount(null);
+      setRequestCount(null);
     } finally {
-      setIsSyncing(false);
+      setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchLiveAuctions();
-  }, [fetchLiveAuctions]);
+  useEffect(() => { load(); }, [load]);
 
-  // Main 25-Second Auto-Rotation Loop
+  // Live clock for countdowns (1s) and the batch rotation.
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (isPaused || isHovered) return;
-
-      setSecondsRemaining(prev => {
-        if (prev <= 1) {
-          // Advance to next page and trigger background live refresh
-          setPage(currPage => (currPage + 1) % totalPages);
-          fetchLiveAuctions();
+    const t = setInterval(() => {
+      setNow(Date.now());
+      if (paused) return;
+      setSecondsLeft(s => {
+        if (s <= 1) {
+          setPage(p => p + 1);
           return CYCLE_SECONDS;
         }
-        return prev - 1;
+        return s - 1;
       });
     }, 1000);
+    return () => clearInterval(t);
+  }, [paused]);
 
-    return () => clearInterval(timer);
-  }, [isPaused, isHovered, totalPages, fetchLiveAuctions]);
+  // Only auctions still open are shown.
+  const openNow = useMemo(() => auctions.filter(a => a.endTime > now), [auctions, now]);
+  const totalPages = Math.max(1, Math.ceil(openNow.length / PER_PAGE));
+  const safePage = page % totalPages;
+  const visible = openNow.slice(safePage * PER_PAGE, safePage * PER_PAGE + PER_PAGE);
+  const progress = ((CYCLE_SECONDS - secondsLeft) / CYCLE_SECONDS) * 100;
 
-  // Real-time Auction Lot Expiry Countdown Ticker
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimers(prev => {
-        const next: Record<string, number> = {};
-        Object.keys(prev).forEach(key => {
-          next[key] = Math.max(0, prev[key] - 1);
-        });
-        return next;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleNextPage = () => {
-    setPage(p => (p + 1) % totalPages);
-    setSecondsRemaining(CYCLE_SECONDS);
-  };
-
-  const handlePrevPage = () => {
-    setPage(p => (p - 1 + totalPages) % totalPages);
-    setSecondsRemaining(CYCLE_SECONDS);
-  };
-
-  const handleSelectPage = (targetIndex: number) => {
-    setPage(targetIndex);
-    setSecondsRemaining(CYCLE_SECONDS);
-  };
-
-  // Compute current visible 4 cards
-  const startIndex = page * ITEMS_PER_PAGE;
-  const currentAuctions = allAuctions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  // Fill if less than 4
-  const displayAuctions = currentAuctions.length === ITEMS_PER_PAGE
-    ? currentAuctions
-    : allAuctions.slice(0, ITEMS_PER_PAGE);
-
-  const progressPercent = ((CYCLE_SECONDS - secondsRemaining) / CYCLE_SECONDS) * 100;
+  const openAuction = (a: ReverseAuctionCardItem) =>
+    navigate(`/auctions/${a.auctionType === 'forward' ? 'forward' : 'reverse'}/${a.id}`);
 
   return (
-    <section
-      className="relative z-20 max-w-[1400px] mx-auto w-full px-4 sm:px-5 md:px-6 mb-8 sm:mb-12"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Header — wraps cleanly on laptop widths */}
-      <div className="flex flex-col gap-3 mb-3 sm:mb-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-2 flex-wrap min-w-0">
-          <Flame className="w-4 h-4 text-[#FF5A00] animate-bounce shrink-0" />
-          <h2 className="text-xs sm:text-sm font-extrabold text-white tracking-wider uppercase flex items-center gap-2">
-            Sell Products in 24 Hours
-            <span className="text-[#FF5A00] font-black bg-[#FF5A00]/15 px-1.5 py-0.5 rounded text-[10px] border border-[#FF5A00]/30">
-              HOT
-            </span>
-          </h2>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FF5A00]/15 border border-[#FF5A00]/30 text-white text-[11px] font-medium">
-            <RefreshCw className={`w-3 h-3 text-[#FF5A00] ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>
-              {isHovered ? (
-                <span className="text-amber-400 font-semibold">Paused on hover</span>
-              ) : isPaused ? (
-                <span className="text-amber-400 font-semibold">Feed Paused</span>
-              ) : (
-                <span>
-                  Next batch in <strong className="text-[#FF5A00] font-mono font-bold">{secondsRemaining}s</strong>
-                </span>
-              )}
-            </span>
-          </div>
+    <section className="relative z-20 mx-auto mb-8 w-full max-w-[1400px] px-4 sm:mb-12 sm:px-5 md:px-6">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FF5A00]/15 text-[#FF5A00]">
+            <Flame className="h-5 w-5" />
+          </span>
+          <h2 className="text-[18px] font-black uppercase tracking-tight text-white sm:text-[22px]">Sell Products in 24 Hours</h2>
+          <span className="rounded-md bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] px-2 py-0.5 text-[11px] font-black text-white">HOT</span>
         </div>
-
-        <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+        <div className="flex items-center gap-3 rounded-xl border border-[#FF5A00]/50 bg-[#0c0c0c] px-3.5 py-2 shadow-[0_0_24px_-8px_rgba(255,90,0,0.7)]">
+          <Timer className="h-5 w-5 text-[#FF5A00]" />
+          <div>
+            <p className="text-[10px] text-neutral-400">Next batch in</p>
+            <p className="font-mono text-[15px] font-bold tabular-nums text-white">
+              {paused ? 'Paused' : `${String(secondsLeft).padStart(2, '0')}s`}
+            </p>
+          </div>
           <button
             type="button"
-            onClick={() => setIsPaused((p) => !p)}
-            aria-label={isPaused ? 'Resume 25s auto-cycle' : 'Pause 25s auto-cycle'}
-            className="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all border border-slate-700/80"
-            title={isPaused ? 'Resume auto rotation' : 'Pause auto rotation'}
+            onClick={() => setPaused(p => !p)}
+            aria-label={paused ? 'Resume rotation' : 'Pause rotation'}
+            className="ml-1 rounded-md border border-white/15 px-2 py-1 text-[11px] font-semibold text-white hover:border-[#FF5A00]"
           >
-            {isPaused ? <Play className="w-3.5 h-3.5 fill-current" /> : <Pause className="w-3.5 h-3.5" />}
+            {paused ? 'Resume' : 'Pause'}
           </button>
+        </div>
+      </div>
 
-          <div className="flex items-center gap-1.5 px-1 max-w-[140px] overflow-hidden">
-            {Array.from({ length: Math.min(totalPages, 8) }).map((_, idx) => (
+      {/* Tabs (real counts only) */}
+      <div className="mt-4 flex flex-wrap gap-2.5">
+        <button
+          type="button"
+          onClick={() => setTab('live')}
+          className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[13px] font-semibold transition-all ${
+            tab === 'live' ? 'border-transparent bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-white shadow-[0_8px_22px_-8px_rgba(255,90,0,0.9)]' : 'border-white/10 bg-[#101010] text-slate-200 hover:border-white/25'
+          }`}
+        >
+          <Gavel className="h-4 w-4" /> Live Auctions {liveCount !== null && <span className="opacity-80">({liveCount})</span>}
+        </button>
+        <Link
+          to="/requirements"
+          onClick={() => setTab('requests')}
+          className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[13px] font-semibold transition-all ${
+            tab === 'requests' ? 'border-transparent bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-white' : 'border-white/10 bg-[#101010] text-slate-200 hover:border-white/25 hover:text-white'
+          }`}
+        >
+          <FileText className="h-4 w-4" /> Bulk Requests {requestCount !== null && <span className="opacity-80">({requestCount})</span>}
+        </Link>
+        <button
+          type="button"
+          onClick={() => setIsCreateOpen(true)}
+          className="ml-auto flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-[13px] font-semibold text-white hover:border-[#FF5A00]"
+        >
+          <Sparkles className="h-4 w-4 text-[#FF5A00]" /> List Product in 24h
+        </button>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between">
+        <h3 className="flex items-center gap-2 text-[16px] font-black text-white">
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#B33D00] shadow-[0_0_10px_rgba(220,38,38,0.9)]" />
+          Live Now
+        </h3>
+        <Link to="/auctions" className="group flex items-center gap-1 text-[13px] font-bold text-[#FF7A2E] hover:text-[#FF5A00]">
+          View All <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+
+      <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full bg-gradient-to-r from-[#C94400] via-[#C94400] to-orange-400 transition-[width] duration-1000 ease-linear" style={{ width: `${progress}%` }} />
+      </div>
+
+      {/* Cards */}
+      <div className="mt-4">
+        {loading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map(n => <div key={n} className="h-72 animate-pulse rounded-2xl border border-white/5 bg-[#161616]/[0.03]" />)}
+          </div>
+        ) : openNow.length === 0 ? (
+          <div className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-6 sm:p-8">
+            <div className="text-center">
+              <Package className="mx-auto h-9 w-9 text-[#FF5A00]" />
+              <p className="mt-3 text-sm font-semibold text-white">No live auctions are open right now.</p>
+              <p className="mt-1 text-xs text-neutral-400">Open auctions appear here with a live countdown as soon as they are listed.</p>
+              <button type="button" onClick={() => setIsCreateOpen(true)} className="mt-4 rounded-xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] px-5 py-2.5 text-[13px] font-bold text-white">
+                List a product in 24 hours
+              </button>
+            </div>
+            {recentEnded.length > 0 && (
+              <div className="mt-6 border-t border-white/10 pt-5">
+                <p className="mb-3 text-[12px] font-bold uppercase tracking-wider text-neutral-400">Recently ended auctions</p>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {recentEnded.map(a => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => openAuction(a)}
+                      className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#101010] p-3 text-left transition-colors hover:border-[#FF5A00]/60"
+                    >
+                      <span className="shrink-0 rounded-md bg-white/10 px-2 py-1 text-[10px] font-bold text-neutral-300">ENDED</span>
+                      <span className="min-w-0">
+                        <span className="line-clamp-2 block text-[13px] font-semibold text-white">{a.title}</span>
+                        <span className="mt-1 block text-[11px] text-neutral-400">
+                          {a.quantity} · {a.location} · {new Date(a.endTime).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={safePage}
+              initial={reduce ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduce ? undefined : { opacity: 0, y: -14 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 scrollbar-none sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-3"
+            >
+              {visible.map(a => (
+                <article
+                  key={a.id}
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => openAuction(a)}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openAuction(a); } }}
+                  className="group relative w-[84vw] max-w-[360px] shrink-0 snap-start cursor-pointer overflow-hidden rounded-2xl border border-[#FF5A00]/40 bg-gradient-to-b from-[#121212] to-[#0a0a0a] shadow-[0_18px_50px_-22px_rgba(255,90,0,0.55)] transition-all duration-300 hover:-translate-y-1 hover:border-[#FF5A00] sm:w-auto sm:max-w-none"
+                >
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#0A0A0A]">
+                    <SafeImage src={a.image} alt={a.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />
+                    <div className="absolute left-3 top-3 flex items-center gap-2">
+                      <span className="flex items-center gap-1.5 rounded-md bg-[#B33D00] px-2 py-1 text-[11px] font-extrabold text-white">
+                        <span className="h-1.5 w-1.5 animate-ping rounded-full bg-[#161616]" /> LIVE
+                      </span>
+                      <span className="flex items-center gap-1 rounded-md bg-[#0A0A0A]/70 px-2 py-1 font-mono text-[11px] font-bold text-white backdrop-blur">
+                        <Clock className="h-3 w-3 text-[#FF5A00]" /> {formatCountdown(a.endTime - now)}
+                      </span>
+                    </div>
+                    <span className="absolute right-3 top-3 rounded-md bg-[#0A0A0A]/70 px-2 py-1 font-mono text-[10px] text-slate-200 backdrop-blur">{a.auctionNumber}</span>
+                    <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-lg border border-white/15 bg-[#0A0A0A]/60 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
+                      <Package className="h-3.5 w-3.5 text-[#FF5A00]" /> {a.category}
+                    </span>
+                  </div>
+
+                  <div className="p-4">
+                    <h4 className="line-clamp-2 min-h-[2.6em] text-[15px] font-bold leading-snug text-white group-hover:text-[#FF7A2E]">{a.title}</h4>
+                    <p className="mt-2 flex items-center gap-2 text-[12px] text-slate-300"><Package className="h-3.5 w-3.5 text-neutral-400" /> {a.quantity}</p>
+                    <p className="mt-1 text-[18px] font-black text-[#FF7A2E]">{a.priceRange}</p>
+                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/10 pt-3 text-[12px]">
+                      <span className="flex min-w-0 items-center gap-1.5 text-slate-300">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" />
+                        <span className="truncate">{a.location}</span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1.5 font-semibold text-slate-100">
+                        <MessageSquare className="h-3.5 w-3.5 text-[#FF5A00]" /> {a.quotedCount} {a.quotedCount === 1 ? 'Quotation' : 'Quotations'}
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
+
+      {openNow.length > 0 && (
+        <>
+          <div className="mt-4 flex justify-center gap-2">
+            {Array.from({ length: totalPages }).map((_, i) => (
               <button
-                key={idx}
+                key={i}
                 type="button"
-                onClick={() => handleSelectPage(idx)}
-                aria-label={`Jump to auction batch ${idx + 1}`}
-                className={`h-2 rounded-full transition-all duration-300 shrink-0 ${
-                  idx === page
-                    ? 'w-5 bg-[#FF5A00] shadow-[0_0_8px_rgba(255,90,0,0.6)]'
-                    : 'w-2 bg-slate-700 hover:bg-slate-500'
-                }`}
+                onClick={() => { setPage(i); setSecondsLeft(CYCLE_SECONDS); }}
+                aria-label={`Show batch ${i + 1}`}
+                className={`h-2 rounded-full transition-all duration-300 ${i === safePage ? 'w-6 bg-[#C94400]' : 'w-2 bg-[#0A0A0A] hover:bg-[#262626]'}`}
               />
             ))}
           </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={handlePrevPage}
-              aria-label="Previous auction batch"
-              className="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all border border-slate-700/80 active:scale-95"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleNextPage}
-              aria-label="Next auction batch"
-              className="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all border border-slate-700/80 active:scale-95"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+          <div className="mt-3 flex items-center justify-between rounded-xl border border-white/10 bg-[#0c0c0c] px-4 py-2.5 text-[12px] text-slate-300">
+            <span>Batch {safePage + 1} of {totalPages} ({openNow.length} open {openNow.length === 1 ? 'auction' : 'auctions'})</span>
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => { setPage(p => p - 1 < 0 ? totalPages - 1 : p - 1); setSecondsLeft(CYCLE_SECONDS); }} aria-label="Previous batch" className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/15 hover:border-[#FF5A00]"><ChevronLeft className="h-4 w-4" /></button>
+              <button type="button" onClick={() => { setPage(p => p + 1); setSecondsLeft(CYCLE_SECONDS); }} aria-label="Next batch" className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/15 hover:border-[#FF5A00]"><ChevronRight className="h-4 w-4" /></button>
+            </div>
           </div>
-
-          <div className="h-4 w-px bg-slate-800 hidden sm:block" />
-
-          <Button
-            type="button"
-            onClick={() => setIsCreateOpen(true)}
-            className="bg-[#FF5A00] hover:bg-[#e04e00] text-white text-xs font-bold h-8 px-3 rounded-xl shadow-[0_2px_0_#922f00] flex items-center gap-1.5 shrink-0 transition-all active:translate-y-0.5 active:shadow-none"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="hidden min-[420px]:inline">List Product in 24h</span>
-            <span className="min-[420px]:hidden">List 24h</span>
-          </Button>
-
-          <Link
-            to="/auctions"
-            className="text-xs sm:text-sm font-bold text-[#FF5A00] hover:text-[#e04e00] flex items-center gap-1 transition-colors group shrink-0"
-          >
-            <span>View All</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
-      </div>
-
-      <div className="w-full h-1 bg-slate-800/80 rounded-full overflow-hidden mb-4">
-        <div
-          className="h-full bg-gradient-to-r from-amber-500 via-[#FF5A00] to-orange-400 transition-all duration-1000 ease-linear rounded-full"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
-
-      {/* 3 equal cards on desktop — readable on laptop; swipe on mobile */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={page}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible sm:pb-0"
-        >
-          {displayAuctions.map((auction) => {
-            const timeLeft = timers[auction.id] !== undefined ? timers[auction.id] : auction.initialSeconds;
-
-            return (
-              <div
-                key={auction.id}
-                role="link"
-                tabIndex={0}
-                onClick={() =>
-                  navigate(
-                    `/auctions/${auction.auctionType === 'forward' ? 'forward' : 'reverse'}/${auction.id}`
-                  )
-                }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    navigate(
-                      `/auctions/${auction.auctionType === 'forward' ? 'forward' : 'reverse'}/${auction.id}`
-                    );
-                  }
-                }}
-                className="snap-start shrink-0 w-[78vw] max-w-[320px] sm:w-auto sm:max-w-none group bg-slate-900/85 hover:bg-slate-900 border border-slate-800/90 hover:border-[#FF5A00]/60 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer min-h-0"
-              >
-                <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-950 shrink-0">
-                  <SafeImage
-                    src={auction.image}
-                    alt={auction.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
-
-                  <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1.5 text-[10px] font-bold">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="px-2 py-0.5 rounded-md bg-red-600 text-white font-extrabold flex items-center gap-1 shadow-sm shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                        LIVE
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-white border border-slate-700/80 font-mono flex items-center gap-1 shrink-0">
-                        <Clock className="w-3 h-3 text-[#FF5A1F]" />
-                        {formatTime(timeLeft)}
-                      </span>
-                    </div>
-                    <span className="px-1.5 py-0.5 rounded-md bg-black/60 text-slate-300 font-mono text-[9px] truncate max-w-[38%]">
-                      {auction.auctionNumber}
-                    </span>
-                  </div>
-
-                  <div className="absolute bottom-2 left-2 max-w-[75%]">
-                    <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-slate-200 border border-slate-700/60 text-[10px] font-semibold truncate inline-block max-w-full">
-                      {auction.category}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2.5 min-w-0">
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-white text-sm group-hover:text-[#FF5A1F] transition-colors line-clamp-2 leading-snug">
-                      {auction.title}
-                    </h3>
-                    <div className="text-xs text-slate-300 font-medium mt-1 truncate">
-                      {auction.quantity}
-                    </div>
-                    <div className="text-sm sm:text-base font-extrabold text-[#FF5A1F] mt-1 truncate">
-                      {auction.priceRange}
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 gap-2">
-                    <div className="flex items-center gap-1 min-w-0 flex-1">
-                      <MapPin className="w-3 h-3 text-[#FF5A1F] shrink-0" />
-                      <span className="truncate">{auction.location}</span>
-                    </div>
-                    <div className="flex items-center gap-1 font-semibold text-slate-200 shrink-0">
-                      <Users className="w-3 h-3 text-[#FF5A1F]" />
-                      <span>{auction.quotedCount} Quoted</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Mobile Indicator Footer with Batch Label */}
-      {allAuctions.length > 0 && (
-        <div className="flex md:hidden items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
-          <span>Batch {page + 1} of {totalPages} ({allAuctions.length} live auctions)</span>
-          <span className="text-[#FF5A00] font-medium">Swipe to browse cards</span>
-        </div>
+        </>
       )}
 
-      {/* 24-Hour Product Listing Dialog */}
       <CreateReverseAuctionDialog
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
-        onSuccess={() => {
-          setIsCreateOpen(false);
-          fetchLiveAuctions();
-        }}
+        onSuccess={() => { setIsCreateOpen(false); load(); }}
       />
     </section>
   );
