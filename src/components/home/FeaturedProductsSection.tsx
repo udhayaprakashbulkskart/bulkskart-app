@@ -42,7 +42,7 @@ import type { Product, Category } from '@/types/types';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { CURATED_INDUSTRIAL_PRODUCTS, type CuratedProduct } from '@/data/curatedIndustrialProducts';
-import { isGenericOrDuplicateImage } from '@/lib/productImageMatchingEngine';
+import { catalogProductPhoto, VERIFIED_BULK_CURATED_PHOTOS } from '@/data/verifiedBulkProductPhotos';
 
 // Export DisplayProduct for compatibility with QuickQuoteModal and other components
 export interface DisplayProduct {
@@ -98,81 +98,6 @@ const MARKETPLACE_CATEGORIES: NavCategory[] = [
   { id: 'raw-materials', label: 'Raw Materials', dbSlugMatch: ['chemicals-raw-materials', 'raw-materials', 'plastics-rubber'], subCategories: ['All Subcategories', 'Polymer Granules', 'Aluminum Ingots', 'Titanium Alloys', 'Chemical Resins', 'Rubber Sheets'] },
 ];
 
-/** Fast Unsplash WebP thumbs for category fallbacks (no Pixabay hotlinks) */
-const u = (id: string) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=640&h=640&q=75&fm=webp`;
-
-const CATEGORY_IMAGE_BANKS: Record<string, string[]> = {
-  apparel: [
-    u('photo-1558611848-73f7eb4001a1'),
-    u('photo-1620799140408-edc6dcb6d633'),
-    u('photo-1558769132-cb1aea458c5e'),
-    u('photo-1610030469983-98e550d6193c'),
-  ],
-  electronics: [
-    u('photo-1518770660439-4636190af475'),
-    u('photo-1581092160562-40aa08e78837'),
-    u('photo-1550985543-f47df4b4c4e0'),
-    u('photo-1516035069371-29a1b244cc32'),
-  ],
-  machinery: [
-    u('photo-1565793298595-6a879b1d9492'),
-    u('photo-1565043589221-1a6fd9ae45c7'),
-    u('photo-1581094794329-c8112a89af12'),
-    u('photo-1530587191325-3db32d826c18'),
-    u('photo-1596040033229-a9821ebd058d'),
-  ],
-  agriculture: [
-    u('photo-1586201375761-83865001e31c'),
-    u('photo-1508747703725-719777637510'),
-    u('photo-1464226184884-fa280b87c399'),
-  ],
-  packaging: [
-    u('photo-1607166452427-7e4477079cb9'),
-    u('photo-1586528116311-ad8dd3c8310d'),
-    u('photo-1596462502278-27bfdc403348'),
-    u('photo-1563245372-f21724e3856d'),
-  ],
-  beauty: [
-    u('photo-1608571423902-eed4a5ad8108'),
-    u('photo-1556228578-0d85b1a4d571'),
-    u('photo-1596462502278-27bfdc403348'),
-  ],
-  furniture: [
-    u('photo-1586023492125-27b2c045efd7'),
-    u('photo-1617806118233-18e1de247200'),
-    u('photo-1567538096630-e0c55bd6374c'),
-  ],
-  construction: [
-    u('photo-1504307651254-35680f356dfd'),
-    u('photo-1503387762-592deb58ef4e'),
-    u('photo-1565193566173-7a0ee3dbe261'),
-    u('photo-1504328345606-18bbc8c9d7d1'),
-  ],
-  automotive: [
-    u('photo-1492144534655-ae79c964c9d7'),
-    u('photo-1581092918056-0c4c3acd3789'),
-    u('photo-1593941707882-a5bba14938c7'),
-  ],
-  'home-garden': [
-    u('photo-1416879595882-3373a0480b5b'),
-    u('photo-1556910103-1c02745aae4d'),
-  ],
-  electrical: [
-    u('photo-1621905252507-b35492cc74b4'),
-    u('photo-1558618666-fcd25c85cd64'),
-  ],
-  'renewable-energy': [
-    u('photo-1509391366360-2e959784a276'),
-    u('photo-1613665813446-82a78c468a1d'),
-    u('photo-1473341304170-971dccb5ac1e'),
-  ],
-  'raw-materials': [
-    u('photo-1611273426858-450d8e3c9fce'),
-    u('photo-1600880292089-90a7e086ee0c'),
-    u('photo-1532187863486-abf9dbad1b69'),
-  ],
-};
 
 // Country codes with flags
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -240,7 +165,7 @@ function curatedToDisplay(p: CuratedProduct): DisplayProduct {
     badgeLabel: p.badgeLabel,
     rating: p.rating,
     reviewCount: p.reviewCount,
-    img: p.img,
+    img: VERIFIED_BULK_CURATED_PHOTOS[p.id] || p.img,
     categoryName: p.categoryName,
     subCategory: p.categoryName,
   };
@@ -261,69 +186,6 @@ function pickProductBatch(pool: DisplayProduct[], offset: number, count: number)
     batch.push(item);
   }
   return batch;
-}
-
-// Deterministically pick an authentic, non-repeated image based on product name hash
-function getAuthenticProductImage(productName: string, categorySlug: string, originalImage?: string): string {
-  const nameLower = productName.toLowerCase();
-
-  // Explicit check for mobile commercial food trucks / catering trailers
-  if (nameLower.includes('food truck') || nameLower.includes('catering trailer') || nameLower.includes('mobile kitchen')) {
-    return u('photo-1596040033229-a9821ebd058d');
-  }
-
-  // Reject generic or mismatched assets (passports, cash, currency, generic tokens)
-  const isMismatched = originalImage && (
-    originalImage.includes('3127927') ||
-    originalImage.includes('1544816155') ||
-    originalImage.includes('1542838132') ||
-    originalImage.includes('4385125') ||
-    originalImage.toLowerCase().includes('passport') ||
-    originalImage.toLowerCase().includes('visa')
-  );
-
-  // If original image is already a custom unique asset and not a generic repetitive or mismatched one
-  if (originalImage && !isMismatched && !isGenericOrDuplicateImage(originalImage)) {
-    return originalImage;
-  }
-
-  // Derive target category bank
-  let bankKey = 'machinery';
-  const slugLower = categorySlug.toLowerCase();
-
-  if (nameLower.includes('cloth') || nameLower.includes('silk') || nameLower.includes('cotton') || nameLower.includes('fabric') || nameLower.includes('denim') || nameLower.includes('garment') || nameLower.includes('saree') || slugLower.includes('textile') || slugLower.includes('apparel')) {
-    bankKey = 'apparel';
-  } else if (nameLower.includes('chip') || nameLower.includes('sensor') || nameLower.includes('electronic') || nameLower.includes('iot') || nameLower.includes('cctv') || nameLower.includes('pcb') || nameLower.includes('led') || slugLower.includes('electronic')) {
-    bankKey = 'electronics';
-  } else if (nameLower.includes('solar') || nameLower.includes('battery') || nameLower.includes('lifepo4') || nameLower.includes('clean energy') || nameLower.includes('inverter') || slugLower.includes('renewable')) {
-    bankKey = 'renewable-energy';
-  } else if (nameLower.includes('cable') || nameLower.includes('wire') || nameLower.includes('switchgear') || nameLower.includes('transformer') || slugLower.includes('electrical')) {
-    bankKey = 'electrical';
-  } else if (nameLower.includes('rice') || nameLower.includes('cashew') || nameLower.includes('spice') || nameLower.includes('grain') || nameLower.includes('tea') || slugLower.includes('agri')) {
-    bankKey = 'agriculture';
-  } else if (nameLower.includes('bag') || nameLower.includes('box') || nameLower.includes('packaging') || nameLower.includes('kraft') || nameLower.includes('pouch') || slugLower.includes('pack')) {
-    bankKey = 'packaging';
-  } else if (nameLower.includes('granule') || nameLower.includes('titanium') || nameLower.includes('polymer') || nameLower.includes('resin') || slugLower.includes('chemical') || slugLower.includes('raw')) {
-    bankKey = 'raw-materials';
-  } else if (nameLower.includes('collagen') || nameLower.includes('cosmetic') || nameLower.includes('skin') || nameLower.includes('essential oil') || slugLower.includes('beauty')) {
-    bankKey = 'beauty';
-  } else if (nameLower.includes('chair') || nameLower.includes('table') || nameLower.includes('furniture') || nameLower.includes('dining') || slugLower.includes('furniture')) {
-    bankKey = 'furniture';
-  } else if (nameLower.includes('planter') || nameLower.includes('cookware') || nameLower.includes('garden') || slugLower.includes('home-garden') || slugLower.includes('home')) {
-    bankKey = 'home-garden';
-  } else if (nameLower.includes('rebar') || nameLower.includes('cement') || nameLower.includes('tile') || nameLower.includes('scaffold') || nameLower.includes('construction') || nameLower.includes('lumber') || slugLower.includes('construct')) {
-    bankKey = 'construction';
-  } else if (nameLower.includes('charger') || nameLower.includes('bearing') || nameLower.includes('chassis') || nameLower.includes('ev ') || slugLower.includes('auto')) {
-    bankKey = 'automotive';
-  }
-
-  const pool = CATEGORY_IMAGE_BANKS[bankKey] || CATEGORY_IMAGE_BANKS.machinery;
-  // Calculate deterministic index from product name
-  let hash = 0;
-  for (let i = 0; i < productName.length; i++) {
-    hash = (hash * 31 + productName.charCodeAt(i)) % pool.length;
-  }
-  return pool[Math.abs(hash)];
 }
 
 // Instant first paint — visit-shuffled so every refresh shows a different batch
@@ -615,10 +477,14 @@ export default function FeaturedProductsSection() {
       const res = await getMarketplaceProducts({
         ...filterParams,
         page: targetPage,
+        // Pull a wider window so catalogue photos (not placeholder stock) can fill the rail.
+        pageSize: targetPage === 1 ? 80 : filterParams.pageSize,
       });
 
       // Transform raw products into DisplayProduct with authentic metadata
-      const formatted: DisplayProduct[] = res.products.map((p, index) => {
+      const formatted: DisplayProduct[] = res.products.flatMap((p, index) => {
+        const catalogImg = catalogProductPhoto(p.images);
+        if (!catalogImg) return [];
         const comp = p.companies;
         const cat = p.categories;
         const pCountry = comp?.country || (p.export_destinations && p.export_destinations[0]) || 'India';
@@ -643,10 +509,7 @@ export default function FeaturedProductsSection() {
           badgeLabel = 'Trending';
         }
 
-        const rawImg = Array.isArray(p.images) && p.images[0] ? p.images[0] : '';
-        const authenticImg = getAuthenticProductImage(p.name, cat?.slug || selectedCategory, rawImg);
-
-        return {
+        return [{
           id: p.id,
           name: p.name,
           subtitle: p.specifications || p.tags?.slice(0, 2).join(' · ') || (cat?.name ? `${cat.name} Wholesale` : 'Direct Factory Export'),
@@ -666,10 +529,10 @@ export default function FeaturedProductsSection() {
           supplierName: comp?.company_name || 'Verified Export Manufacturer',
           country: pCountry,
           countryFlag: COUNTRY_FLAGS[pCountry] || '🌐',
-          img: authenticImg,
+          img: catalogImg,
           createdAt: p.created_at,
           categoryName: cat?.name,
-        };
+        }];
       });
 
       // Enrich with curated Alibaba-style samples so the landing grid stays dense & professional
@@ -712,7 +575,7 @@ export default function FeaturedProductsSection() {
             supplierName: item.supplierName,
             country: item.country,
             countryFlag: item.countryFlag,
-            img: item.img,
+            img: VERIFIED_BULK_CURATED_PHOTOS[item.id] || item.img,
             categoryName: item.categoryName,
           });
         }
