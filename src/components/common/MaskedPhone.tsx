@@ -114,7 +114,7 @@ export default function MaskedPhone({
           <button
             type="button"
             onClick={() => setUpgradeModalOpen(true)}
-            className="inline-flex items-center gap-1 text-[10px] font-bold text-[#FF5A1F] hover:text-[#e04f00] bg-[#FF5A1F]/10 hover:bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 px-2 py-0.5 rounded transition-all cursor-pointer"
+            className="inline-flex items-center gap-1 text-[10px] font-bold text-[#FF5A1F] hover:text-[#e04f00] bg-[#FF5A1F]/10 hover:bg-[#B33D00]/15 border border-[#FF5A1F]/30 px-2 py-0.5 rounded transition-all cursor-pointer"
             title="Paid Subscription required to view contact number"
           >
             <Lock className="w-2.5 h-2.5" />
@@ -126,7 +126,7 @@ export default function MaskedPhone({
         <Dialog open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen}>
           <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md p-6 rounded-2xl border border-border">
             <DialogHeader className="space-y-2 text-left">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF5A1F]/20 to-amber-500/10 border border-[#FF5A1F]/30 flex items-center justify-center text-[#FF5A1F] mb-1">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF5A1F]/20 to-[#B33D00]/10 border border-[#FF5A1F]/30 flex items-center justify-center text-[#FF5A1F] mb-1">
                 <Lock className="w-6 h-6" />
               </div>
               <DialogTitle className="text-lg font-bold text-foreground">
@@ -162,7 +162,7 @@ export default function MaskedPhone({
               <Link to="/dashboard/supplier/subscription" className="w-full sm:w-auto">
                 <Button
                   size="sm"
-                  className="w-full bg-[#FF5A1F] hover:bg-[#e04f00] text-white font-bold text-xs gap-1.5"
+                  className="w-full bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold text-xs gap-1.5"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Upgrade Plan Now</span>
@@ -199,7 +199,7 @@ export default function MaskedPhone({
             {formatted}
           </a>
           {verified && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-green-600 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-full px-1.5 py-0.5 leading-none shrink-0">
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 dark:bg-[#B33D00]/40 border border-[#FF5A00]/40 dark:border-[#FF5A00]/40 rounded-full px-1.5 py-0.5 leading-none shrink-0">
               <ShieldCheck className="w-2.5 h-2.5" /> Verified
             </span>
           )}

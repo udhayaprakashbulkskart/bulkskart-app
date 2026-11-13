@@ -1,4 +1,5 @@
 import { PRE_CACHED_PIXABAY_IMAGES } from '@/lib/pixabay';
+import { RFQ_LICENSED_IMAGES } from '@/lib/rfqLicensedImages';
 
 /**
  * Content-Based Image System for BulkSkart B2B Marketplace
@@ -44,10 +45,31 @@ const GENERIC_PLACEHOLDERS = [
   'default-product',
   'ewnftvshvsrhawluloty.supabase.co',
   '/product-images/representative/',
+  // Unsplash removed these files. Requesting them returns HTML and Chrome logs ORB errors.
+  'photo-1486006920555-c77dce18193b',
+  'photo-1504328345608-5c56ce5c6f0f',
+  'photo-1504917599217-d4dc5ebe6122',
+  'photo-1509391365360-2e959784a276',
+  'photo-1541888946425-d0fbb186c5f9',
+  'photo-1550985543-f47df4b4c4e0',
+  'photo-1556911220-bff31c99235b',
+  'photo-1558171813-4c0887533814',
+  'photo-1565793298595-6a381b3f1f4d',
+  'photo-1565814329452-7811bc3270c0',
+  'photo-1578574577315-52ac1758a1d0',
+  'photo-1579482495398-a28a2a0ebae7',
+  'photo-1580481077195-c328a37db71a',
+  'photo-1581092335397-9583fe92d232',
+  'photo-1581093458791-9d42e3f0f0f0',
+  'photo-1607344645866-009c320c5ab8',
+  'photo-1611591475819-79730e70a311',
 ];
 
 export function isGenericImage(url?: string | null): boolean {
   if (!url) return true;
+  // Real catalog files in Supabase storage. Never treat these as placeholders.
+  // Representative stand-ins (/product-images/representative/) stay in GENERIC_PLACEHOLDERS.
+  if (url.includes('/product-images/catalog/')) return false;
   return GENERIC_PLACEHOLDERS.some((p) => url.includes(p));
 }
 
@@ -518,6 +540,8 @@ export function generateIsolatedProductFallback(title?: string, category?: strin
   const hues = [25, 210, 160, 280, 45, 190];
   const hue = hues[Math.abs(hash) % hues.length];
 
+  // Escape text inserted into the SVG: a bare "&" (e.g. "Textiles & Apparel") makes the markup invalid.
+  const xml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
     <defs>
       <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -534,9 +558,9 @@ export function generateIsolatedProductFallback(title?: string, category?: strin
     <circle cx="300" cy="150" r="48" fill="rgba(255,255,255,0.04)" stroke="url(#accent)" stroke-width="2.5"/>
     <path d="M285 140 L315 140 M285 150 L315 150 M285 160 L305 160" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
     <rect x="235" y="220" width="130" height="24" rx="12" fill="url(#accent)" fill-opacity="0.18"/>
-    <text x="300" y="236" fill="hsl(${hue}, 95%, 65%)" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" text-anchor="middle" letter-spacing="1">${cleanCat.toUpperCase()}</text>
+    <text x="300" y="236" fill="hsl(${hue}, 95%, 65%)" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" text-anchor="middle" letter-spacing="1">${xml(cleanCat.toUpperCase())}</text>
     <text x="300" y="280" fill="#F8FAFC" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" text-anchor="middle">
-      ${cleanTitle.length > 36 ? cleanTitle.slice(0, 36) + '...' : cleanTitle}
+      ${xml(cleanTitle.length > 36 ? cleanTitle.slice(0, 36) + '...' : cleanTitle)}
     </text>
     <text x="300" y="325" fill="#64748B" font-family="system-ui, -apple-system, sans-serif" font-size="12" text-anchor="middle">
       BulkSkart B2B Verified Commodity
@@ -601,6 +625,7 @@ export function resolveProductImage(
  */
 export function resolveRfqImage(
   rfq: {
+    id?: string | null;
     title?: string;
     name?: string;
     attachment_url?: string | null;
@@ -609,6 +634,13 @@ export function resolveRfqImage(
     categories?: { name?: string; slug?: string } | null;
   }
 ): string {
+  // 0. Reviewed licensed photos for known requirements (replaces earlier AI-generated attachments).
+  if (rfq.id && Object.prototype.hasOwnProperty.call(RFQ_LICENSED_IMAGES, rfq.id)) {
+    const entry = RFQ_LICENSED_IMAGES[rfq.id];
+    if (entry) return entry.url;
+    return generateIsolatedProductFallback(rfq.title || rfq.name, rfq.category || rfq.categories?.name || 'Bulk RFQ');
+  }
+
   // 1. If buyer uploaded a requirement photo, use it directly!
   const uploaded = rfq.attachment_url || rfq.imageUrl;
   if (uploaded && !isGenericImage(uploaded)) {
@@ -720,7 +752,7 @@ export function generateCompanyLogo(companyName: string, idSeed = ''): string {
     <rect x="6" y="6" width="108" height="108" rx="20" fill="none" stroke="${theme.border}" stroke-width="3" stroke-opacity="0.6"/>
     <circle cx="100" cy="20" r="4" fill="${theme.accent}"/>
     <text x="60" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="38" font-weight="800" fill="${theme.text}" text-anchor="middle" dominant-baseline="middle" letter-spacing="1">
-      ${initials}
+      ${String(initials).replace(/&/g, '&amp;').replace(/</g, '&lt;')}
     </text>
   </svg>`;
 

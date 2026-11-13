@@ -45,8 +45,8 @@ export default function OrderStatusTimeline({ currentStatus, history, variant = 
             <React.Fragment key={stage.key}>
               <div className="flex flex-col items-center shrink-0">
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
-                  ${done && !active ? 'bg-green-500 border-green-500' :
-                    active ? 'bg-primary border-primary ring-2 ring-primary/20' :
+                  ${done && !active ? 'bg-[#C94400] border-[#FF5A00]/40' :
+                    active ? 'bg-[#C94400] border-primary ring-2 ring-primary/20' :
                     'bg-muted border-border'}`}>
                   {done && !active
                     ? <CheckCircle2 className="w-3 h-3 text-white" />
@@ -58,7 +58,7 @@ export default function OrderStatusTimeline({ currentStatus, history, variant = 
                 </span>
               </div>
               {idx < PIPELINE_STAGES.length - 1 && (
-                <div className={`h-0.5 w-6 md:w-10 shrink-0 mt-[-12px] ${idx < curIdx && !isCancelled ? 'bg-green-400' : 'bg-border'}`} />
+                <div className={`h-0.5 w-6 md:w-10 shrink-0 mt-[-12px] ${idx < curIdx && !isCancelled ? 'bg-[#C94400]' : 'bg-border'}`} />
               )}
             </React.Fragment>
           );
@@ -89,8 +89,8 @@ export default function OrderStatusTimeline({ currentStatus, history, variant = 
             {/* Connector column */}
             <div className="flex flex-col items-center shrink-0">
               <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all
-                ${done ? 'bg-green-500 border-green-500' :
-                  active ? 'bg-primary border-primary ring-4 ring-primary/15 motion-safe:animate-pulse' :
+                ${done ? 'bg-[#C94400] border-[#FF5A00]/40' :
+                  active ? 'bg-[#C94400] border-primary ring-4 ring-primary/15' :
                   'bg-muted border-border'}`}>
                 {done
                   ? <CheckCircle2 className="w-4 h-4 text-white" />
@@ -99,7 +99,7 @@ export default function OrderStatusTimeline({ currentStatus, history, variant = 
                     : <Circle className="w-3 h-3 text-muted-foreground" />}
               </div>
               {!isLast && (
-                <div className={`w-0.5 flex-1 min-h-[28px] transition-all ${done ? 'bg-green-400' : 'bg-border'}`} />
+                <div className={`w-0.5 flex-1 min-h-[28px] transition-all ${done ? 'bg-[#C94400]' : 'bg-border'}`} />
               )}
             </div>
 

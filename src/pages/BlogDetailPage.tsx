@@ -410,7 +410,7 @@ export default function BlogDetailPage() {
             <p className="text-xs text-muted-foreground mt-0.5">Post an RFQ now and receive competing factory quotations within 24 hours.</p>
           </div>
           <Link to="/post-requirement" className="shrink-0">
-            <Button className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-10 px-5 rounded-xl shadow-md gap-1.5">
+            <Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 px-5 rounded-xl shadow-md gap-1.5">
               <span>Post Free RFQ</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>

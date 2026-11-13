@@ -140,9 +140,9 @@ export default function Header() {
   const isActive = (href: string) => location.pathname === href;
 
   return (
-    <header className="bs-header z-40 w-full border-b border-border/80 bg-background/80 shadow-[0_10px_40px_-28px_hsl(21_100%_40%/0.8)] backdrop-blur-xl transition-colors">
+    <header className="relative z-30 w-full bg-background border-b border-border shadow-sm transition-colors">
       {/* ── Main row ── */}
-      <div className="max-w-[1400px] mx-auto px-2.5 sm:px-4 lg:px-6 min-h-[56px] py-2 flex items-center gap-1 sm:gap-2 lg:gap-4 justify-between lg:justify-start">
+      <div className="max-w-[1400px] mx-auto px-2.5 sm:px-4 md:px-6 h-[56px] flex items-center gap-1 sm:gap-2 md:gap-4 justify-between md:justify-start">
 
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0 group py-1 min-w-0" aria-label="BulkSkart Homepage">
@@ -150,7 +150,7 @@ export default function Header() {
         </Link>
 
         {/* Search bar — desktop */}
-        <form onSubmit={handleSearch} className="hidden lg:flex flex-1 min-w-[140px] max-w-[420px] xl:max-w-[500px] items-center bg-muted/80 border border-border rounded-xl h-10 px-3 gap-2 focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25 transition-all">
+        <form onSubmit={handleSearch} className="hidden md:flex flex-1 min-w-[140px] max-w-[420px] lg:max-w-[500px] items-center bg-muted border border-border rounded-lg h-9 px-3 gap-2 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/30 transition-all">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input
             ref={searchInputRef}
@@ -160,25 +160,25 @@ export default function Header() {
             placeholder="Search products, suppliers, categories…"
             className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
           />
-          <Button type="submit" size="sm" className="h-7 px-3 text-[12px] bg-primary text-white rounded-md shrink-0">
+          <Button type="submit" size="sm" className="h-7 px-3 text-[12px] bg-[#C94400] text-white rounded-md shrink-0">
             Search
           </Button>
         </form>
 
         {/* ── Mobile: icon row (right side of logo) ── */}
-        <div className="lg:hidden flex items-center gap-1 sm:gap-1.5 ml-auto shrink-0">
+        <div className="md:hidden flex items-center gap-1 sm:gap-1.5 ml-auto shrink-0">
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0" aria-label="Toggle theme">
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
           <CopyPublicProfileButton compact />
           <NotificationBell />
           {user && profile ? (
-            <Link to={getDashboardLink()} className="w-7 h-7 rounded-full bg-[#FF5A00] flex items-center justify-center text-white text-xs font-bold shrink-0">
+            <Link to={getDashboardLink()} className="w-7 h-7 rounded-full bg-[#C94400] flex items-center justify-center text-white text-xs font-bold shrink-0">
               {(displayName || profile?.full_name || 'U')[0]?.toUpperCase() ?? 'U'}
             </Link>
           ) : (
             <Link to="/auth">
-              <Button size="sm" className="h-7 px-2 min-[360px]:px-2.5 text-[10.5px] min-[360px]:text-[11px] font-bold bg-[#FF5A00] hover:bg-[#e04e00] text-white rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Sign In</Button>
+              <Button size="sm" className="h-7 px-2 min-[360px]:px-2.5 text-[10.5px] min-[360px]:text-[11px] font-bold bg-[#C94400] hover:bg-[#B33D00] text-white rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Sign In</Button>
             </Link>
           )}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -206,7 +206,7 @@ export default function Header() {
                       className="flex-1 min-w-0 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
                     />
                   </div>
-                  <Button type="submit" size="sm" aria-label="Search products and suppliers" className="h-9 px-3 bg-primary text-white shrink-0">
+                  <Button type="submit" size="sm" aria-label="Search products and suppliers" className="h-9 px-3 bg-[#C94400] text-white shrink-0">
                     <Search className="w-4 h-4" />
                   </Button>
                 </form>
@@ -271,7 +271,7 @@ export default function Header() {
                           isActive(link.href)
                             ? 'bg-primary/10 text-primary font-bold'
                             : isAiAssistant
-                            ? 'text-[#FF5A00] bg-[#FF5A00]/10 hover:bg-[#FF5A00]/20 font-semibold'
+                            ? 'text-[#FF5A00] bg-[#FF5A00]/10 hover:bg-[#B33D00]/20 font-semibold'
                             : 'text-foreground hover:bg-muted'
                         }`}
                       >
@@ -335,7 +335,7 @@ export default function Header() {
                       {/* Create Free Account for new users */}
                       <Link to="/register" onClick={() => setMobileOpen(false)} className="block w-full">
                         <Button
-                          className="w-full bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-12 rounded-xl text-sm flex items-center justify-center gap-2 shadow-[0_2px_0_#922f00] transition-all active:scale-[0.99]"
+                          className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-12 rounded-xl text-sm flex items-center justify-center gap-2 shadow-[0_2px_0_#922f00] transition-all active:scale-[0.99]"
                         >
                           <UserPlus className="w-4 h-4 text-white shrink-0" />
                           <span>Create Free Account</span>
@@ -354,12 +354,12 @@ export default function Header() {
         </div>
 
         {/* ── Desktop: right side controls ── */}
-        <div className="hidden lg:flex items-center gap-1 ml-auto">
+        <div className="hidden md:flex items-center gap-1 ml-auto">
           {showViewPlans && (
             <Link to="/pricing">
               <Button
                 size="sm"
-                className="h-8 px-3 text-[12px] font-bold bg-primary text-white hover:bg-primary/90 gap-1.5 rounded shadow-[0_2px_0_hsl(20_100%_30%)] animate-in fade-in slide-in-from-top-1 duration-300"
+                className="h-8 px-3 text-[12px] font-bold bg-[#C94400] text-white hover:bg-primary/90 gap-1.5 rounded shadow-[0_2px_0_hsl(20_100%_30%)] animate-in fade-in slide-in-from-top-1 duration-300"
               >
                 <Zap className="w-3 h-3" /> View Plans
               </Button>
@@ -374,8 +374,8 @@ export default function Header() {
               <Button variant="ghost" size="sm" aria-label="Select Country and Currency" className="h-9 px-2 gap-1.5 text-[13px] text-muted-foreground hover:text-foreground font-semibold">
                 <span className="text-base leading-none">{countryConfig.flag}</span>
                 <span className="font-bold text-foreground">{countryConfig.code}</span>
-                <span className="hidden xl:inline text-xs font-mono text-muted-foreground">({countryConfig.symbol})</span>
-                <span className="hidden xl:inline text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">
+                <span className="text-xs font-mono text-muted-foreground">({countryConfig.symbol})</span>
+                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">
                   {countryConfig.taxLabel}
                 </span>
                 <ChevronDown className="w-3 h-3 opacity-60" />
@@ -427,7 +427,7 @@ export default function Header() {
             <DropdownMenu open={userMenuOpen} onOpenChange={setUserMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" aria-label="My Account Menu" className="h-9 px-2 gap-2 text-[13px] font-medium text-foreground hover:bg-muted">
-                  <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-7 h-7 rounded-full bg-[#C94400] flex items-center justify-center text-white text-xs font-bold">
                     {(displayName || profile?.full_name || user.email || 'U')[0]?.toUpperCase() ?? 'U'}
                   </div>
                   <span className="max-w-[80px] truncate">{(displayName || profile?.full_name || 'Account').split(' ')[0]}</span>
@@ -477,7 +477,7 @@ export default function Header() {
                 <Button size="sm" variant="ghost" className="text-[13px] font-bold text-foreground hover:text-primary hover:bg-muted h-8 px-3 rounded whitespace-nowrap">Sign In</Button>
               </Link>
               <Link to="/register" className="shrink-0">
-                <Button size="sm" className="bg-[#FF5A00] text-white hover:bg-[#e04e00] h-8 px-3 text-[13px] font-bold rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Create Free Account</Button>
+                <Button size="sm" className="bg-[#C94400] text-white hover:bg-[#B33D00] h-8 px-3 text-[13px] font-bold rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Create Free Account</Button>
               </Link>
             </>
           )}
@@ -485,7 +485,7 @@ export default function Header() {
       </div>
 
       {/* ── Mobile: full-width search bar row ── */}
-      <div className="lg:hidden px-2.5 sm:px-4 pt-1 pb-1.5 w-full min-w-0 box-border">
+      <div className="md:hidden px-2.5 sm:px-4 pt-1 pb-1.5 bg-background w-full min-w-0 box-border">
         <form onSubmit={handleSearch} className="flex items-center rounded-xl border border-border bg-muted overflow-hidden h-9 w-full min-w-0 shadow-xs">
           <Search className="w-3.5 h-3.5 text-muted-foreground ml-2.5 shrink-0" />
           <input
@@ -496,14 +496,14 @@ export default function Header() {
             placeholder="Search products, suppliers, categories..."
             className="flex-1 min-w-0 px-2 py-1.5 text-[12px] outline-none bg-transparent text-foreground placeholder:text-muted-foreground"
           />
-          <button type="submit" aria-label="Search" className="bg-[#FF5A00] hover:bg-[#e04e00] px-3 min-[360px]:px-3.5 h-full text-white text-[11px] font-bold shrink-0 transition-colors">
+          <button type="submit" aria-label="Search" className="bg-[#C94400] hover:bg-[#B33D00] px-3 min-[360px]:px-3.5 h-full text-white text-[11px] font-bold shrink-0 transition-colors">
             Search
           </button>
         </form>
       </div>
 
       {/* ── Mobile: category chips with smooth touch swipe ── */}
-      <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto px-2.5 sm:px-4 pb-2 w-full min-w-0 scrollbar-none overscroll-x-contain touch-pan-x">
+      <div className="md:hidden flex items-center gap-1.5 overflow-x-auto px-2.5 sm:px-4 pb-2 w-full min-w-0 scrollbar-none overscroll-x-contain touch-pan-x">
         {MOBILE_CATS.map(({ label, icon: Icon, href }) => (
           <Link key={label} to={href}
             className="flex items-center gap-1 shrink-0 px-2.5 py-1 bg-muted border border-border rounded-full text-[10px] font-medium text-foreground whitespace-nowrap hover:border-primary/50 hover:text-primary transition-colors">
@@ -521,14 +521,14 @@ export default function Header() {
       </div>
 
       {/* ── Desktop Category Nav ── */}
-      <nav className="hidden lg:block border-t border-border">
+      <nav className="hidden md:block border-t border-border">
         <div className="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center overflow-x-auto scrollbar-none whitespace-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {navLinks.map((link) => (
+            {navLinks.map((link, i) => (
               <Link key={link.href} to={link.href}
                 {...getPrefetchHandlers(link.href)}
-                className={`whitespace-nowrap px-2.5 xl:px-3.5 py-2.5 text-[12px] xl:text-[13px] font-medium transition-colors hover:text-primary border-b-2 ${
-                  isActive(link.href) ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
+                className={`whitespace-nowrap px-3.5 lg:px-4 py-2.5 text-[12.5px] lg:text-[13px] font-medium transition-colors hover:text-primary border-b-2 ${
+                  i === 0 ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
                 }`}>
                 {link.label}
               </Link>

@@ -29,7 +29,7 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
     <div className="flex items-center gap-1.5">
       <div className="flex items-center gap-0.5">
         {[1,2,3,4,5].map(i => (
-          <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'}`} />
+          <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-[#FF7A2E] fill-[#FF5A00]' : 'text-muted-foreground'}`} />
         ))}
       </div>
       <span className="text-xs text-muted-foreground">({count} {count === 1 ? 'review' : 'reviews'})</span>
@@ -42,10 +42,10 @@ function CertBadge({ cert }: { cert: CompanyCertification }) {
   const label = cert.cert_type === 'iso' || cert.cert_type === 'other' ? cert.cert_name : labels[cert.cert_type];
   if (!label) return null;
   return (
-    <div className="flex items-center gap-1.5 bg-green-500/10 border border-green-500/25 rounded-lg px-3 py-1.5">
-      <CheckCircle className="w-3.5 h-3.5 text-green-400 shrink-0" />
+    <div className="flex items-center gap-1.5 bg-[#FF5A00]/10 border border-[#FF5A00]/25 rounded-lg px-3 py-1.5">
+      <CheckCircle className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
       <div>
-        <p className="text-xs font-medium text-green-400">{label}</p>
+        <p className="text-xs font-medium text-[#FF7A2E]">{label}</p>
         {cert.cert_number && <p className="text-xs text-muted-foreground">{cert.cert_number}</p>}
       </div>
     </div>
@@ -121,7 +121,7 @@ export default function CompanyProfilePage() {
         <h2 className="text-xl font-bold text-foreground">Manufacturer Not Found</h2>
         <p className="text-sm text-muted-foreground">The requested company profile does not exist or may have been unlisted.</p>
         <Link to="/manufacturers">
-          <Button className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-10 px-5 rounded-xl">
+          <Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 px-5 rounded-xl">
             Browse Verified Manufacturers
           </Button>
         </Link>
@@ -267,7 +267,7 @@ export default function CompanyProfilePage() {
         </button>
 
         {/* ── Hero / Banner ── */}
-        <div className="bs-glass overflow-hidden rounded-3xl mb-6">
+        <div className="bg-card border border-border rounded-xl overflow-hidden mb-6 shadow-sm">
           <div className="relative aspect-[21/9] md:h-56 max-h-56 w-full overflow-hidden bg-muted">
             <SafeImage
               src={company.cover_url || company.banner_url || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80'}
@@ -297,7 +297,7 @@ export default function CompanyProfilePage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-xl md:text-2xl font-bold text-foreground break-words">{company.company_name}</h1>
                     {(company.is_verified || company.verification_status === 'verified') && (
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs gap-1">
+                      <Badge className="bg-[#FF5A00]/20 text-[#FF7A2E] border-[#FF5A00]/30 text-xs gap-1">
                         <ShieldCheck className="w-3 h-3" /> Verified Business
                       </Badge>
                     )}
@@ -332,7 +332,7 @@ export default function CompanyProfilePage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowReportModal(true)}
-                  className="border-red-500/40 text-red-500 hover:bg-red-500/10 gap-1.5 h-9"
+                  className="border-[#FF5A00]/40 text-[#FF7A2E] hover:bg-[#B33D00]/10 gap-1.5 h-9"
                   title="Report this Supplier"
                 >
                   <Flag className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Report</span>
@@ -358,7 +358,7 @@ export default function CompanyProfilePage() {
                     setDirectChatProduct(null);
                     setChatOpen(true);
                   }}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 h-9 font-bold shadow-sm"
+                  className="bg-[#C94400] text-primary-foreground hover:bg-primary/90 gap-1.5 h-9 font-bold shadow-sm"
                 >
                   <MessageSquare className="w-3.5 h-3.5" /> Chat with Supplier
                 </Button>
@@ -385,7 +385,7 @@ export default function CompanyProfilePage() {
           <button
             type="button"
             onClick={copyProfileLink}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#FF5A00] px-3 text-xs font-bold text-white"
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#C94400] px-3 text-xs font-bold text-white"
           >
             {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             {linkCopied ? 'Copied' : 'Copy'}
@@ -456,7 +456,7 @@ export default function CompanyProfilePage() {
                         <Sparkles className="w-3.5 h-3.5 text-primary" />
                         Verified Facility & Production Showcase
                       </span>
-                      <span className="text-[11px] text-emerald-400 font-mono">
+                      <span className="text-[11px] text-[#FF7A2E] font-mono">
                         Auto-refreshed via 1-Min Image Engine
                       </span>
                     </div>
@@ -650,7 +650,7 @@ export default function CompanyProfilePage() {
                   </a>
                 ) : null}
                 {whatsapp ? (
-                  <a href={waLink(whatsapp)} target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  <a href={waLink(whatsapp)} target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-2 rounded-lg border border-[#FF5A00]/30 bg-[#FF5A00]/10 px-3 text-sm font-semibold text-[#FF7A2E] dark:text-[#FF7A2E]">
                     <MessageSquare className="w-4 h-4 shrink-0" />
                     <span className="truncate">WhatsApp {whatsapp}</span>
                   </a>
@@ -679,7 +679,7 @@ export default function CompanyProfilePage() {
                     setDirectChatProduct(null);
                     setChatOpen(true);
                   }}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 font-bold text-xs gap-1.5 shadow-sm"
+                  className="w-full bg-[#C94400] text-primary-foreground hover:bg-primary/90 h-10 font-bold text-xs gap-1.5 shadow-sm"
                 >
                   <MessageSquare className="w-4 h-4" /> Chat with Supplier
                 </Button>
@@ -721,7 +721,7 @@ export default function CompanyProfilePage() {
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold text-foreground truncate">{company.company_name}</p>
           <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C94400] inline-block" />
             Online • Ready for quotes
           </p>
         </div>
@@ -731,7 +731,7 @@ export default function CompanyProfilePage() {
             setDirectChatProduct(null);
             setChatOpen(true);
           }}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 font-bold gap-1.5 text-xs shadow-md shrink-0"
+          className="bg-[#C94400] text-primary-foreground hover:bg-primary/90 h-9 px-4 font-bold gap-1.5 text-xs shadow-md shrink-0"
         >
           <MessageSquare className="w-3.5 h-3.5" /> Chat
         </Button>

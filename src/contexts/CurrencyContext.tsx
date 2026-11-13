@@ -124,35 +124,22 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         // Keep default IN
       }
 
-      // Optional background IP refinement (uses standard AbortController for legacy browser compatibility)
-      try {
-        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-        const timerId = controller ? setTimeout(() => controller.abort(), 2500) : null;
-        const res = await fetch('https://ipapi.co/json/', {
-          signal: controller?.signal,
-        });
-        if (timerId) clearTimeout(timerId);
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.country_code && isMounted) {
-            const detected = resolveCountry(data.country_code);
-            setCountryConfig(detected);
-            setAutoDetectedSource('ip');
-            localStorage.setItem('bs-country', detected.code);
-          }
-        }
-      } catch {
-        // Fallback already configured via timezone
-      }
+      // IP-based lookup (ipapi.co) removed: browsers on this origin are blocked by its CORS policy,
+      // so it never succeeded and only logged errors. Timezone detection above is the fallback.
     };
 
     detectLocaleFallback();
-    fetchRates().catch(() => {}).finally(() => {
-      if (isMounted) {
-        clearTimeout(fallbackSafetyTimer);
-        setLoading(false);
-      }
-    });
+    // Defer the rate request until the browser is idle so it does not compete with first paint.
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    const runFetch = () => {
+      fetchRates().catch(() => {}).finally(() => {
+        if (isMounted) {
+          clearTimeout(fallbackSafetyTimer);
+          setLoading(false);
+        }
+      });
+    };
+    if (ric) ric(runFetch, { timeout: 2000 }); else setTimeout(runFetch, 1000);
 
     return () => {
       isMounted = false;

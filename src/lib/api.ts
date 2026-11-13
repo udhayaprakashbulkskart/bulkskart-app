@@ -1,7 +1,7 @@
 import { supabase } from '@/db/supabase';
-import { ALIBABA_VERIFIED_SUPPLIERS, getAlibabaSupplierBySlug } from '@/data/alibabaVerifiedSuppliers';
-import { EXPANDED_GLOBAL_PRODUCTS, type GlobalCatalogProduct } from '@/data/expandedGlobalProducts';
-import { CURATED_INDUSTRIAL_PRODUCTS, type CuratedProduct } from '@/data/curatedIndustrialProducts';
+import type { GlobalCatalogProduct } from '@/data/expandedGlobalProducts';
+import type { CuratedProduct } from '@/data/curatedIndustrialProducts';
+import { loadAlibabaCatalog, loadGlobalCatalog, loadCuratedCatalog } from '@/lib/catalogLoaders';
 import {
   MOCKUP_VERIFIED_COMPANIES,
   MOCKUP_SUPPLIER_PRODUCTS,
@@ -309,7 +309,8 @@ export async function getCompanies(options?: {
     return true;
   });
 
-  // Filter Alibaba Verified Suppliers dataset
+  // Filter Alibaba Verified Suppliers dataset (loaded on demand)
+  const { ALIBABA_VERIFIED_SUPPLIERS } = await loadAlibabaCatalog();
   const filteredAlibaba = ALIBABA_VERIFIED_SUPPLIERS.filter((s) => {
     if (options?.verified && !s.is_verified) return false;
     if (options?.featured && !s.is_featured) return false;
@@ -367,7 +368,8 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
     // ignore
   }
 
-  // 4. Check Alibaba dataset by exact slug
+  // 4. Check Alibaba dataset by exact slug (loaded on demand)
+  const { ALIBABA_VERIFIED_SUPPLIERS, getAlibabaSupplierBySlug } = await loadAlibabaCatalog();
   const alibabaSupplier = getAlibabaSupplierBySlug(cleanSlug);
   if (alibabaSupplier) return alibabaSupplier;
 
@@ -433,7 +435,8 @@ export async function getProducts(options?: {
   const { data } = await query;
   let combined: Product[] = Array.isArray(data) ? [...data] : [];
 
-  // Filter and merge expanded global catalog items
+  // Filter and merge expanded global catalog items (loaded on demand)
+  const { EXPANDED_GLOBAL_PRODUCTS } = await loadGlobalCatalog();
   const searchLower = options?.search ? options.search.trim().toLowerCase() : '';
   const countryFilter = options?.country && options.country !== 'all' ? options.country.toLowerCase() : '';
 
@@ -477,6 +480,7 @@ export async function getProducts(options?: {
 
   // Only include curated products for general public discovery, never when querying a specific supplier's company
   if (!options?.companyId) {
+    const { CURATED_INDUSTRIAL_PRODUCTS } = await loadCuratedCatalog();
     for (const cp of CURATED_INDUSTRIAL_PRODUCTS) {
       if (options?.categoryId && cp.categorySlug !== options.categoryId) continue;
       if (countryFilter && cp.country.toLowerCase() !== countryFilter) continue;
@@ -520,7 +524,9 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     if (byId) return byId;
   }
 
-  // 3. Check EXPANDED_GLOBAL_PRODUCTS by slug or id
+  // 3. Check EXPANDED_GLOBAL_PRODUCTS by slug or id (catalogues loaded on demand)
+  const { EXPANDED_GLOBAL_PRODUCTS } = await loadGlobalCatalog();
+  const { CURATED_INDUSTRIAL_PRODUCTS } = await loadCuratedCatalog();
   const fromGlobal = EXPANDED_GLOBAL_PRODUCTS.find(p => p.slug === slug || p.id === slug);
   if (fromGlobal) {
     return mapGlobalToProduct(fromGlobal);
@@ -566,6 +572,7 @@ export async function getSimilarProducts(categoryId: string | null, excludeId: s
   let result: Product[] = Array.isArray(data) ? [...data] : [];
 
   if (result.length < 6 && categoryId) {
+    const { EXPANDED_GLOBAL_PRODUCTS } = await loadGlobalCatalog();
     const globals = EXPANDED_GLOBAL_PRODUCTS.filter(
       p => (p.category_id === categoryId || p.category_slug === categoryId) && p.id !== excludeId
     ).slice(0, 8 - result.length);
@@ -851,11 +858,10 @@ export async function getRequirementById(id: string): Promise<Requirement | null
 }
 
 export async function incrementRequirementViewCount(id: string): Promise<void> {
-  try {
-    await supabase.rpc('increment_requirement_view_count', { req_id: id });
-  } catch {
-    // Non-critical metric increment fallback
-  }
+  // Production has no increment_requirement_view_count (PostgREST PGRST202).
+  // Migration 00063 would add it, but this release must not change the database.
+  // Skip the call so opening a requirement does not 404 or change view_count.
+  void id;
 }
 
 export async function createRequirement(payload: Partial<Requirement>): Promise<{ error: string | null; id?: string }> {
@@ -1816,7 +1822,7 @@ import type { OrderStatusHistory, PipelineStatus } from '@/types/types';
 export async function getOrderStatusHistory(orderId: string): Promise<OrderStatusHistory[]> {
   const { data } = await supabase
     .from('order_status_history')
-    .select('*, changer:changed_by(full_name,avatar_url)')
+    .select('*')
     .eq('order_id', orderId)
     .order('created_at', { ascending: true });
   return Array.isArray(data) ? data as unknown as OrderStatusHistory[] : [];

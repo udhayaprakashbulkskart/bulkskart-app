@@ -1,5 +1,12 @@
 # Bulkskart — Origin TLS (matches Aura Cloudflare Full pattern)
-www.bulkskart.com, bulkskart.com {
+# www.bulkskart.com is the canonical host. The apex domain gets a real 301
+# instead of serving duplicate content and relying on client-side JS to redirect.
+bulkskart.com {
+	tls /etc/caddy/certs/bulkskart-origin.pem /etc/caddy/certs/bulkskart-origin-key.pem
+	redir https://www.bulkskart.com{uri} permanent
+}
+
+www.bulkskart.com {
 	tls /etc/caddy/certs/bulkskart-origin.pem /etc/caddy/certs/bulkskart-origin-key.pem
 	import common_headers
 

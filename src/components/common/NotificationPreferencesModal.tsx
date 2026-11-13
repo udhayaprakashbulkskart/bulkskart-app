@@ -149,7 +149,7 @@ export default function NotificationPreferencesModal({ open, onOpenChange }: Pro
             {/* Chat Messages */}
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2.5">
-                <MessageSquare className="w-4 h-4 text-purple-500 shrink-0" />
+                <MessageSquare className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                 <div>
                   <Label htmlFor="msg-toggle" className="text-xs font-medium text-foreground cursor-pointer">
                     Direct Chat & Negotiation Messages
@@ -185,7 +185,7 @@ export default function NotificationPreferencesModal({ open, onOpenChange }: Pro
             {/* Order Milestones */}
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2.5">
-                <Truck className="w-4 h-4 text-teal-500 shrink-0" />
+                <Truck className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                 <div>
                   <Label htmlFor="order-toggle" className="text-xs font-medium text-foreground cursor-pointer">
                     Order Tracking & Milestones
@@ -203,7 +203,7 @@ export default function NotificationPreferencesModal({ open, onOpenChange }: Pro
             {/* Subscription & Account Alerts */}
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2.5">
-                <CreditCard className="w-4 h-4 text-amber-500 shrink-0" />
+                <CreditCard className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                 <div>
                   <Label htmlFor="sub-toggle" className="text-xs font-medium text-foreground cursor-pointer">
                     Subscription & Account Reminders
@@ -222,7 +222,7 @@ export default function NotificationPreferencesModal({ open, onOpenChange }: Pro
 
         <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
           <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-            <Check className="w-3.5 h-3.5 text-green-500" /> Preferences saved automatically
+            <Check className="w-3.5 h-3.5 text-[#FF7A2E]" /> Preferences saved automatically
           </span>
           <Button
             size="sm"
@@ -230,7 +230,7 @@ export default function NotificationPreferencesModal({ open, onOpenChange }: Pro
               onOpenChange(false);
               toast.success('Notification preferences updated');
             }}
-            className="h-8 px-4 text-xs font-bold bg-primary text-primary-foreground"
+            className="h-8 px-4 text-xs font-bold bg-[#C94400] text-primary-foreground"
           >
             Done
           </Button>

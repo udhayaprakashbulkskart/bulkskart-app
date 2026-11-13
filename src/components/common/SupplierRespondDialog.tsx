@@ -137,7 +137,7 @@ export default function SupplierRespondDialog({ open, onClose, requirement, supp
           {/* Price + Currency */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-foreground">Unit Price <span className="text-red-500">*</span></Label>
+              <Label className="text-[12px] font-semibold text-foreground">Unit Price <span className="text-[#FF7A2E]">*</span></Label>
               <Input type="number" min="0.01" step="0.01" value={form.unit_price} onChange={e => set('unit_price', e.target.value)}
                 placeholder="e.g. 85.00" className="border-border text-[13px] h-9" required />
             </div>
@@ -223,7 +223,7 @@ export default function SupplierRespondDialog({ open, onClose, requirement, supp
               Cancel
             </Button>
             <Button type="submit" disabled={loading || uploading}
-              className="flex-1 bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold gap-2 shadow-[0_2px_0_#b83c00]">
+              className="flex-1 bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold gap-2 shadow-[0_2px_0_#b83c00]">
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : <><Send className="w-4 h-4" /> Submit Response</>}
             </Button>
           </div>

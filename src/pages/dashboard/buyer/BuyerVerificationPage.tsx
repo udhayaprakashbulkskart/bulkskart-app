@@ -118,9 +118,9 @@ export default function BuyerVerificationPage() {
 
   const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
     unverified: { label: 'Not Submitted', color: 'bg-muted text-muted-foreground', icon: <FileText className="w-4 h-4" /> },
-    pending: { label: 'Under Review', color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: <Clock className="w-4 h-4" /> },
-    verified: { label: 'Verified', color: 'bg-green-100 text-green-700 border-green-300', icon: <CheckCircle2 className="w-4 h-4" /> },
-    rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700 border-red-300', icon: <XCircle className="w-4 h-4" /> },
+    pending: { label: 'Under Review', color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40', icon: <Clock className="w-4 h-4" /> },
+    verified: { label: 'Verified', color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40', icon: <CheckCircle2 className="w-4 h-4" /> },
+    rejected: { label: 'Rejected', color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40', icon: <XCircle className="w-4 h-4" /> },
   };
 
   const status = profile?.verification_status || 'unverified';
@@ -143,12 +143,12 @@ export default function BuyerVerificationPage() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-5 w-full min-w-0">
-        <div className="bs-glass flex items-center gap-3 rounded-3xl p-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center text-primary shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-black text-foreground">Buyer KYC Verification</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Buyer KYC Verification</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">Verify your business to get the Verified Buyer badge</p>
           </div>
         </div>
@@ -169,13 +169,13 @@ export default function BuyerVerificationPage() {
                 )}
               </div>
               {status === 'verified' && (
-                <Badge className="bg-green-600 text-white gap-1">
+                <Badge className="bg-[#B33D00] text-white gap-1">
                   <ShieldCheck className="w-3.5 h-3.5" /> Verified Buyer
                 </Badge>
               )}
             </div>
             {status === 'rejected' && profile?.rejection_reason && (
-              <div className="mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <div className="mt-3 p-3 rounded-lg bg-[#FF5A00]/10 border border-[#FF5A00]/20">
                 <p className="text-xs sm:text-sm font-medium text-destructive">Rejection Reason</p>
                 <p className="text-xs sm:text-sm text-destructive/80 mt-0.5">{profile.rejection_reason}</p>
               </div>
@@ -251,9 +251,9 @@ export default function BuyerVerificationPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-xs sm:text-sm font-medium truncate">{label}</p>
                         {docs[key] ? (
-                          <p className="text-xs text-green-500 font-medium truncate">{docs[key]!.name}</p>
+                          <p className="text-xs text-[#FF7A2E] font-medium truncate">{docs[key]!.name}</p>
                         ) : existing ? (
-                          <p className="text-xs text-green-500">Document uploaded ✓</p>
+                          <p className="text-xs text-[#FF7A2E]">Document uploaded ✓</p>
                         ) : (
                           <p className="text-xs text-muted-foreground">No file selected</p>
                         )}
@@ -278,7 +278,7 @@ export default function BuyerVerificationPage() {
               </CardContent>
             </Card>
 
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 text-sm font-semibold" disabled={saving}>
+            <Button type="submit" className="w-full bg-[#C94400] hover:bg-primary/90 text-primary-foreground h-11 text-sm font-semibold" disabled={saving}>
               {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
               {saving ? 'Submitting…' : 'Submit for Verification'}
             </Button>
@@ -288,7 +288,7 @@ export default function BuyerVerificationPage() {
         {status === 'pending' && (
           <Card>
             <CardContent className="pt-5 text-center py-8">
-              <Clock className="w-10 h-10 text-yellow-500 mx-auto mb-3" />
+              <Clock className="w-10 h-10 text-[#FF7A2E] mx-auto mb-3" />
               <h3 className="font-semibold text-foreground">Your documents are under review</h3>
               <p className="text-sm text-muted-foreground mt-1">Admin typically reviews within 1–2 business days. You'll be notified of the result.</p>
             </CardContent>
@@ -298,7 +298,7 @@ export default function BuyerVerificationPage() {
         {status === 'verified' && (
           <Card>
             <CardContent className="pt-5 text-center py-8">
-              <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
+              <CheckCircle2 className="w-10 h-10 text-[#FF7A2E] mx-auto mb-3" />
               <h3 className="font-semibold text-foreground">Your business is verified!</h3>
               <p className="text-sm text-muted-foreground mt-1">You now have a Verified Buyer badge visible to all manufacturers.</p>
             </CardContent>

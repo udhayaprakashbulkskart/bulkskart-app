@@ -20,10 +20,10 @@ export default function SupplierQuotesPage() {
   }, [user]);
 
   const statusColor = (s: string) => {
-    if (s === 'accepted') return 'text-green-400 border-green-400/30';
+    if (s === 'accepted') return 'text-[#FF7A2E] border-[#FF5A00]/30';
     if (s === 'rejected') return 'text-destructive border-destructive/30';
     if (s === 'revised') return 'text-[#FF5A00] border-[#FF5A00]/30/30';
-    return 'text-yellow-400 border-yellow-400/30';
+    return 'text-[#FF7A2E] border-[#FF5A00]/30';
   };
 
   const pending = quotations.filter(q => q.status === 'pending').length;
@@ -38,8 +38,8 @@ export default function SupplierQuotesPage() {
       />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl w-full mx-auto">
-          <div className="bs-glass mb-6 rounded-3xl p-4">
-            <h1 className="text-xl font-black text-foreground">Sent Quotations</h1>
+          <div className="mb-6">
+            <h1 className="text-xl font-bold text-foreground">Sent Quotations</h1>
             <p className="text-sm text-muted-foreground">Track all quotations you've sent to buyers</p>
           </div>
 
@@ -47,8 +47,8 @@ export default function SupplierQuotesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
             {[
               { label: 'Total Sent', value: quotations.length, icon: Package, color: 'text-primary' },
-              { label: 'Pending Response', value: pending, icon: TrendingUp, color: 'text-yellow-400' },
-              { label: 'Accepted', value: accepted, icon: MessageSquare, color: 'text-green-400' },
+              { label: 'Pending Response', value: pending, icon: TrendingUp, color: 'text-[#FF7A2E]' },
+              { label: 'Accepted', value: accepted, icon: MessageSquare, color: 'text-[#FF7A2E]' },
             ].map(s => {              const Icon = s.icon;
               return (
                 <div key={s.label} className="bg-card border border-border rounded-xl p-4">
@@ -72,7 +72,7 @@ export default function SupplierQuotesPage() {
                 <Package className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground mb-3">No quotations sent yet.</p>
                 <Link to="/dashboard/supplier/rfqs">
-                  <Button size="sm" className="bg-primary text-primary-foreground">Browse RFQ Leads</Button>
+                  <Button size="sm" className="bg-[#1A0C05] text-primary-foreground">Browse RFQ Leads</Button>
                 </Link>
               </div>
             ) : (

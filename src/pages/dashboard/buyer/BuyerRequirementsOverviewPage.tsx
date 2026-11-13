@@ -30,7 +30,7 @@ function daysUntil(date: string | null): number | null {
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    active: 'text-green-400 border-green-400/30 bg-green-400/10',
+    active: 'text-[#FF7A2E] border-[#FF5A00]/30 bg-[#FF5A00]/10',
     closed: 'text-muted-foreground border-border bg-muted',
     expired: 'text-destructive border-destructive/30 bg-destructive/10',
   };
@@ -163,13 +163,13 @@ export default function BuyerRequirementsOverviewPage() {
         <div className="max-w-6xl w-full mx-auto space-y-6">
 
           {/* Header */}
-          <div className="bs-glass flex items-start justify-between flex-wrap gap-3 rounded-3xl p-4">
+          <div className="flex items-start justify-between flex-wrap gap-3">
             <div>
-              <h1 className="text-xl font-black text-foreground">Requirements Overview</h1>
+              <h1 className="text-xl font-bold text-foreground">Requirements Overview</h1>
               <p className="text-sm text-muted-foreground">Manage all your posted bulk requirements</p>
             </div>
             <Link to="/post-requirement">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 text-sm shrink-0">
+              <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2 text-sm shrink-0">
                 <Plus className="w-4 h-4" /> Post New
               </Button>
             </Link>
@@ -179,7 +179,7 @@ export default function BuyerRequirementsOverviewPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Total Posted', value: stats.total, icon: FileText, color: 'text-primary', bg: 'bg-primary/10' },
-              { label: 'Active', value: stats.active, icon: TrendingUp, color: 'text-green-400', bg: 'bg-green-400/10' },
+              { label: 'Active', value: stats.active, icon: TrendingUp, color: 'text-[#FF7A2E]', bg: 'bg-[#FF5A00]/10' },
               { label: 'Total Quotes Received', value: stats.totalQuotes, icon: Package, color: 'text-[#FF5A00]', bg: 'bg-orange-500/10' },
               { label: 'Closed / Expired', value: stats.closed, icon: XCircle, color: 'text-muted-foreground', bg: 'bg-muted' },
             ].map(s => {
@@ -236,7 +236,7 @@ export default function BuyerRequirementsOverviewPage() {
               <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground mb-3">No requirements found.</p>
               <Link to="/post-requirement">
-                <Button size="sm" className="bg-primary text-primary-foreground">Post a Requirement</Button>
+                <Button size="sm" className="bg-[#1A0C05] text-primary-foreground">Post a Requirement</Button>
               </Link>
             </div>
           ) : (
@@ -280,7 +280,7 @@ export default function BuyerRequirementsOverviewPage() {
                         </Button>
                         <Link to={`/dashboard/buyer/rfq/${req.id}`} onClick={e => e.stopPropagation()}>
                           <Button size="sm" variant="ghost"
-                            className="text-xs text-amber-600 border border-amber-500/30 hover:bg-amber-500/10 h-7 gap-1">
+                            className="text-xs text-[#FF7A2E] border border-[#FF5A00]/30 hover:bg-[#B33D00]/10 h-7 gap-1">
                             <Zap className="w-3 h-3" /> Matches
                           </Button>
                         </Link>
@@ -375,13 +375,13 @@ export default function BuyerRequirementsOverviewPage() {
                                   {q.companies?.company_name ?? 'Supplier'}
                                 </Link>
                                 {(q.companies?.is_verified || q.companies?.verification_status === 'verified') && (
-                                  <ShieldCheck className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                                  <ShieldCheck className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
                                 )}
                               </div>
                               <p className="text-xs text-muted-foreground">{q.companies?.city}, {q.companies?.country}</p>
                             </div>
                             <Badge variant="outline" className={`text-xs capitalize shrink-0 ${
-                              q.status === 'accepted' ? 'text-green-400 border-green-400/30'
+                              q.status === 'accepted' ? 'text-[#FF7A2E] border-[#FF5A00]/30'
                               : q.status === 'rejected' ? 'text-destructive border-destructive/30'
                               : 'text-muted-foreground border-border'
                             }`}>
@@ -409,7 +409,7 @@ export default function BuyerRequirementsOverviewPage() {
                           {q.status === 'pending' && (
                             <div className="flex gap-2 flex-wrap">
                               <Button size="sm" onClick={() => handleAcceptQuote(q.id)}
-                                className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs h-7 gap-1">
+                                className="flex-1 bg-[#B33D00] hover:bg-[#B33D00] text-white text-xs h-7 gap-1">
                                 <CheckCircle className="w-3 h-3" /> Accept
                               </Button>
                               <Button size="sm" variant="ghost" onClick={() => handleRejectQuote(q.id)}

@@ -105,7 +105,7 @@ export default function PixabayImagePickerModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-3xl max-h-[90dvh] flex flex-col p-5 bg-[#0a0f1d] border-slate-800 text-foreground">
+      <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-3xl max-h-[90dvh] flex flex-col p-5 bg-[#0a0f1d] border-[#2A2A2A] text-foreground">
         <DialogHeader className="shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -116,7 +116,7 @@ export default function PixabayImagePickerModal({
                 Search Representative Images (Pixabay API)
               </DialogTitle>
             </div>
-            <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 text-[10px]">
+            <Badge variant="outline" className="border-[#FF5A00]/40 text-[#FF7A2E] text-[10px]">
               API Key Active
             </Badge>
           </div>
@@ -133,13 +133,13 @@ export default function PixabayImagePickerModal({
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="e.g. Copper wire, CNC milling, solar panel, polyester yarn..."
-              className="pl-9 bg-[#111827] border-slate-700 text-white text-xs h-9"
+              className="pl-9 bg-[#C94400] border-[#2A2A2A] text-white text-xs h-9"
             />
           </div>
           <Button
             type="submit"
             disabled={loading}
-            className="bg-[#FF5A1F] hover:bg-[#e04e17] text-white text-xs h-9 px-4 shrink-0 font-semibold"
+            className="bg-[#C94400] hover:bg-[#e04e17] text-white text-xs h-9 px-4 shrink-0 font-semibold"
           >
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Search'}
           </Button>
@@ -154,8 +154,8 @@ export default function PixabayImagePickerModal({
               onClick={() => handleCategorySelect(c.cat)}
               className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all border ${
                 selectedCategory === c.cat
-                  ? 'bg-[#FF5A1F] text-white border-[#FF5A1F]'
-                  : 'bg-slate-900/80 text-muted-foreground border-slate-800 hover:text-white'
+                  ? 'bg-[#C94400] text-white border-[#FF5A1F]'
+                  : 'bg-[#0A0A0A]/80 text-muted-foreground border-[#2A2A2A] hover:text-white'
               }`}
             >
               {c.label}
@@ -171,7 +171,7 @@ export default function PixabayImagePickerModal({
               <p className="text-xs">Querying Pixabay API...</p>
             </div>
           ) : images.length === 0 ? (
-            <div className="text-center py-16 border border-dashed border-slate-800 rounded-xl p-6">
+            <div className="text-center py-16 border border-dashed border-[#2A2A2A] rounded-xl p-6">
               <ImageIcon className="w-10 h-10 text-muted-foreground mx-auto mb-2 opacity-50" />
               <p className="text-xs font-semibold text-white">No images found on Pixabay</p>
               <p className="text-[11px] text-muted-foreground mt-1">Try broadening your search term or selecting another category.</p>
@@ -184,10 +184,10 @@ export default function PixabayImagePickerModal({
                   <div
                     key={img.id}
                     onClick={() => setSelectedId(img.id)}
-                    className={`group relative rounded-xl overflow-hidden border cursor-pointer aspect-[4/3] bg-slate-900 transition-all ${
+                    className={`group relative rounded-xl overflow-hidden border cursor-pointer aspect-[4/3] bg-[#0A0A0A] transition-all ${
                       isSelected
                         ? 'border-[#FF5A1F] ring-2 ring-[#FF5A1F]/50 scale-[1.02]'
-                        : 'border-slate-800 hover:border-slate-600'
+                        : 'border-[#2A2A2A] hover:border-[#2A2A2A]'
                     }`}
                   >
                     <img
@@ -197,7 +197,7 @@ export default function PixabayImagePickerModal({
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     {isSelected && (
-                      <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#FF5A1F] text-white flex items-center justify-center shadow-lg">
+                      <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#C94400] text-white flex items-center justify-center shadow-lg">
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
                     )}
@@ -213,11 +213,11 @@ export default function PixabayImagePickerModal({
         </div>
 
         {/* Footer */}
-        <DialogFooter className="shrink-0 pt-3 border-t border-slate-800 flex items-center justify-between sm:justify-between w-full">
+        <DialogFooter className="shrink-0 pt-3 border-t border-[#2A2A2A] flex items-center justify-between sm:justify-between w-full">
           <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
             <span>Powered by Pixabay API</span>
             <span>•</span>
-            <span className="text-emerald-400">Free for commercial use</span>
+            <span className="text-[#FF7A2E]">Free for commercial use</span>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -234,7 +234,7 @@ export default function PixabayImagePickerModal({
               size="sm"
               onClick={handleConfirmSelection}
               disabled={!selectedId}
-              className="bg-[#FF5A1F] hover:bg-[#e04e17] text-white text-xs font-semibold px-4"
+              className="bg-[#C94400] hover:bg-[#e04e17] text-white text-xs font-semibold px-4"
             >
               Select Representative Photo
             </Button>

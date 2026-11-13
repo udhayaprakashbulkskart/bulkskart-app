@@ -170,17 +170,17 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
             <button
               type="button"
               onClick={() => set('is_urgent', !form.is_urgent)}
-              className={`flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full border transition-colors ${form.is_urgent ? 'bg-red-50 border-red-400 text-red-600' : 'border-border text-muted-foreground hover:border-[#FF5A00]'}`}
+              className={`flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full border transition-colors ${form.is_urgent ? 'bg-[#FF5A00]/10 border-[#FF5A00]/40 text-[#FF7A2E]' : 'border-border text-muted-foreground hover:border-[#FF5A00]'}`}
             >
               <Zap className="w-3.5 h-3.5" />
               {form.is_urgent ? 'Urgent' : 'Normal'} Priority
             </button>
-            {form.is_urgent && <Badge className="bg-red-100 text-red-600 border-red-300 text-[10px]">URGENT</Badge>}
+            {form.is_urgent && <Badge className="bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40 text-[10px]">URGENT</Badge>}
           </div>
 
           {/* Title */}
           <div className="space-y-1.5">
-            <Label className="text-[13px] font-semibold text-foreground">Requirement / Product Name <span className="text-red-500">*</span></Label>
+            <Label className="text-[13px] font-semibold text-foreground">Requirement / Product Name <span className="text-[#FF7A2E]">*</span></Label>
             <Input
               value={form.title}
               onChange={e => { set('title', e.target.value); setFieldErrors(prev => ({ ...prev, title: '' })); }}
@@ -215,7 +215,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
           {/* Category + Unit in 2 cols */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">Category <span className="text-red-500">*</span></Label>
+              <Label className="text-[13px] font-semibold text-foreground">Category <span className="text-[#FF7A2E]">*</span></Label>
               <Select value={form.category_id} onValueChange={v => { set('category_id', v); setFieldErrors(prev => ({ ...prev, category_id: '' })); }}>
                 <SelectTrigger className={`border-border text-[13px] h-10 ${fieldErrors.category_id ? 'border-destructive ring-1 ring-destructive' : ''}`}>
                   <SelectValue placeholder="Select category" />
@@ -229,7 +229,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
               {fieldErrors.category_id && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {fieldErrors.category_id}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">Unit <span className="text-red-500">*</span></Label>
+              <Label className="text-[13px] font-semibold text-foreground">Unit <span className="text-[#FF7A2E]">*</span></Label>
               <Select value={form.quantity_unit} onValueChange={v => set('quantity_unit', v)}>
                 <SelectTrigger className="border-border text-[13px] h-10">
                   <SelectValue />
@@ -244,7 +244,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
           {/* Quantity + Budget */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">Quantity <span className="text-red-500">*</span></Label>
+              <Label className="text-[13px] font-semibold text-foreground">Quantity <span className="text-[#FF7A2E]">*</span></Label>
               <Input
                 type="number" min="1"
                 value={form.quantity}
@@ -269,7 +269,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
           {/* Destination + City */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">Delivery Location (Country) <span className="text-red-500">*</span></Label>
+              <Label className="text-[13px] font-semibold text-foreground">Delivery Location (Country) <span className="text-[#FF7A2E]">*</span></Label>
               <Select value={form.destination_country} onValueChange={v => { set('destination_country', v); setFieldErrors(prev => ({ ...prev, destination: '' })); }}>
                 <SelectTrigger className={`border-border text-[13px] h-10 ${fieldErrors.destination ? 'border-destructive ring-1 ring-destructive' : ''}`}>
                   <SelectValue />
@@ -307,7 +307,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
 
           {/* Description */}
           <div className="space-y-1.5">
-            <Label className="text-[13px] font-semibold text-foreground">Description <span className="text-red-500">*</span></Label>
+            <Label className="text-[13px] font-semibold text-foreground">Description <span className="text-[#FF7A2E]">*</span></Label>
             <Textarea
               value={form.description}
               onChange={e => { set('description', e.target.value); setFieldErrors(prev => ({ ...prev, description: '' })); }}
@@ -353,7 +353,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
             <Button
               type="submit"
               disabled={loading || uploading}
-              className="flex-1 bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold gap-2 shadow-[0_2px_0_#b83c00]"
+              className="flex-1 bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold gap-2 shadow-[0_2px_0_#b83c00]"
             >
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Posting…</> : <><Plus className="w-4 h-4" /> Post Requirement</>}
             </Button>

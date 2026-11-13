@@ -24,9 +24,9 @@ type Dispute = {
 type OrderOption = { id: string; order_number: string };
 
 const STATUS_COLORS: Record<string, string> = {
-  open: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+  open: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
   under_review: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
-  resolved: 'bg-green-100 text-green-700 border-green-300',
+  resolved: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
   closed: 'bg-muted text-muted-foreground',
 };
 
@@ -153,7 +153,7 @@ export default function DisputeCenterPage() {
         robots="noindex, nofollow"
       />
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        <div className="bs-glass flex items-center justify-between gap-4 flex-wrap rounded-3xl p-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <AlertTriangle className="w-6 h-6 text-primary" />
             <div>
@@ -161,7 +161,7 @@ export default function DisputeCenterPage() {
               <p className="text-sm text-muted-foreground">Raise and track disputes for your orders</p>
             </div>
           </div>
-          <Button onClick={() => { fetchOrders(); setDialogOpen(true); }} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+          <Button onClick={() => { fetchOrders(); setDialogOpen(true); }} className="bg-[#1A0C05] hover:bg-primary/90 text-primary-foreground gap-2">
             <Plus className="w-4 h-4" /> Raise Dispute
           </Button>
         </div>
@@ -266,7 +266,7 @@ export default function DisputeCenterPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={saving} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button onClick={handleSubmit} disabled={saving} className="bg-[#1A0C05] hover:bg-primary/90 text-primary-foreground">
               {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : null}
               Submit Dispute
             </Button>

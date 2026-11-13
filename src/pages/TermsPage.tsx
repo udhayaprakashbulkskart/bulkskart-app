@@ -74,7 +74,7 @@ export default function TermsPage() {
       />
       <Header />
 
-      <section className="bg-[#1a1a2e] text-white py-12 px-4">
+      <section className="bg-[#C94400] text-white py-12 px-4">
         <div className="max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-5">
             <Shield className="w-3.5 h-3.5 text-primary" />

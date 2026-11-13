@@ -42,7 +42,7 @@ export default function BrandLogo({
 
   const content = imgError ? (
     <div className={`flex items-center gap-1.5 shrink-0 ${className}`}>
-      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#FF5A00] flex items-center justify-center text-white font-black text-sm sm:text-base shadow-sm">
+      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#C94400] flex items-center justify-center text-white font-black text-sm sm:text-base shadow-sm">
         B
       </div>
       <div className="flex flex-col leading-none">

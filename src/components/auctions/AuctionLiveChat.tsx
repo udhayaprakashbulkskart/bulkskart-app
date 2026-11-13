@@ -199,10 +199,10 @@ export default function AuctionLiveChat({
               <h3 className="text-xs sm:text-sm font-bold text-foreground truncate">
                 {isFullPage ? '60-Minute Live Room Chat (Full Page)' : 'Live Auction Chat'}
               </h3>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-[#C94400] animate-pulse shrink-0" />
             </div>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground truncate">
-              <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="flex items-center gap-1 font-semibold text-[#FF7A2E] dark:text-[#FF7A2E]">
                 <Users className="w-3 h-3" /> {activeParticipants} Bidders Active
               </span>
               <span>•</span>
@@ -275,7 +275,7 @@ export default function AuctionLiveChat({
                     {!isMe && (
                       <div
                         className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[9px] shrink-0 text-white ${
-                          isManufacturer ? 'bg-[#FF5A1F]' : 'bg-slate-700'
+                          isManufacturer ? 'bg-[#C94400]' : 'bg-[#0A0A0A]'
                         }`}
                       >
                         {msg.sender_name.charAt(0)}
@@ -307,9 +307,9 @@ export default function AuctionLiveChat({
                   <div
                     className={`p-3 sm:p-3.5 rounded-2xl text-xs sm:text-[13px] leading-relaxed shadow-sm break-words whitespace-pre-wrap ${
                       isMe
-                        ? 'bg-[#FF5A1F] text-white rounded-tr-xs text-left'
+                        ? 'bg-[#1A0C05] text-white rounded-tr-xs text-left'
                         : isManufacturer
-                        ? 'bg-orange-50/90 dark:bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 text-foreground rounded-tl-xs font-medium text-left'
+                        ? 'bg-[#C94400]/95 dark:bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 text-foreground rounded-tl-xs font-medium text-left'
                         : 'bg-card border border-border/80 text-foreground rounded-tl-xs text-left'
                     }`}
                   >
@@ -326,7 +326,7 @@ export default function AuctionLiveChat({
           <button
             type="button"
             onClick={scrollToBottom}
-            className="sticky bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-[#FF5A1F] text-white font-bold text-xs shadow-lg flex items-center gap-1 animate-bounce"
+            className="sticky bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-[#C94400] text-white font-bold text-xs shadow-lg flex items-center gap-1 animate-bounce"
           >
             <ArrowDown className="w-3.5 h-3.5" />
             <span>New Live Messages</span>
@@ -346,7 +346,7 @@ export default function AuctionLiveChat({
               type="button"
               size="sm"
               onClick={() => { window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`; }}
-              className="h-8 text-xs bg-[#FF5A1F] hover:bg-[#e04e17] text-white px-3.5 rounded-xl font-bold shrink-0 shadow-xs"
+              className="h-8 text-xs bg-[#C94400] hover:bg-[#e04e17] text-white px-3.5 rounded-xl font-bold shrink-0 shadow-xs"
             >
               Sign in to participate
             </Button>
@@ -363,7 +363,7 @@ export default function AuctionLiveChat({
               type="submit"
               disabled={!inputText.trim() || sending}
               size="sm"
-              className="h-10 px-4 bg-[#FF5A1F] hover:bg-[#e04f1a] text-white rounded-xl shrink-0 font-bold flex items-center justify-center gap-1 shadow-sm"
+              className="h-10 px-4 bg-[#C94400] hover:bg-[#e04f1a] text-white rounded-xl shrink-0 font-bold flex items-center justify-center gap-1 shadow-sm"
             >
               <Send className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Send</span>

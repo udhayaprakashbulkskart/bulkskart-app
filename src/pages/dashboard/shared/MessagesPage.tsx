@@ -311,7 +311,7 @@ export default function MessagesPage() {
         description="BulkSkart dashboard — manage your account, orders and trade activity."
         robots="noindex, nofollow"
       />
-      <div className="flex-1 min-w-0 flex overflow-hidden h-full min-h-[70dvh]">
+      <div className="flex-1 min-w-0 flex overflow-hidden" style={{ height: 'calc(100vh - 3.5rem)' }}>
 
         {/* ── Conversations & Inquiries sidebar ─────────────────────────────────── */}
         <div className={cn("w-full md:w-80 shrink-0 border-r border-border bg-sidebar flex-col", mobileView === 'chat' ? 'hidden md:flex' : 'flex')}>
@@ -380,13 +380,13 @@ export default function MessagesPage() {
                         isSelected ? 'bg-sidebar-accent border-primary' : 'border-transparent'
                       )}
                     >
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                      <div className="w-8 h-8 rounded-full bg-[#FF5A00]/20 text-[#FF7A2E] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
                         {inq.sender_name[0]?.toUpperCase() || 'B'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
                           <p className="text-xs font-semibold text-sidebar-foreground truncate">{inq.sender_name}</p>
-                          <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-500/10 px-1 rounded shrink-0">
+                          <span className="text-[9px] font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 px-1 rounded shrink-0">
                             Profile Chat
                           </span>
                         </div>
@@ -401,12 +401,12 @@ export default function MessagesPage() {
                           {inq.status === 'replied' ? (
                             <span className="text-[#FF5A00] font-medium">Replied ({inq.replies?.length || 1})</span>
                           ) : (
-                            <span className="text-emerald-500 font-semibold">New Inquiry</span>
+                            <span className="text-[#FF7A2E] font-semibold">New Inquiry</span>
                           )}
                         </div>
                       </div>
                       {isNew && (
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 mt-1.5" title="New unread inquiry" />
+                        <div className="w-2 h-2 rounded-full bg-[#C94400] shrink-0 mt-1.5" title="New unread inquiry" />
                       )}
                     </button>
                   );
@@ -451,7 +451,7 @@ export default function MessagesPage() {
                         )}
                       </div>
                       {unread > 0 && (
-                        <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-[9px] text-primary-foreground shrink-0 mt-1">
+                        <div className="w-4 h-4 rounded-full bg-[#C94400] flex items-center justify-center text-[9px] text-primary-foreground shrink-0 mt-1">
                           {unread > 9 ? '9+' : unread}
                         </div>
                       )}
@@ -484,7 +484,7 @@ export default function MessagesPage() {
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center text-sm font-bold shrink-0">
+                <div className="w-9 h-9 rounded-full bg-[#FF5A00]/20 text-[#FF7A2E] flex items-center justify-center text-sm font-bold shrink-0">
                   {selectedInquiry.sender_name[0]?.toUpperCase() || 'B'}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -493,7 +493,7 @@ export default function MessagesPage() {
                     {selectedInquiry.sender_company && (
                       <span className="text-xs text-muted-foreground truncate">({selectedInquiry.sender_company})</span>
                     )}
-                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 px-2 py-0.5 rounded-full">
                       Direct Supplier Inquiry
                     </span>
                   </div>
@@ -505,7 +505,7 @@ export default function MessagesPage() {
                     )}
                     {selectedInquiry.sender_phone && (
                       <a href={`tel:${selectedInquiry.sender_phone}`} className="flex items-center gap-1 hover:text-primary hover:underline">
-                        <Phone className="w-3 h-3 text-emerald-500" /> {selectedInquiry.sender_phone}
+                        <Phone className="w-3 h-3 text-[#FF7A2E]" /> {selectedInquiry.sender_phone}
                       </a>
                     )}
                   </div>
@@ -514,7 +514,7 @@ export default function MessagesPage() {
                   <Link to="/dashboard/supplier/quotes">
                     <Button
                       size="sm"
-                      className="h-8 gap-1.5 text-xs bg-primary text-primary-foreground font-semibold hover:bg-primary/90"
+                      className="h-8 gap-1.5 text-xs bg-[#C94400] text-primary-foreground font-semibold hover:bg-primary/90"
                       title="Create or manage formal quotation for this buyer"
                     >
                       <FileText className="w-3.5 h-3.5" />
@@ -585,7 +585,7 @@ export default function MessagesPage() {
                       </div>
                       <div className={cn(
                         "max-w-[85%] p-3.5 rounded-2xl text-sm shadow-xs",
-                        isSupplier ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md" : "bg-card border border-border text-foreground rounded-2xl rounded-bl-md"
+                        isSupplier ? "bg-[#C94400] text-primary-foreground rounded-tr-sm" : "bg-card border border-border text-foreground rounded-tl-sm"
                       )}>
                         <p className="whitespace-pre-wrap leading-relaxed">{reply.content}</p>
                       </div>
@@ -631,10 +631,10 @@ export default function MessagesPage() {
 
               {/* Reply Form — subscription gate for unpaid manufacturers */}
               {!canReplyAsSupplier ? (
-                <div className="px-4 py-4 border-t border-border shrink-0 bg-amber-500/5">
+                <div className="px-4 py-4 border-t border-border shrink-0 bg-[#FF5A00]/5">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
                     <div className="flex items-start gap-2.5 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-lg bg-[#FF5A00]/15 text-[#FF7A2E] flex items-center justify-center shrink-0">
                         <Lock className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
@@ -645,7 +645,7 @@ export default function MessagesPage() {
                       </div>
                     </div>
                     <Link to={subscriptionPath} className="shrink-0 w-full sm:w-auto">
-                      <Button className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold gap-1.5 text-xs h-9">
+                      <Button className="w-full sm:w-auto bg-[#C94400] hover:bg-[#B33D00] text-white font-bold gap-1.5 text-xs h-9">
                         <Sparkles className="w-3.5 h-3.5" /> View Plans &amp; Subscribe
                       </Button>
                     </Link>
@@ -661,7 +661,7 @@ export default function MessagesPage() {
                     disabled={replyingInquiry}
                     maxLength={4000}
                   />
-                  <Button type="submit" disabled={replyingInquiry || !inquiryReply.trim()} className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 font-bold">
+                  <Button type="submit" disabled={replyingInquiry || !inquiryReply.trim()} className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 shrink-0 font-bold">
                     {replyingInquiry ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </Button>
                 </form>
@@ -749,7 +749,7 @@ export default function MessagesPage() {
                         <div key={msg.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                           <div className={cn(
                             'max-w-[85%] p-3 rounded-2xl text-sm shadow-xs',
-                            isMine ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md' : 'bg-card border border-border text-foreground rounded-2xl rounded-bl-md'
+                            isMine ? 'bg-[#C94400] text-primary-foreground rounded-tr-sm' : 'bg-card border border-border text-foreground rounded-tl-sm'
                           )}>
                             <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                           </div>
@@ -758,8 +758,8 @@ export default function MessagesPage() {
                     })}
                     <div ref={bottomRef} />
                   </div>
-                  <div className="px-4 py-5 border-t border-border bg-amber-500/5 text-center space-y-3 shrink-0">
-                    <div className="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center mx-auto">
+                  <div className="px-4 py-5 border-t border-border bg-[#FF5A00]/5 text-center space-y-3 shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-[#FF5A00]/15 text-[#FF7A2E] flex items-center justify-center mx-auto">
                       <Lock className="w-6 h-6" />
                     </div>
                     <div>
@@ -771,7 +771,7 @@ export default function MessagesPage() {
                       </p>
                     </div>
                     <Link to={subscriptionPath}>
-                      <Button className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold gap-2">
+                      <Button className="bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold gap-2">
                         <Sparkles className="w-4 h-4" /> View Plans &amp; Subscribe <ArrowRight className="w-4 h-4" />
                       </Button>
                     </Link>
@@ -802,7 +802,7 @@ export default function MessagesPage() {
                                 {getContactName(selectedConv)}
                               </span>
                               {isUrgent && (
-                                <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase px-1.5 py-0.2 rounded-full bg-red-600 text-white animate-pulse">
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase px-1.5 py-0.2 rounded-full bg-[#B33D00] text-white animate-pulse">
                                   🚨 URGENT
                                 </span>
                               )}
@@ -811,9 +811,9 @@ export default function MessagesPage() {
                           <div className={cn(
                             'max-w-[78%] px-3.5 py-2.5 rounded-2xl text-sm shadow-xs',
                             isMine
-                              ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md'
+                              ? 'bg-[#C94400] text-primary-foreground rounded-br-sm'
                               : isUrgent
-                              ? 'bg-card border-2 border-red-500/80 text-foreground rounded-bl-sm ring-2 ring-red-500/20'
+                              ? 'bg-card border-2 border-[#FF5A00]/80 text-foreground rounded-bl-sm ring-2 ring-[#FF5A00]/20'
                               : 'bg-card border border-border text-foreground rounded-bl-sm'
                           )}>
                             <p className="text-pretty break-words leading-relaxed">{msg.content}</p>
@@ -879,7 +879,7 @@ export default function MessagesPage() {
                                       if (requirePaidReply()) return;
                                       setInput(reply.text);
                                     }}
-                                    className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20 px-2 py-0.5 rounded transition-colors"
+                                    className="text-[10px] font-bold text-[#FF7A2E] bg-[#FF5A00]/10 hover:bg-[#B33D00]/20 px-2 py-0.5 rounded transition-colors"
                                   >
                                     Edit
                                   </button>
@@ -891,7 +891,7 @@ export default function MessagesPage() {
                                       setInput(reply.text);
                                       toast.info('Review text and press Send to dispatch.');
                                     }}
-                                    className="text-[10px] font-bold text-white bg-[#FF5A00] hover:bg-[#e04f00] px-2.5 py-0.5 rounded transition-colors"
+                                    className="text-[10px] font-bold text-white bg-[#C94400] hover:bg-[#B33D00] px-2.5 py-0.5 rounded transition-colors"
                                   >
                                     Send
                                   </button>
@@ -917,7 +917,7 @@ export default function MessagesPage() {
                       disabled={sending}
                       maxLength={4000}
                     />
-                    <Button type="submit" disabled={sending || !input.trim()} className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
+                    <Button type="submit" disabled={sending || !input.trim()} className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 shrink-0">
                       {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     </Button>
                   </form>

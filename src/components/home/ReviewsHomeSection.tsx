@@ -126,7 +126,7 @@ export default function ReviewsHomeSection() {
           <div className="flex items-center gap-4 shrink-0">
             {/* Aggregated Score Card */}
             <div className="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl bg-card border border-border/80">
-              <div className="flex items-center gap-0.5 text-amber-400">
+              <div className="flex items-center gap-0.5 text-[#FF7A2E]">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-current" />
                 ))}
@@ -179,12 +179,12 @@ export default function ReviewsHomeSection() {
               <div>
                 {/* Header: Stars + Verified Badge */}
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-1 text-amber-400">
+                  <div className="flex items-center gap-1 text-[#FF7A2E]">
                     {[...Array(review.rating)].map((_, i) => (
                       <Star key={i} className="w-3.5 h-3.5 fill-current" />
                     ))}
                   </div>
-                  <Badge variant="outline" className="text-[10px] font-semibold border-emerald-500/30 text-emerald-400 bg-emerald-500/10">
+                  <Badge variant="outline" className="text-[10px] font-semibold border-[#FF5A00]/30 text-[#FF7A2E] bg-[#FF5A00]/10">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
                     {review.verifiedTag}
                   </Badge>

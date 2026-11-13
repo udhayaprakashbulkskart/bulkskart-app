@@ -29,11 +29,11 @@ export default function AIOpportunityCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#16132A] via-[#151728] to-[#1D1726] border border-[#FF5A00]/30 p-4 sm:p-5 md:p-6 shadow-[0_8px_30px_rgba(255,90,0,0.12)] ${className}`}
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2A1205] via-[#C94400] to-[#B33D00] border border-[#FF5A00]/30 p-4 sm:p-5 md:p-6 shadow-[0_8px_30px_rgba(255,90,0,0.12)] ${className}`}
     >
       {/* Ambient background glow */}
       <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#FF5A00]/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-600/10 rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-[#B33D00]/10 rounded-full blur-2xl pointer-events-none" />
 
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Left header */}
@@ -72,7 +72,7 @@ export default function AIOpportunityCard({
             <Link to="/dashboard/supplier/ai-assistant">
               <Button
                 onClick={onViewAll}
-                className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04f00] text-white font-extrabold text-xs sm:text-sm h-11 px-5 rounded-xl shadow-[0_4px_16px_rgba(255,90,0,0.4)] flex items-center justify-center gap-2 group transition-all"
+                className="w-full sm:w-auto bg-[#C94400] hover:bg-[#B33D00] text-white font-extrabold text-xs sm:text-sm h-11 px-5 rounded-xl shadow-[0_4px_16px_rgba(255,90,0,0.4)] flex items-center justify-center gap-2 group transition-all"
               >
                 <span>View Matched Opportunities ({summary.totalOpportunities})</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -81,7 +81,7 @@ export default function AIOpportunityCard({
           ) : (
             <Link to="/dashboard/supplier/products">
               <Button
-                className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04f00] text-white font-extrabold text-xs sm:text-sm h-11 px-5 rounded-xl shadow-[0_4px_16px_rgba(255,90,0,0.4)] flex items-center justify-center gap-2 group transition-all"
+                className="w-full sm:w-auto bg-[#C94400] hover:bg-[#B33D00] text-white font-extrabold text-xs sm:text-sm h-11 px-5 rounded-xl shadow-[0_4px_16px_rgba(255,90,0,0.4)] flex items-center justify-center gap-2 group transition-all"
               >
                 <PlusCircle className="w-4 h-4" />
                 <span>{hasProducts ? 'Add More Products' : 'Add First Product'}</span>
@@ -106,24 +106,24 @@ export default function AIOpportunityCard({
         </div>
 
         {/* Metric 2 */}
-        <div className="bg-card/90 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-3 flex flex-col justify-between">
+        <div className="bg-card/90 backdrop-blur-sm border border-[#FF5A00]/20 rounded-xl p-3 flex flex-col justify-between">
           <div className="flex items-center justify-between text-muted-foreground text-[11px] font-semibold">
             <span>High Priority</span>
-            <Zap className="w-3.5 h-3.5 text-emerald-500" />
+            <Zap className="w-3.5 h-3.5 text-[#FF7A2E]" />
           </div>
-          <div className="mt-1 text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+          <div className="mt-1 text-xl sm:text-2xl font-black text-[#FF7A2E] dark:text-[#FF7A2E]">
             {summary.highPriorityCount}
           </div>
-          <div className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">&gt;85% compatibility</div>
+          <div className="text-[10px] text-[#FF7A2E]/70 dark:text-[#FF7A2E]/70 mt-0.5">&gt;85% compatibility</div>
         </div>
 
         {/* Metric 3 */}
         <div className="bg-card/90 backdrop-blur-sm border border-border rounded-xl p-3 flex flex-col justify-between">
           <div className="flex items-center justify-between text-muted-foreground text-[11px] font-semibold">
             <span>Average Match</span>
-            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+            <Sparkles className="w-3.5 h-3.5 text-[#FF7A2E]" />
           </div>
-          <div className="mt-1 text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400">
+          <div className="mt-1 text-xl sm:text-2xl font-black text-[#FF7A2E] dark:text-[#FF7A2E]">
             {summary.averageMatchScore}%
           </div>
           <div className="text-[10px] text-muted-foreground mt-0.5">Specifications alignment</div>

@@ -279,10 +279,10 @@ export default function SupplierProfilePage() {
           {/* Header */}
           <div className="flex items-start justify-between flex-wrap gap-3">
             <div>
-              <h1 className="text-xl font-black text-foreground">Business Profile</h1>
+              <h1 className="text-xl font-bold text-foreground">Business Profile</h1>
               <p className="text-sm text-muted-foreground">Manage your verified manufacturer profile</p>
             </div>
-            <Button onClick={handleSave} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
+            <Button onClick={handleSave} disabled={saving} className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 shrink-0">
               {saving ? 'Saving…' : 'Save Changes'}
             </Button>
           </div>
@@ -294,13 +294,13 @@ export default function SupplierProfilePage() {
                 <Zap className="w-4 h-4 text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">Profile Completeness</h3>
               </div>
-              <span className={`text-sm font-bold ${completionPct >= 80 ? 'text-green-500' : completionPct >= 50 ? 'text-yellow-500' : 'text-destructive'}`}>
+              <span className={`text-sm font-bold ${completionPct >= 80 ? 'text-[#FF7A2E]' : completionPct >= 50 ? 'text-[#FF7A2E]' : 'text-destructive'}`}>
                 {completionPct}%
               </span>
             </div>
             <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden mb-3">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${completionPct >= 80 ? 'bg-green-500' : completionPct >= 50 ? 'bg-yellow-500' : 'bg-primary'}`}
+                className={`h-full rounded-full transition-all duration-500 ${completionPct >= 80 ? 'bg-[#C94400]' : completionPct >= 50 ? 'bg-[#C94400]' : 'bg-[#C94400]'}`}
                 style={{ width: `${completionPct}%` }}
               />
             </div>
@@ -315,7 +315,7 @@ export default function SupplierProfilePage() {
                 { label: 'Certifications', done: certs.length >= 1 },
                 { label: 'GST Number', done: !!company?.gst_number },
               ].map(item => (
-                <span key={item.label} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${item.done ? 'bg-green-50 border-green-300 text-green-700' : 'bg-muted border-border text-muted-foreground'}`}>
+                <span key={item.label} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${item.done ? 'bg-[#FF5A00]/10 border-[#FF5A00]/40 text-[#FF7A2E]' : 'bg-muted border-border text-muted-foreground'}`}>
                   {item.done ? <CheckCircle className="w-3 h-3" /> : <Info className="w-3 h-3" />}
                   {item.label}
                 </span>
@@ -334,8 +334,8 @@ export default function SupplierProfilePage() {
               {[
                 { label: 'Response Rate', value: company?.response_rate ? `${company.response_rate}%` : '—', icon: TrendingUp, color: 'text-primary' },
                 { label: 'Avg Response', value: company?.avg_response_hours ? `${company.avg_response_hours}h` : '—', icon: Clock, color: 'text-[#FF5A00]' },
-                { label: 'Rating', value: company?.rating_avg ? `${Number(company.rating_avg).toFixed(1)} ★` : '—', icon: Star, color: 'text-yellow-500' },
-                { label: 'Reviews', value: company?.review_count ?? 0, icon: Users, color: 'text-purple-500' },
+                { label: 'Rating', value: company?.rating_avg ? `${Number(company.rating_avg).toFixed(1)} ★` : '—', icon: Star, color: 'text-[#FF7A2E]' },
+                { label: 'Reviews', value: company?.review_count ?? 0, icon: Users, color: 'text-[#FF7A2E]' },
               ].map(m => (
                 <div key={m.label} className="bg-muted/50 rounded-xl p-3 text-center">
                   <m.icon className={`w-5 h-5 mx-auto mb-1 ${m.color}`} />
@@ -350,15 +350,15 @@ export default function SupplierProfilePage() {
           {company && (
             <div className={`rounded-xl border p-4 flex items-center gap-3 ${
               company.is_verified
-                ? 'bg-green-500/10 border-green-500/30'
+                ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30'
                 : company.verification_status === 'pending'
-                ? 'bg-yellow-500/10 border-yellow-500/30'
+                ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30'
                 : 'bg-muted border-border'
             }`}>
               {company.is_verified ? (
-                <ShieldCheck className="w-5 h-5 text-green-400 shrink-0" />
+                <ShieldCheck className="w-5 h-5 text-[#FF7A2E] shrink-0" />
               ) : company.verification_status === 'pending' ? (
-                <Clock className="w-5 h-5 text-yellow-400 shrink-0" />
+                <Clock className="w-5 h-5 text-[#FF7A2E] shrink-0" />
               ) : (
                 <ShieldCheck className="w-5 h-5 text-muted-foreground shrink-0" />
               )}
@@ -376,7 +376,7 @@ export default function SupplierProfilePage() {
                 </p>
               </div>
               {company.is_verified && (
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs shrink-0">
+                <Badge className="bg-[#FF5A00]/20 text-[#FF7A2E] border-[#FF5A00]/30 text-xs shrink-0">
                   <ShieldCheck className="w-3 h-3 mr-1" /> Verified
                 </Badge>
               )}
@@ -564,13 +564,13 @@ export default function SupplierProfilePage() {
                 const isPending = pendingCerts.some(c => c.cert_type === badge.certType);
                 return (
                   <div key={badge.label} className={`rounded-lg border p-3 flex items-center gap-3 ${
-                    isVerified ? 'bg-green-500/10 border-green-500/30' :
-                    isPending ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-muted border-border'
+                    isVerified ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30' :
+                    isPending ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30' : 'bg-muted border-border'
                   }`}>
                     {isVerified
-                      ? <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
+                      ? <CheckCircle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                       : isPending
-                      ? <Clock className="w-4 h-4 text-yellow-400 shrink-0" />
+                      ? <Clock className="w-4 h-4 text-[#FF7A2E] shrink-0" />
                       : <ShieldCheck className="w-4 h-4 text-muted-foreground shrink-0" />
                     }
                     <div>
@@ -614,8 +614,8 @@ export default function SupplierProfilePage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 pt-5 shrink-0">
-                  {cert.is_verified && <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">Verified</Badge>}
-                  {cert.pending_review && !cert.is_verified && <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">Pending</Badge>}
+                  {cert.is_verified && <Badge className="bg-[#FF5A00]/20 text-[#FF7A2E] border-[#FF5A00]/30 text-xs">Verified</Badge>}
+                  {cert.pending_review && !cert.is_verified && <Badge className="bg-[#FF5A00]/20 text-[#FF7A2E] border-[#FF5A00]/30 text-xs">Pending</Badge>}
                   <button type="button" onClick={() => removeCert(cert.id)}
                     className="text-muted-foreground hover:text-destructive transition-colors">
                     <Trash2 className="w-4 h-4" />
@@ -732,7 +732,7 @@ export default function SupplierProfilePage() {
                 <AlertTriangle className="w-3.5 h-3.5" /> Delete Manufacturer Account
               </Button>
             </Link>
-            <Button onClick={handleSave} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button onClick={handleSave} disabled={saving} className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90">
               {saving ? 'Saving…' : 'Save All Changes'}
             </Button>
           </div>

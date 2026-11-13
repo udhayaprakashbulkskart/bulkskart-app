@@ -438,9 +438,9 @@ export default function PricingPage() {
       {/* ── Highlight: Buyers are 100% Free Forever ── */}
       <section className="pb-8">
         <div className="max-w-[1400px] mx-auto px-4 md:px-6">
-          <div className="bg-gradient-to-r from-green-500/10 via-primary/5 to-green-500/10 border-2 border-green-500/30 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+          <div className="bg-gradient-to-r from-[#C94400]/10 via-primary/5 to-[#B33D00]/10 border-2 border-[#FF5A00]/30 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
             <div className="space-y-2 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 text-green-600 dark:text-green-400 font-bold text-xs">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF5A00]/20 text-[#FF7A2E] dark:text-[#FF7A2E] font-bold text-xs">
                 <CheckCircle className="w-4 h-4" /> 100% Free Forever for Buyers
               </div>
               <h2 className="text-xl md:text-2xl font-black text-foreground">
@@ -450,20 +450,20 @@ export default function PricingPage() {
                 Post unlimited bulk requirements (RFQs), browse verified factory catalogs, directly negotiate factory prices, and track orders from verified manufacturers globally without paying any subscription fees or hidden trade margins.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs font-semibold text-foreground">
-                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Unlimited RFQs</div>
-                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Zero Commission</div>
-                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Direct Factory Chat</div>
-                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> KYC Verification</div>
+                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-[#FF7A2E]" /> Unlimited RFQs</div>
+                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-[#FF7A2E]" /> Zero Commission</div>
+                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-[#FF7A2E]" /> Direct Factory Chat</div>
+                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-[#FF7A2E]" /> KYC Verification</div>
               </div>
             </div>
             <div className="shrink-0 flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <Link to="/post-requirement" className="w-full sm:w-auto">
-                <Button className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-11 px-6 shadow-[0_2px_0_#922f00]">
+                <Button className="w-full sm:w-auto bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-11 px-6 shadow-[0_2px_0_#922f00]">
                   Post Free Requirement
                 </Button>
               </Link>
               <Link to="/auth?tab=buyer" className="w-full sm:w-auto">
-                <Button className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-11 px-6 shadow-[0_2px_0_#922f00]">
+                <Button className="w-full sm:w-auto bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-11 px-6 shadow-[0_2px_0_#922f00]">
                   Join as Buyer
                 </Button>
               </Link>
@@ -497,7 +497,7 @@ export default function PricingPage() {
                 <div key={plan.tier} className={`bg-card border-2 rounded-xl p-5 flex flex-col relative ${plan.popular ? 'border-primary' : plan.color} card-hover`}>
                   {plan.popular && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground text-xs px-3 py-1">⚡ Most Popular</Badge>
+                      <Badge className="bg-[#C94400] text-primary-foreground text-xs px-3 py-1">⚡ Most Popular</Badge>
                     </div>
                   )}
                   <div className="mb-4">
@@ -546,7 +546,7 @@ export default function PricingPage() {
 
                   <ul className="space-y-2 flex-1 mb-6">
                     {plan.features.map(f => (
-                      <li key={f.text} className={`flex items-center gap-2 text-xs ${f.included ? 'text-muted-foreground' : 'text-muted/40 line-through'}`}>
+                      <li key={f.text} className={`flex items-center gap-2 text-xs ${f.included ? 'text-muted-foreground' : 'text-neutral-500 line-through'}`}>
                         {f.included
                           ? <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
                           : <span className="w-3.5 h-3.5 rounded-full border border-muted-foreground/20 shrink-0 inline-block" />
@@ -559,7 +559,7 @@ export default function PricingPage() {
                   <Button
                     disabled={checkoutLoading}
                     onClick={() => handlePlanCTA(plan)}
-                    className="w-full text-sm font-bold gap-1.5 bg-[#FF5A00] hover:bg-[#e04e00] text-white shadow-[0_2px_0_#922f00] h-11 rounded-xl"
+                    className="w-full text-sm font-bold gap-1.5 bg-[#C94400] hover:bg-[#B33D00] text-white shadow-[0_2px_0_#922f00] h-11 rounded-xl"
                   >
                     {checkoutLoading ? (
                       <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…</>
@@ -595,7 +595,7 @@ export default function PricingPage() {
             {/* AI Accessibility Add-on */}
             <div className="bg-card border-2 border-[#FF5A00]/50 rounded-2xl p-5 flex flex-col relative shadow-lg shadow-[#FF5A00]/5">
               <div className="absolute -top-3.5 left-6">
-                <Badge className="bg-[#FF5A00] text-white text-xs px-3 py-1 font-bold">
+                <Badge className="bg-[#C94400] text-white text-xs px-3 py-1 font-bold">
                   ⚡ AI Intelligence Suite
                 </Badge>
               </div>
@@ -641,7 +641,7 @@ export default function PricingPage() {
               <Button
                 disabled={checkoutLoading}
                 onClick={() => handleAddonCheckout('ai_accessibility')}
-                className="w-full text-sm font-bold gap-2 bg-[#FF5A00] hover:bg-[#e04e00] text-white shadow-md h-11 rounded-xl"
+                className="w-full text-sm font-bold gap-2 bg-[#C94400] hover:bg-[#B33D00] text-white shadow-md h-11 rounded-xl"
               >
                 {checkoutLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
@@ -652,21 +652,21 @@ export default function PricingPage() {
             </div>
 
             {/* 24 Hours Sell Products */}
-            <div className="bg-card border-2 border-amber-500/50 rounded-2xl p-5 flex flex-col relative shadow-lg shadow-amber-500/5">
+            <div className="bg-card border-2 border-[#FF5A00]/50 rounded-2xl p-5 flex flex-col relative shadow-lg shadow-[#FF5A00]/5">
               <div className="absolute -top-3.5 left-6">
-                <Badge className="bg-amber-500 text-white text-xs px-3 py-1 font-bold">
+                <Badge className="bg-[#C94400] text-white text-xs px-3 py-1 font-bold">
                   🔥 Flash Liquidation
                 </Badge>
               </div>
 
               <div className="mb-4 pt-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500">
+                  <div className="w-10 h-10 rounded-xl bg-[#FF5A00]/15 border border-[#FF5A00]/30 flex items-center justify-center text-[#FF7A2E]">
                     <Zap className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-lg font-black text-foreground">24 Hours Sell Products</h3>
-                    <p className="text-[11px] text-amber-500 font-bold">High-Priority Marketplace Spotlight</p>
+                    <p className="text-[11px] text-[#FF7A2E] font-bold">High-Priority Marketplace Spotlight</p>
                   </div>
                 </div>
 
@@ -674,7 +674,7 @@ export default function PricingPage() {
                   <span className="text-3xl font-black text-foreground">₹5,000</span>
                   <span className="text-xs text-muted-foreground">/24 Hours (Base)</span>
                 </div>
-                <div className="text-[11px] font-semibold text-amber-500 mb-2">
+                <div className="text-[11px] font-semibold text-[#FF7A2E] mb-2">
                   Total Payable: ₹6,018 (incl. 18% GST & Gateway fee)
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -691,7 +691,7 @@ export default function PricingPage() {
                   'Zero Platform Commission on All Bulk Transactions',
                 ].map((feat, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-foreground/90">
-                    <CheckCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                    <CheckCircle className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0 mt-0.5" />
                     <span>{feat}</span>
                   </li>
                 ))}
@@ -700,7 +700,7 @@ export default function PricingPage() {
               <Button
                 disabled={checkoutLoading}
                 onClick={() => handleAddonCheckout('flash_sell_24h')}
-                className="w-full text-sm font-bold gap-2 bg-gradient-to-r from-amber-500 to-[#FF5A00] hover:opacity-90 text-white shadow-md h-11 rounded-xl"
+                className="w-full text-sm font-bold gap-2 bg-gradient-to-r from-[#C94400] to-[#FF5A00] hover:opacity-90 text-white shadow-md h-11 rounded-xl"
               >
                 {checkoutLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
@@ -787,7 +787,7 @@ export default function PricingPage() {
                 </Button>
                 <Button
                   size="sm"
-                  className="bg-primary text-white font-bold"
+                  className="bg-[#1A0C05] text-white font-bold"
                   onClick={() => {
                     const p = selectedPlanForBreakdown;
                     setSelectedPlanForBreakdown(null);
@@ -850,7 +850,7 @@ export default function PricingPage() {
               Post unlimited bulk requirements, receive quotes from verified manufacturers, compare suppliers, and place orders — all for free.
             </p>
             <Link to="/auth">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+              <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
                 Register as Buyer — Free <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>

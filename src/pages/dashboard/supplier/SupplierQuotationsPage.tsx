@@ -29,9 +29,9 @@ type QuotationRow = {
 type ReqOption = { id: string; title: string; quantity: number; quantity_unit: string };
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-  accepted: 'bg-green-100 text-green-700 border-green-300',
-  rejected: 'bg-red-100 text-red-700 border-red-300',
+  pending: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  accepted: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  rejected: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
   revised: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
 };
 
@@ -171,12 +171,12 @@ export default function SupplierQuotationsPage() {
         robots="noindex, nofollow"
       />
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        <div className="bs-glass flex items-center justify-between gap-4 flex-wrap rounded-3xl p-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-black text-foreground">Quotation Management</h1>
+            <h1 className="text-2xl font-bold text-foreground">Quotation Management</h1>
             <p className="text-sm text-muted-foreground">Create and track quotations for matched RFQs</p>
           </div>
-          <Button onClick={openDialog} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+          <Button onClick={openDialog} className="bg-[#1A0C05] hover:bg-primary/90 text-primary-foreground gap-2">
             <Plus className="w-4 h-4" /> New Quotation
           </Button>
         </div>
@@ -296,7 +296,7 @@ export default function SupplierQuotationsPage() {
           </div>
           <DialogFooter className="flex-col md:flex-row gap-2">
             <Button variant="outline" onClick={() => handleSubmit(true)} disabled={saving}>Save as Draft</Button>
-            <Button onClick={() => handleSubmit(false)} disabled={saving} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button onClick={() => handleSubmit(false)} disabled={saving} className="bg-[#1A0C05] hover:bg-primary/90 text-primary-foreground">
               {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : null}
               Submit to Buyer
             </Button>

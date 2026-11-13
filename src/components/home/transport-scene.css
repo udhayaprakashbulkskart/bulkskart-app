@@ -1,0 +1,35 @@
+/* TransportScene motion. Applied only when the user has not requested reduced motion (see TransportScene.tsx). */
+
+@keyframes bs-twinkle {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+@keyframes bs-dash {
+  to { stroke-dashoffset: -28; }
+}
+
+@keyframes bs-dash-fast {
+  to { stroke-dashoffset: -34; }
+}
+
+@keyframes bs-waves {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100px); }
+}
+
+.bs-twinkle {
+  animation: bs-twinkle 3.2s ease-in-out infinite;
+}
+
+.bs-dash {
+  animation: bs-dash 1.6s linear infinite;
+}
+
+.bs-dash-fast {
+  animation: bs-dash-fast 0.6s linear infinite;
+}
+
+.bs-waves {
+  animation: bs-waves 3s linear infinite;
+}

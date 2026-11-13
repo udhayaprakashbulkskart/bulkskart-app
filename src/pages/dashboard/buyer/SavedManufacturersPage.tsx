@@ -63,7 +63,7 @@ export default function SavedManufacturersPage() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        <div className="bs-glass flex items-center gap-3 rounded-3xl p-4">
+        <div className="flex items-center gap-3">
           <Heart className="w-6 h-6 text-primary" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Saved Manufacturers</h1>
@@ -77,7 +77,7 @@ export default function SavedManufacturersPage() {
               <Heart className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <h3 className="font-semibold text-foreground mb-1">No saved manufacturers yet</h3>
               <p className="text-sm">Browse manufacturers and save the ones you want to follow.</p>
-              <Button asChild className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button asChild className="mt-4 bg-[#1A0C05] hover:bg-primary/90 text-primary-foreground">
                 <Link to="/manufacturers">Browse Manufacturers</Link>
               </Button>
             </CardContent>
@@ -111,7 +111,7 @@ export default function SavedManufacturersPage() {
                             {c.company_name}
                           </Link>
                           {c.is_verified && (
-                            <Badge className="bg-green-100 text-green-700 border-green-300 text-[10px] px-1.5 py-0 gap-0.5">
+                            <Badge className="bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40 text-[10px] px-1.5 py-0 gap-0.5">
                               <ShieldCheck className="w-2.5 h-2.5" /> Verified
                             </Badge>
                           )}
@@ -120,7 +120,7 @@ export default function SavedManufacturersPage() {
                           {c.city && <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" />{c.city}, {c.country}</span>}
                           {c.business_type && <span>{c.business_type}</span>}
                           {c.review_count > 0 && (
-                            <span className="flex items-center gap-0.5"><Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />{Number(c.rating_avg).toFixed(1)} ({c.review_count})</span>
+                            <span className="flex items-center gap-0.5"><Star className="w-3 h-3 fill-[#FF5A00] text-[#FF7A2E]" />{Number(c.rating_avg).toFixed(1)} ({c.review_count})</span>
                           )}
                         </div>
                         {c.key_products?.length ? (

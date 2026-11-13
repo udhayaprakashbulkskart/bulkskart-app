@@ -249,7 +249,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                 <div
                   className={`w-full max-w-[380px] sm:max-w-md p-4 rounded-xl shadow-2xl border transition-all ${
                     isUrgent
-                      ? 'bg-card border-red-500/80 ring-2 ring-red-500/40 shadow-red-500/10'
+                      ? 'bg-card border-[#FF5A00]/80 ring-2 ring-[#FF5A00]/40 shadow-[#FF5A00]/10'
                       : 'bg-card border-border shadow-xl'
                   }`}
                 >
@@ -257,10 +257,10 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                   <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-border/70">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                        isUrgent ? 'bg-red-500/20 text-red-600' : 'bg-primary/10 text-primary'
+                        isUrgent ? 'bg-[#FF5A00]/20 text-[#FF7A2E]' : 'bg-primary/10 text-primary'
                       }`}>
                         {isUrgent ? (
-                          <AlertCircle className="w-4 h-4 text-red-600 animate-pulse" />
+                          <AlertCircle className="w-4 h-4 text-[#FF7A2E] animate-pulse" />
                         ) : (
                           <Building2 className="w-4 h-4 text-primary" />
                         )}
@@ -277,7 +277,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       {isUrgent && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full bg-red-600 text-white shadow-sm animate-pulse">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full bg-[#B33D00] text-white shadow-sm animate-pulse">
                           🚨 URGENT
                         </span>
                       )}
@@ -312,8 +312,8 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                         size="sm"
                         className={`h-7 text-xs px-3 font-bold gap-1 shadow-sm ${
                           isUrgent
-                            ? 'bg-red-600 hover:bg-red-700 text-white'
-                            : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                            ? 'bg-[#B33D00] hover:bg-[#B33D00] text-white'
+                            : 'bg-[#C94400] hover:bg-primary/90 text-primary-foreground'
                         }`}
                         onClick={() => {
                           toast.dismiss(t);
@@ -421,12 +421,12 @@ export default function NotificationBell({ className }: NotificationBellProps) {
   const getNotifIcon = (type: string) => {
     switch (type) {
       case 'message':
-        return <MessageSquare className="w-4 h-4 text-purple-400" />;
+        return <MessageSquare className="w-4 h-4 text-[#FF7A2E]" />;
       case 'quote_received':
       case 'quotation':
         return <Package className="w-4 h-4 text-[#FF5A00]" />;
       case 'subscription':
-        return <CreditCard className="w-4 h-4 text-amber-400" />;
+        return <CreditCard className="w-4 h-4 text-[#FF7A2E]" />;
       case 'rfq_matched':
       case 'rfq_match':
         return <Flame className="w-4 h-4 text-orange-400" />;
@@ -448,7 +448,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
         >
           <Bell className="w-4 h-4" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-white text-[10px] font-black flex items-center justify-center shadow-md animate-pulse">
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#C94400] text-white text-[10px] font-black flex items-center justify-center shadow-md animate-pulse">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
@@ -464,7 +464,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
           <div className="flex items-center gap-2">
             <span className="font-bold text-sm text-foreground">Notifications</span>
             {unreadCount > 0 ? (
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#C94400] text-primary-foreground">
                 {unreadCount} new
               </span>
             ) : (
@@ -502,7 +502,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
         <div className="max-h-[420px] overflow-y-auto divide-y divide-border/50">
           {/* AI Sales Assistant Banner for Suppliers/Manufacturers */}
           {isSupplier && (
-            <div className="p-2.5 bg-gradient-to-r from-[#FF5A00]/15 via-orange-500/10 to-[#FF5A00]/5 border-b border-[#FF5A00]/25 flex items-center justify-between">
+            <div className="p-2.5 bg-gradient-to-r from-[#C94400]/15 via-orange-500/10 to-[#FF5A00]/5 border-b border-[#FF5A00]/25 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="p-1 rounded-md bg-[#FF5A00]/20 text-[#FF5A00]">
                   <Sparkles className="w-3.5 h-3.5" />
@@ -527,7 +527,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
           {isSupplier && aiMatchNotifs.map((n) => (
             <div
               key={n.id}
-              className="p-3.5 bg-[#FF5A00]/[0.04] border-l-4 border-l-[#FF5A00] hover:bg-[#FF5A00]/[0.08] transition-colors cursor-pointer space-y-2"
+              className="p-3.5 bg-[#FF5A00]/[0.04] border-l-4 border-l-[#FF5A00] hover:bg-[#B33D00]/[0.08] transition-colors cursor-pointer space-y-2"
               onClick={() => {
                 setOpen(false);
                 navigate(n.ctaLink);
@@ -541,7 +541,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                   </span>
                 </div>
                 <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded uppercase shrink-0 ${
-                  n.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
+                  n.priority === 'high' ? 'bg-[#FF5A00]/20 text-[#FF7A2E]' : 'bg-[#FF5A00]/20 text-[#FF7A2E]'
                 }`}>
                   {n.priority} Priority
                 </span>
@@ -571,7 +571,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Match:</span>{' '}
-                  <strong className="text-emerald-400 font-mono font-bold">{n.matchPercentage}%</strong>
+                  <strong className="text-[#FF7A2E] font-mono font-bold">{n.matchPercentage}%</strong>
                 </div>
               </div>
 
@@ -606,13 +606,13 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                   onClick={() => handleClickItem(item)}
                   className={`p-3.5 cursor-pointer transition-colors hover:bg-muted/60 ${
                     !item.is_read ? 'bg-primary/[0.04]' : ''
-                  } ${isUrgent ? 'border-l-4 border-l-red-500 bg-red-500/[0.03]' : ''}`}
+                  } ${isUrgent ? 'border-l-4 border-l-[#FF5A00]/40 bg-[#FF5A00]/[0.03]' : ''}`}
                 >
                   {/* Header: Company Name & Urgent badge */}
                   <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
-                        isUrgent ? 'bg-red-500/15 text-red-600' : 'bg-muted border border-border'
+                        isUrgent ? 'bg-[#FF5A00]/15 text-[#FF7A2E]' : 'bg-muted border border-border'
                       }`}>
                         {getNotifIcon(item.type)}
                       </div>
@@ -624,12 +624,12 @@ export default function NotificationBell({ className }: NotificationBellProps) {
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       {isUrgent && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-full bg-red-600 text-white shadow-xs animate-pulse">
+                        <span className="inline-flex items-center gap-1 text-[9px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-full bg-[#B33D00] text-white shadow-xs animate-pulse">
                           🚨 URGENT
                         </span>
                       )}
                       {!item.is_read && (
-                        <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                        <span className="w-2 h-2 rounded-full bg-[#C94400] shrink-0" />
                       )}
                     </div>
                   </div>

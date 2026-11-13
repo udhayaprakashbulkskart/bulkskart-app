@@ -114,21 +114,21 @@ export default function AISalesAssistantPage() {
   const getUrgencyBadge = (urgency: string) => {
     if (urgency === 'high') {
       return (
-        <span className="text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-          <Flame className="w-3 h-3 text-red-400" /> High Urgency
+        <span className="text-[10px] font-bold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+          <Flame className="w-3 h-3 text-[#FF7A2E]" /> High Urgency
         </span>
       );
     }
     if (urgency === 'medium') {
       return (
-        <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-          <TrendingUp className="w-3 h-3 text-yellow-400" /> Recommended
+        <span className="text-[10px] font-bold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+          <TrendingUp className="w-3 h-3 text-[#FF7A2E]" /> Recommended
         </span>
       );
     }
     return (
-      <span className="text-[10px] font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-        <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Best Practice
+      <span className="text-[10px] font-medium text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+        <CheckCircle2 className="w-3 h-3 text-[#FF7A2E]" /> Best Practice
       </span>
     );
   };
@@ -136,20 +136,20 @@ export default function AISalesAssistantPage() {
   const getPriorityBadge = (priority: OpportunityPriority) => {
     if (priority === 'high') {
       return (
-        <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-xs font-bold gap-1">
-          <Zap className="w-3 h-3 fill-red-400 text-red-400" /> High Priority
+        <Badge className="bg-[#FF5A00]/15 text-[#FF7A2E] border-[#FF5A00]/30 text-xs font-bold gap-1">
+          <Zap className="w-3 h-3 fill-[#FF5A00] text-[#FF7A2E]" /> High Priority
         </Badge>
       );
     }
     if (priority === 'medium') {
       return (
-        <Badge className="bg-yellow-500/15 text-yellow-400 border-yellow-500/30 text-xs font-bold gap-1">
-          <TrendingUp className="w-3 h-3 text-yellow-400" /> Medium Priority
+        <Badge className="bg-[#FF5A00]/15 text-[#FF7A2E] border-[#FF5A00]/30 text-xs font-bold gap-1">
+          <TrendingUp className="w-3 h-3 text-[#FF7A2E]" /> Medium Priority
         </Badge>
       );
     }
     return (
-      <Badge className="bg-slate-700/50 text-slate-300 border-white/10 text-xs font-medium">
+      <Badge className="bg-[#0A0A0A]/50 text-slate-300 border-white/10 text-xs font-medium">
         Standard Fit
       </Badge>
     );
@@ -164,8 +164,7 @@ export default function AISalesAssistantPage() {
 
       <div className="space-y-6 pb-12 max-w-7xl mx-auto">
         {/* Page Top Header */}
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-hidden rounded-3xl border border-white/10 bg-black/30 p-4">
-          <div className="bs-scan pointer-events-none absolute inset-x-[15%] top-0 h-16 bg-gradient-to-b from-transparent via-[#FF5A00]/25 to-transparent" aria-hidden="true" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="p-1.5 rounded-lg bg-[#FF5A00]/15 text-[#FF5A00]">
@@ -192,7 +191,7 @@ export default function AISalesAssistantPage() {
             <Link to="/dashboard/supplier/products">
               <Button
                 size="sm"
-                className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs h-9 rounded-xl shadow-md gap-1.5"
+                className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-9 rounded-xl shadow-md gap-1.5"
               >
                 <Package className="w-3.5 h-3.5" />
                 <span>Manage Catalogue</span>
@@ -208,7 +207,7 @@ export default function AISalesAssistantPage() {
         <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-xl space-y-3.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="p-1.5 rounded-lg bg-indigo-500/15 text-indigo-400">
+              <span className="p-1.5 rounded-lg bg-[#FF5A00]/15 text-[#FF7A2E]">
                 <Sparkles className="w-4 h-4" />
               </span>
               <div>
@@ -281,7 +280,7 @@ export default function AISalesAssistantPage() {
                     onClick={() => setSelectedPriority(tab.id as any)}
                     className={`whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                       active
-                        ? 'bg-[#FF5A00] text-white shadow-md'
+                        ? 'bg-[#C94400] text-white shadow-md'
                         : 'bg-card text-foreground/80 hover:text-foreground border border-border'
                     }`}
                   >
@@ -303,7 +302,7 @@ export default function AISalesAssistantPage() {
               <Button
                 size="sm"
                 onClick={() => setSelectedPriority('all')}
-                className="bg-[#FF5A00] text-white text-xs rounded-xl"
+                className="bg-[#1A0C05] text-white text-xs rounded-xl"
               >
                 Reset Priority Filter
               </Button>
@@ -322,8 +321,8 @@ export default function AISalesAssistantPage() {
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {getPriorityBadge(opp.priority)}
-                          <span className="text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-indigo-400" />
+                          <span className="text-xs font-mono font-bold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/20 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-[#FF7A2E]" />
                             {opp.topMatchScore}% Match
                           </span>
                           <span className="text-[11px] text-white/50 flex items-center gap-1">
@@ -358,7 +357,7 @@ export default function AISalesAssistantPage() {
                           <span>•</span>
                           <span>
                             Est. Business:{' '}
-                            <strong className="text-emerald-400">
+                            <strong className="text-[#FF7A2E]">
                               {formatPotentialBusinessINR(opp.estimatedBusinessValueINR)}
                             </strong>
                           </span>
@@ -369,7 +368,7 @@ export default function AISalesAssistantPage() {
                       <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">
                         <Button
                           onClick={() => handleOpenAIQuote(opp)}
-                          className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04f00] text-white font-extrabold text-xs h-9 px-4 rounded-xl shadow-[0_2px_10px_rgba(255,90,0,0.35)] gap-1.5"
+                          className="w-full sm:w-auto bg-[#C94400] hover:bg-[#B33D00] text-white font-extrabold text-xs h-9 px-4 rounded-xl shadow-[0_2px_10px_rgba(255,90,0,0.35)] gap-1.5"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
                           <span>AI Quote Draft</span>
@@ -418,7 +417,7 @@ export default function AISalesAssistantPage() {
                                   <span className="text-xs font-bold text-foreground truncate block">
                                     {p.name}
                                   </span>
-                                  <span className="text-[10px] font-mono font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.2 rounded shrink-0">
+                                  <span className="text-[10px] font-mono font-bold text-[#FF7A2E] bg-[#FF5A00]/10 px-1.5 py-0.2 rounded shrink-0">
                                     {p.matchScore}%
                                   </span>
                                 </div>

@@ -1,0 +1,8 @@
+/* Solid black full-page background (MainLayout background="black").
+   Section and footer surfaces become #000; cards and panels keep their own colours. */
+.bs-black-page,
+.bs-black-page main,
+.bs-black-page section,
+.bs-black-page footer {
+  background-color: #000 !important;
+}

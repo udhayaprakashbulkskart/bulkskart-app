@@ -127,13 +127,13 @@ export const AutoImageSyncManager: React.FC = () => {
 
   return (
     <div className="fixed bottom-3 right-3 z-40 max-w-[calc(100%-1.5rem)] sm:max-w-sm pointer-events-auto">
-      <div className="bg-[#0a0f1d]/95 backdrop-blur-md border border-slate-800 hover:border-[#FF5A1F]/40 shadow-xl rounded-xl text-foreground overflow-hidden transition-all duration-300">
+      <div className="bg-[#0a0f1d]/95 backdrop-blur-md border border-[#2A2A2A] hover:border-[#FF5A1F]/40 shadow-xl rounded-xl text-foreground overflow-hidden transition-all duration-300">
         {/* Compact Header Bar */}
-        <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800/80 bg-slate-900/60">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-[#2A2A2A]/80 bg-[#0A0A0A]/60">
           <div className="flex items-center gap-2 min-w-0">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF5A1F] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FF5A1F]"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C94400] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C94400]"></span>
             </span>
             <div className="flex items-center gap-1.5 min-w-0">
               <Camera className="w-3.5 h-3.5 text-[#FF5A1F] shrink-0" />
@@ -144,12 +144,12 @@ export const AutoImageSyncManager: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-[10px] font-mono text-muted-foreground bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/60">
+            <span className="text-[10px] font-mono text-muted-foreground bg-[#0A0A0A]/80 px-1.5 py-0.5 rounded border border-[#2A2A2A]/60">
               {secondsUntilNext}s
             </span>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1 text-muted-foreground hover:text-white rounded hover:bg-slate-800 transition-colors"
+              className="p-1 text-muted-foreground hover:text-white rounded hover:bg-[#0A0A0A] transition-colors"
               aria-label={isExpanded ? 'Collapse' : 'Expand'}
             >
               {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
@@ -180,12 +180,12 @@ export const AutoImageSyncManager: React.FC = () => {
         {/* Expanded Panel Details */}
         {isExpanded && (
           <div className="p-3 space-y-2.5 max-h-[340px] overflow-y-auto">
-            <div className="flex items-center justify-between text-[11px] bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+            <div className="flex items-center justify-between text-[11px] bg-[#0A0A0A]/80 p-2 rounded-lg border border-[#2A2A2A]">
               <div>
                 <p className="text-muted-foreground text-[10px]">Session Refreshed Photos</p>
                 <p className="text-sm font-bold text-white flex items-center gap-1">
                   <span>{totalSyncedSession}+</span>
-                  <span className="text-[10px] font-normal text-emerald-400">stored in Supabase</span>
+                  <span className="text-[10px] font-normal text-[#FF7A2E]">stored in Supabase</span>
                 </p>
               </div>
               <Button
@@ -193,7 +193,7 @@ export const AutoImageSyncManager: React.FC = () => {
                 variant="outline"
                 onClick={() => triggerSync(true)}
                 disabled={isSyncing}
-                className="h-7 text-[11px] gap-1 border-slate-700 hover:border-[#FF5A1F] text-slate-200"
+                className="h-7 text-[11px] gap-1 border-[#2A2A2A] hover:border-[#FF5A1F] text-slate-200"
               >
                 <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-[#FF5A1F]' : ''}`} />
                 {isSyncing ? 'Syncing...' : 'Sync Now'}
@@ -207,7 +207,7 @@ export const AutoImageSyncManager: React.FC = () => {
               </p>
 
               {recentLogs.length === 0 ? (
-                <div className="p-3 text-center text-[11px] text-muted-foreground bg-slate-900/40 rounded border border-slate-800/60">
+                <div className="p-3 text-center text-[11px] text-muted-foreground bg-[#0A0A0A]/40 rounded border border-[#2A2A2A]/60">
                   Sync scheduled. Fetching first cycle...
                 </div>
               ) : (
@@ -215,9 +215,9 @@ export const AutoImageSyncManager: React.FC = () => {
                   {recentLogs.map((log) => (
                     <div
                       key={log.id}
-                      className="flex items-center gap-2 p-1.5 rounded bg-slate-900/60 border border-slate-800/60 text-[11px] group"
+                      className="flex items-center gap-2 p-1.5 rounded bg-[#0A0A0A]/60 border border-[#2A2A2A]/60 text-[11px] group"
                     >
-                      <div className="w-8 h-8 rounded bg-slate-800 overflow-hidden shrink-0 border border-slate-700">
+                      <div className="w-8 h-8 rounded bg-[#0A0A0A] overflow-hidden shrink-0 border border-[#2A2A2A]">
                         <img
                           src={log.storage_url}
                           alt={log.entity_name || 'Thumbnail'}
@@ -229,14 +229,14 @@ export const AutoImageSyncManager: React.FC = () => {
                         <div className="flex items-center gap-1 text-[10px]">
                           {log.entity_type === 'company' && <Building2 className="w-3 h-3 text-[#FF5A00] shrink-0" />}
                           {log.entity_type === 'product' && <Package className="w-3 h-3 text-[#FF5A1F] shrink-0" />}
-                          {log.entity_type === 'requirement' && <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />}
+                          {log.entity_type === 'requirement' && <Sparkles className="w-3 h-3 text-[#FF7A2E] shrink-0" />}
                           <span className="font-semibold text-slate-200 truncate">{log.entity_name || 'Post'}</span>
                         </div>
                         <p className="text-[9px] text-muted-foreground truncate">
                           {log.search_query} • {new Date(log.created_at).toLocaleTimeString()}
                         </p>
                       </div>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
                     </div>
                   ))}
                 </div>

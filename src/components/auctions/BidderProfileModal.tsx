@@ -132,7 +132,7 @@ export default function BidderProfileModal({
         <div className="bg-gradient-to-r from-zinc-900 via-slate-900 to-black text-white p-5 sm:p-6 relative">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#FF5A1F] text-white font-bold text-lg flex items-center justify-center shadow-lg shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-[#C94400] text-white font-bold text-lg flex items-center justify-center shadow-lg shrink-0">
                 {profile.companyName.charAt(0)}
               </div>
               <div className="min-w-0">
@@ -141,12 +141,12 @@ export default function BidderProfileModal({
                     {profile.companyName}
                   </h3>
                   {profile.gstinVerified && (
-                    <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] px-1.5 py-0">
+                    <Badge className="bg-[#FF5A00]/20 text-[#FF7A2E] border border-[#FF5A00]/30 text-[10px] px-1.5 py-0">
                       <CheckCircle2 className="w-3 h-3 mr-0.5" /> GSTIN Verified
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-neutral-400 mt-0.5">
                   {profile.businessType}
                 </p>
               </div>
@@ -167,7 +167,7 @@ export default function BidderProfileModal({
             </div>
 
             <div className="p-3 rounded-2xl bg-muted/40 border border-border/60 text-center">
-              <div className="flex items-center justify-center gap-1 text-emerald-600 dark:text-emerald-400 mb-1">
+              <div className="flex items-center justify-center gap-1 text-[#FF7A2E] dark:text-[#FF7A2E] mb-1">
                 <Award className="w-4 h-4" />
                 <span className="font-bold text-sm text-foreground">{profile.totalAuctionsWon}</span>
               </div>
@@ -222,16 +222,16 @@ export default function BidderProfileModal({
 
             <div className="p-3 rounded-2xl bg-muted/20 border border-border/50 flex items-center justify-between">
               <span className="text-muted-foreground flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Escrow Deposit Status:
+                <ShieldCheck className="w-4 h-4 text-[#FF7A2E] dark:text-[#FF7A2E]" /> Escrow Deposit Status:
               </span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <span className="font-bold text-[#FF7A2E] dark:text-[#FF7A2E] flex items-center gap-1">
                 <Check className="w-3.5 h-3.5" /> Pre-Authorized & Verified
               </span>
             </div>
           </div>
 
           {/* Verification Assurance */}
-          <div className="p-3 rounded-2xl bg-orange-50/60 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/20 text-[11px] text-muted-foreground flex items-center gap-2">
+          <div className="p-3 rounded-2xl bg-[#FF5A00]/60 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/20 text-[11px] text-muted-foreground flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-[#FF5A1F] shrink-0" />
             <span>
               All bids placed by this entity are legally binding under BulkSkart Enterprise Trade Escrow Terms.
@@ -244,7 +244,7 @@ export default function BidderProfileModal({
             variant="default"
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="bg-[#FF5A1F] hover:bg-[#e04f1a] text-white text-xs font-semibold px-5"
+            className="bg-[#C94400] hover:bg-[#e04f1a] text-white text-xs font-semibold px-5"
           >
             Close Profile
           </Button>

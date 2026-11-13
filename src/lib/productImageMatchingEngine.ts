@@ -553,7 +553,7 @@ export function getCategoryPlaceholderSVG(categoryName?: string, productName?: s
     </text>
     <!-- Commodity Title -->
     <text x="200" y="235" fill="#f8fafc" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" text-anchor="middle">
-      ${title}
+      ${String(title).replace(/&/g, '&amp;').replace(/</g, '&lt;')}
     </text>
     <text x="200" y="260" fill="#64748b" font-family="system-ui, -apple-system, sans-serif" font-size="11" text-anchor="middle">
       BulkSkart Verified Sourcing Standard
@@ -589,10 +589,29 @@ export const GENERIC_IMAGE_PATTERNS = [
   'default-product',
   'ewnftvshvsrhawluloty.supabase.co',
   '/product-images/representative/',
+  'photo-1486006920555-c77dce18193b',
+  'photo-1504328345608-5c56ce5c6f0f',
+  'photo-1504917599217-d4dc5ebe6122',
+  'photo-1509391365360-2e959784a276',
+  'photo-1541888946425-d0fbb186c5f9',
+  'photo-1550985543-f47df4b4c4e0',
+  'photo-1556911220-bff31c99235b',
+  'photo-1558171813-4c0887533814',
+  'photo-1565793298595-6a381b3f1f4d',
+  'photo-1565814329452-7811bc3270c0',
+  'photo-1578574577315-52ac1758a1d0',
+  'photo-1579482495398-a28a2a0ebae7',
+  'photo-1580481077195-c328a37db71a',
+  'photo-1581092335397-9583fe92d232',
+  'photo-1581093458791-9d42e3f0f0f0',
+  'photo-1607344645866-009c320c5ab8',
+  'photo-1611591475819-79730e70a311',
 ];
 
 export function isGenericOrDuplicateImage(url?: string | null): boolean {
   if (!url) return true;
+  // Catalog photos are the product's real image. Do not replace them.
+  if (url.includes('/product-images/catalog/')) return false;
   return GENERIC_IMAGE_PATTERNS.some((pattern) => url.includes(pattern));
 }
 

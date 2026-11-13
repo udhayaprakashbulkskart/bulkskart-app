@@ -55,7 +55,7 @@ function RootErrorFallback({ error, resetError }: { error?: unknown; resetError?
                 window.location.reload();
               }
             }}
-            className="px-4 py-2 bg-primary text-primary-foreground font-medium rounded-lg text-sm hover:opacity-90 transition"
+            className="px-4 py-2 bg-[#C94400] text-primary-foreground font-medium rounded-lg text-sm hover:opacity-90 transition"
           >
             Refresh Page
           </button>

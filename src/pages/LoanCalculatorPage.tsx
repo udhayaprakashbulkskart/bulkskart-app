@@ -69,7 +69,7 @@ export default function LoanCalculatorPage() {
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Link
             to="/products"
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#FF5A00] px-5 text-sm font-bold text-white"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#C94400] px-5 text-sm font-bold text-white"
           >
             Browse products
             <ArrowRight className="h-4 w-4" />

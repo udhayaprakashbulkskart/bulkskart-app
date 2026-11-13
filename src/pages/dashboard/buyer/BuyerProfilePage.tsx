@@ -275,7 +275,7 @@ export default function BuyerProfilePage() {
             />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-xl md:text-2xl font-black text-foreground truncate">{formData.fullName || 'Buyer Account'}</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-foreground truncate">{formData.fullName || 'Buyer Account'}</h1>
                 <Badge variant="outline" className="text-xs capitalize font-semibold border-primary/30 text-primary shrink-0">
                   Buyer
                 </Badge>
@@ -288,8 +288,8 @@ export default function BuyerProfilePage() {
           <div className="flex items-center gap-2 shrink-0">
             <Link to="/dashboard/buyer/verification">
               <Badge className={`text-xs px-3 py-1 gap-1 cursor-pointer hover:opacity-90 transition-opacity ${
-                kycStatus === 'verified' ? 'bg-green-600 text-white' :
-                kycStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/40' :
+                kycStatus === 'verified' ? 'bg-[#B33D00] text-white' :
+                kycStatus === 'pending' ? 'bg-[#FF5A00]/20 text-[#FF7A2E] border border-[#FF5A00]/40' :
                 'bg-muted text-muted-foreground border border-border'
               }`}>
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -317,7 +317,7 @@ export default function BuyerProfilePage() {
                   if (ok) toast.success('Public profile link copied');
                   else toast.error('Select the link and copy it');
                 }}
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FF5A00] px-3 text-xs font-bold text-white"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-[#C94400] px-3 text-xs font-bold text-white"
               >
                 Copy
               </button>
@@ -528,7 +528,7 @@ export default function BuyerProfilePage() {
           <div className="flex justify-end gap-3">
             <Button
               type="submit"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 px-6 font-semibold"
+              className="bg-[#C94400] hover:bg-primary/90 text-primary-foreground h-10 px-6 font-semibold"
               disabled={saving}
             >
               {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
@@ -599,7 +599,7 @@ export default function BuyerProfilePage() {
               </div>
             </div>
             <Link to="/dashboard/buyer/verification" className="shrink-0">
-              <Button size="sm" className="bg-primary text-primary-foreground gap-1.5">
+              <Button size="sm" className="bg-[#1A0C05] text-primary-foreground gap-1.5">
                 Go to KYC Verification <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </Link>

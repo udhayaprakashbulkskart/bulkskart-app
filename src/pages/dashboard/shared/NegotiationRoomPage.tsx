@@ -32,7 +32,7 @@ const toHex = (s: string) =>
   Array.from(new TextEncoder().encode(s), (b) => b.toString(16).padStart(2, '0')).join('');
 
 const FILE_ICONS: Record<string, React.ReactNode> = {
-  'application/pdf': <FileText className="w-4 h-4 text-red-500" />,
+  'application/pdf': <FileText className="w-4 h-4 text-[#FF7A2E]" />,
   'image/': <Image className="w-4 h-4 text-[#FF5A00]" />,
 };
 
@@ -218,9 +218,9 @@ export default function NegotiationRoomPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-[calc(100dvh-8.5rem)] lg:h-[calc(100dvh-6rem)] max-w-3xl mx-auto bs-glass rounded-none sm:rounded-3xl overflow-hidden">
+      <div className="flex flex-col h-[calc(100vh-120px)] max-w-3xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3 px-3 py-3 border-b border-border bg-card/80 shrink-0">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -228,7 +228,7 @@ export default function NegotiationRoomPage() {
             <div className="flex items-center gap-2">
               <span className="font-semibold text-sm truncate">{otherName}</span>
               {conv?.companies?.is_verified && (
-                <Badge className="bg-green-100 text-green-700 border-green-300 text-[10px] px-1.5 py-0 gap-0.5">
+                <Badge className="bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40 text-[10px] px-1.5 py-0 gap-0.5">
                   <ShieldCheck className="w-2.5 h-2.5" /> Verified
                 </Badge>
               )}
@@ -259,7 +259,7 @@ export default function NegotiationRoomPage() {
                 <DropdownMenuItem onClick={handleExportTranscript} className="gap-2">
                   <Download className="w-4 h-4" /> Export Transcript
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleBlock} className="text-red-600">Block User</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleBlock} className="text-[#FF7A2E]">Block User</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
                   const reportPath = profile?.role === 'buyer' ? '/dashboard/buyer/disputes' : '/dashboard/supplier/disputes';
                   navigate(reportPath);
@@ -304,18 +304,18 @@ export default function NegotiationRoomPage() {
                       {displayName}
                     </span>
                     {isUrgent && (
-                      <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase px-1.5 py-0.2 rounded-full bg-red-600 text-white animate-pulse">
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase px-1.5 py-0.2 rounded-full bg-[#B33D00] text-white animate-pulse">
                         🚨 URGENT
                       </span>
                     )}
                   </div>
                 )}
-                <div className={`max-w-[82%] px-3.5 py-2.5 shadow-xs ${
+                <div className={`max-w-[78%] rounded-xl px-3.5 py-2.5 shadow-xs ${
                   isMine
-                    ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md'
+                    ? 'bg-[#C94400] text-primary-foreground'
                     : isUrgent
-                    ? 'bg-card border-2 border-red-500/80 text-foreground ring-2 ring-red-500/20 rounded-2xl rounded-bl-md'
-                    : 'bg-muted text-foreground rounded-2xl rounded-bl-md'
+                    ? 'bg-card border-2 border-[#FF5A00]/80 text-foreground ring-2 ring-[#FF5A00]/20'
+                    : 'bg-muted text-foreground'
                 }`}>
                   {msg.is_file && msg.attachment_url ? (
                     <a
@@ -349,7 +349,7 @@ export default function NegotiationRoomPage() {
             <p className="text-sm text-muted-foreground">This conversation has been blocked.</p>
           </div>
         ) : (
-          <div className="px-3 py-3 border-t border-border bg-card/95 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="px-4 py-3 border-t border-border bg-card shrink-0">
             <div className="flex items-center gap-2">
               <Button type="button" variant="ghost" size="icon" onClick={() => fileRef.current?.click()} disabled={uploadingFile}>
                 {uploadingFile ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
@@ -365,7 +365,7 @@ export default function NegotiationRoomPage() {
               <Button
                 onClick={() => text.trim() && sendMessage(text.trim())}
                 disabled={sending || !text.trim()}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="bg-[#1A0C05] hover:bg-primary/90 text-primary-foreground"
                 size="icon"
               >
                 <Send className="w-4 h-4" />

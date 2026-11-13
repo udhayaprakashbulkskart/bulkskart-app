@@ -107,7 +107,7 @@ export default function ProtectedContact({
                 href={`https://wa.me/${cleanDigits}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded hover:bg-emerald-500/20 transition-colors"
+                className="text-[10px] font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/20 px-1.5 py-0.5 rounded hover:bg-[#B33D00]/20 transition-colors"
               >
                 WhatsApp
               </a>
@@ -124,7 +124,7 @@ export default function ProtectedContact({
             <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
               <Phone className="w-3.5 h-3.5 text-primary" /> {contactLabel}
             </span>
-            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/20 px-2 py-0.5 rounded-full">
               Unlocked
             </span>
           </div>
@@ -134,7 +134,7 @@ export default function ProtectedContact({
               <div className="flex items-center gap-2">
                 <a
                   href={`tel:${cleanDigits}`}
-                  className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1 hover:bg-primary/90 transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-[#C94400] text-primary-foreground text-xs font-semibold flex items-center gap-1 hover:bg-primary/90 transition-colors"
                 >
                   <Phone className="w-3 h-3" /> Call
                 </a>
@@ -142,7 +142,7 @@ export default function ProtectedContact({
                   href={`https://wa.me/${cleanDigits}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-[#B33D00] hover:bg-[#B33D00] text-white text-xs font-semibold flex items-center gap-1 transition-colors"
                 >
                   <MessageSquare className="w-3 h-3" /> WhatsApp
                 </a>
@@ -168,7 +168,7 @@ export default function ProtectedContact({
             href={`https://wa.me/${cleanDigits}`}
             target="_blank"
             rel="noreferrer"
-            className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded hover:bg-emerald-500/20 transition-colors ml-1"
+            className="text-[10px] font-semibold text-[#FF7A2E] dark:text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/20 px-1.5 py-0.5 rounded hover:bg-[#B33D00]/20 transition-colors ml-1"
           >
             WhatsApp
           </a>
@@ -198,7 +198,7 @@ export default function ProtectedContact({
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="px-2.5 py-1 rounded-lg bg-[#FF5A1F] hover:bg-[#e04f00] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                className="px-2.5 py-1 rounded-lg bg-[#C94400] hover:bg-[#B33D00] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
               >
                 <Lock className="w-3 h-3" /> Subscribe to View
               </button>
@@ -223,7 +223,7 @@ export default function ProtectedContact({
             <button
               type="button"
               onClick={() => setModalOpen(true)}
-              className="inline-flex items-center gap-1 text-[10px] font-bold text-[#FF5A1F] hover:text-[#e04f00] bg-[#FF5A1F]/10 hover:bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 px-2 py-0.5 rounded transition-all cursor-pointer ml-1"
+              className="inline-flex items-center gap-1 text-[10px] font-bold text-[#FF5A1F] hover:text-[#e04f00] bg-[#FF5A1F]/10 hover:bg-[#B33D00]/15 border border-[#FF5A1F]/30 px-2 py-0.5 rounded transition-all cursor-pointer ml-1"
             >
               <Lock className="w-2.5 h-2.5" />
               <span>Subscribe to View</span>
@@ -245,7 +245,7 @@ export default function ProtectedContact({
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md p-6 rounded-3xl border border-border">
           <DialogHeader className="space-y-2 text-left">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF5A1F]/20 to-amber-500/10 border border-[#FF5A1F]/30 flex items-center justify-center text-[#FF5A1F] mb-1">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF5A1F]/20 to-[#B33D00]/10 border border-[#FF5A1F]/30 flex items-center justify-center text-[#FF5A1F] mb-1">
               <Lock className="w-6 h-6" />
             </div>
             <DialogTitle className="text-lg font-bold text-foreground">
@@ -281,7 +281,7 @@ export default function ProtectedContact({
             <Link to="/dashboard/supplier/subscription" className="w-full sm:w-auto">
               <Button
                 size="sm"
-                className="w-full bg-[#FF5A1F] hover:bg-[#e04f00] text-white font-bold text-xs gap-1.5"
+                className="w-full bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold text-xs gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Upgrade Plan to Unlock</span>
@@ -316,7 +316,7 @@ export default function ProtectedContact({
             <Button
               size="sm"
               onClick={() => setNonOwnerModalOpen(false)}
-              className="w-full bg-primary text-primary-foreground font-bold text-xs"
+              className="w-full bg-[#1A0C05] text-primary-foreground font-bold text-xs"
             >
               Understood
             </Button>

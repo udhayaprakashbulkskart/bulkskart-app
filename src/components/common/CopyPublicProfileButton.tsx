@@ -48,7 +48,7 @@ export default function CopyPublicProfileButton({ compact = false }: CopyPublicP
       onClick={copy}
       title="Copy your public profile link"
       aria-label="Copy public profile link"
-      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[#FF5A00]/40 bg-[#FF5A00]/10 font-bold text-[#FF5A00] hover:bg-[#FF5A00]/15 ${
+      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[#FF5A00]/40 bg-[#FF5A00]/10 font-bold text-[#FF5A00] hover:bg-[#B33D00]/15 ${
         compact ? 'w-8 px-0' : 'px-2.5 text-[11px]'
       }`}
     >

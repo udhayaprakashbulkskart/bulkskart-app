@@ -56,17 +56,17 @@ interface Campaign {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft:           { label: 'Draft',           color: 'bg-muted text-muted-foreground border-border' },
-  pending_payment: { label: 'Pending Payment', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  active:          { label: 'Active',          color: 'bg-green-100 text-green-700 border-green-200' },
-  paused:          { label: 'Paused',          color: 'bg-orange-100 text-orange-700 border-orange-200' },
+  pending_payment: { label: 'Pending Payment', color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  active:          { label: 'Active',          color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  paused:          { label: 'Paused',          color: 'bg-[#FF5A00]/10 text-orange-700 border-[#FF5A00]/30' },
   completed:       { label: 'Completed',       color: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30' },
-  cancelled:       { label: 'Cancelled',       color: 'bg-red-100 text-red-700 border-red-200' },
+  cancelled:       { label: 'Cancelled',       color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
 };
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
   featured: <Star className="w-3.5 h-3.5 text-primary" />,
-  boost:    <Zap className="w-3.5 h-3.5 text-amber-500" />,
-  campaign: <BarChart2 className="w-3.5 h-3.5 text-violet-500" />,
+  boost:    <Zap className="w-3.5 h-3.5 text-[#FF7A2E]" />,
+  campaign: <BarChart2 className="w-3.5 h-3.5 text-[#FF7A2E]" />,
 };
 
 const fmt = (n: number, cur = 'INR') => {
@@ -233,7 +233,7 @@ export default function ProductPromotionsPanel({ companyId }: Props) {
         <BarChart2 className="w-5 h-5 text-primary" />
         <h2 className="text-base font-bold text-foreground">Product Promotions</h2>
         {active.length > 0 && (
-          <Badge className="text-[10px] bg-green-100 text-green-700 border border-green-200">
+          <Badge className="text-[10px] bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/40">
             {active.length} Active
           </Badge>
         )}
@@ -242,10 +242,10 @@ export default function ProductPromotionsPanel({ companyId }: Props) {
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         {[
-          { icon: <BarChart2 className="w-4 h-4" />, label: 'Active Campaigns', val: active.length.toString(),              color: 'text-green-600' },
+          { icon: <BarChart2 className="w-4 h-4" />, label: 'Active Campaigns', val: active.length.toString(),              color: 'text-[#FF7A2E]' },
           { icon: <DollarSign className="w-4 h-4" />, label: 'Total Spent',     val: fmt(totalSpent),                       color: 'text-primary' },
           { icon: <Eye className="w-4 h-4" />,        label: 'Impressions',     val: totalImpr.toLocaleString('en-IN'),      color: 'text-[#FF5A00]' },
-          { icon: <Users className="w-4 h-4" />,      label: 'Leads',           val: totalLeads.toLocaleString('en-IN'),     color: 'text-violet-600' },
+          { icon: <Users className="w-4 h-4" />,      label: 'Leads',           val: totalLeads.toLocaleString('en-IN'),     color: 'text-[#FF7A2E]' },
         ].map(m => (
           <div key={m.label} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
             <div className={`w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 ${m.color}`}>
@@ -356,7 +356,7 @@ export default function ProductPromotionsPanel({ companyId }: Props) {
                               <Button
                                 size="sm" variant="outline"
                                 onClick={() => handleResume(c.id)}
-                                className="h-7 text-[11px] gap-1 border-green-300 text-green-700 hover:bg-green-50"
+                                className="h-7 text-[11px] gap-1 border-[#FF5A00]/40 text-[#FF7A2E] hover:bg-[#B33D00]/10"
                               >
                                 <Play className="w-3 h-3" /> Resume
                               </Button>
@@ -472,7 +472,7 @@ export default function ProductPromotionsPanel({ companyId }: Props) {
               <Button
                 onClick={handleSaveAndResume}
                 disabled={editSaving}
-                className="flex-1 h-9 text-xs bg-green-600 hover:bg-green-700 text-white gap-1.5"
+                className="flex-1 h-9 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white gap-1.5"
               >
                 {editSaving
                   ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />

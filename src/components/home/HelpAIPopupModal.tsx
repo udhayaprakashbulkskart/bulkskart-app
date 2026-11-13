@@ -33,7 +33,7 @@ const GUIDED_PROMPTS = [
     query: 'How does BulkSkart estimate landed cost and customs duty across ports?',
     icon: Calculator,
     badge: 'Forex & Taxes',
-    color: 'text-amber-400',
+    color: 'text-[#FF7A2E]',
   },
   {
     title: 'Post Free RFQ Requirement',
@@ -47,7 +47,7 @@ const GUIDED_PROMPTS = [
     query: 'What protections exist for bulk payments and supplier delivery?',
     icon: ShieldCheck,
     badge: 'Guaranteed',
-    color: 'text-emerald-400',
+    color: 'text-[#FF7A2E]',
   },
 ];
 
@@ -191,14 +191,14 @@ export default function HelpAIPopupModal() {
       {showToastTrigger && !isOpen && (
         <div className="fixed bottom-20 right-4 z-40 max-w-sm w-[calc(100%-2rem)] bg-[#0d121f]/95 border border-[#FF5A00]/40 backdrop-blur-xl shadow-2xl rounded-2xl p-3.5 text-foreground animate-in fade-in slide-in-from-bottom-5 duration-300">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF5A00] to-amber-500 flex items-center justify-center shrink-0 shadow-md shadow-orange-950/50">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#C94400] to-[#B33D00] flex items-center justify-center shrink-0 shadow-md shadow-orange-950/50">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-1 mb-1">
                 <span className="text-xs font-bold text-white flex items-center gap-1.5">
                   BulkSkart Help AI
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#C94400] animate-pulse" />
                 </span>
                 <button
                   onClick={() => {
@@ -221,7 +221,7 @@ export default function HelpAIPopupModal() {
                     setIsOpen(true);
                     setShowToastTrigger(false);
                   }}
-                  className="h-7 px-3 bg-[#FF5A00] hover:bg-[#e04e00] text-white text-[11px] font-bold rounded-lg shadow-sm gap-1"
+                  className="h-7 px-3 bg-[#C94400] hover:bg-[#B33D00] text-white text-[11px] font-bold rounded-lg shadow-sm gap-1"
                 >
                   <Bot className="w-3 h-3" />
                   Chat with Help AI
@@ -243,12 +243,12 @@ export default function HelpAIPopupModal() {
 
       {/* ── 2. Interactive Help AI Modal Overlay ── */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#0b0f19] border border-slate-800 shadow-2xl rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden text-foreground">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#0A0A0A]/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#0b0f19] border border-[#2A2A2A] shadow-2xl rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden text-foreground">
             {/* Modal Header */}
-            <div className="px-4 sm:px-6 py-3.5 border-b border-slate-800/80 bg-slate-900/70 flex items-center justify-between shrink-0">
+            <div className="px-4 sm:px-6 py-3.5 border-b border-[#2A2A2A]/80 bg-[#0A0A0A]/70 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FF5A00] to-amber-500 flex items-center justify-center shadow-md shadow-orange-950/60">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#C94400] to-[#B33D00] flex items-center justify-center shadow-md shadow-orange-950/60">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -256,7 +256,7 @@ export default function HelpAIPopupModal() {
                     <h3 className="text-sm sm:text-base font-bold text-white">
                       BulkSkart Help AI Assistant
                     </h3>
-                    <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/30 px-1.5 py-0">
+                    <Badge variant="outline" className="text-[10px] bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/30 px-1.5 py-0">
                       Online • Multi-Currency
                     </Badge>
                   </div>
@@ -269,7 +269,7 @@ export default function HelpAIPopupModal() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-[#0A0A0A] transition-colors"
                   aria-label="Close Help AI"
                 >
                   <X className="w-5 h-5" />
@@ -278,7 +278,7 @@ export default function HelpAIPopupModal() {
             </div>
 
             {/* Quick Prompt Carousel / Pills */}
-            <div className="px-4 sm:px-6 py-2.5 bg-slate-900/40 border-b border-slate-800/60 shrink-0">
+            <div className="px-4 sm:px-6 py-2.5 bg-[#0A0A0A]/40 border-b border-[#2A2A2A]/60 shrink-0">
               <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-2">
                 Suggested Trade Topics
               </p>
@@ -289,11 +289,11 @@ export default function HelpAIPopupModal() {
                     <button
                       key={prompt.title}
                       onClick={() => handlePromptClick(prompt.query)}
-                      className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-[#FF5A00]/50 text-left transition-all group flex flex-col justify-between"
+                      className="p-2 rounded-xl bg-[#0A0A0A]/80 hover:bg-[#0A0A0A]/90 border border-[#2A2A2A] hover:border-[#FF5A00]/50 text-left transition-all group flex flex-col justify-between"
                     >
                       <div className="flex items-center justify-between mb-1">
                         <Icon className={`w-3.5 h-3.5 ${prompt.color}`} />
-                        <span className="text-[9px] font-mono text-muted-foreground bg-slate-800 px-1 py-0.2 rounded">
+                        <span className="text-[9px] font-mono text-muted-foreground bg-[#0A0A0A] px-1 py-0.2 rounded">
                           {prompt.badge}
                         </span>
                       </div>
@@ -316,14 +316,14 @@ export default function HelpAIPopupModal() {
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed ${
                       msg.sender === 'user'
-                        ? 'bg-[#FF5A00] text-white rounded-br-sm'
-                        : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-bl-sm shadow-sm'
+                        ? 'bg-[#C94400] text-white rounded-br-sm'
+                        : 'bg-[#0A0A0A] border border-[#2A2A2A] text-slate-200 rounded-bl-sm shadow-sm'
                     }`}
                   >
                     {msg.text}
 
                     {msg.suggestedAction && (
-                      <div className="mt-2.5 pt-2 border-t border-slate-800">
+                      <div className="mt-2.5 pt-2 border-t border-[#2A2A2A]">
                         <Button
                           size="sm"
                           variant="outline"
@@ -331,7 +331,7 @@ export default function HelpAIPopupModal() {
                             setIsOpen(false);
                             navigate(msg.suggestedAction!.route);
                           }}
-                          className="h-7 text-[11px] font-bold bg-[#FF5A00]/15 hover:bg-[#FF5A00] text-[#FF5A00] hover:text-white border-[#FF5A00]/40 gap-1.5 transition-colors"
+                          className="h-7 text-[11px] font-bold bg-[#FF5A00]/15 hover:bg-[#C94400] text-[#FF5A00] hover:text-white border-[#FF5A00]/40 gap-1.5 transition-colors"
                         >
                           <span>{msg.suggestedAction.label}</span>
                           <ArrowRight className="w-3 h-3" />
@@ -346,7 +346,7 @@ export default function HelpAIPopupModal() {
               ))}
 
               {isTyping && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-slate-900/60 border border-slate-800 px-3 py-2 rounded-xl w-fit">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-[#0A0A0A]/60 border border-[#2A2A2A] px-3 py-2 rounded-xl w-fit">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#FF5A00]" />
                   <span>BulkSkart AI is finding answers...</span>
                 </div>
@@ -360,18 +360,18 @@ export default function HelpAIPopupModal() {
                 e.preventDefault();
                 handleSendMessage(inputValue);
               }}
-              className="p-3 sm:p-4 border-t border-slate-800/80 bg-slate-900/80 flex items-center gap-2 shrink-0"
+              className="p-3 sm:p-4 border-t border-[#2A2A2A]/80 bg-[#0A0A0A]/80 flex items-center gap-2 shrink-0"
             >
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Ask about manufacturers, landed costs, RFQs, customs..."
-                className="bg-slate-950 border-slate-800 focus-visible:ring-[#FF5A00] text-xs sm:text-sm text-white placeholder:text-muted-foreground"
+                className="bg-[#0A0A0A] border-[#2A2A2A] focus-visible:ring-[#FF5A00] text-xs sm:text-sm text-white placeholder:text-muted-foreground"
               />
               <Button
                 type="submit"
                 disabled={!inputValue.trim() || isTyping}
-                className="bg-[#FF5A00] hover:bg-[#e04e00] text-white px-3 sm:px-4 font-bold h-9 shrink-0 gap-1"
+                className="bg-[#C94400] hover:bg-[#B33D00] text-white px-3 sm:px-4 font-bold h-9 shrink-0 gap-1"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Ask</span>
@@ -379,9 +379,9 @@ export default function HelpAIPopupModal() {
             </form>
 
             {/* Direct Shortcuts Footer */}
-            <div className="px-4 py-2 bg-slate-950 border-t border-slate-900 text-[11px] flex flex-wrap items-center justify-between gap-2 text-muted-foreground">
+            <div className="px-4 py-2 bg-[#0A0A0A] border-t border-[#2A2A2A] text-[11px] flex flex-wrap items-center justify-between gap-2 text-muted-foreground">
               <span className="flex items-center gap-1 text-[10px]">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                <ShieldCheck className="w-3 h-3 text-[#FF7A2E]" />
                 Verified B2B Intelligence
               </span>
               <div className="flex items-center gap-3">

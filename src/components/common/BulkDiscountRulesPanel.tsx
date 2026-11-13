@@ -108,7 +108,7 @@ export default function BulkDiscountRulesPanel({ productId, companyId, moqUnit =
                   </p>
                   {r.label && <p className="text-[10px] text-muted-foreground truncate">{r.label}</p>}
                 </div>
-                <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0" />
+                <CheckCircle2 className="w-3 h-3 text-[#FF7A2E] shrink-0" />
                 <Button
                   size="sm"
                   variant="ghost"
@@ -168,7 +168,7 @@ export default function BulkDiscountRulesPanel({ productId, companyId, moqUnit =
               />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" disabled={saving} size="sm" className="flex-1 h-8 text-xs bg-primary text-primary-foreground">
+              <Button type="submit" disabled={saving} size="sm" className="flex-1 h-8 text-xs bg-[#C94400] text-primary-foreground">
                 {saving ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Save Rule'}
               </Button>
               <Button type="button" size="sm" variant="ghost" onClick={() => setShowAdd(false)} className="h-8 text-xs border border-border">

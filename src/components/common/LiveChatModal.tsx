@@ -246,7 +246,7 @@ export default function LiveChatModal({ open, onClose, product, supplier }: Prop
             <p className="font-semibold text-foreground mb-1">Login to start chatting</p>
             <p className="text-sm text-muted-foreground">Create an account or sign in to access live chat with suppliers.</p>
           </div>
-          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+          <Button className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2"
             onClick={() => { onClose(); navigate('/auth'); }}>
             Login / Register <ArrowRight className="w-4 h-4" />
           </Button>
@@ -267,7 +267,7 @@ export default function LiveChatModal({ open, onClose, product, supplier }: Prop
               This supplier does not currently have an active subscription and cannot receive messages.
             </p>
           </div>
-          <Button onClick={onClose} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Got it</Button>
+          <Button onClick={onClose} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90">Got it</Button>
         </div>
       );
     }
@@ -284,7 +284,7 @@ export default function LiveChatModal({ open, onClose, product, supplier }: Prop
             <p className="text-sm text-muted-foreground">Renew your supplier subscription to continue sending messages. Your chat history remains saved.</p>
           </div>
           <Link to={subscriptionPath} onClick={onClose} className="w-full">
-            <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+            <Button className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
               Renew Subscription <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
@@ -303,7 +303,7 @@ export default function LiveChatModal({ open, onClose, product, supplier }: Prop
             <p className="font-semibold text-foreground mb-1">Supplier subscription expired</p>
             <p className="text-sm text-muted-foreground">Messaging is paused because the supplier's subscription has expired. Please try again later.</p>
           </div>
-          <Button onClick={onClose} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Close</Button>
+          <Button onClick={onClose} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90">Close</Button>
         </div>
       );
     }
@@ -359,7 +359,7 @@ export default function LiveChatModal({ open, onClose, product, supplier }: Prop
                         {supplier.company_name}
                       </span>
                       {isUrgent && (
-                        <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase px-1.5 py-0.2 rounded-full bg-red-600 text-white animate-pulse">
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase px-1.5 py-0.2 rounded-full bg-[#B33D00] text-white animate-pulse">
                           🚨 URGENT
                         </span>
                       )}
@@ -368,9 +368,9 @@ export default function LiveChatModal({ open, onClose, product, supplier }: Prop
                   <div className={cn(
                     'max-w-[78%] px-3.5 py-2.5 rounded-2xl text-sm shadow-xs',
                     isMine
-                      ? 'bg-primary text-primary-foreground rounded-br-sm'
+                      ? 'bg-[#C94400] text-primary-foreground rounded-br-sm'
                       : isUrgent
-                      ? 'bg-card border-2 border-red-500/80 text-foreground rounded-bl-sm ring-2 ring-red-500/20'
+                      ? 'bg-card border-2 border-[#FF5A00]/80 text-foreground rounded-bl-sm ring-2 ring-[#FF5A00]/20'
                       : 'bg-card border border-border text-foreground rounded-bl-sm'
                   )}>
                     <p className="text-pretty break-words leading-relaxed">{msg.content}</p>
@@ -398,7 +398,7 @@ export default function LiveChatModal({ open, onClose, product, supplier }: Prop
           <Button
             type="submit"
             disabled={sending || !input.trim()}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
+            className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 shrink-0"
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
@@ -423,8 +423,8 @@ export default function LiveChatModal({ open, onClose, product, supplier }: Prop
               <p className="text-[11px] text-muted-foreground">Live chat · Subscription required</p>
             </div>
             {chatState === 'ready' && (
-              <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> Live
+              <span className="flex items-center gap-1 text-[10px] font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-full px-2 py-0.5 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#C94400] inline-block" /> Live
               </span>
             )}
           </div>

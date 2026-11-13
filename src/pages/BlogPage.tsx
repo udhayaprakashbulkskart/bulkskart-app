@@ -65,10 +65,10 @@ const POSTS = [
 ];
 
 const TAG_COLORS: Record<string, string> = {
-  Trending: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+  Trending: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/20',
   Essential: 'bg-[#FF5A00]/10 text-[#FF5A00] border-[#FF5A00]/25',
-  Popular: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  Guide: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  Popular: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/20',
+  Guide: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/20',
 };
 
 export default function BlogPage() {
@@ -105,9 +105,8 @@ export default function BlogPage() {
       </div>
 
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-muted/40 to-background py-10 px-4">
-        <div className="bs-hero-grid pointer-events-none absolute inset-0 opacity-30" aria-hidden="true" />
-        <div className="relative z-10 mx-auto max-w-4xl text-center">
+      <section className="border-b border-border bg-gradient-to-b from-muted/40 to-background py-10 px-4">
+        <div className="max-w-4xl mx-auto text-center">
           <Badge className="bg-[#FF5A00]/10 text-[#FF5A00] border border-[#FF5A00]/25 text-xs font-bold mb-3 uppercase tracking-wider">
             Trade Knowledge Hub
           </Badge>
@@ -129,7 +128,7 @@ export default function BlogPage() {
               onClick={() => setSelectedCat(cat)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                 cat === selectedCat
-                  ? 'bg-[#FF5A00] text-white shadow-sm'
+                  ? 'bg-[#C94400] text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
             >
@@ -178,7 +177,7 @@ export default function BlogPage() {
                   <span className="font-semibold text-foreground">{post.author}</span> • <span>{post.date}</span>
                 </div>
                 <Link to={`/blog/${post.slug}`}>
-                  <Button size="sm" className="bg-[#FF5A00] hover:bg-[#e04e00] text-white text-xs font-bold gap-1 rounded-xl h-8 px-3">
+                  <Button size="sm" className="bg-[#C94400] hover:bg-[#B33D00] text-white text-xs font-bold gap-1 rounded-xl h-8 px-3">
                     <span>Read Guide</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Button>

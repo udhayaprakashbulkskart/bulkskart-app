@@ -1,16 +1,13 @@
-import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { motion, useReducedMotion } from 'motion/react';
 import {
-  CheckCircle, ArrowRight, Shield, Zap, Sparkles,
-  Building2, Users, Star, BarChart3, Check
+  ArrowRight, Shield, Zap, Check, Rocket, TrendingUp, Gem, ShieldCheck, CalendarCheck, Repeat, XCircle, FileText, Crown,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountry } from '@/contexts/CurrencyContext';
 import { useRazorpay } from '@/hooks/useRazorpay';
 import { toast } from 'sonner';
-import SectionHeader from '@/components/home/SectionHeader';
+
 
 const MONTHLY_PLANS = [
   {
@@ -22,6 +19,7 @@ const MONTHLY_PLANS = [
     billed: 'Billed monthly • Cancel anytime',
     tagline: 'Ideal for emerging suppliers and specialized factories seeking verified leads.',
     popular: false,
+    icon: Rocket,
     features: [
       'Verified factory profile & trust badge',
       'Up to 10 product listings in catalog',
@@ -41,6 +39,7 @@ const MONTHLY_PLANS = [
     billed: 'Billed monthly • Cancel anytime',
     tagline: 'High-growth plan for manufacturers seeking maximum trade visibility and lead velocity.',
     popular: true,
+    icon: TrendingUp,
     features: [
       'Everything in Starter included',
       '50 high-value buyer RFQ responses / mo',
@@ -61,6 +60,7 @@ const MONTHLY_PLANS = [
     billed: 'Billed monthly • Cancel anytime',
     tagline: 'For high-volume exporters, OEMs and global trading corporations.',
     popular: false,
+    icon: Gem,
     features: [
       'Everything in Professional included',
       'Unlimited buyer RFQ quotes & responses',
@@ -74,8 +74,17 @@ const MONTHLY_PLANS = [
   },
 ];
 
+const BENEFITS = [
+  { icon: ShieldCheck, label: 'No Lock-in', sub: 'Contract' },
+  { icon: CalendarCheck, label: 'Billed', sub: 'Monthly' },
+  { icon: Repeat, label: 'Upgrade / Downgrade', sub: 'Anytime' },
+  { icon: XCircle, label: 'Cancel', sub: 'Anytime' },
+  { icon: FileText, label: 'GST', sub: 'Invoice' },
+];
+
 export default function PlansHomeSection() {
   const navigate = useNavigate();
+  const reduce = useReducedMotion();
   const { user, profile, company } = useAuth();
   const { countryConfig } = useCountry();
   const { startCheckout, loading: paying } = useRazorpay();
@@ -107,117 +116,159 @@ export default function PlansHomeSection() {
   };
 
   return (
-    <section className="relative z-20 pt-2 pb-12 md:pt-4 md:pb-16 bg-[#0B0F19] border-t-0">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-5 md:px-6">
+    <section className="relative isolate overflow-hidden bg-[#070707] py-10 text-white md:py-14">
+      <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/3 h-96 w-96 rounded-full bg-[#FF5A00]/10 blur-[130px]" />
 
-        {/* Section Header */}
-        <div className="mb-10">
-          <SectionHeader
-            align="center"
-            eyebrow="Supplier Growth Memberships"
-            icon={<Zap className="h-3.5 w-3.5" />}
-            title="Transparent Monthly Supplier Plans"
-            subtitle="Simple, transparent monthly pricing. Zero lock-in contracts, zero annual billing commitments. Cancel or upgrade whenever you want."
-          />
+      <div className="relative mx-auto max-w-[1400px] px-4 sm:px-5 md:px-6">
+        {/* Header with photo */}
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0c0c0c]">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0c0c0c] via-[#0c0c0c]/80 to-transparent" />
+          <div className="relative max-w-xl p-6 md:p-10">
+            <motion.span
+              initial={reduce ? false : { opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 rounded-full border border-[#FF5A00]/50 bg-[#FF5A00]/10 px-3.5 py-1.5 text-[12px] font-bold text-[#FF7A2E]"
+            >
+              <Zap className="h-4 w-4" /> Supplier Growth Memberships
+            </motion.span>
+            <motion.h2
+              initial={reduce ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.6 }}
+              className="mt-4 text-[32px] font-black leading-[1.05] tracking-tight sm:text-[42px]"
+            >
+              Transparent Monthly <span className="text-[#FF5A00]">Supplier Plans</span>
+            </motion.h2>
+            <motion.p
+              initial={reduce ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="mt-3 text-[14px] leading-relaxed text-slate-300 sm:text-[15px]"
+            >
+              Simple, transparent monthly pricing. Zero lock-in contracts, zero annual billing commitments. Cancel or upgrade whenever you want.
+            </motion.p>
+          </div>
         </div>
 
-        {/* Plans Grid (3 Monthly Columns) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {MONTHLY_PLANS.map((plan) => (
-            <div
-              key={plan.tier}
-              className={`rounded-2xl p-6 sm:p-7 flex flex-col justify-between transition-all relative ${
-                plan.popular
-                  ? 'bg-gradient-to-b from-card to-background border-2 border-primary shadow-[0_0_30px_rgba(249,115,22,0.15)] ring-1 ring-primary/40'
-                  : 'bg-card border border-border/80 hover:border-border'
-              }`}
+        {/* Benefit strip */}
+        <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-[#0c0c0c] p-4 md:grid-cols-5 md:gap-0 md:divide-x md:divide-white/10">
+          {BENEFITS.map(({ icon: Icon, label, sub }, i) => (
+            <motion.div
+              key={label}
+              initial={reduce ? false : { opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.07 }}
+              className="flex items-center gap-3 md:justify-center md:px-4"
             >
-              {plan.popular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground font-bold px-3 py-0.5 text-xs uppercase tracking-wider shadow-md">
-                    Most Popular
-                  </Badge>
-                </div>
-              )}
-
-              <div>
-                {/* Plan Header */}
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <h3 className="text-lg font-bold text-foreground">{plan.tier}</h3>
-                  <Badge variant="outline" className="text-[11px] border-border text-muted-foreground bg-muted/30">
-                    Monthly
-                  </Badge>
-                </div>
-
-                <p className="text-xs text-muted-foreground text-pretty mb-4 min-h-[32px]">
-                  {plan.tagline}
-                </p>
-
-                {/* Price Display */}
-                <div className="mb-4 pb-4 border-b border-border/60">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-extrabold text-foreground">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground font-medium">{plan.period}</span>
-                  </div>
-                  <p className="text-[11px] text-emerald-400 font-medium mt-1">
-                    {plan.billed}
-                  </p>
-                </div>
-
-                {/* Features List */}
-                <div className="space-y-2.5 mb-6">
-                  <p className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                    Included with {plan.tier}:
-                  </p>
-                  {plan.features.map((feature, i) => (
-                    <div key={i} className="flex items-start gap-2 text-xs text-foreground/90">
-                      <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      <span className="leading-snug">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <div className="pt-2">
-                <Button
-                  onClick={() => handleSelectPlan(plan)}
-                  disabled={paying}
-                  className={`w-full h-11 text-xs font-bold gap-1.5 transition-all ${
-                    plan.popular
-                      ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-md'
-                      : 'bg-muted hover:bg-muted/80 text-foreground border border-border'
-                  }`}
-                >
-                  <span>{plan.cta}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
-                <p className="text-[10px] text-center text-muted-foreground mt-2">
-                  Instant activation via Razorpay • GST invoice issued
-                </p>
-              </div>
-            </div>
+              <Icon className="h-6 w-6 shrink-0 text-[#FF5A00]" />
+              <span className="text-[12px] font-semibold leading-tight text-slate-200">{label}<span className="block text-neutral-400">{sub}</span></span>
+            </motion.div>
           ))}
         </div>
 
-        {/* Bottom Guarantee Banner */}
-        <div className="mt-10 max-w-4xl mx-auto rounded-xl bg-card border border-border/80 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-3">
-            <Shield className="w-5 h-5 text-primary shrink-0" />
+        {/* Plans */}
+        <div className="mt-8 grid grid-cols-1 gap-5 pt-4 md:grid-cols-3">
+          {MONTHLY_PLANS.map((plan, idx) => {
+            const Icon = plan.icon;
+            return (
+              <motion.div
+                key={plan.tier}
+                initial={reduce ? false : { opacity: 0, y: 28 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.6, delay: idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className={`group relative flex flex-col rounded-3xl border p-6 transition-all duration-300 sm:p-7 ${
+                  plan.popular
+                    ? 'z-10 border-[#FF5A00] bg-gradient-to-b from-[#1a0d05] via-[#0c0c0c] to-[#0a0a0a] shadow-[0_0_50px_-12px_rgba(255,90,0,0.7)] md:-my-3'
+                    : 'border-white/10 bg-[#0c0c0c] hover:-translate-y-1 hover:border-[#FF5A00]/40'
+                }`}
+              >
+                {plan.popular && (
+                  <span className="absolute -top-3.5 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] px-4 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-lg">
+                    <Crown className="h-3.5 w-3.5" /> Most Popular
+                  </span>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ${plan.popular ? 'bg-gradient-to-br from-[#FF7A2E] to-[#E84A00] shadow-[0_8px_24px_-8px_rgba(255,90,0,0.9)]' : 'bg-[#FF5A00]/12 text-[#FF5A00]'}`}>
+                    <Icon className="h-6 w-6 text-white" />
+                  </span>
+                  <div>
+                    <h3 className="text-[20px] font-black">{plan.tier}</h3>
+                    <p className="text-[12px] text-neutral-400">Monthly</p>
+                  </div>
+                </div>
+
+                <p className="mt-4 min-h-[44px] text-[13px] leading-relaxed text-slate-300">{plan.tagline}</p>
+
+                <div className="mt-5 border-t border-white/10 pt-5">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className={`text-[40px] font-black leading-none ${plan.popular ? 'text-[#FF7A2E]' : 'text-white'}`}>{plan.price}</span>
+                    <span className="text-[14px] font-semibold text-neutral-400">{plan.period}</span>
+                  </div>
+                  <span className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#FF5A00]/40 bg-[#FF5A00]/10 px-3 py-1 text-[11px] font-semibold text-[#FF7A2E]">
+                    <CalendarCheck className="h-3.5 w-3.5" /> {plan.billed}
+                  </span>
+                </div>
+
+                <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-300">Included with {plan.tier}</p>
+                <ul className="mt-3 flex-1 space-y-2.5">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2.5 text-[13px] text-slate-200">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FF5A00]/15">
+                        <Check className="h-3.5 w-3.5 text-[#FF5A00]" strokeWidth={3} />
+                      </span>
+                      <span className="leading-snug">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPlan(plan)}
+                    disabled={paying}
+                    className={`group/btn flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-bold transition-transform hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-60 ${
+                      plan.popular
+                        ? 'bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-white shadow-[0_12px_30px_-10px_rgba(255,90,0,0.9)]'
+                        : 'border border-white/20 text-white hover:border-[#FF5A00] hover:text-[#FF7A2E]'
+                    }`}
+                  >
+                    {plan.cta}
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                  </button>
+                  <p className="mt-2.5 text-center text-[11px] text-neutral-400">Instant activation via Razorpay • GST invoice issued</p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Guarantee banner */}
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mt-8 flex flex-col items-start justify-between gap-4 rounded-2xl border border-[#FF5A00]/40 bg-gradient-to-r from-[#1a0d05] via-[#0c0c0c] to-[#0c0c0c] p-5 sm:flex-row sm:items-center sm:p-6"
+        >
+          <div className="flex items-center gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#FF5A00]/15">
+              <Shield className="h-6 w-6 text-[#FF5A00]" />
+            </span>
             <div>
-              <p className="font-semibold text-foreground">100% Monthly Flexibility Guarantee</p>
-              <p className="text-[11px]">No locked commitments. Upgrade, downgrade, or pause your supplier subscription at any time.</p>
+              <p className="text-[17px] font-black">100% Monthly Flexibility Guarantee</p>
+              <p className="text-[13px] text-neutral-400">No locked commitments. Upgrade, downgrade, or pause your supplier subscription at any time.</p>
             </div>
           </div>
           <Link
             to="/pricing"
-            className="text-primary font-semibold hover:underline flex items-center gap-1 shrink-0 text-xs"
+            className="flex h-11 shrink-0 items-center gap-2 rounded-xl border border-[#FF5A00]/60 px-5 text-[13px] font-bold text-[#FF7A2E] transition-colors hover:bg-[#B33D00]/10"
           >
-            <span>Compare Full Plan Features</span>
-            <ArrowRight className="w-3 h-3" />
+            Compare Full Plan Features <ArrowRight className="h-4 w-4" />
           </Link>
-        </div>
-
+        </motion.div>
       </div>
     </section>
   );

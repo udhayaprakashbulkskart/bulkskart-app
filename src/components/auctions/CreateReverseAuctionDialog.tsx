@@ -353,9 +353,9 @@ export default function CreateReverseAuctionDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-2xl max-h-[92dvh] overflow-y-auto p-4 sm:p-6 rounded-3xl bg-[#070B13] border border-slate-800 text-white shadow-2xl">
+      <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-2xl max-h-[92dvh] overflow-y-auto p-4 sm:p-6 rounded-3xl bg-[#070B13] border border-[#2A2A2A] text-white shadow-2xl">
         {/* Modal Header */}
-        <DialogHeader className="pb-3 border-b border-slate-800/80">
+        <DialogHeader className="pb-3 border-b border-[#2A2A2A]/80">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 flex items-center justify-center text-[#FF5A1F] shrink-0">
               <Flame className="w-5 h-5 fill-[#FF5A1F]" />
@@ -366,7 +366,7 @@ export default function CreateReverseAuctionDialog({
                 {currentStep === 2 && 'Compulsory Participation Fee & Tax'}
                 {currentStep === 3 && 'Payment Confirmed & Auction Published!'}
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-400 mt-0.5">
+              <DialogDescription className="text-xs text-neutral-400 mt-0.5">
                 {currentStep === 1 && 'Manufacturers liquidate bulk inventory lots in 24 hours with live competitive bidding.'}
                 {currentStep === 2 && 'Compulsory ₹5,000 fixed participation fee with statutory 18% GST (₹5,900 Total).'}
                 {currentStep === 3 && 'Your 24-hour auction is now streaming live with real-time bidding.'}
@@ -375,19 +375,19 @@ export default function CreateReverseAuctionDialog({
           </div>
 
           {/* Stepper Progress */}
-          <div className="flex items-center justify-between mt-3 pt-2 text-[11px] font-semibold text-slate-400 border-t border-slate-800/80">
+          <div className="flex items-center justify-between mt-3 pt-2 text-[11px] font-semibold text-neutral-400 border-t border-[#2A2A2A]/80">
             <span className={`flex items-center gap-1.5 ${currentStep === 1 ? 'text-[#FF5A1F]' : 'text-slate-300'}`}>
-              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-bold ${currentStep >= 1 ? 'bg-[#FF5A1F]' : 'bg-slate-800'}`}>1</span>
+              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-bold ${currentStep >= 1 ? 'bg-[#C94400]' : 'bg-[#0A0A0A]'}`}>1</span>
               <span>Product Lot Details</span>
             </span>
-            <span className="text-slate-600">• • •</span>
-            <span className={`flex items-center gap-1.5 ${currentStep === 2 ? 'text-[#FF5A1F]' : currentStep > 2 ? 'text-slate-300' : 'text-slate-500'}`}>
-              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-bold ${currentStep >= 2 ? 'bg-[#FF5A1F]' : 'bg-slate-800'}`}>2</span>
+            <span className="text-neutral-300">• • •</span>
+            <span className={`flex items-center gap-1.5 ${currentStep === 2 ? 'text-[#FF5A1F]' : currentStep > 2 ? 'text-slate-300' : 'text-neutral-400'}`}>
+              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-bold ${currentStep >= 2 ? 'bg-[#C94400]' : 'bg-[#0A0A0A]'}`}>2</span>
               <span>Compulsory Subscription & Tax</span>
             </span>
-            <span className="text-slate-600">• • •</span>
-            <span className={`flex items-center gap-1.5 ${currentStep === 3 ? 'text-emerald-400' : 'text-slate-500'}`}>
-              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-bold ${currentStep === 3 ? 'bg-emerald-500' : 'bg-slate-800'}`}>3</span>
+            <span className="text-neutral-300">• • •</span>
+            <span className={`flex items-center gap-1.5 ${currentStep === 3 ? 'text-[#FF7A2E]' : 'text-neutral-400'}`}>
+              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-bold ${currentStep === 3 ? 'bg-[#C94400]' : 'bg-[#0A0A0A]'}`}>3</span>
               <span>Live & Invoice</span>
             </span>
           </div>
@@ -397,11 +397,11 @@ export default function CreateReverseAuctionDialog({
         {currentStep === 1 && (
           <form onSubmit={handleProceedToPayment} className="space-y-4 pt-3 pb-4">
             <div className="flex items-center justify-between pb-1">
-              <span className="text-[11px] text-slate-400">Fill in your inventory lot specifications:</span>
+              <span className="text-[11px] text-neutral-400">Fill in your inventory lot specifications:</span>
               <Button
                 type="button"
                 onClick={handleFillTestLot}
-                className="bg-[#FF5A00] hover:bg-[#e04e00] text-white text-[11px] font-bold h-7 px-3 rounded-lg shadow-[0_2px_0_#922f00] flex items-center gap-1 transition-all active:translate-y-0.5"
+                className="bg-[#C94400] hover:bg-[#B33D00] text-white text-[11px] font-bold h-7 px-3 rounded-lg shadow-[0_2px_0_#922f00] flex items-center gap-1 transition-all active:translate-y-0.5"
               >
                 <Sparkles className="w-3 h-3" />
                 <span>⚡ Auto-Fill Test Lot</span>
@@ -416,7 +416,7 @@ export default function CreateReverseAuctionDialog({
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 required
-                className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#FF5A1F]"
+                className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
               />
             </div>
 
@@ -425,12 +425,12 @@ export default function CreateReverseAuctionDialog({
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-slate-200">Category</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white focus:border-[#FF5A1F]">
+                  <SelectTrigger className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white focus:border-[#FF5A1F]">
                     <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                  <SelectContent className="bg-[#0A0A0A] border-[#2A2A2A] text-white">
                     {CATEGORIES.map(cat => (
-                      <SelectItem key={cat} value={cat} className="text-xs hover:bg-slate-800 focus:bg-slate-800">{cat}</SelectItem>
+                      <SelectItem key={cat} value={cat} className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">{cat}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -439,13 +439,13 @@ export default function CreateReverseAuctionDialog({
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-slate-200">Dispatch Lead Time</Label>
                 <Select value={leadTime} onValueChange={setLeadTime}>
-                  <SelectTrigger className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white focus:border-[#FF5A1F]">
+                  <SelectTrigger className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white focus:border-[#FF5A1F]">
                     <SelectValue placeholder="Select Lead Time" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700 text-white">
-                    <SelectItem value="Ready for Immediate Dispatch" className="text-xs hover:bg-slate-800 focus:bg-slate-800">Ready for Immediate Dispatch (24h)</SelectItem>
-                    <SelectItem value="Ready within 48 Hours" className="text-xs hover:bg-slate-800 focus:bg-slate-800">Ready within 48 Hours</SelectItem>
-                    <SelectItem value="Ready within 3 to 5 Days" className="text-xs hover:bg-slate-800 focus:bg-slate-800">Ready within 3 to 5 Days</SelectItem>
+                  <SelectContent className="bg-[#0A0A0A] border-[#2A2A2A] text-white">
+                    <SelectItem value="Ready for Immediate Dispatch" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Ready for Immediate Dispatch (24h)</SelectItem>
+                    <SelectItem value="Ready within 48 Hours" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Ready within 48 Hours</SelectItem>
+                    <SelectItem value="Ready within 3 to 5 Days" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Ready within 3 to 5 Days</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -462,22 +462,22 @@ export default function CreateReverseAuctionDialog({
                   onChange={e => setTotalQuantity(e.target.value)}
                   required
                   min={1}
-                  className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#FF5A1F]"
+                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-slate-200">Quantity Unit</Label>
                 <Select value={quantityUnit} onValueChange={setQuantityUnit}>
-                  <SelectTrigger className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white focus:border-[#FF5A1F]">
+                  <SelectTrigger className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white focus:border-[#FF5A1F]">
                     <SelectValue placeholder="Unit" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700 text-white">
-                    <SelectItem value="Metre (m)" className="text-xs hover:bg-slate-800 focus:bg-slate-800">Metres (m)</SelectItem>
-                    <SelectItem value="Kilograms (kg)" className="text-xs hover:bg-slate-800 focus:bg-slate-800">Kilograms (kg)</SelectItem>
-                    <SelectItem value="Metric Tonnes (MT)" className="text-xs hover:bg-slate-800 focus:bg-slate-800">Metric Tonnes (MT)</SelectItem>
-                    <SelectItem value="Pieces / Units" className="text-xs hover:bg-slate-800 focus:bg-slate-800">Pieces / Units</SelectItem>
-                    <SelectItem value="Barrels" className="text-xs hover:bg-slate-800 focus:bg-slate-800">Barrels</SelectItem>
+                  <SelectContent className="bg-[#0A0A0A] border-[#2A2A2A] text-white">
+                    <SelectItem value="Metre (m)" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Metres (m)</SelectItem>
+                    <SelectItem value="Kilograms (kg)" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Kilograms (kg)</SelectItem>
+                    <SelectItem value="Metric Tonnes (MT)" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Metric Tonnes (MT)</SelectItem>
+                    <SelectItem value="Pieces / Units" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Pieces / Units</SelectItem>
+                    <SelectItem value="Barrels" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Barrels</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -488,7 +488,7 @@ export default function CreateReverseAuctionDialog({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold text-slate-200">Starting Base Price (₹) *</Label>
-                  <span className="text-[10px] text-slate-400">Opening bid floor</span>
+                  <span className="text-[10px] text-neutral-400">Opening bid floor</span>
                 </div>
                 <div className="relative">
                   <Input
@@ -499,16 +499,16 @@ export default function CreateReverseAuctionDialog({
                     required
                     min={0.1}
                     step="any"
-                    className="text-xs h-10 pl-7 rounded-xl bg-slate-950 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#FF5A1F]"
+                    className="text-xs h-10 pl-7 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
                   />
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-400">₹</span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold text-slate-200">Reserve Price (₹)</Label>
-                  <span className="text-[10px] text-slate-400">Target minimum</span>
+                  <span className="text-[10px] text-neutral-400">Target minimum</span>
                 </div>
                 <div className="relative">
                   <Input
@@ -518,9 +518,9 @@ export default function CreateReverseAuctionDialog({
                     onChange={e => setReservePrice(e.target.value)}
                     min={0}
                     step="any"
-                    className="text-xs h-10 pl-7 rounded-xl bg-slate-950 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#FF5A1F]"
+                    className="text-xs h-10 pl-7 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
                   />
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-400">₹</span>
                 </div>
               </div>
             </div>
@@ -536,7 +536,7 @@ export default function CreateReverseAuctionDialog({
                     className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                       auctionDuration === '24h'
                         ? 'border-[#FF5A1F] bg-[#FF5A1F]/20 text-[#FF8A3D] shadow-sm'
-                        : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                        : 'border-[#2A2A2A] bg-[#0A0A0A] text-neutral-400 hover:text-white'
                     }`}
                   >
                     <Clock className="w-3.5 h-3.5 text-[#FF5A1F]" />
@@ -548,7 +548,7 @@ export default function CreateReverseAuctionDialog({
                     className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                       auctionDuration === '60m'
                         ? 'border-[#FF5A1F] bg-[#FF5A1F]/20 text-[#FF8A3D] shadow-sm'
-                        : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                        : 'border-[#2A2A2A] bg-[#0A0A0A] text-neutral-400 hover:text-white'
                     }`}
                   >
                     <Flame className="w-3.5 h-3.5 text-[#FF5A1F]" />
@@ -564,7 +564,7 @@ export default function CreateReverseAuctionDialog({
                   placeholder="e.g. 2"
                   value={minBidIncrement}
                   onChange={e => setMinBidIncrement(e.target.value)}
-                  className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#FF5A1F]"
+                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
                 />
               </div>
             </div>
@@ -577,7 +577,7 @@ export default function CreateReverseAuctionDialog({
                   placeholder="e.g. Ahmedabad, Gujarat"
                   value={deliveryLocation}
                   onChange={e => setDeliveryLocation(e.target.value)}
-                  className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#FF5A1F]"
+                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
                 />
               </div>
 
@@ -587,7 +587,7 @@ export default function CreateReverseAuctionDialog({
                   placeholder="e.g. Purity: 99.9%, Grade: Commercial"
                   value={specs}
                   onChange={e => setSpecs(e.target.value)}
-                  className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#FF5A1F]"
+                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
                 />
               </div>
             </div>
@@ -600,12 +600,12 @@ export default function CreateReverseAuctionDialog({
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 rows={2}
-                className="text-xs rounded-xl bg-slate-950 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#FF5A1F]"
+                className="text-xs rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
               />
             </div>
 
             {/* Multi Image Upload with Pixabay API Integration */}
-            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <div className="p-3.5 rounded-2xl bg-[#0A0A0A] border border-[#2A2A2A] space-y-2">
               <MultiImageUploader
                 images={lotImages}
                 onChange={setLotImages}
@@ -629,18 +629,18 @@ export default function CreateReverseAuctionDialog({
             </div>
 
             {/* Padded Action Footer (Sticky or Bottom Docked with Safe Zone) */}
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2.5">
+            <div className="pt-3 border-t border-[#2A2A2A] flex items-center justify-end gap-2.5">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
-                className="text-xs h-10 px-4 rounded-xl border border-[#FF5A00]/40 text-[#FF5A00] hover:bg-[#FF5A00]/15 hover:text-white font-bold"
+                className="text-xs h-10 px-4 rounded-xl border border-[#FF5A00]/40 text-[#FF5A00] hover:bg-[#B33D00]/15 hover:text-white font-bold"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="bg-[#FF5A00] hover:bg-[#e04e00] text-white text-xs h-10 px-5 font-bold rounded-xl flex items-center gap-2 shadow-[0_3px_0_#922f00] transition-all active:translate-y-0.5 active:shadow-none"
+                className="bg-[#C94400] hover:bg-[#B33D00] text-white text-xs h-10 px-5 font-bold rounded-xl flex items-center gap-2 shadow-[0_3px_0_#922f00] transition-all active:translate-y-0.5 active:shadow-none"
               >
                 <span>Continue to Subscription & Tax</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -672,12 +672,12 @@ export default function CreateReverseAuctionDialog({
                 Select Billing Country & Tax Jurisdiction *
               </Label>
               <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
-                <SelectTrigger className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white focus:border-[#FF5A1F]">
+                <SelectTrigger className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white focus:border-[#FF5A1F]">
                   <SelectValue placeholder="Select Country" />
                 </SelectTrigger>
-                <SelectContent className="max-h-60 bg-slate-900 border-slate-700 text-white">
+                <SelectContent className="max-h-60 bg-[#0A0A0A] border-[#2A2A2A] text-white">
                   {SUPPORTED_COUNTRIES.map(c => (
-                    <SelectItem key={c.code} value={c.code} className="text-xs hover:bg-slate-800 focus:bg-slate-800">
+                    <SelectItem key={c.code} value={c.code} className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">
                       {c.flag} {c.name} — {c.currency} ({c.taxName})
                     </SelectItem>
                   ))}
@@ -686,8 +686,8 @@ export default function CreateReverseAuctionDialog({
             </div>
 
             {/* Itemized Tax Invoice Breakdown Card */}
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-md space-y-2.5">
-              <div className="flex items-center justify-between text-xs font-bold text-white border-b border-slate-800 pb-2">
+            <div className="p-4 rounded-2xl bg-[#0A0A0A]/80 border border-[#2A2A2A] shadow-md space-y-2.5">
+              <div className="flex items-center justify-between text-xs font-bold text-white border-b border-[#2A2A2A] pb-2">
                 <span className="flex items-center gap-1.5">
                   <Receipt className="w-4 h-4 text-[#FF5A1F]" />
                   <span>Itemized Tax Invoice Breakdown</span>
@@ -697,20 +697,20 @@ export default function CreateReverseAuctionDialog({
                 </Badge>
               </div>
 
-              <div className="flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center justify-between text-xs text-neutral-400">
                 <span>24-Hour Sell Product Posting Fee (Fixed Base)</span>
                 <span className="font-semibold text-white">{bill.formattedBase}</span>
               </div>
 
-              <div className="flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center justify-between text-xs text-neutral-400">
                 <div className="flex flex-col">
                   <span className="text-slate-300 font-medium">{bill.country.taxName}</span>
-                  <span className="text-[10px] text-slate-400">{bill.country.taxDescription}</span>
+                  <span className="text-[10px] text-neutral-400">{bill.country.taxDescription}</span>
                 </div>
-                <span className="font-semibold text-amber-400">{bill.formattedTax}</span>
+                <span className="font-semibold text-[#FF7A2E]">{bill.formattedTax}</span>
               </div>
 
-              <div className="pt-2.5 border-t border-slate-800 flex items-center justify-between text-sm font-bold text-white">
+              <div className="pt-2.5 border-t border-[#2A2A2A] flex items-center justify-between text-sm font-bold text-white">
                 <span className="text-[#FF5A1F]">Total Amount Payable</span>
                 <span className="text-lg font-extrabold text-[#FF5A1F]">{bill.formattedTotal}</span>
               </div>
@@ -724,7 +724,7 @@ export default function CreateReverseAuctionDialog({
                   placeholder="e.g. Apex Conductors India Ltd."
                   value={companyBillingName}
                   onChange={e => setCompanyBillingName(e.target.value)}
-                  className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#FF5A1F]"
+                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
                 />
               </div>
 
@@ -734,7 +734,7 @@ export default function CreateReverseAuctionDialog({
                   placeholder={selectedCountryCode === 'IN' ? 'e.g. 24AABCA1234F1Z5 (15-digit GSTIN)' : 'e.g. VAT / Federal EIN ID'}
                   value={taxIdGstin}
                   onChange={e => setTaxIdGstin(e.target.value)}
-                  className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#FF5A1F]"
+                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
                 />
               </div>
             </div>
@@ -745,7 +745,7 @@ export default function CreateReverseAuctionDialog({
                 placeholder="Industrial Estate, City, State / Province, Postal Code"
                 value={billingAddress}
                 onChange={e => setBillingAddress(e.target.value)}
-                className="text-xs h-10 rounded-xl bg-slate-950 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#FF5A1F]"
+                className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
               />
             </div>
 
@@ -758,13 +758,13 @@ export default function CreateReverseAuctionDialog({
                   className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2.5 ${
                     paymentMethod === 'razorpay'
                       ? 'border-[#FF5A1F] bg-[#FF5A1F]/15 text-white shadow-sm'
-                      : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                      : 'border-[#2A2A2A] bg-[#0A0A0A] text-neutral-400 hover:text-white'
                   }`}
                 >
                   <CreditCard className="w-5 h-5 text-[#FF5A1F] shrink-0" />
                   <div className="min-w-0">
                     <div className="text-xs font-bold leading-tight text-white">Razorpay Gateway</div>
-                    <div className="text-[10px] text-slate-400">UPI / Cards / NetBanking</div>
+                    <div className="text-[10px] text-neutral-400">UPI / Cards / NetBanking</div>
                   </div>
                 </div>
 
@@ -773,25 +773,25 @@ export default function CreateReverseAuctionDialog({
                   className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2.5 ${
                     paymentMethod === 'instant_escrow'
                       ? 'border-[#FF5A1F] bg-[#FF5A1F]/15 text-white shadow-sm'
-                      : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                      : 'border-[#2A2A2A] bg-[#0A0A0A] text-neutral-400 hover:text-white'
                   }`}
                 >
                   <Lock className="w-5 h-5 text-[#FF5A1F] shrink-0" />
                   <div className="min-w-0">
                     <div className="text-xs font-bold leading-tight text-white">Corporate Escrow</div>
-                    <div className="text-[10px] text-slate-400">Verified Factory Credit</div>
+                    <div className="text-[10px] text-neutral-400">Verified Factory Credit</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Step 2 Padded Action Footer */}
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2.5">
+            <div className="pt-3 border-t border-[#2A2A2A] flex items-center justify-between gap-2.5">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setCurrentStep(1)}
-                className="text-xs h-10 px-4 rounded-xl border border-[#FF5A00]/40 text-[#FF5A00] hover:bg-[#FF5A00]/15 hover:text-white font-bold"
+                className="text-xs h-10 px-4 rounded-xl border border-[#FF5A00]/40 text-[#FF5A00] hover:bg-[#B33D00]/15 hover:text-white font-bold"
               >
                 <ArrowLeft className="w-3.5 h-3.5 mr-1" />
                 <span>Back</span>
@@ -800,7 +800,7 @@ export default function CreateReverseAuctionDialog({
                 type="button"
                 disabled={loading}
                 onClick={handlePayAndLaunchAuction}
-                className="bg-[#FF5A00] hover:bg-[#e04e00] text-white text-xs h-10 px-5 font-bold rounded-xl flex items-center gap-2 shadow-[0_3px_0_#922f00] transition-all active:translate-y-0.5 active:shadow-none"
+                className="bg-[#C94400] hover:bg-[#B33D00] text-white text-xs h-10 px-5 font-bold rounded-xl flex items-center gap-2 shadow-[0_3px_0_#922f00] transition-all active:translate-y-0.5 active:shadow-none"
               >
                 {loading ? (
                   <>
@@ -822,8 +822,8 @@ export default function CreateReverseAuctionDialog({
         {currentStep === 3 && (
           <div className="space-y-4 pt-3 pb-4">
             {/* Matching Image 2 Success Card */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 flex flex-col sm:flex-row items-center sm:items-start gap-3.5 text-center sm:text-left">
-              <div className="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950/50">
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#B33D00]/30 border border-[#FF5A00]/40 flex flex-col sm:flex-row items-center sm:items-start gap-3.5 text-center sm:text-left">
+              <div className="w-12 h-12 rounded-full bg-[#C94400] text-white flex items-center justify-center shrink-0 shadow-lg shadow-[#FF5A00]/50">
                 <CheckCircle2 className="w-7 h-7 text-white" />
               </div>
               <div>
@@ -831,10 +831,10 @@ export default function CreateReverseAuctionDialog({
                   Subscription Payment Successful & Auction Published!
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">
-                  Your compulsory 24-hour reverse auction fee of <strong className="text-emerald-400 font-bold">{bill.formattedTotal}</strong> has been received and verified.
+                  Your compulsory 24-hour reverse auction fee of <strong className="text-[#FF7A2E] font-bold">{bill.formattedTotal}</strong> has been received and verified.
                 </p>
                 {paymentReferenceId && (
-                  <p className="text-[11px] text-slate-400 mt-1 font-mono">
+                  <p className="text-[11px] text-neutral-400 mt-1 font-mono">
                     Gateway Ref: {paymentReferenceId}
                   </p>
                 )}
@@ -842,31 +842,31 @@ export default function CreateReverseAuctionDialog({
             </div>
 
             {/* Official Tax Invoice Card matching Image 2 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-950 border border-slate-800 shadow-xl space-y-3.5">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#0A0A0A] border border-[#2A2A2A] shadow-xl space-y-3.5">
+              <div className="flex items-center justify-between border-b border-[#2A2A2A] pb-3">
                 <div>
                   <div className="text-xs font-bold uppercase tracking-wider text-slate-300">Official Tax Invoice</div>
-                  <div className="text-xs text-slate-400 font-mono mt-0.5">{invoiceNumber}</div>
+                  <div className="text-xs text-neutral-400 font-mono mt-0.5">{invoiceNumber}</div>
                 </div>
-                <Badge className="bg-emerald-600 text-white font-bold text-[10px] px-2.5 py-1 uppercase tracking-wider">
+                <Badge className="bg-[#B33D00] text-white font-bold text-[10px] px-2.5 py-1 uppercase tracking-wider">
                   PAID IN FULL
                 </Badge>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <span className="text-slate-400 text-[11px] block mb-0.5">Billed To:</span>
+                  <span className="text-neutral-400 text-[11px] block mb-0.5">Billed To:</span>
                   <p className="font-bold text-white truncate">{companyBillingName}</p>
-                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">{taxIdGstin}</p>
+                  <p className="text-[11px] text-neutral-400 font-mono mt-0.5">{taxIdGstin}</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-slate-400 text-[11px] block mb-0.5">Tax Jurisdiction:</span>
+                  <span className="text-neutral-400 text-[11px] block mb-0.5">Tax Jurisdiction:</span>
                   <p className="font-bold text-white">{bill.country.name} ({bill.country.currency})</p>
                   <p className="text-[11px] text-[#FF8A3D] font-semibold mt-0.5">{bill.country.taxName}</p>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs">
+              <div className="p-3 rounded-xl bg-[#0A0A0A]/80 border border-[#2A2A2A] flex items-center justify-between text-xs">
                 <span className="text-slate-300 font-medium">Total Amount Paid (Inclusive of Taxes)</span>
                 <span className="text-base sm:text-lg font-extrabold text-[#FF5A1F]">{bill.formattedTotal}</span>
               </div>
@@ -889,7 +889,7 @@ export default function CreateReverseAuctionDialog({
                     a.click();
                   } catch {}
                 }}
-                className="text-xs h-10 rounded-xl border border-[#FF5A00]/40 bg-slate-900 text-[#FF5A00] hover:text-white hover:bg-[#FF5A00]/20 font-bold flex items-center justify-center gap-2"
+                className="text-xs h-10 rounded-xl border border-[#FF5A00]/40 bg-[#0A0A0A] text-[#FF5A00] hover:text-white hover:bg-[#B33D00]/20 font-bold flex items-center justify-center gap-2"
               >
                 <FileText className="w-4 h-4 text-[#FF5A00]" />
                 <span>Download Tax Invoice</span>
@@ -897,7 +897,7 @@ export default function CreateReverseAuctionDialog({
               <Button
                 type="button"
                 onClick={handleViewLiveAuction}
-                className="bg-[#FF5A00] hover:bg-[#e04e00] text-white text-xs h-10 font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_3px_0_#922f00] transition-all active:translate-y-0.5 active:shadow-none"
+                className="bg-[#C94400] hover:bg-[#B33D00] text-white text-xs h-10 font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_3px_0_#922f00] transition-all active:translate-y-0.5 active:shadow-none"
               >
                 <span>Enter Live 24-Hour Auction Room</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />

@@ -231,7 +231,7 @@ export default function FullScreenMobileChat({
               {buyerProfile.avatar_initials}
             </div>
             <span
-              className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-background animate-pulse"
+              className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#C94400] ring-2 ring-background animate-pulse"
               title="Online now"
             />
           </div>
@@ -244,8 +244,8 @@ export default function FullScreenMobileChat({
               </h3>
               <span className="text-xs shrink-0">{buyerProfile.flag}</span>
             </div>
-            <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium truncate mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+            <div className="flex items-center gap-1 text-[11px] text-[#FF7A2E] font-medium truncate mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C94400] shrink-0" />
               <span className="truncate">{buyerProfile.contact_person}</span>
               <span className="text-white/40 hidden xs:inline">·</span>
               <span className="text-white/60 text-[10px] hidden xs:inline">Verified Buyer</span>
@@ -283,7 +283,7 @@ export default function FullScreenMobileChat({
             {/* Dropdown menu */}
             {showMoreMenu && (
               <div
-                className="absolute right-0 top-full mt-1 w-52 bg-[#161A28] border border-white/15 rounded-xl shadow-2xl py-1.5 z-50 text-xs space-y-0.5"
+                className="absolute right-0 top-full mt-1 w-52 bg-[#C94400] border border-white/15 rounded-xl shadow-2xl py-1.5 z-50 text-xs space-y-0.5"
                 onClick={() => setShowMoreMenu(false)}
               >
                 <button
@@ -312,14 +312,14 @@ export default function FullScreenMobileChat({
                   }}
                   className="w-full text-left px-3 py-2 text-white/90 hover:bg-white/10 flex items-center gap-2"
                 >
-                  <Download className="w-3.5 h-3.5 text-emerald-400" />
+                  <Download className="w-3.5 h-3.5 text-[#FF7A2E]" />
                   <span>Download RFQ Spec PDF</span>
                 </button>
                 <div className="h-px bg-white/10 my-1" />
                 <button
                   type="button"
                   onClick={onClose}
-                  className="w-full text-left px-3 py-2 text-amber-400 hover:bg-white/10 flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 text-[#FF7A2E] hover:bg-white/10 flex items-center gap-2"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Exit to Requirement Page</span>
@@ -333,12 +333,12 @@ export default function FullScreenMobileChat({
       {/* ── 2. PINNED RFQ / PRODUCT SUMMARY CARD ── */}
       <section
         aria-label="RFQ Summary"
-        className="shrink-0 bg-[#121522] border-b border-white/10 px-3 py-2 transition-all shadow-inner"
+        className="shrink-0 bg-[#C94400] border-b border-white/10 px-3 py-2 transition-all shadow-inner"
       >
         <div className="flex items-center justify-between gap-2">
           {/* Left Thumbnail + RFQ info */}
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-black/50 border border-white/10 shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-[#0A0A0A]/50 border border-white/10 shrink-0">
               <img
                 src={requirement?.attachment_url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=75'}
                 alt="Product thumbnail"
@@ -364,7 +364,7 @@ export default function FullScreenMobileChat({
           <div className="flex items-center gap-2 shrink-0">
             <div className="text-right text-[11px] hidden xs:block">
               <div className="text-white/40 text-[9px]">Target Budget</div>
-              <div className="font-bold text-emerald-400">{targetBudget}</div>
+              <div className="font-bold text-[#FF7A2E]">{targetBudget}</div>
             </div>
             <button
               type="button"
@@ -394,7 +394,7 @@ export default function FullScreenMobileChat({
 
             <div className="p-2 rounded-lg bg-white/5 space-y-0.5">
               <div className="text-[10px] text-white/50 flex items-center gap-1">
-                <Clock className="w-3 h-3 text-emerald-400" />
+                <Clock className="w-3 h-3 text-[#FF7A2E]" />
                 <span>Deadline / Timeline</span>
               </div>
               <div className="font-bold text-white text-[11px] truncate">
@@ -445,27 +445,27 @@ export default function FullScreenMobileChat({
               <div
                 className={`max-w-[88%] sm:max-w-[78%] p-3 sm:p-3.5 rounded-2xl text-xs sm:text-sm shadow-md break-words ${
                   isMe
-                    ? 'bg-[#FF5A00] text-white rounded-tr-none'
-                    : 'bg-[#181B28] text-white/95 border border-white/10 rounded-tl-none'
+                    ? 'bg-[#1A0C05] text-white rounded-tr-none'
+                    : 'bg-[#1A0C05] text-white/95 border border-white/10 rounded-tl-none'
                 }`}
               >
                 <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
 
                 {/* IN-CHAT FORMAL QUOTATION CARD ATTACHMENT */}
                 {msg.quoteCard && (
-                  <div className="mt-3 p-3 rounded-xl bg-black/45 border border-white/15 text-white space-y-2 shadow-inner">
+                  <div className="mt-3 p-3 rounded-xl bg-[#0A0A0A]/45 border border-white/15 text-white space-y-2 shadow-inner">
                     <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
                       <div className="flex items-center gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-amber-400" />
-                        <span className="font-black text-[11px] uppercase tracking-wider text-amber-300">
+                        <FileText className="w-3.5 h-3.5 text-[#FF7A2E]" />
+                        <span className="font-black text-[11px] uppercase tracking-wider text-[#FF7A2E]">
                           Commercial Quotation Card
                         </span>
                       </div>
                       <Badge
                         className={`text-[9px] uppercase font-mono ${
                           msg.quoteCard.status === 'accepted'
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                            ? 'bg-[#1A0C05] text-white'
+                            : 'bg-[#FF5A00]/20 text-[#FF7A2E] border-[#FF5A00]/30'
                         }`}
                       >
                         {msg.quoteCard.status === 'accepted' ? 'Deal Finalized' : 'Pending Review'}
@@ -481,7 +481,7 @@ export default function FullScreenMobileChat({
                       </div>
                       <div className="bg-white/5 p-1.5 rounded-lg">
                         <div className="text-[9px] text-white/50">Total Est. Value</div>
-                        <div className="font-black text-xs sm:text-sm text-emerald-400">
+                        <div className="font-black text-xs sm:text-sm text-[#FF7A2E]">
                           {msg.quoteCard.currency} {msg.quoteCard.totalPrice.toLocaleString()}
                         </div>
                       </div>
@@ -510,7 +510,7 @@ export default function FullScreenMobileChat({
                     {/* Action buttons on quote card */}
                     <div className="pt-1 flex items-center gap-1.5 flex-wrap">
                       {msg.quoteCard.status === 'accepted' ? (
-                        <div className="w-full p-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-emerald-400 text-xs font-bold flex items-center justify-center gap-1">
+                        <div className="w-full p-1.5 bg-[#FF5A00]/20 border border-[#FF5A00]/30 rounded-lg text-[#FF7A2E] text-xs font-bold flex items-center justify-center gap-1">
                           <Check className="w-3.5 h-3.5" /> Deal Finalized & Transmitted
                         </div>
                       ) : (
@@ -518,7 +518,7 @@ export default function FullScreenMobileChat({
                           <Button
                             size="sm"
                             onClick={() => onAcceptQuote(msg.id)}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] h-7 px-2.5 rounded-lg gap-1"
+                            className="bg-[#B33D00] hover:bg-[#C94400] text-white font-bold text-[11px] h-7 px-2.5 rounded-lg gap-1"
                           >
                             <Check className="w-3 h-3" />
                             Accept Quote
@@ -547,9 +547,9 @@ export default function FullScreenMobileChat({
 
                 {/* File Attachment */}
                 {msg.attachment && (
-                  <div className="mt-2 p-2 rounded-xl bg-black/30 border border-white/10 flex items-center justify-between gap-2 text-xs">
+                  <div className="mt-2 p-2 rounded-xl bg-[#0A0A0A]/30 border border-white/10 flex items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-7 h-7 rounded-lg bg-red-600/30 text-red-400 flex items-center justify-center font-bold text-[9px] shrink-0">
+                      <div className="w-7 h-7 rounded-lg bg-[#B33D00]/30 text-[#FF7A2E] flex items-center justify-center font-bold text-[9px] shrink-0">
                         PDF
                       </div>
                       <div className="min-w-0">
@@ -693,7 +693,7 @@ export default function FullScreenMobileChat({
               <Button
                 type="submit"
                 size="sm"
-                className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs h-8 px-4 rounded-xl gap-1.5 shadow"
+                className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-8 px-4 rounded-xl gap-1.5 shadow"
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>Attach & Send Quotation Card</span>
@@ -751,7 +751,7 @@ export default function FullScreenMobileChat({
                         setChatInput(reply.text);
                         inputRef.current?.focus();
                       }}
-                      className="text-[10px] font-bold text-amber-600 dark:text-yellow-400 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded transition-colors"
+                      className="text-[10px] font-bold text-[#FF7A2E] dark:text-[#FF7A2E] bg-[#FF5A00]/10 hover:bg-[#B33D00]/20 px-2 py-0.5 rounded transition-colors"
                     >
                       Edit
                     </button>
@@ -761,7 +761,7 @@ export default function FullScreenMobileChat({
                         onSendMessage(reply.text);
                         setShowAiReplies(false);
                       }}
-                      className="text-[10px] font-bold text-white bg-[#FF5A00] hover:bg-[#e04f00] px-2.5 py-0.5 rounded transition-colors"
+                      className="text-[10px] font-bold text-white bg-[#C94400] hover:bg-[#B33D00] px-2.5 py-0.5 rounded transition-colors"
                     >
                       Send
                     </button>
@@ -794,9 +794,9 @@ export default function FullScreenMobileChat({
 
         {/* Subscription Locked Gate check */}
         {isSupplierViewer && !isPaidSubscription ? (
-          <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-2 text-xs">
+          <div className="p-2 rounded-xl bg-[#FF5A00]/10 border border-[#FF5A00]/25 flex items-center justify-between gap-2 text-xs">
             <div className="flex items-center gap-2 min-w-0">
-              <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+              <Lock className="w-4 h-4 text-[#FF7A2E] shrink-0" />
               <p className="text-[11px] text-foreground/80 truncate">
                 Paid membership required to message verified buyers.
               </p>
@@ -804,7 +804,7 @@ export default function FullScreenMobileChat({
             <Button
               size="sm"
               onClick={onTriggerSubscription}
-              className="bg-[#FF5A00] hover:bg-[#e04f00] text-white text-[11px] font-bold h-7 px-3 rounded-lg shrink-0 gap-1"
+              className="bg-[#C94400] hover:bg-[#B33D00] text-white text-[11px] font-bold h-7 px-3 rounded-lg shrink-0 gap-1"
             >
               <Zap className="w-3 h-3" />
               Upgrade
@@ -829,7 +829,7 @@ export default function FullScreenMobileChat({
               onClick={() => setShowInChatQuoteBuilder(prev => !prev)}
               className={`p-2 sm:p-2.5 rounded-xl border transition-colors flex items-center gap-1 text-xs font-bold active:scale-95 shrink-0 ${
                 showInChatQuoteBuilder
-                  ? 'bg-[#FF5A00] text-white border-[#FF5A00]'
+                  ? 'bg-[#1A0C05] text-white border-[#FF5A00]'
                   : 'bg-muted hover:bg-muted/80 text-[#FF5A00] border-[#FF5A00]/30'
               }`}
               title="Attach Formal Quotation Card"
@@ -847,7 +847,7 @@ export default function FullScreenMobileChat({
                 className={`p-2 sm:p-2.5 rounded-xl border transition-colors flex items-center gap-1 text-xs font-bold active:scale-95 shrink-0 ${
                   showAiReplies
                     ? 'bg-[#FF5A00]/20 text-[#FF5A00] border-[#FF5A00]'
-                    : 'bg-muted hover:bg-muted/80 text-amber-500 border-amber-500/30'
+                    : 'bg-muted hover:bg-muted/80 text-[#FF7A2E] border-[#FF5A00]/30'
                 }`}
                 title="AI Suggested Replies"
                 aria-label="AI Suggested Replies"
@@ -869,7 +869,7 @@ export default function FullScreenMobileChat({
             <Button
               type="submit"
               disabled={!chatInput.trim()}
-              className="bg-[#FF5A00] hover:bg-[#e04f00] disabled:opacity-40 disabled:hover:bg-[#FF5A00] text-white font-bold h-10 w-10 sm:w-auto sm:px-4 rounded-xl shrink-0 p-0 sm:p-2.5 flex items-center justify-center gap-1.5 shadow-lg active:scale-95"
+              className="bg-[#C94400] hover:bg-[#B33D00] disabled:opacity-40 disabled:hover:bg-[#C94400] text-white font-bold h-10 w-10 sm:w-auto sm:px-4 rounded-xl shrink-0 p-0 sm:p-2.5 flex items-center justify-center gap-1.5 shadow-lg active:scale-95"
               aria-label="Send message"
             >
               <Send className="w-4 h-4 text-white" />

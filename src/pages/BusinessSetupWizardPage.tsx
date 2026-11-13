@@ -86,6 +86,37 @@ const PAYMENT_TERMS = ['L/C (Letter of Credit)', 'T/T (Telegraphic Transfer)', '
 const SHIPPING_MODES = ['Road Freight / Full Truckload', 'Air Cargo (Express & General)', 'Sea Freight (FCL & LCL)', 'Courier / Parcel Express', 'Warehousing & Cross-Docking', 'Cold Chain Logistics'];
 const COUNTRIES_LIST = ['India', 'United States', 'United Arab Emirates', 'United Kingdom', 'Germany', 'Australia', 'Canada', 'Saudi Arabia', 'Singapore', 'Japan', 'South Africa', 'Worldwide'];
 
+// Never let a single slow database read keep the wizard on a spinner forever.
+function withTimeout<T>(promise: PromiseLike<T>, ms = 12000): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Request timed out. Please check your connection and retry.')), ms);
+    Promise.resolve(promise).then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
+
+// Adds the sample manufacturer welcome leads after navigation, so they never delay onboarding.
+async function seedWelcomeLeadsInBackground(userId: string, fallbackName: string) {
+  try {
+    const { data: co } = await withTimeout(
+      supabase.from('companies').select('id, company_name').eq('owner_id', userId).maybeSingle(),
+      8000,
+    );
+    if (!co?.id) return;
+    const { ensureManufacturerWelcomeLeads } = await import('@/lib/api');
+    const result = ensureManufacturerWelcomeLeads(co.id, co.company_name || fallbackName || 'Your Factory');
+    if (result.seeded) {
+      toast.success('5 sample buyer leads added to your Messages inbox', {
+        description: 'Open Messages to reply — this is a simulation for new manufacturers.',
+      });
+    }
+  } catch (seedErr) {
+    console.warn('Welcome lead seed skipped:', seedErr);
+  }
+}
+
 export default function BusinessSetupWizardPage() {
   const { user, profile, company, buyerProfile, refreshProfile } = useAuth();
   const navigate = useNavigate();
@@ -93,6 +124,8 @@ export default function BusinessSetupWizardPage() {
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState<number>(0);
   const [saving, setSaving] = useState<boolean>(false);
   const [completing, setCompleting] = useState<boolean>(false);
 
@@ -322,21 +355,29 @@ export default function BusinessSetupWizardPage() {
   }, [currentStep, validateStep, scrollToFirstError]);
 
   // Load existing data for user
+  const userId = user?.id;
+  const userEmail = user?.email;
+
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setLoading(false);
       return;
     }
+    let cancelled = false;
 
     const loadData = async () => {
       setLoading(true);
+      setLoadError(null);
       try {
         // Direct query to guarantee exact logged-in user profile without crosstalk
-        const { data: directProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
+        const { data: directProfile } = await withTimeout(
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle()
+        );
+        if (cancelled) return;
 
         const activeProfile = directProfile || profile;
 
@@ -359,22 +400,28 @@ export default function BusinessSetupWizardPage() {
         }
 
         // Direct query company owned specifically by this user to eliminate any cross-account leakage
-        const { data: directCompany } = await supabase
-          .from('companies')
-          .select('*')
-          .eq('owner_id', user.id)
-          .maybeSingle();
+        const { data: directCompany } = await withTimeout(
+          supabase
+            .from('companies')
+            .select('*')
+            .eq('owner_id', userId)
+            .maybeSingle()
+        );
+        if (cancelled) return;
 
-        const targetCompany = directCompany || (company?.owner_id === user.id ? company : null);
+        const targetCompany = directCompany || (company?.owner_id === userId ? company : null);
 
         // Direct query buyer profile specifically for this user
-        const { data: directBuyerProfile } = await supabase
-          .from('buyer_profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        const { data: directBuyerProfile } = await withTimeout(
+          supabase
+            .from('buyer_profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle()
+        );
+        if (cancelled) return;
 
-        const targetBuyerProfile = directBuyerProfile || (buyerProfile?.user_id === user.id ? buyerProfile : null);
+        const targetBuyerProfile = directBuyerProfile || (buyerProfile?.user_id === userId ? buyerProfile : null);
 
         // Check if company exists
         if (targetCompany) {
@@ -441,13 +488,26 @@ export default function BusinessSetupWizardPage() {
         }
       } catch (err) {
         console.error('Error loading onboarding data:', err);
+        if (!cancelled) {
+          setLoadError(
+            err instanceof Error && err.message
+              ? err.message
+              : 'We could not load your saved details. You can still fill in the form.'
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     loadData();
-  }, [user, profile, company, buyerProfile]);
+    return () => {
+      cancelled = true;
+    };
+    // Reload only when the signed-in user changes or the user presses Retry.
+    // Re-running on every profile/company object change restarted the spinner.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, userEmail, reloadKey]);
 
   // Handle document uploads
   const handleUploadDoc = async (file: File, type: 'gst' | 'iec' | 'pan' | 'reg') => {
@@ -657,7 +717,7 @@ export default function BusinessSetupWizardPage() {
 
       // 1. Update profiles table
       const finalRole = isBuyer ? 'buyer' : 'supplier';
-      await supabase.from('profiles').update({
+      const profRes = await withTimeout(supabase.from('profiles').update({
         full_name: personal.fullName.trim(),
         phone: personal.phone.trim(),
         whatsapp_number: personal.whatsappNumber.trim() || null,
@@ -667,19 +727,23 @@ export default function BusinessSetupWizardPage() {
         role: finalRole,
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
-      }).eq('id', user.id);
-
-      // Keep auth metadata in sync so dashboard routing never drifts after setup
-      try {
-        await supabase.auth.updateUser({
-          data: {
-            role: finalRole,
-            full_name: personal.fullName.trim(),
-          },
-        });
-      } catch (metaErr) {
-        console.warn('Auth metadata sync skipped:', metaErr);
+      }).eq('id', user.id));
+      if (profRes.error) {
+        throw new Error(`Could not save your personal details: ${profRes.error.message}`);
       }
+
+      // Keep auth metadata in sync so dashboard routing never drifts after setup.
+      // Non-blocking: a slow auth call must not hold the user on "Completing Profile...".
+      void withTimeout(supabase.auth.updateUser({
+        data: {
+          role: finalRole,
+          full_name: personal.fullName.trim(),
+        },
+      }), 8000)
+        .then(metaRes => {
+          if (metaRes.error) console.warn('Auth metadata sync failed:', metaRes.error.message);
+        })
+        .catch(metaErr => console.warn('Auth metadata sync skipped:', metaErr));
 
       if (isBuyer) {
         const buyerPayload = {
@@ -712,11 +776,14 @@ export default function BusinessSetupWizardPage() {
           updated_at: new Date().toISOString(),
         };
 
-        const { data: existingBuyer } = await supabase.from('buyer_profiles').select('id').eq('user_id', user.id).maybeSingle();
-        if (existingBuyer?.id) {
-          await supabase.from('buyer_profiles').update(buyerPayload).eq('user_id', user.id);
-        } else {
-          await supabase.from('buyer_profiles').insert(buyerPayload);
+        const { data: existingBuyer } = await withTimeout(
+          supabase.from('buyer_profiles').select('id').eq('user_id', user.id).maybeSingle()
+        );
+        const buyerRes = existingBuyer?.id
+          ? await withTimeout(supabase.from('buyer_profiles').update(buyerPayload).eq('user_id', user.id))
+          : await withTimeout(supabase.from('buyer_profiles').insert(buyerPayload));
+        if (buyerRes.error) {
+          throw new Error(`Could not save your business profile: ${buyerRes.error.message}`);
         }
       } else {
         const slug = business.legalName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + user.id.slice(0, 6);
@@ -756,48 +823,38 @@ export default function BusinessSetupWizardPage() {
           updated_at: new Date().toISOString(),
         };
 
-        const { data: existingCo } = await supabase.from('companies').select('id').eq('owner_id', user.id).maybeSingle();
-        if (existingCo?.id) {
-          await supabase.from('companies').update(companyPayload).eq('owner_id', user.id);
-        } else {
-          await supabase.from('companies').insert({
-            ...companyPayload,
-            slug,
-            verification_status: finalStatus,
-            is_verified: false,
-            is_featured: false,
-            total_products: 0,
-            total_quotes_sent: 0,
-          });
+        const { data: existingCo } = await withTimeout(
+          supabase.from('companies').select('id').eq('owner_id', user.id).maybeSingle()
+        );
+        const companyRes = existingCo?.id
+          ? await withTimeout(supabase.from('companies').update(companyPayload).eq('owner_id', user.id))
+          : await withTimeout(supabase.from('companies').insert({
+              ...companyPayload,
+              slug,
+              verification_status: finalStatus,
+              is_verified: false,
+              is_featured: false,
+              total_products: 0,
+              total_quotes_sent: 0,
+            }));
+        if (companyRes.error) {
+          throw new Error(`Could not save your company profile: ${companyRes.error.message}`);
         }
       }
 
-      await refreshProfile();
+      // Refresh is capped: the saved data is already committed, so a slow read must not keep the form spinning.
+      try {
+        await withTimeout(refreshProfile(), 6000);
+      } catch (refreshErr) {
+        console.warn('Profile refresh after save did not finish:', refreshErr);
+      }
       toast.success('Business profile setup completed successfully!');
       if (isBuyer) {
         navigate('/dashboard/buyer');
-      } else {
-        // Auto-seed 5 sample buyer lead messages into manufacturer inbox
-        try {
-          const { data: co } = await supabase
-            .from('companies')
-            .select('id, company_name')
-            .eq('owner_id', user.id)
-            .maybeSingle();
-          if (co?.id) {
-            const { ensureManufacturerWelcomeLeads } = await import('@/lib/api');
-            const result = ensureManufacturerWelcomeLeads(co.id, co.company_name || business.legalName || 'Your Factory');
-            if (result.seeded) {
-              toast.success('5 sample buyer leads added to your Messages inbox', {
-                description: 'Open Messages to reply — this is a simulation for new manufacturers.',
-              });
-            }
-          }
-        } catch (seedErr) {
-          console.warn('Welcome lead seed skipped:', seedErr);
-        }
-        navigate('/dashboard/supplier');
+        return;
       }
+      navigate('/dashboard/supplier');
+      void seedWelcomeLeadsInBackground(user.id, business.legalName);
     } catch (err: any) {
       console.error('Complete profile error:', err);
       toast.error(err?.message || 'Failed to complete profile');
@@ -865,6 +922,17 @@ export default function BusinessSetupWizardPage() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 md:p-8 space-y-6">
+        {loadError && (
+          <div role="alert" className="flex flex-col gap-3 rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">Your saved details did not load</p>
+              <p className="mt-0.5 text-xs text-muted-foreground break-words">{loadError}</p>
+            </div>
+            <Button size="sm" onClick={() => setReloadKey((k) => k + 1)} className="shrink-0">
+              Retry loading
+            </Button>
+          </div>
+        )}
         {/* Progress Bar & Steps Indicator */}
         <div className="bg-card border border-border rounded-xl p-4 sm:p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
@@ -874,7 +942,7 @@ export default function BusinessSetupWizardPage() {
 
           <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
             <div
-              className="bg-primary h-full transition-all duration-300 rounded-full"
+              className="bg-[#C94400] h-full transition-all duration-300 rounded-full"
               style={{ width: `${(currentStep / 5) * 100}%` }}
             />
           </div>
@@ -899,9 +967,9 @@ export default function BusinessSetupWizardPage() {
                 >
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs mb-1 ${
                     isActive
-                      ? 'bg-primary text-white shadow-sm'
+                      ? 'bg-[#C94400] text-white shadow-sm'
                       : isPast
-                      ? 'bg-emerald-500/20 text-emerald-500'
+                      ? 'bg-[#FF5A00]/20 text-[#FF7A2E]'
                       : 'bg-muted text-muted-foreground'
                   }`}>
                     {isPast ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Icon className="w-3.5 h-3.5" />}
@@ -951,7 +1019,7 @@ export default function BusinessSetupWizardPage() {
                           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{type.desc}</p>
                         </div>
                         <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                          accountType === type.id ? 'border-primary bg-primary text-white' : 'border-border'
+                          accountType === type.id ? 'border-primary bg-[#C94400] text-white' : 'border-border'
                         }`}>
                           {accountType === type.id && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
@@ -1285,7 +1353,7 @@ export default function BusinessSetupWizardPage() {
                           }}
                           className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                             isSelected
-                              ? 'bg-primary text-white border-primary shadow-sm'
+                              ? 'bg-[#C94400] text-white border-primary shadow-sm'
                               : 'bg-background border-border text-foreground hover:bg-muted'
                           }`}
                         >
@@ -1463,9 +1531,9 @@ export default function BusinessSetupWizardPage() {
                 {/* Status Indicator Banner */}
                 <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 ${
                   verificationStatus === 'verified'
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                    ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30 text-[#FF7A2E] dark:text-[#FF7A2E]'
                     : verificationStatus === 'pending'
-                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                    ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30 text-[#FF7A2E] dark:text-[#FF7A2E]'
                     : verificationStatus === 'rejected'
                     ? 'bg-destructive/10 border-destructive/30 text-destructive'
                     : 'bg-muted/50 border-border text-muted-foreground'
@@ -1500,7 +1568,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">PDF or JPG/PNG image of Form REG-06</p>
                       </div>
                       {docs.gstDocUrl ? (
-                        <Badge className="bg-emerald-500 text-white text-[10px] gap-1">
+                        <Badge className="bg-[#1A0C05] text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1534,7 +1602,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">Official Income Tax Department PAN</p>
                       </div>
                       {docs.panDocUrl ? (
-                        <Badge className="bg-emerald-500 text-white text-[10px] gap-1">
+                        <Badge className="bg-[#1A0C05] text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1568,7 +1636,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">DGFT issued Certificate for foreign trade</p>
                       </div>
                       {docs.iecDocUrl ? (
-                        <Badge className="bg-emerald-500 text-white text-[10px] gap-1">
+                        <Badge className="bg-[#1A0C05] text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1602,7 +1670,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">Ministry of MSME / MCA Incorporation</p>
                       </div>
                       {docs.regDocUrl ? (
-                        <Badge className="bg-emerald-500 text-white text-[10px] gap-1">
+                        <Badge className="bg-[#1A0C05] text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1678,7 +1746,7 @@ export default function BusinessSetupWizardPage() {
                   type="button"
                   onClick={handleNextStep}
                   disabled={saving || completing}
-                  className="flex-1 sm:flex-initial bg-primary text-white hover:bg-primary/90 text-xs gap-1.5"
+                  className="flex-1 sm:flex-initial bg-[#1A0C05] text-white hover:bg-primary/90 text-xs gap-1.5"
                 >
                   Next Step <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
@@ -1687,7 +1755,7 @@ export default function BusinessSetupWizardPage() {
                   type="button"
                   onClick={handleCompleteProfile}
                   disabled={completing || saving}
-                  className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-1.5 font-bold shadow-md"
+                  className="flex-1 sm:flex-initial bg-[#B33D00] hover:bg-[#1A0C05] text-white text-xs gap-1.5 font-bold shadow-md"
                 >
                   {completing ? 'Completing Profile...' : 'Complete Profile & Launch'}
                   <CheckCircle2 className="w-4 h-4" />

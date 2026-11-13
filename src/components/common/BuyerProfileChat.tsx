@@ -209,8 +209,8 @@ export default function BuyerProfileChat({ buyerUserId, buyerName, returnPath }:
           <p className="text-[11px] text-muted-foreground">Messages go to this buyer’s BulkSkart inbox</p>
         </div>
         {gate === 'ready' && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Live
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#FF5A00]/15 px-2 py-0.5 text-[10px] font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C94400]" /> Live
           </span>
         )}
       </div>
@@ -227,7 +227,7 @@ export default function BuyerProfileChat({ buyerUserId, buyerName, returnPath }:
             Sign in with a manufacturer account to message {buyerName}. Phone, WhatsApp, and email stay available in Contact.
           </p>
           <div className="flex flex-col gap-2">
-            <Link to={authPath} className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FF5A00] px-3 text-xs font-bold text-white">
+            <Link to={authPath} className="inline-flex h-10 items-center justify-center rounded-lg bg-[#C94400] px-3 text-xs font-bold text-white">
               Sign in to chat
             </Link>
             <Link to={`/auth?tab=supplier&redirect=${encodeURIComponent(returnPath)}`} className="inline-flex h-10 items-center justify-center rounded-lg border border-border px-3 text-xs font-bold text-foreground">
@@ -242,7 +242,7 @@ export default function BuyerProfileChat({ buyerUserId, buyerName, returnPath }:
           <p className="text-sm text-muted-foreground">
             This is your public profile. Replies from suppliers appear in your messages.
           </p>
-          <Link to="/dashboard/buyer/messages" className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FF5A00] px-3 text-xs font-bold text-white">
+          <Link to="/dashboard/buyer/messages" className="inline-flex h-10 items-center justify-center rounded-lg bg-[#C94400] px-3 text-xs font-bold text-white">
             Open messages
           </Link>
         </div>
@@ -253,7 +253,7 @@ export default function BuyerProfileChat({ buyerUserId, buyerName, returnPath }:
           <p className="text-sm text-muted-foreground">
             Chat is open to manufacturer accounts. Use the phone, WhatsApp, or email in Contact, or sign in as a supplier to message {buyerName} here.
           </p>
-          <Link to={`/auth?tab=supplier&redirect=${encodeURIComponent(returnPath)}`} className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FF5A00] px-3 text-xs font-bold text-white">
+          <Link to={`/auth?tab=supplier&redirect=${encodeURIComponent(returnPath)}`} className="inline-flex h-10 items-center justify-center rounded-lg bg-[#C94400] px-3 text-xs font-bold text-white">
             Continue as a supplier
           </Link>
         </div>
@@ -264,7 +264,7 @@ export default function BuyerProfileChat({ buyerUserId, buyerName, returnPath }:
           <p className="text-sm text-muted-foreground">
             Finish your manufacturer profile before chatting with buyers. You can still use the contact details on this page.
           </p>
-          <Link to="/dashboard/supplier" className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FF5A00] px-3 text-xs font-bold text-white">
+          <Link to="/dashboard/supplier" className="inline-flex h-10 items-center justify-center rounded-lg bg-[#C94400] px-3 text-xs font-bold text-white">
             Complete supplier profile
           </Link>
         </div>
@@ -276,7 +276,7 @@ export default function BuyerProfileChat({ buyerUserId, buyerName, returnPath }:
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#FF5A00]" />
             An active manufacturer plan is required to send messages. Call, WhatsApp, and email on this profile stay open.
           </p>
-          <Link to="/dashboard/supplier/subscription" className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FF5A00] px-3 text-xs font-bold text-white">
+          <Link to="/dashboard/supplier/subscription" className="inline-flex h-10 items-center justify-center rounded-lg bg-[#C94400] px-3 text-xs font-bold text-white">
             View plans
           </Link>
         </div>
@@ -311,7 +311,7 @@ export default function BuyerProfileChat({ buyerUserId, buyerName, returnPath }:
                 const mine = message.sender_id === user?.id;
                 return (
                   <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${mine ? 'rounded-br-sm bg-[#FF5A00] text-white' : 'rounded-bl-sm border border-border bg-card text-foreground'}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${mine ? 'rounded-br-sm bg-[#C94400] text-white' : 'rounded-bl-sm border border-border bg-card text-foreground'}`}>
                       <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
                       <p className={`mt-1 text-right text-[10px] ${mine ? 'text-white/75' : 'text-muted-foreground'}`}>
                         {formatTime(message.created_at)}
@@ -354,7 +354,7 @@ export default function BuyerProfileChat({ buyerUserId, buyerName, returnPath }:
             <button
               type="submit"
               disabled={sending || !draft.trim()}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#FF5A00] text-white disabled:opacity-50"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#C94400] text-white disabled:opacity-50"
               aria-label="Send message"
             >
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

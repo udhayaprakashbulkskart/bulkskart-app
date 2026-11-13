@@ -84,10 +84,10 @@ export default function BulkPriceCalculator({ productId, priceMin, priceMax, moq
                 <span className="text-xs line-through text-muted-foreground">{sym}{basePrice.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-green-600 flex items-center gap-1 font-medium">
+                <span className="text-xs text-[#FF7A2E] flex items-center gap-1 font-medium">
                   <TrendingDown className="w-3 h-3" /> Bulk discount
                 </span>
-                <span className="text-xs text-green-600 font-semibold">−{discountPct}%</span>
+                <span className="text-xs text-[#FF7A2E] font-semibold">−{discountPct}%</span>
               </div>
               <div className="flex items-center justify-between border-t border-border pt-1.5">
                 <span className="text-xs font-semibold text-foreground">Price per {moqUnit}</span>
@@ -118,15 +118,15 @@ export default function BulkPriceCalculator({ productId, priceMin, priceMax, moq
                 return (
                   <div
                     key={r.id}
-                    className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs transition-colors ${active ? 'bg-green-50 dark:bg-green-950/30 border border-green-300/50' : 'bg-muted/40'}`}
+                    className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs transition-colors ${active ? 'bg-[#FF5A00]/10 dark:bg-[#B33D00]/30 border border-[#FF5A00]/50' : 'bg-muted/40'}`}
                   >
                     <span className="flex items-center gap-1.5">
-                      <Tag className={`w-3 h-3 ${active ? 'text-green-600' : 'text-muted-foreground'}`} />
-                      <span className={active ? 'text-green-700 dark:text-green-400 font-medium' : 'text-muted-foreground'}>
+                      <Tag className={`w-3 h-3 ${active ? 'text-[#FF7A2E]' : 'text-muted-foreground'}`} />
+                      <span className={active ? 'text-[#FF7A2E] dark:text-[#FF7A2E] font-medium' : 'text-muted-foreground'}>
                         {r.min_qty}{r.max_qty ? `–${r.max_qty}` : '+'} {moqUnit}
                       </span>
                     </span>
-                    <span className={`font-bold ${active ? 'text-green-600' : 'text-foreground'}`}>
+                    <span className={`font-bold ${active ? 'text-[#FF7A2E]' : 'text-foreground'}`}>
                       {r.discount_pct}% off
                       {active && <Zap className="w-3 h-3 inline ml-1" />}
                     </span>

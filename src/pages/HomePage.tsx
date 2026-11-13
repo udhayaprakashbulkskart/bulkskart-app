@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -18,23 +18,21 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import SubscribeToContactDialog from '@/components/common/SubscribeToContactDialog';
 import { getOrCreateConversation, checkDirectMessageQuota, incrementMessageQuota, getCategories } from '@/lib/api';
 import type { Requirement, Category } from '@/types/types';
-import LiveRequirementsFeed from '@/components/common/LiveRequirementsFeed';
-import FeaturedProductsSection from '@/components/home/FeaturedProductsSection';
-import VerifiedSuppliersSection from '@/components/home/VerifiedSuppliersSection';
-import VerifiedSupplierQuickActions from '@/components/home/VerifiedSupplierQuickActions';
-import HeroSection3D from '@/components/home/HeroSection3D';
-import MarketplaceActionCards3D from '@/components/home/MarketplaceActionCards3D';
-import LiveReverseAuctionsRail from '@/components/home/LiveReverseAuctionsRail';
-import GlobalTradeNetworkSection from '@/components/home/GlobalTradeNetworkSection';
-import HowBulkSkartWorks3D from '@/components/home/HowBulkSkartWorks3D';
-import CategoriesAndStatsSection from '@/components/home/CategoriesAndStatsSection';
-import TrustAndFinalCTASection from '@/components/home/TrustAndFinalCTASection';
-import PostRequirementsHomeSection from '@/components/home/PostRequirementsHomeSection';
-import PlansHomeSection from '@/components/home/PlansHomeSection';
-import ReviewsHomeSection from '@/components/home/ReviewsHomeSection';
-import OrderBenefitsSection from '@/components/home/OrderBenefitsSection';
+import LandingHero from '@/components/home/LandingHero';
 import SafeImage, { toWebPUrl, buildWebPSrcSet } from '@/components/common/SafeImage';
-import SectionHeader from '@/components/home/SectionHeader';
+
+// Below-the-fold sections are split into their own chunks so the first paint only downloads the hero.
+const VerifiedSuppliersSection = lazy(() => import('@/components/home/VerifiedSuppliersSection'));
+const FeaturedProductsSection = lazy(() => import('@/components/home/FeaturedProductsSection'));
+const OrderBenefitsSection = lazy(() => import('@/components/home/OrderBenefitsSection'));
+const CategoriesAndStatsSection = lazy(() => import('@/components/home/CategoriesAndStatsSection'));
+const VerifiedSupplierQuickActions = lazy(() => import('@/components/home/VerifiedSupplierQuickActions'));
+const LiveRequirementsFeed = lazy(() => import('@/components/common/LiveRequirementsFeed'));
+const LiveReverseAuctionsRail = lazy(() => import('@/components/home/LiveReverseAuctionsRail'));
+const GlobalTradeNetworkSection = lazy(() => import('@/components/home/GlobalTradeNetworkSection'));
+const PostRequirementsHomeSection = lazy(() => import('@/components/home/PostRequirementsHomeSection'));
+const PlansHomeSection = lazy(() => import('@/components/home/PlansHomeSection'));
+const ReviewsHomeSection = lazy(() => import('@/components/home/ReviewsHomeSection'));
 
 // ── Helpers ─────────────────────────────────────────────
 function timeAgo(iso: string): string {
@@ -86,18 +84,18 @@ function AnimatedCount({ target, suffix = '' }: { target: number; suffix?: strin
 }
 
 // ── Image Assets (Pixabay Authentic Industrial Media) ──
-const HERO_BG   = 'https://cdn.pixabay.com/photo/2016/11/29/09/32/welding-1868731_1280.jpg';
+const HERO_BG   = 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg';
 const CARGO_IMG = 'https://cdn.pixabay.com/photo/2017/04/02/09/08/bulldozer-2195329_1280.jpg';
-const SHIPPING_BANNER = 'https://cdn.pixabay.com/photo/2016/11/21/14/53/boxes-1845814_1280.jpg';
+const SHIPPING_BANNER = 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg';
 
 const TOP_CATEGORIES = [
   { label: 'Machinery &\nIndustrial',   slug: 'machinery-industrial',    rfqCount: '1,420+ Active RFQs', img: 'https://cdn.pixabay.com/photo/2016/09/12/07/48/mechanical-1663275_1280.jpg' },
-  { label: 'Electronics &\nElectrical',slug: 'electronics-electricals', rfqCount: '1,240+ Active RFQs', img: 'https://cdn.pixabay.com/photo/2015/09/05/20/02/motherboard-924904_1280.jpg' },
+  { label: 'Electronics &\nElectrical',slug: 'electronics-electricals', rfqCount: '1,240+ Active RFQs', img: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg' },
   { label: 'Apparel &\nTextiles',      slug: 'textiles-apparel',         rfqCount: '2,890+ Active RFQs', img: 'https://cdn.pixabay.com/photo/2019/03/25/04/43/weaving-4079366_1280.jpg' },
   { label: 'Construction &\nBuilding', slug: 'construction-real-estate', rfqCount: '1,650+ Active RFQs', img: 'https://cdn.pixabay.com/photo/2015/08/16/09/55/tile-890729_1280.jpg' },
   { label: 'Packaging &\nPrinting',     slug: 'packaging',               rfqCount: '1,120+ Active RFQs', img: 'https://cdn.pixabay.com/photo/2014/04/05/11/07/cardboard-314504_1280.jpg' },
-  { label: 'Food &\nAgriculture',       slug: 'agriculture-food',        rfqCount: '3,150+ Active RFQs', img: 'https://cdn.pixabay.com/photo/2016/09/10/11/42/wheat-1659021_1280.jpg' },
-  { label: 'Chemicals &\nRaw Materials',slug: 'chemicals-raw-materials', rfqCount: '860+ Active RFQs',   img: 'https://cdn.pixabay.com/photo/2014/12/10/20/56/laboratory-563423_1280.jpg' },
+  { label: 'Food &\nAgriculture',       slug: 'agriculture-food',        rfqCount: '3,150+ Active RFQs', img: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg' },
+  { label: 'Chemicals &\nRaw Materials',slug: 'chemicals-raw-materials', rfqCount: '860+ Active RFQs',   img: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg' },
   { label: 'Medical &\nHealthcare',     slug: 'pharma-healthcare',       rfqCount: '980+ Active RFQs',   img: 'https://cdn.pixabay.com/photo/2021/02/03/03/22/chemistry-5976465_1280.jpg' },
 ];
 
@@ -124,20 +122,20 @@ const HOW_STEPS = [
 
 const PRODUCTS = [
   { name: 'Solar Panels',        moq: 'MOQ: 100 Pieces',   usdMin: 0.18,  usdMax: 0.25,  img: 'https://cdn.pixabay.com/photo/2020/10/03/09/05/solar-energy-5622969_1280.jpg' },
-  { name: 'Premium Basmati Rice',moq: 'MOQ: 1 Ton',        usdMin: 520,   usdMax: 560,   img: 'https://cdn.pixabay.com/photo/2016/09/10/11/42/wheat-1659021_1280.jpg' },
+  { name: 'Premium Basmati Rice',moq: 'MOQ: 1 Ton',        usdMin: 520,   usdMax: 560,   img: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg' },
   { name: 'Industrial Water Pump',moq: 'MOQ: 10 Pieces',   usdMin: 120,   usdMax: 150,   img: 'https://cdn.pixabay.com/photo/2017/10/04/21/01/turbine-engine-2817617_1280.jpg' },
-  { name: 'Ergonomic Office Chair',moq: 'MOQ: 50 Pieces',  usdMin: 25,    usdMax: 35,    img: 'https://cdn.pixabay.com/photo/2016/11/21/14/53/boxes-1845814_1280.jpg' },
+  { name: 'Ergonomic Office Chair',moq: 'MOQ: 50 Pieces',  usdMin: 25,    usdMax: 35,    img: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg' },
   { name: 'Cotton Fabric Rolls',  moq: 'MOQ: 500 Meters',  usdMin: 1.2,   usdMax: 1.8,   img: 'https://cdn.pixabay.com/photo/2019/03/25/04/43/weaving-4079366_1280.jpg' },
   { name: 'Smartphones (Bulk)',   moq: 'MOQ: 100 Pieces',  usdMin: 90,    usdMax: 110,   img: 'https://cdn.pixabay.com/photo/2020/03/31/13/26/processor-4987614_1280.jpg' },
 ];
 
 const SUPPLIERS = [
-  { name: 'Shenzhen Tech Co.', country: 'China', flag: '🇨🇳', industry: 'Electronics', rating: 4.8, img: 'https://cdn.pixabay.com/photo/2015/09/05/20/02/motherboard-924904_1280.jpg' },
+  { name: 'Shenzhen Tech Co.', country: 'China', flag: '🇨🇳', industry: 'Electronics', rating: 4.8, img: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg' },
   { name: 'Kamal Textiles', country: 'India', flag: '🇮🇳', industry: 'Textiles', rating: 4.7, img: 'https://cdn.pixabay.com/photo/2019/03/25/04/43/weaving-4079366_1280.jpg' },
-  { name: 'Global Agro Ltd.', country: 'UAE', flag: '🇦🇪', industry: 'Food & Agri', rating: 4.9, img: 'https://cdn.pixabay.com/photo/2016/09/10/11/42/wheat-1659021_1280.jpg' },
+  { name: 'Global Agro Ltd.', country: 'UAE', flag: '🇦🇪', industry: 'Food & Agri', rating: 4.9, img: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg' },
   { name: 'Sunrise Machinery', country: 'Germany', flag: '🇩🇪', industry: 'Industrial', rating: 4.6, img: 'https://cdn.pixabay.com/photo/2016/09/12/07/48/mechanical-1663275_1280.jpg' },
   { name: 'StyleHome Industries', country: 'Turkey', flag: '🇹🇷', industry: 'Furniture', rating: 4.7, img: 'https://cdn.pixabay.com/photo/2017/04/02/09/08/bulldozer-2195329_1280.jpg' },
-  { name: 'GreenChem Industries', country: 'USA', flag: '🇺🇸', industry: 'Chemicals', rating: 4.8, img: 'https://cdn.pixabay.com/photo/2014/12/10/20/56/laboratory-563423_1280.jpg' },
+  { name: 'GreenChem Industries', country: 'USA', flag: '🇺🇸', industry: 'Chemicals', rating: 4.8, img: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg' },
 ];
 
 
@@ -339,7 +337,7 @@ function HeroBanner() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#FF5A00] animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C94400] animate-pulse" />
               <span className="text-[9.5px] font-bold text-white/80 uppercase tracking-widest">{slide.tag}</span>
             </motion.div>
 
@@ -397,12 +395,12 @@ function HeroBanner() {
               transition={{ delay: 0.48 }}
             >
               <Link to={slide.cta1.to} className="w-full min-[340px]:flex-1 sm:w-auto sm:flex-none">
-                <Button className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-10 sm:h-11 px-3.5 sm:px-5 text-[12px] sm:text-[13px] rounded-xl shadow-[0_3px_0_#922f00] gap-1.5 sm:gap-2 transition-all active:shadow-none active:translate-y-0.5">
+                <Button className="w-full sm:w-auto bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 sm:h-11 px-3.5 sm:px-5 text-[12px] sm:text-[13px] rounded-xl shadow-[0_3px_0_#922f00] gap-1.5 sm:gap-2 transition-all active:shadow-none active:translate-y-0.5">
                   <Package className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{slide.cta1.label}</span> <ArrowRight className="w-3.5 h-3.5 shrink-0" />
                 </Button>
               </Link>
               <Link to={slide.cta2.to} className="w-full min-[340px]:flex-1 sm:w-auto sm:flex-none">
-                <Button className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-10 sm:h-11 px-3.5 sm:px-5 text-[12px] sm:text-[13px] rounded-xl shadow-[0_3px_0_#922f00] gap-1.5 sm:gap-2 transition-all active:shadow-none active:translate-y-0.5">
+                <Button className="w-full sm:w-auto bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 sm:h-11 px-3.5 sm:px-5 text-[12px] sm:text-[13px] rounded-xl shadow-[0_3px_0_#922f00] gap-1.5 sm:gap-2 transition-all active:shadow-none active:translate-y-0.5">
                   <ChevronRight className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{slide.cta2.label}</span>
                 </Button>
               </Link>
@@ -418,7 +416,7 @@ function HeroBanner() {
           <button
             key={i}
             onClick={() => setCurrent(i)}
-            className={`rounded-full transition-all duration-300 ${i === current ? 'w-7 h-2.5 bg-[#FF5A00]' : 'w-2.5 h-2.5 bg-white/30 hover:bg-white/60'}`}
+            className={`rounded-full transition-all duration-300 ${i === current ? 'w-7 h-2.5 bg-[#C94400]' : 'w-2.5 h-2.5 bg-white/30 hover:bg-white/60'}`}
             aria-label={`Go to slide ${i + 1}`}
           />
         ))}
@@ -448,7 +446,7 @@ function HeroBanner() {
         {!paused && (
           <motion.div
             key={current}
-            className="h-full bg-[#FF5A00]"
+            className="h-full bg-[#1A0C05]"
             initial={{ width: '0%' }}
             animate={{ width: '100%' }}
             transition={{ duration: SLIDE_DURATION / 1000, ease: 'linear' }}
@@ -596,7 +594,7 @@ export default function HomePage() {
   };
 
   return (
-    <MainLayout>
+    <MainLayout background="black">
       <PageMeta
         title="BulkSkart | B2B Wholesale Marketplace & Bulk Suppliers in India"
         description="Find verified manufacturers and wholesale suppliers in India. Every BulkSkart order includes free delivery. Compare bulk prices, estimate an order installment, post free RFQs, and source factory-direct products."
@@ -655,60 +653,62 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════════════
           SECTION 1: BANNER (HERO / PROMOTIONAL BANNER)
       ═══════════════════════════════════════════════════ */}
-      <HeroSection3D />
+      <LandingHero />
 
       {/* ═══════════════════════════════════════════════════
           SECTION 2: VERIFIED SUPPLIERS (POSITIONED IN FRONT OF FEATURED PRODUCTS)
       ═══════════════════════════════════════════════════ */}
-      <VerifiedSuppliersSection />
+      <Suspense fallback={null}>
+        <VerifiedSuppliersSection />
 
-      {/* ═══════════════════════════════════════════════════
-          SECTION 3: FEATURED PRODUCTS (IMMEDIATE VIEW - ZERO LOADING DELAY)
-      ═══════════════════════════════════════════════════ */}
-      <FeaturedProductsSection />
+        {/* ═══════════════════════════════════════════════════
+            SECTION 3: FEATURED PRODUCTS
+        ═══════════════════════════════════════════════════ */}
+        <FeaturedProductsSection />
 
-      {/* Free delivery on every order + order loan calculator */}
-      <OrderBenefitsSection />
+        {/* Free delivery on every order + order loan calculator */}
+        <OrderBenefitsSection />
 
-      {/* ═══════════════════════════════════════════════════
-          SECTION 4: CATEGORIES (PRODUCT & INDUSTRIAL CATEGORIES)
-      ═══════════════════════════════════════════════════ */}
-      <CategoriesAndStatsSection />
+        {/* ═══════════════════════════════════════════════════
+            SECTION 4: CATEGORIES (PRODUCT & INDUSTRIAL CATEGORIES)
+        ═══════════════════════════════════════════════════ */}
+        <CategoriesAndStatsSection />
 
-      {/* ═══════════════════════════════════════════════════
-          SECTION 5: QUICK ACTIONS (FIND MFR, PRODUCT, POST RFQ, 24H SELL, GLOBAL TRADE)
-      ═══════════════════════════════════════════════════ */}
-      <VerifiedSupplierQuickActions />
+        {/* ═══════════════════════════════════════════════════
+            SECTION 5: QUICK ACTIONS (FIND MFR, PRODUCT, POST RFQ, 24H SELL, GLOBAL TRADE)
+        ═══════════════════════════════════════════════════ */}
+        <VerifiedSupplierQuickActions />
 
-      {/* ═══════════════════════════════════════════════════
-          SECTION 5: LIVE BUYING REQUIREMENTS (REAL-TIME RFQS & DEMANDS)
-      ═══════════════════════════════════════════════════ */}
-      <LiveRequirementsFeed />
+        {/* ═══════════════════════════════════════════════════
+            SECTION 5: LIVE BUYING REQUIREMENTS (REAL-TIME RFQS & DEMANDS)
+        ═══════════════════════════════════════════════════ */}
+        <LiveRequirementsFeed />
 
-      {/* ═══════════════════════════════════════════════════
-          SECTION 6: SELL PRODUCTS IN 24 HOURS (HOT) (FAST-TRACK 24H LIQUIDATION)
-      ═══════════════════════════════════════════════════ */}
-      <LiveReverseAuctionsRail />
+        {/* ═══════════════════════════════════════════════════
+            SECTION 6: SELL PRODUCTS IN 24 HOURS (HOT) (FAST-TRACK 24H LIQUIDATION)
+        ═══════════════════════════════════════════════════ */}
+        <LiveReverseAuctionsRail />
 
-      {/* ═══════════════════════════════════════════════════
-          SECTION 7: GLOBAL TRADE ROUTES (LOGISTICS & CROSS-BORDER LANES)
-      ═══════════════════════════════════════════════════ */}
-      <GlobalTradeNetworkSection />
+        {/* ═══════════════════════════════════════════════════
+            SECTION 7: GLOBAL TRADE ROUTES (LOGISTICS & CROSS-BORDER LANES)
+        ═══════════════════════════════════════════════════ */}
+        <GlobalTradeNetworkSection />
 
-      {/* ═══════════════════════════════════════════════════
-          SECTION 8: POST REQUIREMENTS (INLINE RFQ SUBMISSION ENGINE)
-      ═══════════════════════════════════════════════════ */}
-      <PostRequirementsHomeSection />
+        {/* ═══════════════════════════════════════════════════
+            SECTION 8: POST REQUIREMENTS (INLINE RFQ SUBMISSION ENGINE)
+        ═══════════════════════════════════════════════════ */}
+        <PostRequirementsHomeSection />
 
-      {/* ═══════════════════════════════════════════════════
-          SECTION 9: PLANS (MONTHLY SUPPLIER SUBSCRIPTIONS - NO ANNUAL BILLING)
-      ═══════════════════════════════════════════════════ */}
-      <PlansHomeSection />
+        {/* ═══════════════════════════════════════════════════
+            SECTION 9: PLANS (MONTHLY SUPPLIER SUBSCRIPTIONS - NO ANNUAL BILLING)
+        ═══════════════════════════════════════════════════ */}
+        <PlansHomeSection />
 
-      {/* ═══════════════════════════════════════════════════
-          SECTION 10: REVIEWS (VERIFIED BUYER & MANUFACTURER TESTIMONIALS)
-      ═══════════════════════════════════════════════════ */}
-      <ReviewsHomeSection />
+        {/* ═══════════════════════════════════════════════════
+            SECTION 10: REVIEWS (VERIFIED BUYER & MANUFACTURER TESTIMONIALS)
+        ═══════════════════════════════════════════════════ */}
+        <ReviewsHomeSection />
+      </Suspense>
 
       {/* ═══════════════════════════════════════════════════
           CRAWLABLE B2B MARKETPLACE OVERVIEW (SEO & BUYER GUIDE)
@@ -716,13 +716,16 @@ export default function HomePage() {
       <section className="py-12 bg-card/60 border-t border-border">
         <div className="max-w-[1400px] mx-auto px-4 md:px-6">
           <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-              <SectionHeader
-                align="center"
-                eyebrow="India sourcing ecosystem"
-                title="India’s Premier B2B Bulk Buying & Wholesale Platform"
-                subtitle="Bridging verified Indian manufacturing clusters with global procurement professionals through transparent quotation comparison and Trade Assurance."
-              />
+            <div className="text-center mb-8">
+              <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#FF5A00] bg-[#FF5A00]/10 px-3 py-1 rounded-full mb-2">
+                India Sourcing Ecosystem
+              </span>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-foreground">
+                India’s Premier B2B Bulk Buying & Wholesale Platform
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-2xl mx-auto">
+                Bridging verified Indian manufacturing clusters with global procurement professionals through transparent quotation comparison and Trade Assurance.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs sm:text-sm text-muted-foreground leading-relaxed">
@@ -805,7 +808,7 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════════════
           FINAL CTA BANNER
       ═══════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#1a1a2e] dark:bg-[#15181F]">
+      <section className="relative overflow-hidden bg-[#1A0C05] dark:bg-[#15181F]">
         <div className="absolute inset-0 z-0 opacity-20">
           <img
             src={SHIPPING_BANNER}
@@ -815,6 +818,7 @@ export default function HomePage() {
             className="w-full h-full object-cover"
           />
         </div>
+        <div className="absolute inset-0 z-0 bg-[#0b0f17]/80" />
         <FadeInSection className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-5 md:px-6 py-6 sm:py-8 md:py-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
@@ -828,7 +832,7 @@ export default function HomePage() {
               </div>
             </div>
             <Link to="/auth?tab=register" className="w-full md:w-auto shrink-0">
-              <Button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white font-bold h-12 px-8 text-[14px] rounded-xl shadow-[0_4px_0_hsl(20_100%_30%)] gap-2 transition-all active:shadow-none active:translate-y-0.5">
+              <Button className="w-full md:w-auto bg-[#C94400] hover:bg-primary/90 text-white font-bold h-12 px-8 text-[14px] rounded-xl shadow-[0_4px_0_hsl(20_100%_30%)] gap-2 transition-all active:shadow-none active:translate-y-0.5">
                 Create Free Account <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>

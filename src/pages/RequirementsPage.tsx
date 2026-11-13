@@ -15,7 +15,6 @@ import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { getRequirements, getCategories, getOrCreateConversation, checkDirectMessageQuota, incrementMessageQuota } from '@/lib/api';
 import type { Requirement, Category } from '@/types/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import FilterDock from '@/components/layouts/FilterDock';
 import { useAuth } from '@/contexts/AuthContext';
 import SubscribeToContactDialog from '@/components/common/SubscribeToContactDialog';
 import { toast } from 'sonner';
@@ -90,9 +89,9 @@ const DEAL_STAGES: { key: DealStatus; label: string; short: string }[] = [
 const STATUS_COLOR: Record<DealStatus, string> = {
   active:             'bg-[#FF5A00]/10 text-[#FF5A00] border-[#FF5A00]/30',
   responses_received: 'bg-primary/10 text-primary border-primary/30',
-  negotiation:        'bg-yellow-500/10 text-yellow-500 border-yellow-500/30',
-  deal_finalized:     'bg-green-500/10 text-green-500 border-green-500/30',
-  fulfilled:          'bg-emerald-500/10 text-emerald-500 border-emerald-500/30',
+  negotiation:        'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/30',
+  deal_finalized:     'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/30',
+  fulfilled:          'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/30',
   closed:             'bg-muted text-muted-foreground border-border',
 };
 
@@ -108,9 +107,9 @@ function StatusPipeline({ current }: { current: DealStatus }) {
           <div key={stage.key} className="flex items-center shrink-0">
             <div className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold ${
               active
-                ? 'bg-[#FF5A00] text-white shadow-sm'
+                ? 'bg-[#C94400] text-white shadow-sm'
                 : done
-                  ? 'bg-emerald-500/20 text-emerald-400'
+                  ? 'bg-[#FF5A00]/20 text-[#FF7A2E]'
                   : 'bg-white/5 text-white/40'
             }`}>
               {done && <CheckCircle2 className="w-2.5 h-2.5" />}
@@ -172,7 +171,7 @@ function MyRequirementCard({
       <Button
         size="sm"
         onClick={() => onView(req)}
-        className="w-full mt-2 bg-[#FF5A00] hover:bg-[#e04e00] text-white text-xs h-9 font-semibold shadow-[0_2px_10px_rgba(255,90,0,0.3)] gap-1.5 rounded-xl"
+        className="w-full mt-2 bg-[#C94400] hover:bg-[#B33D00] text-white text-xs h-9 font-semibold shadow-[0_2px_10px_rgba(255,90,0,0.3)] gap-1.5 rounded-xl"
       >
         <Eye className="w-3.5 h-3.5" /> View Quotes & Chat
       </Button>
@@ -433,7 +432,7 @@ export default function RequirementsPage() {
               />
               <Button
                 onClick={loadRequirements}
-                className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-9 sm:h-11 px-4 sm:px-7 rounded-xl shadow-[0_2px_10px_rgba(255,90,0,0.35)] shrink-0 text-xs sm:text-sm"
+                className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-9 sm:h-11 px-4 sm:px-7 rounded-xl shadow-[0_2px_10px_rgba(255,90,0,0.35)] shrink-0 text-xs sm:text-sm"
               >
                 Search
               </Button>
@@ -451,7 +450,7 @@ export default function RequirementsPage() {
                   onClick={() => setSelectedCat(cat.id)}
                   className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
                     active
-                      ? 'bg-[#FF5A00] text-white shadow-[0_2px_12px_rgba(255,90,0,0.35)] font-bold'
+                      ? 'bg-[#C94400] text-white shadow-[0_2px_12px_rgba(255,90,0,0.35)] font-bold'
                       : 'bg-card text-foreground/80 hover:text-foreground border border-border hover:border-[#FF5A00]/40'
                   }`}
                 >
@@ -466,12 +465,12 @@ export default function RequirementsPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-border">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#FF5A00] animate-pulse" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#C94400] animate-pulse" />
                 <span className="text-[11px] font-extrabold text-[#FF5A00] uppercase tracking-widest">
                   LIVE REQUIREMENTS
                 </span>
               </div>
-              <h1 className="text-2xl md:text-4xl font-black text-foreground tracking-tight">
+              <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
                 Active Buying <span className="text-[#FF5A00]">Requirements</span>
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
@@ -483,8 +482,8 @@ export default function RequirementsPage() {
               {/* Active RFQs Stat Badge */}
               <div className="flex items-center gap-2.5 bg-card border border-border rounded-xl px-4 py-2">
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C94400] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#C94400]" />
                 </span>
                 <div>
                   <div className="text-lg font-black text-foreground leading-none">
@@ -497,7 +496,7 @@ export default function RequirementsPage() {
               {/* + Post Requirement Button */}
               <Button
                 onClick={handleOpenPostDialog}
-                className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-12 px-5 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.35)] flex items-center gap-2 text-left"
+                className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-12 px-5 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.35)] flex items-center gap-2 text-left"
               >
                 <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                   <Plus className="w-4 h-4 text-white" />
@@ -514,10 +513,10 @@ export default function RequirementsPage() {
           <div className="mb-5 bg-card border border-border rounded-xl px-4 py-2 flex items-center justify-between gap-3 text-xs overflow-hidden">
             <div className="flex items-center gap-2 shrink-0">
               <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C94400] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C94400]" />
               </span>
-              <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-[11px] uppercase tracking-wider">LIVE STREAM</span>
+              <span className="font-extrabold text-[#FF7A2E] dark:text-[#FF7A2E] text-[11px] uppercase tracking-wider">LIVE STREAM</span>
               <span className="text-muted-foreground/40 hidden sm:inline">|</span>
             </div>
             <div className="overflow-x-auto no-scrollbar whitespace-nowrap text-muted-foreground text-xs flex items-center gap-6 flex-1 px-2">
@@ -526,11 +525,11 @@ export default function RequirementsPage() {
               </span>
               <span className="text-border">•</span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">New:</span> 25 MT HDPE Granules from Ahmedabad, Gujarat
+                <span className="text-[#FF7A2E] dark:text-[#FF7A2E] font-bold">New:</span> 25 MT HDPE Granules from Ahmedabad, Gujarat
               </span>
               <span className="text-border">•</span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="text-sky-600 dark:text-sky-400 font-bold">Urgent:</span> 100 MT Parboiled Rice 5% Broken required in Cotonou
+                <span className="text-[#FF7A2E] dark:text-[#FF7A2E] font-bold">Urgent:</span> 100 MT Parboiled Rice 5% Broken required in Cotonou
               </span>
             </div>
             <div className="text-[11px] text-muted-foreground/60 shrink-0 font-medium hidden md:block">
@@ -561,7 +560,7 @@ export default function RequirementsPage() {
               >
                 <User className="w-3.5 h-3.5 text-[#FF5A00]" /> My Requirements
                 {myReqs.length > 0 && (
-                  <span className="text-[10px] font-bold bg-[#FF5A00] text-white rounded-full px-1.5 py-0.2">
+                  <span className="text-[10px] font-bold bg-[#C94400] text-white rounded-full px-1.5 py-0.2">
                     {myReqs.length}
                   </span>
                 )}
@@ -577,7 +576,7 @@ export default function RequirementsPage() {
                 <Button
                   onClick={handleOpenPostDialog}
                   size="sm"
-                  className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold gap-1 text-xs"
+                  className="bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold gap-1 text-xs"
                 >
                   <Plus className="w-3.5 h-3.5" /> Post New
                 </Button>
@@ -596,7 +595,7 @@ export default function RequirementsPage() {
                   <p className="text-xs text-white/50 mt-1 mb-4">Post your first bulk requirement and receive quotes from verified global manufacturers</p>
                   <Button
                     onClick={handleOpenPostDialog}
-                    className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold gap-1.5"
+                    className="bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold gap-1.5"
                   >
                     <Plus className="w-4 h-4" /> Post a Requirement
                   </Button>
@@ -620,10 +619,7 @@ export default function RequirementsPage() {
             <>
               {/* ── 4. Filter Bar matching Image 2 ─────────────────────────── */}
               <div className="space-y-4 mb-6">
-                <FilterDock
-                  title="Filter requirements"
-                  activeCount={(selectedLocation !== 'all' ? 1 : 0) + (selectedCat !== 'all' ? 1 : 0) + (selectedSort !== 'latest' ? 1 : 0)}
-                >
+                {/* 3 Dropdown Row: Location, Category, Sort */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {/* Location Dropdown */}
                   <div className="bg-card border border-border rounded-xl px-3 py-1 flex items-center gap-2">
@@ -679,15 +675,14 @@ export default function RequirementsPage() {
                     </Select>
                   </div>
                 </div>
-                </FilterDock>
 
                 {/* Status Tabs with count chips reflecting 50,000+ Active Inquiries */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
                   {[
                     { key: 'all', label: 'All', count: totalCount },
-                    { key: 'urgent', label: 'Urgent', count: Math.round(totalCount * 0.28), icon: Zap, iconClass: 'text-rose-500' },
+                    { key: 'urgent', label: 'Urgent', count: Math.round(totalCount * 0.28), icon: Zap, iconClass: 'text-[#FF7A2E]' },
                     { key: 'new', label: 'New', count: Math.round(totalCount * 0.35), icon: Sparkles, iconClass: 'text-orange-500' },
-                    { key: 'expiring', label: 'Expiring', count: Math.round(totalCount * 0.15), icon: Clock, iconClass: 'text-amber-500' },
+                    { key: 'expiring', label: 'Expiring', count: Math.round(totalCount * 0.15), icon: Clock, iconClass: 'text-[#FF7A2E]' },
                     { key: 'live', label: 'Live', count: Math.round(totalCount * 0.22), isLiveDot: true },
                   ].map(tab => {
                     const active = statusFilter === tab.key;
@@ -699,12 +694,12 @@ export default function RequirementsPage() {
                         onClick={() => setStatusFilter(tab.key as typeof statusFilter)}
                         className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold transition-all shrink-0 ${
                           active
-                            ? 'bg-[#FF5A00] text-white shadow-[0_2px_10px_rgba(255,90,0,0.35)] font-bold'
+                            ? 'bg-[#C94400] text-white shadow-[0_2px_10px_rgba(255,90,0,0.35)] font-bold'
                             : 'bg-card text-foreground/80 hover:text-foreground border border-border hover:border-[#FF5A00]/40'
                         }`}
                       >
                         {tab.isLiveDot && (
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="w-2 h-2 rounded-full bg-[#C94400] animate-pulse" />
                         )}
                         {Icon && <Icon className={`w-3 h-3 ${tab.iconClass}`} />}
                         <span>{tab.label}</span>
@@ -748,7 +743,7 @@ export default function RequirementsPage() {
                     return (
                       <div
                         key={req.id}
-                        className="group bs-glass hover:bg-muted/30 border border-border hover:border-[#FF5A00]/50 rounded-3xl p-4 md:p-5 transition-all duration-200 hover:-translate-y-0.5 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
+                        className="group bg-card hover:bg-muted/30 border border-border hover:border-[#FF5A00]/40 rounded-2xl p-4 md:p-5 transition-all duration-200 shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
                       >
                         {/* Left: Square Thumbnail (Real Commercial Photography, No AI) */}
                         <div
@@ -811,8 +806,8 @@ export default function RequirementsPage() {
                         {/* Right Column: Badges & View & Quote Button */}
                         <div className="w-full md:w-auto shrink-0 flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-border">
                           <div className="flex flex-col items-start md:items-end gap-1">
-                            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                            <div className="flex items-center gap-1 text-xs font-semibold text-[#FF7A2E] dark:text-[#FF7A2E]">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#FF7A2E]" />
                               <span>{visual.verifiedStatus}</span>
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -829,7 +824,7 @@ export default function RequirementsPage() {
 
                           <Button
                             onClick={() => handleViewAndQuote(req)}
-                            className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-[0_2px_10px_rgba(255,90,0,0.35)] shrink-0 gap-1.5"
+                            className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-[0_2px_10px_rgba(255,90,0,0.35)] shrink-0 gap-1.5"
                           >
                             Contact Buyer <ArrowRight className="w-4 h-4" />
                           </Button>
@@ -880,7 +875,7 @@ export default function RequirementsPage() {
                           }}
                           className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
                             pNum === page
-                              ? 'bg-[#FF5A00] text-white shadow-[0_0_10px_rgba(255,90,0,0.35)]'
+                              ? 'bg-[#C94400] text-white shadow-[0_0_10px_rgba(255,90,0,0.35)]'
                               : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted border border-border'
                           }`}
                         >
@@ -914,13 +909,13 @@ export default function RequirementsPage() {
         <div className="max-w-[1240px] mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C94400] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#C94400]" />
             </span>
             <div>
               <div className="text-xs md:text-sm font-black text-foreground leading-tight flex items-center gap-2">
                 <span><AnimatedCount target={totalCount} /> Active Real Requirements</span>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-1.5 py-0.2 rounded font-bold hidden sm:inline">100% Authentic Photos</span>
+                <span className="text-[10px] bg-[#FF5A00]/20 text-[#FF7A2E] dark:text-[#FF7A2E] border border-[#FF5A00]/30 px-1.5 py-0.2 rounded font-bold hidden sm:inline">100% Authentic Photos</span>
               </div>
               <div className="text-[10px] text-muted-foreground leading-tight">
                 50,000+ verified B2B procurement requests · Zero AI imagery
@@ -930,7 +925,7 @@ export default function RequirementsPage() {
 
           <Button
             onClick={handleOpenPostDialog}
-            className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-10 px-5 rounded-xl shadow-[0_2px_10px_rgba(255,90,0,0.35)] flex items-center gap-2 text-xs md:text-sm"
+            className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 px-5 rounded-xl shadow-[0_2px_10px_rgba(255,90,0,0.35)] flex items-center gap-2 text-xs md:text-sm"
           >
             <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0">
               <Plus className="w-3.5 h-3.5 text-white" />

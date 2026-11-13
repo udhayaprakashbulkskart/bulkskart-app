@@ -150,9 +150,8 @@ export default function SupplierInventoryPage() {
       <PageMeta title="Inventory — Supplier | BulkSkart" description="Manage your product stock levels." robots="noindex, nofollow" />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl w-full mx-auto">
-          <div className="bs-glass mb-6 rounded-3xl p-4">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-primary">Warehouse</p>
-            <h1 className="text-xl font-black text-foreground">Inventory & Stock</h1>
+          <div className="mb-6">
+            <h1 className="text-xl font-bold text-foreground">Inventory & Stock</h1>
             <p className="text-sm text-muted-foreground">Track and manage stock levels for all your products</p>
           </div>
 
@@ -179,7 +178,7 @@ export default function SupplierInventoryPage() {
             <Card>
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <CheckCircle2 className="w-4 h-4 text-[#FF7A2E]" />
                   <span className="text-xs text-muted-foreground">Available</span>
                 </div>
                 <p className="text-2xl font-bold text-foreground">{totalAvailable.toLocaleString()}</p>
@@ -188,23 +187,23 @@ export default function SupplierInventoryPage() {
             <Card>
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  <AlertTriangle className="w-4 h-4 text-[#FF7A2E]" />
                   <span className="text-xs text-muted-foreground">Low Stock</span>
                 </div>
-                <p className="text-2xl font-bold text-amber-500">{lowStockItems.length}</p>
+                <p className="text-2xl font-bold text-[#FF7A2E]">{lowStockItems.length}</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Low stock alert */}
           {lowStockItems.length > 0 && (
-            <div className="mb-4 flex items-start gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-300/50 rounded-xl p-3 text-sm">
-              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <div className="mb-4 flex items-start gap-3 bg-[#FF5A00]/10 dark:bg-[#B33D00]/20 border border-[#FF5A00]/50 rounded-xl p-3 text-sm">
+              <AlertTriangle className="w-4 h-4 text-[#FF7A2E] shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-amber-700 dark:text-amber-400">
+                <p className="font-semibold text-[#FF7A2E] dark:text-[#FF7A2E]">
                   {lowStockItems.length} product{lowStockItems.length > 1 ? 's' : ''} running low on stock
                 </p>
-                <p className="text-xs text-amber-600 dark:text-amber-500 truncate">
+                <p className="text-xs text-[#FF7A2E] dark:text-[#FF7A2E] truncate">
                   {lowStockItems.map(p => p.name).join(', ')}
                 </p>
               </div>
@@ -228,7 +227,7 @@ export default function SupplierInventoryPage() {
                 </p>
                 <Button
                   onClick={() => navigate('/dashboard/supplier/products')}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs gap-1.5"
+                  className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 font-semibold text-xs gap-1.5"
                 >
                   <Plus className="w-4 h-4" /> Go to My Products
                 </Button>
@@ -241,7 +240,7 @@ export default function SupplierInventoryPage() {
                 const isLow = inv && inv.available_qty <= inv.low_stock_threshold;
                 const stockPct = inv ? Math.min((inv.available_qty / Math.max(inv.stock_qty, 1)) * 100, 100) : 0;
                 return (
-                  <Card key={p.id} className={isLow ? 'border-amber-300/50' : ''}>
+                  <Card key={p.id} className={isLow ? 'border-[#FF5A00]/50' : ''}>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-muted shrink-0 overflow-hidden">
@@ -261,18 +260,18 @@ export default function SupplierInventoryPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
                             {inv?.sku && <span className="text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">{inv.sku}</span>}
-                            {isLow && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">Low Stock</Badge>}
+                            {isLow && <Badge className="text-[10px] bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40">Low Stock</Badge>}
                           </div>
                           <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
                             <span>Stock: <span className="text-foreground font-medium">{inv?.stock_qty ?? '—'}</span></span>
-                            <span>Available: <span className="text-green-600 font-medium">{inv?.available_qty ?? '—'}</span></span>
+                            <span>Available: <span className="text-[#FF7A2E] font-medium">{inv?.available_qty ?? '—'}</span></span>
                             <span>Reserved: <span className="text-foreground">{inv?.reserved_qty ?? 0}</span></span>
                             {inv?.warehouse_location && <span className="flex items-center gap-0.5"><Warehouse className="w-3 h-3" /> {inv.warehouse_location}</span>}
                           </div>
                           {inv && (
                             <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all ${stockPct > 50 ? 'bg-green-500' : stockPct > 20 ? 'bg-amber-500' : 'bg-destructive'}`}
+                                className={`h-full rounded-full transition-all ${stockPct > 50 ? 'bg-[#C94400]' : stockPct > 20 ? 'bg-[#C94400]' : 'bg-destructive'}`}
                                 style={{ width: `${stockPct}%` }}
                               />
                             </div>
@@ -305,7 +304,7 @@ export default function SupplierInventoryPage() {
                   size="sm"
                   variant={adjustMode === 'add' ? 'default' : 'outline'}
                   onClick={() => setAdjustMode('add')}
-                  className={`flex-1 text-xs gap-1 ${adjustMode === 'add' ? 'bg-primary text-primary-foreground' : ''}`}
+                  className={`flex-1 text-xs gap-1 ${adjustMode === 'add' ? 'bg-[#1A0C05] text-primary-foreground' : ''}`}
                 >
                   <ArrowUp className="w-3 h-3" /> Add Stock
                 </Button>
@@ -327,7 +326,7 @@ export default function SupplierInventoryPage() {
                   onChange={e => setAdjustQty(e.target.value)}
                   className="bg-input border-border text-sm"
                 />
-                <Button onClick={handleAdjust} size="sm" className="bg-primary text-primary-foreground text-xs shrink-0">
+                <Button onClick={handleAdjust} size="sm" className="bg-[#1A0C05] text-primary-foreground text-xs shrink-0">
                   Apply
                 </Button>
               </div>
@@ -356,7 +355,7 @@ export default function SupplierInventoryPage() {
               <Label className="text-xs text-muted-foreground">Warehouse / Location</Label>
               <Input value={form.warehouse_location} onChange={e => setForm(p => ({ ...p, warehouse_location: e.target.value }))} placeholder="e.g. Mumbai Warehouse A" className="bg-input border-border" />
             </div>
-            <Button type="submit" disabled={saving} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-sm">
+            <Button type="submit" disabled={saving} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 text-sm">
               {saving ? <><RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Saving…</> : 'Save Inventory'}
             </Button>
           </form>

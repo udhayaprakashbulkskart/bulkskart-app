@@ -73,16 +73,16 @@ export default function InstantQuoteDialog({
         {!user || profile?.role !== 'buyer' ? (
           <div className="text-center py-6">
             <p className="text-sm text-muted-foreground mb-4">Please log in as a buyer to request a quote.</p>
-            <Link to="/auth"><Button className="bg-primary text-primary-foreground">Login / Register</Button></Link>
+            <Link to="/auth"><Button className="bg-[#1A0C05] text-primary-foreground">Login / Register</Button></Link>
           </div>
         ) : done ? (
           <div className="text-center py-8">
-            <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
+            <CheckCircle2 className="w-12 h-12 text-[#FF7A2E] mx-auto mb-3" />
             <p className="text-base font-bold text-foreground mb-1">Quote Request Sent!</p>
             <p className="text-sm text-muted-foreground mb-4">
               <span className="font-medium text-foreground">{supplierName}</span> will respond with pricing within 24 hours.
             </p>
-            <Button onClick={handleClose} className="bg-primary text-primary-foreground">Done</Button>
+            <Button onClick={handleClose} className="bg-[#1A0C05] text-primary-foreground">Done</Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 mt-1">
@@ -132,7 +132,7 @@ export default function InstantQuoteDialog({
               />
             </div>
 
-            <Button type="submit" disabled={submitting} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+            <Button type="submit" disabled={submitting} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
               {submitting
                 ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Sending…</>
                 : <><Zap className="w-4 h-4" /> Send Quote Request</>}

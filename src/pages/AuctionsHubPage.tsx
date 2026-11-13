@@ -196,9 +196,8 @@ export default function AuctionsHubPage() {
       <div className="bg-background min-h-screen pb-20">
         
         {/* ── Hero Banner ── */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-zinc-900 to-black text-white py-8 sm:py-10 border-b border-border">
-          <div className="bs-scan pointer-events-none absolute inset-x-[12%] top-0 h-16 bg-gradient-to-b from-transparent via-[#FF5A00]/25 to-transparent" aria-hidden="true" />
-          <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6">
+        <div className="bg-gradient-to-r from-slate-900 via-zinc-900 to-black text-white py-8 sm:py-10 border-b border-border">
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF5A1F]/20 text-[#FF5A1F] border border-[#FF5A1F]/30 text-xs font-bold mb-3">
@@ -208,7 +207,7 @@ export default function AuctionsHubPage() {
                 <h1 className="text-2xl sm:text-4xl font-bold tracking-tight">
                   60-Minute Live Reverse Auctions: Sell Your Bulk Product
                 </h1>
-                <p className="text-sm sm:text-base text-zinc-400 mt-2 max-w-2xl">
+                <p className="text-sm sm:text-base text-neutral-400 mt-2 max-w-2xl">
                   A live reverse auction is when a manufacturer has a bulk product they want to sell within 60 minutes through real-time bidding.
                 </p>
               </div>
@@ -217,7 +216,7 @@ export default function AuctionsHubPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <Button
                   onClick={() => setCreateDialogOpen(true)}
-                  className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold text-xs sm:text-sm h-11 px-5 rounded-xl shadow-[0_3px_0_#922f00] flex items-center gap-1.5 transition-all active:translate-y-0.5 active:shadow-none"
+                  className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs sm:text-sm h-11 px-5 rounded-xl shadow-[0_3px_0_#922f00] flex items-center gap-1.5 transition-all active:translate-y-0.5 active:shadow-none"
                 >
                   <Flame className="w-4 h-4 fill-white" />
                   ⚡ Sell Products in 24 Hours (Hot)
@@ -225,7 +224,7 @@ export default function AuctionsHubPage() {
                 <Link to="/post-requirement">
                   <Button
                     variant="ghost"
-                    className="border border-[#FF5A00]/50 text-white hover:bg-[#FF5A00]/15 font-bold text-xs sm:text-sm h-11 px-5 rounded-xl"
+                    className="border border-[#FF5A00]/50 text-white hover:bg-[#B33D00]/15 font-bold text-xs sm:text-sm h-11 px-5 rounded-xl"
                   >
                     <Plus className="w-4 h-4 mr-1.5" /> Post Sourcing RFQ
                   </Button>
@@ -239,7 +238,7 @@ export default function AuctionsHubPage() {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6">
           
           {/* Rules & Anti-Sniping Alert */}
-          <div className="p-3.5 rounded-2xl bg-orange-50/60 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+          <div className="p-3.5 rounded-2xl bg-[#FF5A00]/60 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2.5 text-xs text-foreground">
               <ShieldCheck className="w-5 h-5 text-[#FF5A1F] shrink-0" />
               <span>
@@ -261,7 +260,7 @@ export default function AuctionsHubPage() {
                 }}
                 className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
                   activeTab === 'reverse'
-                    ? 'bg-[#FF5A1F] text-white shadow-sm'
+                    ? 'bg-[#C94400] text-white shadow-sm'
                     : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -279,7 +278,7 @@ export default function AuctionsHubPage() {
                 }}
                 className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
                   activeTab === 'forward'
-                    ? 'bg-[#FF5A1F] text-white shadow-sm'
+                    ? 'bg-[#C94400] text-white shadow-sm'
                     : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -304,7 +303,7 @@ export default function AuctionsHubPage() {
                   type="button"
                   onClick={() => setStatusFilter('sold')}
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                    statusFilter === 'sold' ? 'bg-card text-emerald-600 shadow-sm' : 'text-muted-foreground'
+                    statusFilter === 'sold' ? 'bg-card text-[#FF7A2E] shadow-sm' : 'text-muted-foreground'
                   }`}
                 >
                   History & Concluded
@@ -337,7 +336,7 @@ export default function AuctionsHubPage() {
             <div className="mb-6 p-4 rounded-2xl bg-card border border-border/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#C94400] animate-pulse" />
                   Live Manufacturer Reverse Auctions
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -347,7 +346,7 @@ export default function AuctionsHubPage() {
               <Button
                 size="sm"
                 onClick={() => setCreateDialogOpen(true)}
-                className="shrink-0 text-xs bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-9 px-3.5 rounded-xl shadow-[0_2px_0_#922f00] flex items-center gap-1.5 transition-all active:translate-y-0.5"
+                className="shrink-0 text-xs bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-9 px-3.5 rounded-xl shadow-[0_2px_0_#922f00] flex items-center gap-1.5 transition-all active:translate-y-0.5"
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
                 ⚡ List Product in 24h
@@ -368,7 +367,7 @@ export default function AuctionsHubPage() {
               return (
                 <div
                   key={auc.id}
-                  className="bg-[#0e121b]/95 hover:bg-[#151a26] border border-slate-800/90 hover:border-[#FF5A00]/70 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_12px_28px_rgba(255,90,0,0.22)] hover:-translate-y-1 transition-all flex flex-col backdrop-blur-md"
+                  className="bg-[#0e121b]/95 hover:bg-[#1A0C05] border border-[#2A2A2A]/90 hover:border-[#FF5A00]/70 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_12px_28px_rgba(255,90,0,0.22)] hover:-translate-y-1 transition-all flex flex-col backdrop-blur-md"
                 >
                   {/* Top Image Banner */}
                   <div className="relative h-48 bg-muted overflow-hidden">
@@ -384,22 +383,22 @@ export default function AuctionsHubPage() {
                     {/* Status Pill & Auction ID */}
                     <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap">
                       {isSold ? (
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white flex items-center gap-1 shadow-md">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#B33D00] text-white flex items-center gap-1 shadow-md">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           SOLD OUT
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-600 text-white flex items-center gap-1 shadow-md">
-                          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#B33D00] text-white flex items-center gap-1 shadow-md">
+                          <span className="w-2 h-2 rounded-full bg-[#161616] animate-ping" />
                           LIVE 60-MIN
                         </span>
                       )}
                       {(auc as AuctionItem | SimulatedAuctionItem).is_simulated && (
-                        <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-700/90 text-slate-200 backdrop-blur-sm">
+                        <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-[#0A0A0A]/90 text-slate-200 backdrop-blur-sm">
                           SAMPLE
                         </span>
                       )}
-                      <span className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-black/75 text-white backdrop-blur-sm">
+                      <span className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#0A0A0A]/75 text-white backdrop-blur-sm">
                         {auc.auction_number}
                       </span>
                     </div>
@@ -407,10 +406,10 @@ export default function AuctionsHubPage() {
                     {/* Dynamic Countdown Clock */}
                     <div className={`absolute bottom-3 right-3 px-3 py-1 rounded-xl text-xs font-bold font-mono shadow-md backdrop-blur-md flex items-center gap-1.5 ${
                       isSold
-                        ? 'bg-emerald-950/80 text-emerald-400'
+                        ? 'bg-[#B33D00]/80 text-[#FF7A2E]'
                         : seconds <= 300
-                        ? 'bg-red-600/90 text-white animate-pulse'
-                        : 'bg-black/80 text-white'
+                        ? 'bg-[#B33D00]/90 text-white animate-pulse'
+                        : 'bg-[#0A0A0A]/80 text-white'
                     }`}>
                       <Clock className="w-3.5 h-3.5" />
                       {isSold ? 'Concluded' : formattedTime}
@@ -494,7 +493,7 @@ export default function AuctionsHubPage() {
                               });
                               setCreateDialogOpen(true);
                             }}
-                            className="font-bold text-xs h-9 px-2.5 border-[#FF5A1F] text-[#FF5A1F] hover:bg-[#FF5A1F]/10 flex items-center gap-1"
+                            className="font-bold text-xs h-9 px-2.5 border-[#FF5A1F] text-[#FF5A1F] hover:bg-[#B33D00]/10 flex items-center gap-1"
                           >
                             <RefreshCw className="w-3 h-3" />
                             <span>Re-list Lot</span>
@@ -505,8 +504,8 @@ export default function AuctionsHubPage() {
                             size="sm"
                             className={`font-bold text-xs h-9 px-3.5 rounded-xl flex items-center gap-1 shadow-sm ${
                               isSold
-                                ? 'bg-zinc-800 hover:bg-zinc-700 text-white'
-                                : 'bg-[#FF5A1F] hover:bg-[#e04e17] text-white'
+                                ? 'bg-[#0A0A0A] hover:bg-[#0A0A0A] text-white'
+                                : 'bg-[#C94400] hover:bg-[#e04e17] text-white'
                             }`}
                           >
                             <span>{isSold ? 'View Lot' : 'Enter Live Room'}</span>
@@ -530,7 +529,7 @@ export default function AuctionsHubPage() {
               </p>
               <Button
                 onClick={() => setCreateDialogOpen(true)}
-                className="mt-4 bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-[0_2px_0_#922f00] flex items-center gap-1.5 transition-all active:translate-y-0.5"
+                className="mt-4 bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-9 px-4 rounded-xl shadow-[0_2px_0_#922f00] flex items-center gap-1.5 transition-all active:translate-y-0.5"
               >
                 <Flame className="w-3.5 h-3.5 mr-1" />
                 ⚡ List Product in 24 Hours (Hot)

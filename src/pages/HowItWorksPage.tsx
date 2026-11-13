@@ -9,7 +9,6 @@ import {
 import PageMeta from '@/components/common/PageMeta';
 import FaqAccordion from '@/components/common/FaqAccordion';
 
-const HERO_IMG = 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=75';
 
 const buyerSteps = [
   { n: 1, icon: UserPlus, title: 'Register for Free', desc: 'Create your buyer account with your business details in minutes. No subscription needed.' },
@@ -85,7 +84,7 @@ export default function HowItWorksPage() {
       {/* Hero */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img src={HERO_IMG} alt="BulkSkart B2B Trade Process Illustration" className="w-full h-full object-cover opacity-15" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_60%,rgba(255,101,0,0.18),transparent_60%)]" />
           <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background" />
         </div>
         <div className="relative z-10 max-w-[1400px] mx-auto px-4 md:px-6 text-center">
@@ -96,8 +95,8 @@ export default function HowItWorksPage() {
             Your step-by-step guide to sourcing and supplying bulk products through the world's most trusted B2B trade platform.
           </p>
           <div className="flex flex-col md:flex-row gap-3 justify-center">
-            <Link to="/auth"><Button className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold gap-2 shadow-[0_2px_0_#922f00] rounded-xl h-11 px-6">Register as Buyer <ArrowRight className="w-4 h-4" /></Button></Link>
-            <Link to="/auth?tab=supplier"><Button className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold gap-2 shadow-[0_2px_0_#922f00] rounded-xl h-11 px-6">Register as Supplier <ArrowRight className="w-4 h-4" /></Button></Link>
+            <Link to="/auth"><Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold gap-2 shadow-[0_2px_0_#922f00] rounded-xl h-11 px-6">Register as Buyer <ArrowRight className="w-4 h-4" /></Button></Link>
+            <Link to="/auth?tab=supplier"><Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold gap-2 shadow-[0_2px_0_#922f00] rounded-xl h-11 px-6">Register as Supplier <ArrowRight className="w-4 h-4" /></Button></Link>
           </div>
         </div>
       </section>
@@ -106,7 +105,7 @@ export default function HowItWorksPage() {
       <section className="py-16">
         <div className="max-w-[1400px] mx-auto px-4 md:px-6">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#C94400] flex items-center justify-center">
               <UserPlus className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
@@ -131,7 +130,7 @@ export default function HowItWorksPage() {
           </div>
           <div className="mt-8 text-center">
             <Link to="/post-requirement">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">Post a Bulk Requirement <ArrowRight className="w-4 h-4" /></Button>
+              <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">Post a Bulk Requirement <ArrowRight className="w-4 h-4" /></Button>
             </Link>
           </div>
         </div>
@@ -141,7 +140,7 @@ export default function HowItWorksPage() {
       <section className="py-16 bg-muted">
         <div className="max-w-[1400px] mx-auto px-4 md:px-6">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#C94400] flex items-center justify-center">
               <Shield className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
@@ -166,7 +165,7 @@ export default function HowItWorksPage() {
           </div>
           <div className="mt-8 text-center">
             <Link to="/auth?tab=supplier">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">Join as Supplier <ArrowRight className="w-4 h-4" /></Button>
+              <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">Join as Supplier <ArrowRight className="w-4 h-4" /></Button>
             </Link>
           </div>
         </div>

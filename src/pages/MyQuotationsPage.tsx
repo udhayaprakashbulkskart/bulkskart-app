@@ -137,7 +137,7 @@ export default function MyQuotationsPage() {
       <div className="bg-background min-h-screen pb-20">
         
         {/* Top Header */}
-        <div className="bg-card/90 backdrop-blur-xl border-b border-border sticky top-0 z-20 px-4 py-3 sm:px-6">
+        <div className="bg-card border-b border-border sticky top-0 z-20 px-4 py-3 sm:px-6">
           <div className="max-w-[1200px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
@@ -184,7 +184,7 @@ export default function MyQuotationsPage() {
 
                 <Link to="/register?redirect=/my-quotations" className="block w-full">
                   <Button
-                    className="w-full bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-11 rounded-xl text-sm shadow-[0_2px_0_#922f00] flex items-center justify-center gap-2"
+                    className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-11 rounded-xl text-sm shadow-[0_2px_0_#922f00] flex items-center justify-center gap-2"
                   >
                     <UserPlus className="w-4 h-4 text-white" />
                     <span>Create Free Account</span>
@@ -210,7 +210,7 @@ export default function MyQuotationsPage() {
                 onClick={() => setTab('all')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap ${
                   tab === 'all'
-                    ? 'bg-[#FF5A1F] text-white shadow-sm'
+                    ? 'bg-[#C94400] text-white shadow-sm'
                     : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -220,7 +220,7 @@ export default function MyQuotationsPage() {
                 onClick={() => setTab('live')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
                   tab === 'live'
-                    ? 'bg-[#FF5A1F] text-white shadow-sm'
+                    ? 'bg-[#C94400] text-white shadow-sm'
                     : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -230,7 +230,7 @@ export default function MyQuotationsPage() {
                 onClick={() => setTab('closed')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap ${
                   tab === 'closed'
-                    ? 'bg-[#FF5A1F] text-white shadow-sm'
+                    ? 'bg-[#C94400] text-white shadow-sm'
                     : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -240,7 +240,7 @@ export default function MyQuotationsPage() {
                 onClick={() => setTab('awarded')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap ${
                   tab === 'awarded'
-                    ? 'bg-[#FF5A1F] text-white shadow-sm'
+                    ? 'bg-[#C94400] text-white shadow-sm'
                     : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -258,7 +258,7 @@ export default function MyQuotationsPage() {
                     : `No ${tab} quotations found.`}
                 </p>
                 <Link to="/requirements">
-                  <Button className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-10 px-5 rounded-xl text-xs shadow-[0_2px_0_#922f00]">
+                  <Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 px-5 rounded-xl text-xs shadow-[0_2px_0_#922f00]">
                     Browse Reverse RFQs
                   </Button>
                 </Link>
@@ -297,16 +297,16 @@ export default function MyQuotationsPage() {
                           <div className="flex items-center gap-1.5 mt-1.5">
                             {q.status === 'active' ? (
                               <>
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-600 text-white">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#B33D00] text-white">
                                   LIVE
                                 </span>
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/40">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#FF5A00]/10 dark:bg-[#B33D00]/40 text-[#FF7A2E] dark:text-[#FF7A2E] border border-[#FF5A00]/40 dark:border-[#FF5A00]/40">
                                   <Clock className="w-3 h-3" />
                                   {timerStr}
                                 </span>
                               </>
                             ) : q.status === 'awarded' ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#B33D00] text-white">
                                 AWARDED
                               </span>
                             ) : (
@@ -336,7 +336,7 @@ export default function MyQuotationsPage() {
 
                       {/* Card Action Controls */}
                       <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-border/40">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-lg">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF7A2E] dark:text-[#FF7A2E] bg-[#FF5A00]/10 dark:bg-[#B33D00]/40 px-2 py-1 rounded-lg">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           {q.status === 'awarded' ? 'Contract Awarded' : q.status === 'closed' ? 'Concluded' : 'Active'}
                         </span>
@@ -358,7 +358,7 @@ export default function MyQuotationsPage() {
                                   endSecondsRemaining: sec
                                 });
                               }}
-                              className="h-8 px-3 rounded-xl text-xs font-bold border-[#FF5A1F] text-[#FF5A1F] hover:bg-[#FF5A1F]/10"
+                              className="h-8 px-3 rounded-xl text-xs font-bold border-[#FF5A1F] text-[#FF5A1F] hover:bg-[#B33D00]/10"
                             >
                               Revise
                             </Button>

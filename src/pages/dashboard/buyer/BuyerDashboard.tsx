@@ -78,11 +78,11 @@ export default function BuyerDashboard() {
 
   const statsCards = [
     { label: 'Requirements Posted', value: stats.totalReqs, icon: FileText, color: 'text-primary', to: '/dashboard/buyer/requirements' },
-    { label: 'Quotes Received', value: stats.totalQuotes, icon: Package, color: 'text-green-500', to: '/dashboard/buyer/quotes' },
+    { label: 'Quotes Received', value: stats.totalQuotes, icon: Package, color: 'text-[#FF7A2E]', to: '/dashboard/buyer/quotes' },
     { label: 'Active Orders', value: stats.activeOrders, icon: TrendingUp, color: 'text-[#FF5A00]', to: '/dashboard/buyer/orders' },
-    { label: 'Completed Orders', value: stats.completedOrders, icon: CheckCircle2, color: 'text-green-600', to: '/dashboard/buyer/orders' },
-    { label: 'Saved Manufacturers', value: stats.savedMfrs, icon: Heart, color: 'text-rose-500', to: '/dashboard/buyer/saved-manufacturers' },
-    { label: 'Active Chats', value: stats.activeConvs, icon: MessageSquare, color: 'text-indigo-500', to: '/dashboard/buyer/messages' },
+    { label: 'Completed Orders', value: stats.completedOrders, icon: CheckCircle2, color: 'text-[#FF7A2E]', to: '/dashboard/buyer/orders' },
+    { label: 'Saved Manufacturers', value: stats.savedMfrs, icon: Heart, color: 'text-[#FF7A2E]', to: '/dashboard/buyer/saved-manufacturers' },
+    { label: 'Active Chats', value: stats.activeConvs, icon: MessageSquare, color: 'text-[#FF7A2E]', to: '/dashboard/buyer/messages' },
   ];
 
   return (
@@ -95,7 +95,7 @@ export default function BuyerDashboard() {
       <div className="flex-1 min-w-0 p-3 md:p-6 overflow-y-auto">
         <div className="max-w-5xl w-full mx-auto">
           {/* Header */}
-          <div className="bs-glass mb-4 flex items-center justify-between gap-3 flex-wrap rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
             <div>
               <h1 className="text-base md:text-xl font-bold text-foreground">Welcome back, {displayName.split(' ')[0] || profile?.full_name?.split(' ')[0] || 'Buyer'}</h1>
               <p className="text-xs md:text-sm text-muted-foreground">Manage your bulk requirements and received quotes</p>
@@ -105,12 +105,12 @@ export default function BuyerDashboard() {
                 <Link to="/dashboard/buyer/notifications">
                   <Button variant="outline" size="sm" className="gap-1.5 relative">
                     <Bell className="w-4 h-4" />
-                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold">{stats.unreadNotifs}</span>
+                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#C94400] text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold">{stats.unreadNotifs}</span>
                   </Button>
                 </Link>
               )}
               <Link to="/post-requirement">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 hidden md:flex">
+                <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2 hidden md:flex">
                   <Plus className="w-4 h-4" /> Post Requirement
                 </Button>
               </Link>
@@ -126,25 +126,25 @@ export default function BuyerDashboard() {
                 <p className="text-xs mt-0.5 text-muted-foreground">Verified buyers get priority responses from manufacturers and stand out in the marketplace.</p>
               </div>
               <Link to="/dashboard/buyer/verification" className="shrink-0">
-                <Button size="sm" className="bg-primary text-primary-foreground text-xs">Verify Now</Button>
+                <Button size="sm" className="bg-[#1A0C05] text-primary-foreground text-xs">Verify Now</Button>
               </Link>
             </div>
           )}
 
           {/* Open dispute alert */}
           {stats.openDisputes > 0 && (
-            <div className="mb-4 flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-3 text-sm">
-              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-              <span className="text-red-700">{stats.openDisputes} open dispute{stats.openDisputes > 1 ? 's' : ''} pending resolution</span>
+            <div className="mb-4 flex items-center gap-3 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-xl p-3 text-sm">
+              <AlertTriangle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
+              <span className="text-[#FF7A2E]">{stats.openDisputes} open dispute{stats.openDisputes > 1 ? 's' : ''} pending resolution</span>
               <Link to="/dashboard/buyer/disputes" className="ml-auto shrink-0">
-                <Button variant="outline" size="sm" className="text-xs border-red-300 text-red-600 hover:bg-red-50">View</Button>
+                <Button variant="outline" size="sm" className="text-xs border-[#FF5A00]/40 text-[#FF7A2E] hover:bg-[#B33D00]/10">View</Button>
               </Link>
             </div>
           )}
 
           {/* Mandatory Business Details Onboarding Banner for Buyers */}
           {(!(buyerProfile as any)?.onboarding_completed) && (
-            <div className="mb-4 bg-gradient-to-r from-primary/10 via-orange-500/10 to-amber-500/5 border-2 border-primary/40 rounded-xl p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="mb-4 bg-gradient-to-r from-primary/10 via-orange-500/10 to-[#B33D00]/5 border-2 border-primary/40 rounded-xl p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5">
                   <Building2 className="w-4 h-4" />
@@ -159,7 +159,7 @@ export default function BuyerDashboard() {
                 </div>
               </div>
               <Link to="/business-setup" className="shrink-0 w-full sm:w-auto">
-                <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90 font-bold text-xs h-8 px-3 rounded-lg shadow-sm gap-1.5">
+                <Button size="sm" className="w-full bg-[#C94400] text-white hover:bg-primary/90 font-bold text-xs h-8 px-3 rounded-lg shadow-sm gap-1.5">
                   Complete Profile
                 </Button>
               </Link>
@@ -175,7 +175,7 @@ export default function BuyerDashboard() {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
-                      <p className="text-2xl font-bold text-foreground">{loading ? <span className="inline-block h-7 w-12 animate-pulse rounded-md bg-muted" /> : s.value}</p>
+                      <p className="text-2xl font-bold text-foreground">{loading ? '—' : s.value}</p>
                     </div>
                     <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
                       <Icon className={`w-5 h-5 ${s.color}`} />
@@ -212,7 +212,7 @@ export default function BuyerDashboard() {
 
           {/* Mobile post requirement button */}
           <Link to="/post-requirement" className="md:hidden block mb-4">
-            <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+            <Button className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
               <Plus className="w-4 h-4" /> Post a New Requirement
             </Button>
           </Link>
@@ -232,7 +232,7 @@ export default function BuyerDashboard() {
                 <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground mb-3">No requirements posted yet.</p>
                 <Link to="/post-requirement">
-                  <Button size="sm" className="bg-primary text-primary-foreground">Post Your First Requirement</Button>
+                  <Button size="sm" className="bg-[#1A0C05] text-primary-foreground">Post Your First Requirement</Button>
                 </Link>
               </div>
             ) : (
@@ -257,7 +257,7 @@ export default function BuyerDashboard() {
                           {req.deadline ? new Date(req.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—'}
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'text-green-400 border-green-400/30' : 'text-muted-foreground'}`}>
+                          <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'text-[#FF7A2E] border-[#FF5A00]/30' : 'text-muted-foreground'}`}>
                             {req.status}
                           </Badge>
                         </td>

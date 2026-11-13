@@ -74,7 +74,7 @@ export default function HowBulkSkartWorks3D() {
           return (
             <div
               key={s.step}
-              className="relative p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-900/85 hover:bg-slate-900 border border-slate-800/90 hover:border-[#FF5A00]/50 shadow-sm transition-all duration-300 flex flex-col justify-between group"
+              className="relative p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0A0A0A]/85 hover:bg-[#0A0A0A] border border-[#2A2A2A]/90 hover:border-[#FF5A00]/50 shadow-sm transition-all duration-300 flex flex-col justify-between group"
             >
               {/* Step Number Decal */}
               <div className="flex items-center justify-between mb-2">
@@ -99,7 +99,7 @@ export default function HowBulkSkartWorks3D() {
               </div>
 
               {/* Action Link */}
-              <div className="pt-2 mt-2 border-t border-slate-800/70">
+              <div className="pt-2 mt-2 border-t border-[#2A2A2A]/70">
                 <Link
                   to={s.link}
                   className="text-[10.5px] sm:text-xs font-bold text-[#FF5A00] hover:text-[#e04e00] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform"

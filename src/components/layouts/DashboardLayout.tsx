@@ -86,7 +86,7 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { isPaidSubscriber, signOut, loading, resolvedRole, displayName, profile } = useAuth();
+  const { user, isPaidSubscriber, signOut, loading, resolvedRole, displayName, profile } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -185,16 +185,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               to={item.href}
               onClick={() => setMobileOpen(false)}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors min-h-11',
+                'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors min-h-10',
                 active
-                  ? 'bg-primary/15 text-primary font-semibold shadow-[inset_3px_0_0_hsl(var(--primary))]'
+                  ? 'bg-sidebar-primary/20 text-primary font-medium'
                   : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground'
               )}
             >
               <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-primary' : 'text-muted-foreground')} />
               <span className="truncate">{item.label}</span>
               {item.href === '/dashboard/supplier/subscription' && isUnpaidManufacturer && (
-                <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30 uppercase tracking-wider">
+                <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#FF5A00]/20 text-[#FF7A2E] border border-[#FF5A00]/30 uppercase tracking-wider">
                   Unpaid
                 </span>
               )}
@@ -225,14 +225,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         robots="noindex, nofollow"
       />
       {/* Desktop Sidebar — fixed viewport height */}
-      <aside className="hidden md:flex flex-col w-60 lg:w-64 shrink-0 h-full bg-sidebar/95 backdrop-blur-xl border-r border-sidebar-border overflow-hidden">
+      <aside className="hidden md:flex flex-col w-56 lg:w-60 shrink-0 h-full bg-sidebar border-r border-sidebar-border overflow-hidden">
         <SidebarContent />
       </aside>
 
         {/* Main */}
         <div className="flex-1 min-w-0 min-h-0 overflow-hidden flex flex-col w-full">
           {/* Mobile top bar */}
-          <div className="md:hidden flex items-center gap-3 px-3 sm:px-4 h-14 border-b border-border bg-background/85 backdrop-blur-xl shrink-0 w-full">
+          <div className="md:hidden flex items-center gap-3 px-3 sm:px-4 h-12 border-b border-border bg-background shrink-0 w-full">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="text-foreground shrink-0" aria-label="Open sidebar menu">
@@ -256,9 +256,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* ── UNPAID MANUFACTURER SUBSCRIPTION NOTIFICATION BANNER ── */}
           {isUnpaidManufacturer && (
-            <div className="w-full bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/10 border-b-2 border-amber-500/30 px-3 md:px-5 py-2 shrink-0 flex items-center justify-between gap-3 flex-wrap">
+            <div className="w-full bg-gradient-to-r from-[#C94400]/15 via-orange-500/15 to-[#B33D00]/10 border-b-2 border-[#FF5A00]/30 px-3 md:px-5 py-2 shrink-0 flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-[#FF5A00]/20 text-[#FF7A2E] flex items-center justify-center shrink-0">
                   <Lock className="w-3.5 h-3.5" />
                 </div>
                 <div className="min-w-0">
@@ -266,7 +266,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <span className="text-xs sm:text-sm font-extrabold text-foreground">
                       Unpaid Manufacturer Account
                     </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF5A00]/20 text-[#FF7A2E] border border-[#FF5A00]/30 uppercase tracking-wider">
                       Contacts Locked
                     </span>
                   </div>
@@ -277,12 +277,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
                 <Link to="/pricing" className="hidden sm:block">
-                  <Button variant="outline" size="sm" className="h-8 text-xs border-amber-500/30 hover:bg-amber-500/10">
+                  <Button variant="outline" size="sm" className="h-8 text-xs border-[#FF5A00]/30 hover:bg-[#B33D00]/10">
                     Compare Plans
                   </Button>
                 </Link>
                 <Link to="/dashboard/supplier/subscription">
-                  <Button size="sm" className="h-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs shadow-md gap-1.5">
+                  <Button size="sm" className="h-8 bg-gradient-to-r from-[#C94400] to-orange-500 hover:from-[#C94400] hover:to-orange-600 text-white font-bold text-xs shadow-md gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Subscribe Now</span>
                   </Button>
@@ -291,8 +291,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           )}
 
-          <main className="bs-dash bs-page-enter flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0">
-            {children}
+          <main className="flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
+            {!loading && !user ? (
+              <div className="max-w-md mx-auto px-4 py-16 text-center space-y-3">
+                <h1 className="text-xl font-semibold text-foreground">Sign in to continue</h1>
+                <p className="text-sm text-muted-foreground">
+                  This account page is available after you sign in.
+                </p>
+                <Button asChild>
+                  <Link to={`/auth?redirect=${encodeURIComponent(location.pathname)}`}>Sign in</Link>
+                </Button>
+              </div>
+            ) : children}
           </main>
         </div>
     </div>

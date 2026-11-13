@@ -38,7 +38,7 @@ function UrgencyChip({ req }: { req: MatchRow['requirements'] }) {
   if (!req) return null;
   if (req.is_urgent) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/40">
         <Flame className="w-2.5 h-2.5" /> URGENT
       </span>
     );
@@ -46,12 +46,12 @@ function UrgencyChip({ req }: { req: MatchRow['requirements'] }) {
   if (req.deadline) {
     const days = Math.ceil((new Date(req.deadline).getTime() - Date.now()) / 86_400_000);
     if (days <= 7) return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/40">
         <Flame className="w-2.5 h-2.5" /> URGENT
       </span>
     );
     if (days <= 30) return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/40">
         <Zap className="w-2.5 h-2.5" /> NEW
       </span>
     );
@@ -70,10 +70,10 @@ const STATUS_LABEL: Record<string, string> = {
   expired: 'Expired',
 };
 const STATUS_COLOR: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  quoted: 'bg-green-100 text-green-700 border-green-200',
+  pending: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  quoted: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
   dismissed: 'bg-muted text-muted-foreground border-border',
-  expired: 'bg-red-100 text-red-700 border-red-200',
+  expired: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
 };
 
 export default function MatchedRequirementsPanel() {
@@ -146,7 +146,7 @@ export default function MatchedRequirementsPanel() {
             <Target className="w-5 h-5 text-primary" />
             <CardTitle className="text-base font-bold">Matched Buyer Requirements</CardTitle>
             {pendingCount > 0 && (
-              <Badge className="bg-primary text-primary-foreground text-xs">{pendingCount} new</Badge>
+              <Badge className="bg-[#1A0C05] text-primary-foreground text-xs">{pendingCount} new</Badge>
             )}
           </div>
           <Button variant="outline" size="sm" onClick={fetchMatches} className="gap-1 text-xs h-7">
@@ -234,7 +234,7 @@ export default function MatchedRequirementsPanel() {
                     <div className="flex items-center gap-2 mt-2.5">
                       <Button
                         size="sm"
-                        className="h-8 text-xs px-4 bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold"
+                        className="h-8 text-xs px-4 bg-[#C94400] hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold"
                         onClick={() => handleApplyFast(m)}
                       >
                         Apply Fast <ArrowRight className="w-3.5 h-3.5" />

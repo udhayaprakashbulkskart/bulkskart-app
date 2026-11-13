@@ -96,12 +96,12 @@ const RAW_CACHED_PIXABAY_IMAGES: Record<string, { url: string; alt: string; phot
     photographer: 'Pixabay'
   },
   electrical: {
-    url: 'https://cdn.pixabay.com/photo/2016/11/29/08/41/cable-1868478_1280.jpg',
+    url: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     alt: 'Industrial copper cables and electrical wiring',
     photographer: 'Pixabay'
   },
   electronics: {
-    url: 'https://cdn.pixabay.com/photo/2015/09/05/20/02/motherboard-924904_1280.jpg',
+    url: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     alt: 'Printed circuit board and semiconductor components',
     photographer: 'Pixabay'
   },
@@ -111,27 +111,27 @@ const RAW_CACHED_PIXABAY_IMAGES: Record<string, { url: string; alt: string; phot
     photographer: 'Pixabay'
   },
   packaging: {
-    url: 'https://cdn.pixabay.com/photo/2016/11/21/14/53/boxes-1845814_1280.jpg',
+    url: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     alt: 'Warehouse storage corrugated boxes and shipping cartons',
     photographer: 'Pixabay'
   },
   agriculture: {
-    url: 'https://cdn.pixabay.com/photo/2016/09/10/11/42/wheat-1659021_1280.jpg',
+    url: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     alt: 'Golden wheat grain harvest field',
     photographer: 'Pixabay'
   },
   chemicals: {
-    url: 'https://cdn.pixabay.com/photo/2014/12/10/20/56/laboratory-563423_1280.jpg',
+    url: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     alt: 'Chemical laboratory glass test tubes and research flask',
     photographer: 'Pixabay'
   },
   metals: {
-    url: 'https://cdn.pixabay.com/photo/2016/11/29/09/32/welding-1868731_1280.jpg',
+    url: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     alt: 'Industrial metal fabrication, welding, and steel processing',
     photographer: 'Pixabay'
   },
   construction: {
-    url: 'https://cdn.pixabay.com/photo/2015/09/09/18/25/crane-932356_1280.jpg',
+    url: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     alt: 'Construction building site cranes and engineering structure',
     photographer: 'Pixabay'
   },
@@ -141,7 +141,7 @@ const RAW_CACHED_PIXABAY_IMAGES: Record<string, { url: string; alt: string; phot
     photographer: 'Pixabay'
   },
   solar: {
-    url: 'https://cdn.pixabay.com/photo/2017/09/12/11/56/solar-2742159_1280.jpg',
+    url: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
     alt: 'Photovoltaic solar panels and renewable energy equipment',
     photographer: 'Pixabay'
   },
@@ -239,6 +239,10 @@ export async function fetchLatestImageSyncLogs(limit = 10): Promise<any[]> {
 // In-memory resolution cache to avoid redundant network calls per session
 const resolvedProductCache = new Map<string, PixabayProductResolutionResult>();
 
+// After a failed backend call, skip further calls for this long.
+const PIXABAY_BREAKER_MS = 10 * 60 * 1000;
+let pixabayBackendDownUntil = 0;
+
 /**
  * Resolve single product image via Edge Function with strict tag relevance
  */
@@ -253,6 +257,16 @@ export async function resolveProductImageBackend(
     return resolvedProductCache.get(cacheKey)!;
   }
 
+  const fallback: PixabayProductResolutionResult = {
+    has_image: false,
+    source: 'placeholder',
+    reason: 'backend_error_or_no_match',
+  };
+
+  // Backend currently returns 500 (PIXABAY_API_KEY not configured). Stop calling it for a while
+  // so each product card does not fire a failing request.
+  if (Date.now() < pixabayBackendDownUntil) return fallback;
+
   try {
     const { data, error } = await supabase.functions.invoke('pixabay-product-image', {
       body: {
@@ -265,12 +279,8 @@ export async function resolveProductImageBackend(
     });
 
     if (error || !data || data.code !== 'SUCCESS') {
+      if (error) pixabayBackendDownUntil = Date.now() + PIXABAY_BREAKER_MS;
       console.warn('Backend image resolution error:', error || data?.message);
-      const fallback: PixabayProductResolutionResult = {
-        has_image: false,
-        source: 'placeholder',
-        reason: 'backend_error_or_no_match',
-      };
       resolvedProductCache.set(cacheKey, fallback);
       return fallback;
     }
