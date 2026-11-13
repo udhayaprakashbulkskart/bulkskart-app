@@ -1,17 +1,19 @@
 /**
- * Live buyer-alert popup.
- * Shows only active, unexpired requirements from the database.
- * Buyer names and companies are omitted: the public Buy Leads cards do not show them.
+ * Homepage buyer-alert carousel.
+ * Active, unexpired rows from public.requirements only.
+ * Buyer names and companies stay hidden, matching the public Buy Leads cards.
+ * When no leads qualify, the popup stays hidden.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BadgeCheck, MessageSquare, Pause, Play, X } from 'lucide-react';
+import { BadgeCheck, ChevronLeft, ChevronRight, Pause, Play, X } from 'lucide-react';
 import { supabase } from '@/db/supabase';
 import { checkDirectMessageQuota, checkSupplierPaidSubscription } from '@/lib/api';
 import type { Requirement } from '@/types/types';
 import { useAuth } from '@/contexts/AuthContext';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
+import BrandLogo from '@/components/common/BrandLogo';
 import { resolveRfqImage } from '@/lib/contentImages';
 
 const DISMISS_KEY = 'bsk_live_buyer_alert_dismissed';
@@ -19,17 +21,13 @@ const LEGACY_DISMISS_KEY = 'bsk_lead_popup_session';
 const PAUSE_KEY = 'bsk_live_buyer_alert_paused';
 const ROTATE_MS = 6000;
 const POLL_MS = 60_000;
-const LEAD_LIMIT = 12;
+const LEAD_LIMIT = 8;
+const PEEK = 0.22;
+const GAP = 10;
+const DRAG_THRESHOLD = 48;
 
 const LEAD_SELECT =
   'id,req_number,title,quantity,quantity_unit,destination_city,destination_country,status,is_verified_buyer,created_at,deadline,expires_at,attachment_url,images,buyer_id,category_id,categories!category_id(id,name,slug)';
-
-type Stats = {
-  active: number | null;
-  today: number | null;
-  buyers: number | null;
-  countries: number | null;
-};
 
 function isTestTitle(title: string): boolean {
   return /\b(test|debug|timed|timeout)\b/i.test(title) || /^test\b/i.test(title.trim());
@@ -99,12 +97,6 @@ function dedupe(rows: Requirement[]): Requirement[] {
   return out;
 }
 
-function startOfToday(): string {
-  const day = new Date();
-  day.setHours(0, 0, 0, 0);
-  return day.toISOString();
-}
-
 function readDismissed(): boolean {
   try {
     if (localStorage.getItem(DISMISS_KEY) === '1') return true;
@@ -114,25 +106,16 @@ function readDismissed(): boolean {
   }
 }
 
-function Count({ value, reduce }: { value: number; reduce: boolean }) {
-  const [shown, setShown] = useState(reduce ? value : 0);
-  useEffect(() => {
-    if (reduce) {
-      setShown(value);
-      return;
-    }
-    const from = shown;
-    const start = performance.now();
-    let frame = 0;
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - start) / 700);
-      setShown(Math.round(from + (value - from) * progress));
-      if (progress < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [value, reduce]);
-  return <>{shown.toLocaleString('en-IN')}</>;
+function withClones(leads: Requirement[]): Requirement[] {
+  if (leads.length < 2) return leads;
+  return [leads[leads.length - 1], ...leads, leads[0]];
+}
+
+function logicalIndex(pos: number, count: number): number {
+  if (count <= 1) return 0;
+  if (pos <= 0) return count - 1;
+  if (pos > count) return 0;
+  return pos - 1;
 }
 
 export default function LiveBuyerOrderAlert() {
@@ -149,13 +132,24 @@ export default function LiveBuyerOrderAlert() {
     try { return localStorage.getItem(PAUSE_KEY) === '1'; } catch { return false; }
   });
   const [hovering, setHovering] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [ready, setReady] = useState(false);
   const [leads, setLeads] = useState<Requirement[]>([]);
-  const [cursor, setCursor] = useState(0);
-  const [stats, setStats] = useState<Stats>({ active: null, today: null, buyers: null, countries: null });
+  const [pos, setPos] = useState(1);
+  const [instant, setInstant] = useState(false);
+  const [dragX, setDragX] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const [arrivedId, setArrivedId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogReason, setDialogReason] = useState<SubscriptionReason>('not_logged_in');
   const [respondReq, setRespondReq] = useState<Requirement | null>(null);
+
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const leadsRef = useRef(leads);
+  const dragRef = useRef({ pointerId: -1, startX: 0, startY: 0, dx: 0, locked: false });
+  const suppressClick = useRef(false);
+  leadsRef.current = leads;
 
   const hiddenRoute =
     location.pathname.includes('/business-setup') ||
@@ -174,47 +168,13 @@ export default function LiveBuyerOrderAlert() {
     return dedupe((data ?? []) as unknown as Requirement[]);
   }, []);
 
-  const loadStats = useCallback(async () => {
-    const nowIso = new Date().toISOString();
-    const open = supabase
-      .from('requirements')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'active')
-      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
-      .or(`deadline.is.null,deadline.gt.${nowIso}`);
-    const today = supabase
-      .from('requirements')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'active')
-      .gte('created_at', startOfToday())
-      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
-      .or(`deadline.is.null,deadline.gt.${nowIso}`);
-    const places = supabase
-      .from('requirements')
-      .select('buyer_id,destination_country')
-      .eq('status', 'active')
-      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
-      .or(`deadline.is.null,deadline.gt.${nowIso}`)
-      .limit(1000);
-    const [activeRes, todayRes, placeRes] = await Promise.all([open, today, places]);
-    const rows = (placeRes.data ?? []) as { buyer_id?: string | null; destination_country?: string | null }[];
-    const buyers = new Set(rows.map(row => row.buyer_id).filter(Boolean));
-    const countries = new Set(rows.map(row => row.destination_country?.trim()).filter(Boolean));
-    setStats({
-      active: activeRes.error ? null : activeRes.count ?? 0,
-      today: todayRes.error ? null : todayRes.count ?? 0,
-      buyers: placeRes.error ? null : buyers.size,
-      countries: placeRes.error ? null : countries.size,
-    });
-  }, []);
-
   useEffect(() => {
     if (dismissed || hiddenRoute) return;
     let cancelled = false;
-    const showTimer = window.setTimeout(() => { if (!cancelled) setReady(true); }, 1200);
+    const showTimer = window.setTimeout(() => { if (!cancelled) setReady(true); }, 900);
     (async () => {
       try {
-        const [rows] = await Promise.all([loadLeads(), loadStats()]);
+        const rows = await loadLeads();
         if (!cancelled) setLeads(rows);
       } catch {
         if (!cancelled) setLeads([]);
@@ -224,57 +184,168 @@ export default function LiveBuyerOrderAlert() {
       cancelled = true;
       window.clearTimeout(showTimer);
     };
-  }, [dismissed, hiddenRoute, loadLeads, loadStats]);
+  }, [dismissed, hiddenRoute, loadLeads]);
 
   useEffect(() => {
-    if (dismissed || hiddenRoute || leads.length === 0) return;
+    if (dismissed || hiddenRoute) return;
     const timer = window.setInterval(async () => {
       try {
-        const newest = leads[0]?.created_at;
-        if (!newest) return;
-        const nowIso = new Date().toISOString();
-        const { data, error } = await activeFilters(nowIso)
-          .gt('created_at', newest)
-          .order('created_at', { ascending: false })
-          .limit(LEAD_LIMIT);
-        if (error || !data?.length) return;
-        const fresh = dedupe(data as unknown as Requirement[]);
-        setLeads(prev => {
-          const seen = new Set(prev.map(row => row.id));
-          const added = fresh.filter(row => !seen.has(row.id));
-          if (added.length === 0) return prev;
-          setCursor(0);
-          return [...added, ...prev].slice(0, LEAD_LIMIT);
-        });
-        loadStats();
+        const rows = await loadLeads();
+        const prev = leadsRef.current;
+        const same = prev.length === rows.length && prev.every((row, index) => row.id === rows[index]?.id);
+        if (same) return;
+        const added = rows.find(row => !prev.some(item => item.id === row.id));
+        if (added && prev.length > 0) setArrivedId(added.id);
+        setLeads(rows);
       } catch {
         /* keep the leads already on screen */
       }
     }, POLL_MS);
     return () => window.clearInterval(timer);
-  }, [dismissed, hiddenRoute, leads, loadStats]);
+  }, [dismissed, hiddenRoute, loadLeads]);
 
   useEffect(() => {
-    if (dismissed || paused || hovering || reduce || leads.length < 2) return;
-    const timer = window.setInterval(() => {
-      setCursor(index => (index + 1) % leads.length);
-    }, ROTATE_MS);
-    return () => window.clearInterval(timer);
-  }, [dismissed, paused, hovering, reduce, leads.length]);
+    if (!arrivedId) return;
+    const timer = window.setTimeout(() => setArrivedId(null), 700);
+    return () => window.clearTimeout(timer);
+  }, [arrivedId]);
 
-  const ordered = useMemo(() => {
-    if (leads.length === 0) return [];
-    return [...leads.slice(cursor), ...leads.slice(0, cursor)];
-  }, [leads, cursor]);
+  useEffect(() => {
+    if (leads.length === 0) return;
+    if (arrivedId && leads[0]?.id === arrivedId && leads.length > 1) {
+      setPos(1);
+      return;
+    }
+    setPos(current => {
+      if (leads.length < 2) return 0;
+      if (current < 1 || current > leads.length) return 1;
+      return current;
+    });
+  }, [leads, arrivedId]);
 
-  const featured = ordered[0];
-  const stacked = ordered.slice(1, 4);
-  const visibleStats = [
-    stats.active != null ? { label: 'Active Buyer Requirements', value: stats.active } : null,
-    stats.today != null ? { label: 'New RFQs Today', value: stats.today } : null,
-    stats.buyers != null ? { label: 'Active Buyers', value: stats.buyers } : null,
-    stats.countries != null ? { label: 'Countries with Active Demand', value: stats.countries } : null,
-  ].filter((item): item is { label: string; value: number } => item !== null);
+  const loop = leads.length > 1;
+  const slides = useMemo(() => withClones(leads), [leads]);
+  const hold = paused || hovering || focused || dragging || reduce || leads.length < 2;
+
+  useEffect(() => {
+    if (dismissed || hiddenRoute || hold) return;
+    const timer = window.setTimeout(() => setPos(current => current + 1), ROTATE_MS);
+    return () => window.clearTimeout(timer);
+  }, [dismissed, hiddenRoute, hold, pos]);
+
+  useLayoutEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const apply = () => setViewportWidth(el.clientWidth);
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ready, leads.length]);
+
+  const cardWidth = viewportWidth === 0
+    ? 0
+    : leads.length < 2
+      ? Math.round(viewportWidth * 0.9)
+      : Math.round((viewportWidth - GAP * 2) / (1 + PEEK * 2));
+  const stride = cardWidth + GAP;
+  const trackX = viewportWidth === 0 || cardWidth === 0
+    ? 0
+    : (viewportWidth - cardWidth) / 2 - pos * stride + dragX;
+  const active = logicalIndex(pos, leads.length);
+
+  const settleClone = () => {
+    if (!loop) return;
+    if (pos === 0 || pos === leads.length + 1) {
+      setInstant(true);
+      setPos(pos === 0 ? leads.length : 1);
+    }
+  };
+
+  useEffect(() => {
+    if (!instant) return;
+    const frame = requestAnimationFrame(() => setInstant(false));
+    return () => cancelAnimationFrame(frame);
+  }, [instant, pos]);
+
+  const step = (direction: number) => {
+    if (leads.length < 2) return;
+    setDragX(0);
+    if (reduce) {
+      setInstant(true);
+      setPos(() => {
+        const next = (active + direction + leads.length) % leads.length;
+        return next + 1;
+      });
+      return;
+    }
+    setInstant(false);
+    setPos(current => current + direction);
+  };
+
+  const goTo = (index: number) => {
+    setDragX(0);
+    setInstant(reduce);
+    setPos(leads.length > 1 ? index + 1 : 0);
+  };
+
+  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (leads.length < 2) return;
+    if ((event.target as HTMLElement).closest('[data-no-drag]')) return;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      dx: 0,
+      locked: false,
+    };
+  };
+
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (drag.pointerId !== event.pointerId) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.locked) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dy) > Math.abs(dx)) {
+        dragRef.current = { pointerId: -1, startX: 0, startY: 0, dx: 0, locked: false };
+        return;
+      }
+      drag.locked = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setDragging(true);
+    }
+    drag.dx = dx;
+    setDragX(dx);
+  };
+
+  const endDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (drag.pointerId !== event.pointerId) return;
+    const dx = drag.dx;
+    const locked = drag.locked;
+    dragRef.current = { pointerId: -1, startX: 0, startY: 0, dx: 0, locked: false };
+    if (!locked) return;
+    setDragging(false);
+    if (Math.abs(dx) < DRAG_THRESHOLD || stride === 0) {
+      setDragX(0);
+      return;
+    }
+    suppressClick.current = true;
+    window.setTimeout(() => { suppressClick.current = false; }, 0);
+    const shifts = Math.max(1, Math.round(Math.abs(dx) / stride));
+    setDragX(0);
+    if (reduce) {
+      step(dx < 0 ? shifts : -shifts);
+      return;
+    }
+    setInstant(false);
+    setPos(current => {
+      const max = leads.length + 1;
+      return Math.max(0, Math.min(max, current + (dx < 0 ? shifts : -shifts)));
+    });
+  };
 
   const dismiss = () => {
     try {
@@ -293,10 +364,12 @@ export default function LiveBuyerOrderAlert() {
   };
 
   const openRequirement = (req: Requirement) => {
+    if (suppressClick.current) return;
     navigate(`/requirement/${req.id}`);
   };
 
   const contactBuyer = async (req: Requirement) => {
+    if (suppressClick.current) return;
     if (!user || !profile) { setDialogReason('not_logged_in'); setDialogOpen(true); return; }
     if (!company) { setDialogReason('not_registered_business'); setDialogOpen(true); return; }
     const sub = await checkSupplierPaidSubscription(company.id, company);
@@ -306,99 +379,134 @@ export default function LiveBuyerOrderAlert() {
     setRespondReq(req);
   };
 
-  if (dismissed || hiddenRoute || !ready || !featured) return null;
+  if (dismissed || hiddenRoute || !ready || leads.length === 0) return null;
 
   return (
     <>
       <style>{`
-        @keyframes bsk-alert-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-        @keyframes bsk-alert-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes bsk-sms-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes bsk-alert-glow { 0%,100% { box-shadow: 0 0 0 1px rgba(255,101,0,0.4), 0 16px 40px -22px rgba(255,138,0,0.8); } 50% { box-shadow: 0 0 0 1px rgba(255,138,0,0.7), 0 16px 44px -18px rgba(255,101,0,0.9); } }
+        @keyframes bsk-alert-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes bsk-card-arrive { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+        @keyframes bsk-live-glow {
+          0%, 100% { box-shadow: 0 0 0 1px rgba(255,101,0,0.75), 0 10px 28px -16px rgba(255,138,0,0.95); }
+          50% { box-shadow: 0 0 0 1px rgba(255,138,0,0.95), 0 12px 32px -12px rgba(255,101,0,1); }
+        }
         @media (prefers-reduced-motion: reduce) {
           .bsk-alert-motion { animation: none !important; }
         }
       `}</style>
       <aside
-        className="bsk-alert-motion fixed z-40 flex max-h-[min(100dvh-24px,640px)] w-[calc(100%-24px)] flex-col overflow-hidden rounded-[22px] border border-[#FF6500]/70 bg-[#080808]/92 text-white shadow-[0_18px_50px_-24px_rgba(255,138,0,0.9)] backdrop-blur-xl bottom-[max(12px,env(safe-area-inset-bottom))] left-3 right-3 sm:bottom-6 sm:left-auto sm:right-6 sm:w-[360px]"
-        style={{ animation: reduce ? undefined : 'bsk-alert-in 0.4s ease both, bsk-alert-glow 3.6s ease-in-out infinite, bsk-alert-float 4.5s ease-in-out 0.4s infinite' }}
+        className="bsk-alert-motion fixed z-40 w-[92%] max-w-[440px] overflow-hidden rounded-[22px] border border-[#FF6500]/75 bg-[#080808]/90 text-white shadow-[0_18px_40px_-24px_rgba(255,138,0,0.85)] backdrop-blur-xl bottom-[max(12px,env(safe-area-inset-bottom))] left-[4%] md:bottom-auto md:left-auto md:right-5 md:top-[116px] md:w-[440px]"
+        style={{ animation: reduce ? undefined : 'bsk-alert-in 0.35s ease both' }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
+        onFocusCapture={() => setFocused(true)}
+        onBlurCapture={event => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
+        }}
+        onKeyDown={event => {
+          if (event.key === 'ArrowRight') { event.preventDefault(); step(1); }
+          if (event.key === 'ArrowLeft') { event.preventDefault(); step(-1); }
+        }}
+        aria-roledescription="carousel"
         aria-label="Live buyer alert"
+        data-pos={active}
       >
-        <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-white/10 bg-[#080808]/95 px-3 py-2.5 backdrop-blur">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FF6500] text-white">
-            <MessageSquare className="h-4 w-4" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <p className="truncate text-[13px] font-bold text-white">Bulkskart</p>
-              <span className="rounded-full bg-[#FF6500] px-1.5 py-px text-[9px] font-black tracking-wide text-white">SMS</span>
-              <span className="relative flex h-1.5 w-1.5 shrink-0">
-                <span className={`absolute inline-flex h-full w-full rounded-full bg-[#FF8A00] opacity-70 ${reduce ? '' : 'animate-ping'}`} />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#FF8A00]" />
-              </span>
+        <div className="relative">
+          <div
+            ref={viewportRef}
+            data-carousel
+            className="overflow-hidden py-3"
+            style={{ touchAction: 'pan-y' }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+          >
+            <div
+              className="flex items-stretch"
+              style={{
+                gap: GAP,
+                transform: `translate3d(${trackX}px,0,0)`,
+                transition: dragging || instant || reduce ? 'none' : 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1)',
+                willChange: 'transform',
+              }}
+              onTransitionEnd={event => {
+                if (event.propertyName !== 'transform' || event.target !== event.currentTarget) return;
+                settleClone();
+              }}
+            >
+              {cardWidth > 0 && slides.map((req, index) => {
+                const distance = Math.abs(index - (pos - dragX / Math.max(stride, 1)));
+                const isActive = distance < 0.5;
+                return (
+                  <AlertCard
+                    key={`${req.id}-${index}`}
+                    req={req}
+                    width={cardWidth}
+                    active={isActive}
+                    arrived={arrivedId === req.id && isActive && !reduce}
+                    reduce={reduce}
+                    onView={() => openRequirement(req)}
+                    onContact={() => contactBuyer(req)}
+                    onDismiss={dismiss}
+                  />
+                );
+              })}
             </div>
-            <p className="text-[11px] leading-snug text-white/65">New bulk requirements are arriving right now!</p>
+          </div>
+          {loop && (
+            <>
+              <button
+                type="button"
+                onClick={() => step(-1)}
+                className="absolute left-1 top-1/2 z-10 flex h-11 min-h-[44px] w-11 min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-[#080808]/85 text-white hover:border-[#FF6500]"
+                aria-label="Previous lead"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => step(1)}
+                className="absolute right-1 top-1/2 z-10 flex h-11 min-h-[44px] w-11 min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-[#080808]/85 text-white hover:border-[#FF6500]"
+                aria-label="Next lead"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 px-3 pb-3">
+          <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5" role="tablist" aria-label="Buyer requirements">
+            {leads.map((req, index) => (
+              <button
+                key={req.id}
+                type="button"
+                role="tab"
+                aria-label={`Show lead ${index + 1}: ${req.title}`}
+                aria-selected={index === active}
+                onClick={() => goTo(index)}
+                className="flex h-11 w-6 shrink-0 items-center justify-center"
+              >
+                <span className={`block h-2 rounded-full ${index === active ? 'w-4 bg-[#FF6500]' : 'w-2 bg-white/30'}`} />
+              </button>
+            ))}
           </div>
           <button
             type="button"
             onClick={togglePause}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10"
+            className="flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10"
             aria-label={paused ? 'Resume buyer alerts' : 'Pause buyer alerts'}
           >
             {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
           </button>
-          <button
-            type="button"
-            onClick={dismiss}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10"
-            aria-label="Close buyer alerts"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </header>
-
-        <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-3 py-3">
-          <FeaturedLead
-            req={featured}
-            animate={!reduce}
-            onView={() => openRequirement(featured)}
-            onContact={() => contactBuyer(featured)}
-          />
-
-          {stacked.length > 0 && (
-            <div className="space-y-2">
-              {stacked.map((req, index) => (
-                <MiniLead
-                  key={req.id}
-                  req={req}
-                  depth={index}
-                  animate={!reduce}
-                  onView={() => openRequirement(req)}
-                />
-              ))}
-            </div>
-          )}
-
-          {visibleStats.length > 0 && (
-            <div className={`grid gap-1.5 ${visibleStats.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {visibleStats.map(stat => (
-                <div key={stat.label} className="rounded-2xl bg-white/[0.04] px-2.5 py-1.5">
-                  <p className="text-[14px] font-black tabular-nums text-[#FF8A00]">
-                    <Count value={stat.value} reduce={reduce} />
-                  </p>
-                  <p className="text-[10px] leading-tight text-white/60">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
+        </div>
+        <div className="px-3 pb-[max(12px,env(safe-area-inset-bottom))]">
           <Link
             to="/requirements"
-            className="flex h-11 w-full items-center justify-center rounded-full bg-[#FF6500] text-[13px] font-bold text-white hover:bg-[#FF8A00] sm:h-10"
+            className="flex h-11 w-full items-center justify-center rounded-full bg-[#FF6500] text-[13px] font-bold text-white hover:bg-[#FF8A00]"
           >
-            View All Buyer Requirements
+            View all buyer requirements
           </Link>
         </div>
       </aside>
@@ -418,93 +526,112 @@ export default function LiveBuyerOrderAlert() {
   );
 }
 
-function FeaturedLead({
+function AlertCard({
   req,
-  animate,
+  width,
+  active,
+  arrived,
+  reduce,
   onView,
   onContact,
+  onDismiss,
 }: {
   req: Requirement;
-  animate: boolean;
+  width: number;
+  active: boolean;
+  arrived: boolean;
+  reduce: boolean;
   onView: () => void;
   onContact: () => void;
+  onDismiss: () => void;
 }) {
   const qty = quantityOf(req);
   const place = locationOf(req);
   const posted = timeAgo(req.created_at);
   return (
-    <div>
-      <article
-        key={req.id}
-        className="max-w-full rounded-[18px] rounded-tl-[6px] bg-white px-3 py-2.5 text-[#111] shadow-sm"
-        style={animate ? { animation: 'bsk-sms-in 0.35s ease' } : undefined}
+    <article
+      data-card={req.id}
+      data-active={active ? 'true' : 'false'}
+      className="shrink-0"
+      style={{
+        width: width || undefined,
+        transform: `scale(${active ? 1.03 : 0.94})`,
+        opacity: active ? 1 : 0.48,
+        zIndex: active ? 2 : 1,
+        transition: reduce ? 'none' : 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1), opacity 520ms ease',
+      }}
+    >
+      <div
+        className={`overflow-hidden rounded-[18px] border bg-[#080808] ${active ? 'border-[#FF6500]' : 'border-white/10'} ${active && !reduce ? 'bsk-alert-motion' : ''}`}
+        style={active && !reduce ? { animation: 'bsk-live-glow 3.8s ease-in-out infinite' } : undefined}
       >
-        <div className="flex gap-2.5">
-          <button type="button" onClick={onView} className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#F3F3F3]" aria-label={`View ${req.title}`}>
-            <img src={leadImage(req)} alt="" className="h-full w-full object-cover" width={112} height={112} />
-          </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-[#FF6500]">New buy requirement</p>
-            <button type="button" onClick={onView} className="mt-0.5 block w-full text-left">
-              <h3 className="line-clamp-3 break-words text-[14px] font-semibold leading-snug text-[#111]">{req.title}</h3>
+        <div
+          className="p-2.5"
+          style={arrived ? { animation: 'bsk-card-arrive 0.45s ease' } : undefined}
+        >
+          <header className="flex items-start gap-1">
+            <div className="min-w-0 flex-1">
+              <BrandLogo size="sm" variant="dark" linkTo={null} className="!h-5 !max-w-[108px]" />
+              <div className="mt-1 flex items-center gap-1.5">
+                <span className="relative flex h-1.5 w-1.5 shrink-0">
+                  <span className={`absolute inline-flex h-full w-full rounded-full bg-[#FF8A00] opacity-70 ${reduce ? '' : 'animate-ping'}`} />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#FF8A00]" />
+                </span>
+                <span className="text-[10px] font-black tracking-[0.14em] text-white">LIVE</span>
+                {posted && <span className="truncate text-[10px] text-white/60">{posted}</span>}
+              </div>
+            </div>
+            {active && (
+              <button
+                type="button"
+                data-no-drag
+                onClick={onDismiss}
+                className="flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10"
+                aria-label="Close buyer alerts"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </header>
+
+          <span className="mt-1 inline-flex rounded-md bg-[#FF6500] px-1.5 py-0.5 text-[9px] font-extrabold tracking-wide text-white">
+            New Buyer Requirement
+          </span>
+          <div className="mt-2 flex gap-2">
+            <button type="button" onClick={onView} className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#141414]" aria-label={`View ${req.title}`}>
+              <img
+                src={leadImage(req)}
+                alt=""
+                width={112}
+                height={112}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
+            </button>
+            <button type="button" onClick={onView} className="min-w-0 flex-1 text-left">
+              <h3 className="line-clamp-3 break-words text-[13px] font-semibold leading-snug text-white">{req.title}</h3>
+            </button>
+          </div>
+          <div className="mt-2 space-y-0.5 text-[12px] leading-snug text-white/80">
+            {qty && <p className="break-words text-[#FF8A00]">Qty: {qty}</p>}
+            {place && <p className="break-words">{place}</p>}
+            {req.is_verified_buyer && (
+              <p className="inline-flex items-center gap-1 font-medium text-white">
+                <BadgeCheck className="h-3.5 w-3.5 text-[#FF8A00]" /> Verified Buyer
+              </p>
+            )}
+          </div>
+          <div className="mt-2.5 grid grid-cols-2 gap-2">
+            <button type="button" data-no-drag onClick={onView} className="h-11 min-h-[44px] rounded-full border border-white/20 text-[12px] font-semibold text-white hover:border-[#FF6500]">
+              View Lead
+            </button>
+            <button type="button" data-no-drag onClick={onContact} className="h-11 min-h-[44px] rounded-full bg-[#FF6500] text-[12px] font-bold text-white hover:bg-[#FF8A00]">
+              Contact Buyer
             </button>
           </div>
         </div>
-        <div className="mt-2 space-y-0.5 text-[13px] leading-snug text-[#222]">
-          {qty && <p className="break-words">Qty: {qty}</p>}
-          {place && <p className="break-words">{place}</p>}
-          {req.is_verified_buyer && (
-            <p className="inline-flex items-center gap-1 font-medium text-[#111]">
-              <BadgeCheck className="h-3.5 w-3.5 text-[#FF6500]" /> Verified buyer
-            </p>
-          )}
-        </div>
-      </article>
-      {posted && <p className="mt-1 pl-1 text-[10px] text-white/50">{posted}</p>}
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        <button type="button" onClick={onView} className="h-9 rounded-full border border-white/20 text-[12px] font-semibold text-white hover:border-[#FF6500]">
-          View Requirement
-        </button>
-        <button type="button" onClick={onContact} className="h-9 rounded-full bg-[#FF6500] text-[12px] font-bold text-white hover:bg-[#FF8A00]">
-          Contact Buyer
-        </button>
       </div>
-    </div>
-  );
-}
-
-function MiniLead({
-  req,
-  depth,
-  animate,
-  onView,
-}: {
-  req: Requirement;
-  depth: number;
-  animate: boolean;
-  onView: () => void;
-}) {
-  const qty = quantityOf(req);
-  const place = locationOf(req);
-  const posted = timeAgo(req.created_at);
-  const detail = [qty, place].filter(Boolean).join(' · ');
-  return (
-    <button
-      type="button"
-      onClick={onView}
-      className="flex w-full max-w-full items-end gap-2 text-left"
-      style={{ animation: animate ? `bsk-sms-in 0.35s ease ${depth * 0.06}s both` : undefined }}
-    >
-      <span className="min-w-0 flex-1 rounded-[16px] rounded-tl-[6px] bg-[#F4F4F5] px-2.5 py-2 text-[#111]">
-        <span className="flex items-center gap-2">
-          <img src={leadImage(req)} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" width={64} height={64} />
-          <span className="min-w-0">
-            <span className="line-clamp-2 block break-words text-[12px] font-semibold leading-snug">{req.title}</span>
-            {detail && <span className="mt-0.5 line-clamp-1 block break-words text-[11px] text-[#444]">{detail}</span>}
-          </span>
-        </span>
-      </span>
-      {posted && <span className="mb-1 shrink-0 text-[10px] text-white/45">{posted}</span>}
-    </button>
+    </article>
   );
 }
