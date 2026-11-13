@@ -1,47 +1,87 @@
+# Publishes the production SPA to GCS. A pull-based deployer on the GCP VM
+# reads gs://bulkskart-deploy-aura-514212/current and installs that release.
+# Write the tarball first and the current pointer last.
+
 name: Deploy production
 
 on:
   push:
-    branches: [master, main]
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
   group: production-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    env:
+      # Values taken from the live www.bulkskart.com bundle (public client config).
+      # VITE_SENTRY_DSN and VITE_RAZORPAY_KEY_ID are left unset on purpose:
+      # production does not set them. Simulated auctions are explicitly on,
+      # which is how the live site behaves.
+      VITE_SUPABASE_URL: https://www.bulkskart.com
+      VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkxNTQ0OTI3LCJleHAiOjE5NDkyMjQ5Mjd9.Eo6wtXsa-5OglX92lMRsqoC2yML6E2YsjqZ8yktOzng
+      VITE_GTM_ID: GTM-T4HWCGKD
+      VITE_APP_ID: app-egd29h5g4zcx
+      VITE_SIMULATED_AUCTIONS: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
+          node-version: 22
+          cache: pnpm
 
-      - name: Deploy via S3 + SSM
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm exec tsgo -p tsconfig.check.json
+
+      - name: Lint
+        run: pnpm exec biome lint
+
+      - name: Build
+        run: pnpm exec vite build --outDir dist
+
+      - name: Stamp dist/version.json
         env:
-          AWS_PROFILE: ''
-          INSTANCE_ID: i-05439223085603d42
-          DEPLOY_BUCKET: bulkskart-deploy-prod
+          GITHUB_SHA: ${{ github.sha }}
+        run: node scripts/stamp-dist-version.mjs
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/104420147907/locations/global/workloadIdentityPools/github/providers/bulkskart-app
+          service_account: github-deployer@aura-514212.iam.gserviceaccount.com
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Upload release, then current
+        env:
+          GITHUB_SHA: ${{ github.sha }}
         run: |
-          chmod +x scripts/deploy-prod-ssm.sh
-          # Script prefers AWS_PROFILE; clear it so default env creds from the action are used.
-          unset AWS_PROFILE || true
-          bash scripts/deploy-prod-ssm.sh
+          set -euo pipefail
+          python3 scripts/pack-frontend-release.py "$RUNNER_TEMP/release.tar.gz"
+          gcloud storage cp "$RUNNER_TEMP/release.tar.gz" "gs://bulkskart-deploy-aura-514212/releases/${GITHUB_SHA}.tar.gz"
+          printf '%s' "$GITHUB_SHA" > "$RUNNER_TEMP/current"
+          gcloud storage cp "$RUNNER_TEMP/current" "gs://bulkskart-deploy-aura-514212/current"
+
+      - name: Wait until the live site reports this SHA
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: node scripts/wait-for-live-version.mjs
