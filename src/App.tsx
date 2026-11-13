@@ -1,11 +1,11 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import IntersectObserver from '@/components/common/IntersectObserver';
 const LiveBuyerOrderAlert = lazy(() => import('@/components/common/LiveBuyerOrderAlert'));
+const AIChatAssistant = lazy(() => import('@/components/common/AIChatAssistant'));
 import AutoImageSyncManager from '@/components/common/AutoImageSyncManager';
 import VersionCheckSafetyNet from '@/components/common/VersionCheckSafetyNet';
 import PageSkeleton from '@/components/common/PageSkeleton';
-import AIChatAssistant from '@/components/common/AIChatAssistant';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -32,7 +32,22 @@ function ScrollToTop() {
   return null;
 }
 
+function useAfterIdle(timeout = 2500): boolean {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const start = () => setReady(true);
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(start, { timeout });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(start, timeout);
+    return () => window.clearTimeout(id);
+  }, [timeout]);
+  return ready;
+}
+
 const App: React.FC = () => {
+  const showDeferred = useAfterIdle(4000);
   return (
     <Router>
       <ThemeProvider>
@@ -50,12 +65,14 @@ const App: React.FC = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
-            <Suspense fallback={null}>
-              <LiveBuyerOrderAlert />
-            </Suspense>
+            {showDeferred && (
+              <Suspense fallback={null}>
+                <LiveBuyerOrderAlert />
+                <AIChatAssistant />
+              </Suspense>
+            )}
             <AutoImageSyncManager />
             <VersionCheckSafetyNet />
-            <AIChatAssistant />
             <Toaster richColors position="top-right" />
           </AuthProvider>
         </CurrencyProvider>

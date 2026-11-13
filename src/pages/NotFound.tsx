@@ -22,7 +22,6 @@ export default function NotFound() {
       <PageMeta
         title="404 — Page Not Found | Bulkskart"
         description="The page you requested could not be found. Explore verified manufacturers, wholesale suppliers, bulk products, and active RFQs on Bulkskart."
-        canonical="https://www.bulkskart.com/404"
         robots="noindex, follow"
       />
 

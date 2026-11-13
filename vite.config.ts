@@ -24,6 +24,10 @@ function versionStampPlugin(): Plugin {
     buildStart() {
       stamp();
     },
+    async closeBundle() {
+      const { generateSeoAssets } = await import("./scripts/generate-seo-assets.mjs");
+      await generateSeoAssets(path.resolve(__dirname, "dist"));
+    },
   };
 }
 

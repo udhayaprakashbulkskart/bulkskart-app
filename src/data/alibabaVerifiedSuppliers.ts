@@ -149,7 +149,7 @@ function buildGlobalExpandedSuppliers(): AlibabaVerifiedSupplierData[] {
 
 export const ALIBABA_VERIFIED_SUPPLIERS: AlibabaVerifiedSupplier[] = buildGlobalExpandedSuppliers().map(hydrateSupplier);
 
-export const TOTAL_VERIFIED_SUPPLIERS_COUNT = ALIBABA_VERIFIED_SUPPLIERS.length;
+export { TOTAL_VERIFIED_SUPPLIERS_COUNT } from './verifiedSupplierCount';
 
 export function searchAlibabaSuppliers(options?: {
   search?: string;

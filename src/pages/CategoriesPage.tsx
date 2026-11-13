@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import MainLayout from '@/components/layouts/MainLayout';
 import PageMeta from '@/components/common/PageMeta';
 import { Button } from '@/components/ui/button';
@@ -116,7 +116,9 @@ export const ALL_CATEGORIES_DATA: CategoryCardData[] = [
 
 export default function CategoriesPage() {
   const navigate = useNavigate();
+  const { slug } = useParams();
   const [search, setSearch] = useState('');
+  const current = slug ? ALL_CATEGORIES_DATA.find(cat => cat.slug === slug) : undefined;
 
   const filteredCategories = ALL_CATEGORIES_DATA.filter(cat =>
     cat.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -127,9 +129,20 @@ export default function CategoriesPage() {
   return (
     <MainLayout>
       <PageMeta
-        title="All B2B Product Categories & Industry Directory | BulkSkart"
-        description="Explore all industrial bulk product categories on BulkSkart. Browse verified manufacturers, wholesale catalogs, raw materials, and machinery across India and globally."
-        canonical="https://www.bulkskart.com/categories"
+        title={current ? `${current.name} — Wholesale & Bulk Supply | BulkSkart` : 'All B2B Product Categories & Industry Directory | BulkSkart'}
+        description={current?.description || 'Explore all industrial bulk product categories on BulkSkart. Browse verified manufacturers, wholesale catalogs, raw materials, and machinery across India and globally.'}
+        canonical={current ? `/category/${current.slug}` : 'https://www.bulkskart.com/categories'}
+        robots={slug && !current ? 'noindex, follow' : 'index, follow'}
+        breadcrumbs={current
+          ? [
+              { name: 'Home', item: '/' },
+              { name: 'Categories', item: '/categories' },
+              { name: current.name, item: `/category/${current.slug}` },
+            ]
+          : [
+              { name: 'Home', item: '/' },
+              { name: 'Categories', item: '/categories' },
+            ]}
       />
 
       <div className="bg-[#0B0F19] min-h-screen text-slate-100 py-8 sm:py-12 px-3.5 sm:px-6 lg:px-8">
@@ -142,7 +155,7 @@ export default function CategoriesPage() {
               <span>Full B2B Taxonomy & Sourcing Directory</span>
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-              All Industrial Categories
+              {current ? current.name : 'All Industrial Categories'}
             </h1>
             <p className="text-neutral-400 text-sm sm:text-base mt-2 max-w-2xl mx-auto">
               Source bulk commodities, machinery, structural metals, and chemical polymers directly from verified global manufacturing plants.
