@@ -38,8 +38,8 @@ export default function SupplierQuotesPage() {
       />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl w-full mx-auto">
-          <div className="mb-6">
-            <h1 className="text-xl font-bold text-foreground">Sent Quotations</h1>
+          <div className="bs-glass mb-6 rounded-3xl p-4">
+            <h1 className="text-xl font-black text-foreground">Sent Quotations</h1>
             <p className="text-sm text-muted-foreground">Track all quotations you've sent to buyers</p>
           </div>
 

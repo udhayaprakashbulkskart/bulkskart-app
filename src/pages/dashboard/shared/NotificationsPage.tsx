@@ -141,7 +141,7 @@ export default function NotificationsPage() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
 
         {/* Header */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="bs-glass flex items-center justify-between gap-4 flex-wrap rounded-3xl p-4">
           <div className="flex items-center gap-2">
             <Bell className="w-6 h-6 text-primary" />
             <h1 className="text-2xl font-bold text-foreground">Notifications</h1>

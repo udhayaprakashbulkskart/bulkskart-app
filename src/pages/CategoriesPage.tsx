@@ -132,8 +132,9 @@ export default function CategoriesPage() {
         canonical="https://www.bulkskart.com/categories"
       />
 
-      <div className="bg-[#0B0F19] min-h-screen text-slate-100 py-8 sm:py-12 px-3.5 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+      <div className="relative bg-[#0B0F19] min-h-screen text-slate-100 py-8 sm:py-12 px-3.5 sm:px-6 lg:px-8 overflow-hidden">
+        <div className="bs-hero-grid pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
+        <div className="relative z-10 max-w-7xl mx-auto">
           
           {/* Header Banner */}
           <div className="text-center max-w-3xl mx-auto mb-10">

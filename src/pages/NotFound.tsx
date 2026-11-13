@@ -27,7 +27,7 @@ export default function NotFound() {
       />
 
       <div className="min-h-[65vh] flex items-center justify-center py-12 px-4 sm:px-6">
-        <div className="max-w-xl w-full text-center">
+        <div className="bs-glass max-w-xl w-full rounded-3xl p-8 text-center">
           {/* Status Badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 text-xs font-bold mb-4">
             <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />

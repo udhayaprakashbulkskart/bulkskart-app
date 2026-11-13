@@ -196,8 +196,9 @@ export default function AuctionsHubPage() {
       <div className="bg-background min-h-screen pb-20">
         
         {/* ── Hero Banner ── */}
-        <div className="bg-gradient-to-r from-slate-900 via-zinc-900 to-black text-white py-8 sm:py-10 border-b border-border">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
+        <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-zinc-900 to-black text-white py-8 sm:py-10 border-b border-border">
+          <div className="bs-scan pointer-events-none absolute inset-x-[12%] top-0 h-16 bg-gradient-to-b from-transparent via-[#FF5A00]/25 to-transparent" aria-hidden="true" />
+          <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF5A1F]/20 text-[#FF5A1F] border border-[#FF5A1F]/30 text-xs font-bold mb-3">

@@ -275,7 +275,7 @@ export default function BuyerProfilePage() {
             />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-xl md:text-2xl font-bold text-foreground truncate">{formData.fullName || 'Buyer Account'}</h1>
+                <h1 className="text-xl md:text-2xl font-black text-foreground truncate">{formData.fullName || 'Buyer Account'}</h1>
                 <Badge variant="outline" className="text-xs capitalize font-semibold border-primary/30 text-primary shrink-0">
                   Buyer
                 </Badge>

@@ -171,9 +171,9 @@ export default function SupplierQuotationsPage() {
         robots="noindex, nofollow"
       />
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="bs-glass flex items-center justify-between gap-4 flex-wrap rounded-3xl p-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Quotation Management</h1>
+            <h1 className="text-2xl font-black text-foreground">Quotation Management</h1>
             <p className="text-sm text-muted-foreground">Create and track quotations for matched RFQs</p>
           </div>
           <Button onClick={openDialog} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">

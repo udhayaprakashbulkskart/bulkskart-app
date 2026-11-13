@@ -15,6 +15,7 @@ import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { getRequirements, getCategories, getOrCreateConversation, checkDirectMessageQuota, incrementMessageQuota } from '@/lib/api';
 import type { Requirement, Category } from '@/types/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import FilterDock from '@/components/layouts/FilterDock';
 import { useAuth } from '@/contexts/AuthContext';
 import SubscribeToContactDialog from '@/components/common/SubscribeToContactDialog';
 import { toast } from 'sonner';
@@ -470,7 +471,7 @@ export default function RequirementsPage() {
                   LIVE REQUIREMENTS
                 </span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
+              <h1 className="text-2xl md:text-4xl font-black text-foreground tracking-tight">
                 Active Buying <span className="text-[#FF5A00]">Requirements</span>
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
@@ -619,7 +620,10 @@ export default function RequirementsPage() {
             <>
               {/* ── 4. Filter Bar matching Image 2 ─────────────────────────── */}
               <div className="space-y-4 mb-6">
-                {/* 3 Dropdown Row: Location, Category, Sort */}
+                <FilterDock
+                  title="Filter requirements"
+                  activeCount={(selectedLocation !== 'all' ? 1 : 0) + (selectedCat !== 'all' ? 1 : 0) + (selectedSort !== 'latest' ? 1 : 0)}
+                >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {/* Location Dropdown */}
                   <div className="bg-card border border-border rounded-xl px-3 py-1 flex items-center gap-2">
@@ -675,6 +679,7 @@ export default function RequirementsPage() {
                     </Select>
                   </div>
                 </div>
+                </FilterDock>
 
                 {/* Status Tabs with count chips reflecting 50,000+ Active Inquiries */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
@@ -743,7 +748,7 @@ export default function RequirementsPage() {
                     return (
                       <div
                         key={req.id}
-                        className="group bg-card hover:bg-muted/30 border border-border hover:border-[#FF5A00]/40 rounded-2xl p-4 md:p-5 transition-all duration-200 shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
+                        className="group bs-glass hover:bg-muted/30 border border-border hover:border-[#FF5A00]/50 rounded-3xl p-4 md:p-5 transition-all duration-200 hover:-translate-y-0.5 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
                       >
                         {/* Left: Square Thumbnail (Real Commercial Photography, No AI) */}
                         <div

@@ -90,7 +90,7 @@ export default function OrderStatusTimeline({ currentStatus, history, variant = 
             <div className="flex flex-col items-center shrink-0">
               <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all
                 ${done ? 'bg-green-500 border-green-500' :
-                  active ? 'bg-primary border-primary ring-4 ring-primary/15' :
+                  active ? 'bg-primary border-primary ring-4 ring-primary/15 motion-safe:animate-pulse' :
                   'bg-muted border-border'}`}>
                 {done
                   ? <CheckCircle2 className="w-4 h-4 text-white" />

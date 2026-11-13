@@ -136,7 +136,7 @@ export default function SupplierDashboard() {
       <div className="flex-1 min-w-0 p-3 md:p-4 lg:p-5">
         <div className="max-w-[1400px] w-full mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+          <div className="bs-glass mb-4 flex items-center justify-between gap-3 flex-wrap rounded-2xl p-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-base md:text-xl font-bold text-foreground truncate max-w-[280px] sm:max-w-md">{company?.company_name ?? 'Your Dashboard'}</h1>
@@ -294,7 +294,7 @@ export default function SupplierDashboard() {
                       <Icon className={`w-4 h-4 md:w-5 md:h-5 ${s.color}`} />
                     </div>
                   </div>
-                  <p className="text-xl md:text-2xl font-bold text-foreground">{loading ? '—' : s.value}<span className="text-xs md:text-sm font-normal text-muted-foreground">{s.sub ?? ''}</span></p>
+                  <p className="text-xl md:text-2xl font-bold text-foreground">{loading ? <span className="inline-block h-7 w-16 animate-pulse rounded-md bg-muted" /> : s.value}<span className="text-xs md:text-sm font-normal text-muted-foreground">{loading ? '' : (s.sub ?? '')}</span></p>
                   <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
                 </Link>
               );

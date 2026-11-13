@@ -95,9 +95,9 @@ export default function SupplierRFQsPage() {
       />
       <div className="flex-1 min-w-0 p-3 md:p-4 lg:p-5 overflow-y-auto">
         <div className="max-w-[1400px] w-full mx-auto">
-          <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between mb-3 md:mb-4">
+          <div className="bs-glass mb-3 flex flex-col gap-1 rounded-3xl p-4 md:mb-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-lg md:text-xl font-bold text-foreground">RFQ Leads</h1>
+              <h1 className="text-lg md:text-xl font-black text-foreground">RFQ Leads</h1>
               <p className="text-xs md:text-sm text-muted-foreground">Live buyer leads. Refresh the page for a new set.</p>
             </div>
             <div className="flex items-center gap-2 self-start md:self-auto">

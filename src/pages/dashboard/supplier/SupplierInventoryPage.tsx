@@ -150,8 +150,9 @@ export default function SupplierInventoryPage() {
       <PageMeta title="Inventory — Supplier | BulkSkart" description="Manage your product stock levels." robots="noindex, nofollow" />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl w-full mx-auto">
-          <div className="mb-6">
-            <h1 className="text-xl font-bold text-foreground">Inventory & Stock</h1>
+          <div className="bs-glass mb-6 rounded-3xl p-4">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-primary">Warehouse</p>
+            <h1 className="text-xl font-black text-foreground">Inventory & Stock</h1>
             <p className="text-sm text-muted-foreground">Track and manage stock levels for all your products</p>
           </div>
 

@@ -143,12 +143,12 @@ export default function BuyerVerificationPage() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-5 w-full min-w-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+        <div className="bs-glass flex items-center gap-3 rounded-3xl p-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center text-primary shrink-0">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Buyer KYC Verification</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-foreground">Buyer KYC Verification</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">Verify your business to get the Verified Buyer badge</p>
           </div>
         </div>

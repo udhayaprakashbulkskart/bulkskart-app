@@ -311,7 +311,7 @@ export default function MessagesPage() {
         description="BulkSkart dashboard — manage your account, orders and trade activity."
         robots="noindex, nofollow"
       />
-      <div className="flex-1 min-w-0 flex overflow-hidden" style={{ height: 'calc(100vh - 3.5rem)' }}>
+      <div className="flex-1 min-w-0 flex overflow-hidden h-full min-h-[70dvh]">
 
         {/* ── Conversations & Inquiries sidebar ─────────────────────────────────── */}
         <div className={cn("w-full md:w-80 shrink-0 border-r border-border bg-sidebar flex-col", mobileView === 'chat' ? 'hidden md:flex' : 'flex')}>
@@ -585,7 +585,7 @@ export default function MessagesPage() {
                       </div>
                       <div className={cn(
                         "max-w-[85%] p-3.5 rounded-2xl text-sm shadow-xs",
-                        isSupplier ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-card border border-border text-foreground rounded-tl-sm"
+                        isSupplier ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md" : "bg-card border border-border text-foreground rounded-2xl rounded-bl-md"
                       )}>
                         <p className="whitespace-pre-wrap leading-relaxed">{reply.content}</p>
                       </div>
@@ -749,7 +749,7 @@ export default function MessagesPage() {
                         <div key={msg.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                           <div className={cn(
                             'max-w-[85%] p-3 rounded-2xl text-sm shadow-xs',
-                            isMine ? 'bg-primary text-primary-foreground rounded-tr-sm' : 'bg-card border border-border text-foreground rounded-tl-sm'
+                            isMine ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md' : 'bg-card border border-border text-foreground rounded-2xl rounded-bl-md'
                           )}>
                             <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                           </div>
@@ -811,7 +811,7 @@ export default function MessagesPage() {
                           <div className={cn(
                             'max-w-[78%] px-3.5 py-2.5 rounded-2xl text-sm shadow-xs',
                             isMine
-                              ? 'bg-primary text-primary-foreground rounded-br-sm'
+                              ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md'
                               : isUrgent
                               ? 'bg-card border-2 border-red-500/80 text-foreground rounded-bl-sm ring-2 ring-red-500/20'
                               : 'bg-card border border-border text-foreground rounded-bl-sm'

@@ -7,6 +7,7 @@ import PageMeta from '@/components/common/PageMeta';
 import MainLayout from '@/components/layouts/MainLayout';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { Search, Shield, Package, Boxes, TrendingUp, Globe } from 'lucide-react';
+import FilterDock from '@/components/layouts/FilterDock';
 import { getProducts, getCategories } from '@/lib/api';
 import type { Product, Category } from '@/types/types';
 import SafeImage from '@/components/common/SafeImage';
@@ -147,7 +148,7 @@ function ProductCard({
   return (
     <Link
       to={`/products/${product.slug}`}
-      className="group bg-card hover:bg-muted/40 border border-border hover:border-[#FF5A00]/60 rounded-2xl overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-[0_12px_28px_rgba(255,90,0,0.12)] hover:-translate-y-0.5 relative"
+      className="group bs-glass hover:bg-muted/40 border border-border hover:border-[#FF5A00]/60 rounded-2xl overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-hover hover:-translate-y-1 relative"
     >
       {/* Image */}
       <div className="aspect-square overflow-hidden bg-muted relative shrink-0">
@@ -221,6 +222,9 @@ function ProductCard({
             rate={rate}
           />
           <MoqBadge moq={product.moq} unit={product.moq_unit} />
+          <span className="mt-1 inline-flex h-9 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary group-hover:bg-primary group-hover:text-primary-foreground">
+            View product
+          </span>
         </div>
       </div>
     </Link>
@@ -338,10 +342,12 @@ export default function ProductsPage() {
         />
 
         {/* Header */}
-        <div className="mb-4 md:mb-5">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+        <div className="bs-glass relative mb-4 overflow-hidden rounded-3xl p-4 md:mb-5 md:p-6">
+          <div className="bs-hero-grid pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
+          <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Bulk Products Catalog</h1>
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">Factory-direct catalogue</p>
+              <h1 className="text-2xl md:text-4xl font-black tracking-tight text-foreground">Bulk Products Catalog</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Browse products from verified manufacturers — factory-direct bulk orders only
                 {!loading && products.length > 0 && (
@@ -369,18 +375,22 @@ export default function ProductsPage() {
 
         {/* Filters */}
         <div className="flex flex-col gap-3 mb-6">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search products by name or spec..."
-                className="pl-9 bg-card border-border"
-              />
-            </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search products by name or spec..."
+              className="h-12 pl-9 bg-card border-border rounded-xl"
+            />
+          </div>
+          <FilterDock
+            title="Filter products"
+            activeCount={(selectedCat !== 'all' ? 1 : 0) + (selectedCountry !== 'all' ? 1 : 0)}
+          >
+          <div className="flex flex-col gap-3 md:flex-row">
             <Select value={selectedCat} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-full md:w-52 bg-card border-border">
+              <SelectTrigger className="h-11 w-full md:w-52 bg-card border-border">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent className="bg-card border-border">
@@ -391,7 +401,7 @@ export default function ProductsPage() {
               </SelectContent>
             </Select>
             <Select value={selectedCountry} onValueChange={handleCountryChange}>
-              <SelectTrigger className="w-full md:w-48 bg-card border-border">
+              <SelectTrigger className="h-11 w-full md:w-48 bg-card border-border">
                 <Globe className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
                 <SelectValue placeholder="Country Origin" />
               </SelectTrigger>
@@ -470,13 +480,20 @@ export default function ProductsPage() {
               </button>
             ))}
           </div>
+          </FilterDock>
         </div>
 
         {/* Products grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-muted rounded-xl h-72 animate-pulse" />
+              <div key={i} className="overflow-hidden rounded-2xl border border-border bg-card">
+                <div className="aspect-square animate-pulse bg-muted" />
+                <div className="space-y-2 p-4">
+                  <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+                </div>
+              </div>
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (

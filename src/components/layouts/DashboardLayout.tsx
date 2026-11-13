@@ -185,9 +185,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               to={item.href}
               onClick={() => setMobileOpen(false)}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors min-h-10',
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors min-h-11',
                 active
-                  ? 'bg-sidebar-primary/20 text-primary font-medium'
+                  ? 'bg-primary/15 text-primary font-semibold shadow-[inset_3px_0_0_hsl(var(--primary))]'
                   : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground'
               )}
             >
@@ -225,14 +225,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         robots="noindex, nofollow"
       />
       {/* Desktop Sidebar — fixed viewport height */}
-      <aside className="hidden md:flex flex-col w-56 lg:w-60 shrink-0 h-full bg-sidebar border-r border-sidebar-border overflow-hidden">
+      <aside className="hidden md:flex flex-col w-60 lg:w-64 shrink-0 h-full bg-sidebar/95 backdrop-blur-xl border-r border-sidebar-border overflow-hidden">
         <SidebarContent />
       </aside>
 
         {/* Main */}
         <div className="flex-1 min-w-0 min-h-0 overflow-hidden flex flex-col w-full">
           {/* Mobile top bar */}
-          <div className="md:hidden flex items-center gap-3 px-3 sm:px-4 h-12 border-b border-border bg-background shrink-0 w-full">
+          <div className="md:hidden flex items-center gap-3 px-3 sm:px-4 h-14 border-b border-border bg-background/85 backdrop-blur-xl shrink-0 w-full">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="text-foreground shrink-0" aria-label="Open sidebar menu">
@@ -291,7 +291,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           )}
 
-          <main className="flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
+          <main className="bs-dash bs-page-enter flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden pb-24 lg:pb-0">
             {children}
           </main>
         </div>

@@ -153,7 +153,7 @@ export default function DisputeCenterPage() {
         robots="noindex, nofollow"
       />
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="bs-glass flex items-center justify-between gap-4 flex-wrap rounded-3xl p-4">
           <div className="flex items-center gap-3">
             <AlertTriangle className="w-6 h-6 text-primary" />
             <div>

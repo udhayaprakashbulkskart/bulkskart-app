@@ -237,7 +237,7 @@ export default function OrderTrackingPage() {
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
 
           {/* Back + header */}
-          <div className="flex items-center gap-3">
+          <div className="bs-glass flex items-center gap-3 rounded-3xl p-3">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="shrink-0">
               <ChevronLeft className="w-4 h-4" />
             </Button>

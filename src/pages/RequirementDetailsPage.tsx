@@ -1153,8 +1153,9 @@ export default function RequirementDetailsPage() {
           />
 
           {/* ── TOP HEADER BLOCK: Status, Views, Date, Actions matching Image 1 ─ */}
-          <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 md:p-6 mb-4 shadow-xl">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border">
+          <div className="bs-glass relative mb-4 overflow-hidden rounded-3xl p-4 sm:p-5 md:p-6">
+            <div className="bs-scan pointer-events-none absolute inset-x-[18%] top-0 h-16 bg-gradient-to-b from-transparent via-primary/25 to-transparent" aria-hidden="true" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm">
                   <span className="relative flex h-2 w-2">
