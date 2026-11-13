@@ -147,7 +147,7 @@ function ProductCard({
   return (
     <Link
       to={`/products/${product.slug}`}
-      className="group bg-card hover:bg-muted/40 border border-border hover:border-[#FF5A00]/60 rounded-2xl overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-[0_12px_28px_rgba(255,90,0,0.12)] hover:-translate-y-0.5 relative"
+      className="group bs-glass hover:bg-muted/40 border border-border hover:border-[#FF5A00]/60 rounded-2xl overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-hover hover:-translate-y-1 relative"
     >
       {/* Image */}
       <div className="aspect-square overflow-hidden bg-muted relative shrink-0">
@@ -221,6 +221,9 @@ function ProductCard({
             rate={rate}
           />
           <MoqBadge moq={product.moq} unit={product.moq_unit} />
+          <span className="mt-1 inline-flex h-9 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary group-hover:bg-primary group-hover:text-primary-foreground">
+            View product
+          </span>
         </div>
       </div>
     </Link>

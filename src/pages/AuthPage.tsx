@@ -100,6 +100,7 @@ function AuthLeftPanel({ tab }: { tab: string }) {
 
   // Cycle background image every 4s
   useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const t = setInterval(() => {
       setFadeSlide(false);
       setTimeout(() => {
@@ -112,6 +113,7 @@ function AuthLeftPanel({ tab }: { tab: string }) {
 
   // Cycle activity card every 3s
   useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const t = setInterval(() => {
       setFadeActivity(false);
       setTimeout(() => {
@@ -590,8 +592,8 @@ export default function AuthPage() {
       <AuthLeftPanel tab={activeTab} />
 
       {/* Right — auth forms */}
-      <div className="flex-1 min-w-0 h-screen overflow-y-auto flex items-start sm:items-center justify-center p-4 sm:p-6 md:p-8 bg-background">
-        <div className="w-full max-w-md py-6 my-auto">
+      <div className="flex-1 min-w-0 h-screen overflow-y-auto flex items-start sm:items-center justify-center p-4 sm:p-6 md:p-8 bg-transparent">
+        <div className="bs-glass w-full max-w-md rounded-3xl px-5 py-6 sm:px-7 my-auto">
           {/* Mobile logo */}
           <div className="md:hidden flex items-center mb-6 justify-center">
             <BrandLogo size="md" variant="auto" linkTo="/" />

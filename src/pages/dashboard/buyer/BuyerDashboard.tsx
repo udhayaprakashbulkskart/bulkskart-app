@@ -95,7 +95,7 @@ export default function BuyerDashboard() {
       <div className="flex-1 min-w-0 p-3 md:p-6 overflow-y-auto">
         <div className="max-w-5xl w-full mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+          <div className="bs-glass mb-4 flex items-center justify-between gap-3 flex-wrap rounded-2xl p-4">
             <div>
               <h1 className="text-base md:text-xl font-bold text-foreground">Welcome back, {displayName.split(' ')[0] || profile?.full_name?.split(' ')[0] || 'Buyer'}</h1>
               <p className="text-xs md:text-sm text-muted-foreground">Manage your bulk requirements and received quotes</p>

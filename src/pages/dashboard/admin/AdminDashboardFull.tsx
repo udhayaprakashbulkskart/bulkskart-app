@@ -222,7 +222,7 @@ export default function AdminDashboardFull() {
     <DashboardLayout>
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+          <div className="bs-glass mb-6 flex items-center justify-between gap-4 flex-wrap rounded-2xl p-4">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Admin Control Panel</h1>
               <p className="text-sm text-muted-foreground">Platform management — verifications, disputes, analytics</p>

@@ -195,7 +195,7 @@ export default function AIChatAssistant() {
         className={`fixed bottom-24 sm:bottom-28 right-2 sm:right-3 z-30 flex items-center justify-center rounded-full shadow-xl transition-all duration-200 border border-white/20 select-none ${
           open
             ? 'w-10 h-10 md:w-auto md:px-3 md:py-2 bg-muted text-foreground border-border'
-            : 'w-11 h-11 md:w-auto md:px-3 md:py-2 bg-[#FF5A00] text-white hover:bg-[#e04e00] hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(255,90,0,0.4)]'
+            : 'w-12 h-12 md:w-auto md:px-3.5 md:py-2 bg-[#FF5A00] text-white hover:bg-[#e04e00] hover:scale-105 active:scale-95 shadow-[0_8px_28px_rgba(255,90,0,0.45)]'
         }`}
         aria-label="BulkSkart AI Platform Trade Support"
       >
@@ -218,7 +218,7 @@ export default function AIChatAssistant() {
       {/* Chat Window: z-[70] ensures it renders on top of MobileBottomNav and all widgets */}
       {open && (
         <div
-          className="fixed inset-x-2 bottom-16 md:bottom-20 md:right-6 md:left-auto md:w-[390px] max-w-[calc(100vw-1rem)] shadow-2xl rounded-2xl border border-border bg-card flex flex-col overflow-hidden z-[70]"
+          className="bs-glass fixed inset-x-2 bottom-20 md:bottom-24 md:right-6 md:left-auto md:w-[390px] max-w-[calc(100vw-1rem)] shadow-2xl rounded-3xl border border-primary/20 bg-card flex flex-col overflow-hidden z-[70]"
           style={{ height: 'min(520px, 76vh)' }}
         >
           {/* Header */}

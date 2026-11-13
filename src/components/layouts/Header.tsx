@@ -140,9 +140,9 @@ export default function Header() {
   const isActive = (href: string) => location.pathname === href;
 
   return (
-    <header className="relative z-30 w-full bg-background border-b border-border shadow-sm transition-colors">
+    <header className="bs-header z-40 w-full border-b border-border/80 bg-background/80 shadow-[0_10px_40px_-28px_hsl(21_100%_40%/0.8)] backdrop-blur-xl transition-colors">
       {/* ── Main row ── */}
-      <div className="max-w-[1400px] mx-auto px-2.5 sm:px-4 md:px-6 h-[56px] flex items-center gap-1 sm:gap-2 md:gap-4 justify-between md:justify-start">
+      <div className="max-w-[1400px] mx-auto px-2.5 sm:px-4 lg:px-6 min-h-[56px] py-2 flex items-center gap-1 sm:gap-2 lg:gap-4 justify-between lg:justify-start">
 
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0 group py-1 min-w-0" aria-label="BulkSkart Homepage">
@@ -150,7 +150,7 @@ export default function Header() {
         </Link>
 
         {/* Search bar — desktop */}
-        <form onSubmit={handleSearch} className="hidden md:flex flex-1 min-w-[140px] max-w-[420px] lg:max-w-[500px] items-center bg-muted border border-border rounded-lg h-9 px-3 gap-2 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/30 transition-all">
+        <form onSubmit={handleSearch} className="hidden lg:flex flex-1 min-w-[140px] max-w-[420px] xl:max-w-[500px] items-center bg-muted/80 border border-border rounded-xl h-10 px-3 gap-2 focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25 transition-all">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input
             ref={searchInputRef}
@@ -166,7 +166,7 @@ export default function Header() {
         </form>
 
         {/* ── Mobile: icon row (right side of logo) ── */}
-        <div className="md:hidden flex items-center gap-1 sm:gap-1.5 ml-auto shrink-0">
+        <div className="lg:hidden flex items-center gap-1 sm:gap-1.5 ml-auto shrink-0">
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0" aria-label="Toggle theme">
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
@@ -354,7 +354,7 @@ export default function Header() {
         </div>
 
         {/* ── Desktop: right side controls ── */}
-        <div className="hidden md:flex items-center gap-1 ml-auto">
+        <div className="hidden lg:flex items-center gap-1 ml-auto">
           {showViewPlans && (
             <Link to="/pricing">
               <Button
@@ -374,8 +374,8 @@ export default function Header() {
               <Button variant="ghost" size="sm" aria-label="Select Country and Currency" className="h-9 px-2 gap-1.5 text-[13px] text-muted-foreground hover:text-foreground font-semibold">
                 <span className="text-base leading-none">{countryConfig.flag}</span>
                 <span className="font-bold text-foreground">{countryConfig.code}</span>
-                <span className="text-xs font-mono text-muted-foreground">({countryConfig.symbol})</span>
-                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">
+                <span className="hidden xl:inline text-xs font-mono text-muted-foreground">({countryConfig.symbol})</span>
+                <span className="hidden xl:inline text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">
                   {countryConfig.taxLabel}
                 </span>
                 <ChevronDown className="w-3 h-3 opacity-60" />
@@ -485,7 +485,7 @@ export default function Header() {
       </div>
 
       {/* ── Mobile: full-width search bar row ── */}
-      <div className="md:hidden px-2.5 sm:px-4 pt-1 pb-1.5 bg-background w-full min-w-0 box-border">
+      <div className="lg:hidden px-2.5 sm:px-4 pt-1 pb-1.5 w-full min-w-0 box-border">
         <form onSubmit={handleSearch} className="flex items-center rounded-xl border border-border bg-muted overflow-hidden h-9 w-full min-w-0 shadow-xs">
           <Search className="w-3.5 h-3.5 text-muted-foreground ml-2.5 shrink-0" />
           <input
@@ -503,7 +503,7 @@ export default function Header() {
       </div>
 
       {/* ── Mobile: category chips with smooth touch swipe ── */}
-      <div className="md:hidden flex items-center gap-1.5 overflow-x-auto px-2.5 sm:px-4 pb-2 w-full min-w-0 scrollbar-none overscroll-x-contain touch-pan-x">
+      <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto px-2.5 sm:px-4 pb-2 w-full min-w-0 scrollbar-none overscroll-x-contain touch-pan-x">
         {MOBILE_CATS.map(({ label, icon: Icon, href }) => (
           <Link key={label} to={href}
             className="flex items-center gap-1 shrink-0 px-2.5 py-1 bg-muted border border-border rounded-full text-[10px] font-medium text-foreground whitespace-nowrap hover:border-primary/50 hover:text-primary transition-colors">
@@ -521,14 +521,14 @@ export default function Header() {
       </div>
 
       {/* ── Desktop Category Nav ── */}
-      <nav className="hidden md:block border-t border-border">
+      <nav className="hidden lg:block border-t border-border">
         <div className="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center overflow-x-auto scrollbar-none whitespace-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {navLinks.map((link, i) => (
+            {navLinks.map((link) => (
               <Link key={link.href} to={link.href}
                 {...getPrefetchHandlers(link.href)}
-                className={`whitespace-nowrap px-3.5 lg:px-4 py-2.5 text-[12.5px] lg:text-[13px] font-medium transition-colors hover:text-primary border-b-2 ${
-                  i === 0 ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
+                className={`whitespace-nowrap px-2.5 xl:px-3.5 py-2.5 text-[12px] xl:text-[13px] font-medium transition-colors hover:text-primary border-b-2 ${
+                  isActive(link.href) ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
                 }`}>
                 {link.label}
               </Link>

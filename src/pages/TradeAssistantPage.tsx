@@ -350,6 +350,7 @@ export default function TradeAssistantPage() {
           {/* ── Page Header ────────────────────────────────────────── */}
           <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-r from-[#FF5A00] via-orange-500/40 to-[#FF5A00]/50 shadow-[0_0_40px_rgba(255,90,0,0.15)]">
             <div className="relative rounded-[22.5px] bg-[#070B13] p-6 sm:p-8 md:p-10 text-white overflow-hidden border border-white/5">
+              <div className="bs-scan pointer-events-none absolute inset-x-[20%] top-0 h-20 bg-gradient-to-b from-transparent via-[#FF5A00]/20 to-transparent" aria-hidden="true" />
               <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-[#FF5A00]/10 blur-3xl pointer-events-none" />
               <div className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full bg-[#FF5A00]/10 blur-3xl pointer-events-none" />
 
