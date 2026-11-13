@@ -158,12 +158,12 @@ export default function SupplierVerificationPage() {
   return (
     <DashboardLayout>
       <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 min-w-0">
-        <div className="flex items-start gap-3 sm:gap-3.5">
+        <div className="bs-glass flex items-start gap-3 sm:gap-3.5 rounded-3xl p-4">
           <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
             <ShieldCheck className="w-5 h-5 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">Manufacturer Verification</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-foreground leading-tight">Manufacturer Verification</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">Complete verification to get the Verified Manufacturer badge and accept orders</p>
           </div>
         </div>

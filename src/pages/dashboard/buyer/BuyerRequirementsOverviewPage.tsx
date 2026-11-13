@@ -163,9 +163,9 @@ export default function BuyerRequirementsOverviewPage() {
         <div className="max-w-6xl w-full mx-auto space-y-6">
 
           {/* Header */}
-          <div className="flex items-start justify-between flex-wrap gap-3">
+          <div className="bs-glass flex items-start justify-between flex-wrap gap-3 rounded-3xl p-4">
             <div>
-              <h1 className="text-xl font-bold text-foreground">Requirements Overview</h1>
+              <h1 className="text-xl font-black text-foreground">Requirements Overview</h1>
               <p className="text-sm text-muted-foreground">Manage all your posted bulk requirements</p>
             </div>
             <Link to="/post-requirement">

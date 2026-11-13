@@ -209,9 +209,9 @@ export default function SupplierProductsPage() {
       />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl w-full mx-auto">
-          <div className="flex items-center justify-between mb-6">
+          <div className="bs-glass mb-6 flex items-center justify-between rounded-3xl p-4">
             <div>
-              <h1 className="text-xl font-bold text-foreground">My Products</h1>
+              <h1 className="text-xl font-black text-foreground">My Products</h1>
               <p className="text-sm text-muted-foreground">Manage your product listings</p>
             </div>
             <Button

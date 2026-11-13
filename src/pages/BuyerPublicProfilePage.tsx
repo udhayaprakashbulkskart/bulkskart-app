@@ -202,7 +202,7 @@ export default function BuyerPublicProfilePage() {
       <div className="mx-auto max-w-[1100px] px-4 pb-24 pt-6 md:px-6 md:pb-8">
         <Breadcrumbs items={[{ name: 'Buying Requests', href: '/requirements' }, { name: displayName }]} className="mb-4" />
 
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="bs-glass overflow-hidden rounded-3xl">
           <div className="h-28 bg-cover bg-center sm:h-40" style={{ backgroundImage: `url(${buyer.banner_url || FALLBACK_BANNER})` }} />
           <div className="flex flex-col gap-4 px-4 pb-4 sm:flex-row sm:items-end sm:px-5">
             <div className="-mt-10 h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-4 border-card bg-muted sm:h-24 sm:w-24">

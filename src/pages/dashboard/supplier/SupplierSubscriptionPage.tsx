@@ -292,10 +292,10 @@ export default function SupplierSubscriptionPage() {
         <div className="max-w-5xl w-full mx-auto px-4 md:px-6 py-6">
 
           {/* Header */}
-          <div className="mb-6">
+          <div className="bs-glass mb-6 rounded-3xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <CreditCard className="w-5 h-5 text-primary" />
-              <h1 className="text-xl font-bold text-foreground">Subscription & Billing</h1>
+              <h1 className="text-xl font-black text-foreground">Subscription & Billing</h1>
             </div>
             <p className="text-sm text-muted-foreground">
               Manage your plan and download GST tax invoices for all payments.

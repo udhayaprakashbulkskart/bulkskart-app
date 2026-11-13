@@ -105,8 +105,9 @@ export default function BlogPage() {
       </div>
 
       {/* Hero */}
-      <section className="border-b border-border bg-gradient-to-b from-muted/40 to-background py-10 px-4">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-muted/40 to-background py-10 px-4">
+        <div className="bs-hero-grid pointer-events-none absolute inset-0 opacity-30" aria-hidden="true" />
+        <div className="relative z-10 mx-auto max-w-4xl text-center">
           <Badge className="bg-[#FF5A00]/10 text-[#FF5A00] border border-[#FF5A00]/25 text-xs font-bold mb-3 uppercase tracking-wider">
             Trade Knowledge Hub
           </Badge>

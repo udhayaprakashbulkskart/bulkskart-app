@@ -86,9 +86,13 @@ Shared chrome from the first pass still applies everywhere. This pass adds a lay
 | Disputes, shipping calculator, my quotations | Page headers and the freight calculator panel. |
 | Other public pages | About, contact, legal, blog, pricing, how-it-works, categories, and SEO hubs keep the shared header, footer, buttons, and ink panels. |
 
-## Still thin
+## Third pass
 
-Requirement detail, forward-auction detail, and a few dashboard sub-pages (inventory, verification, subscription) mostly inherit the shared system rather than a rebuilt layout. Wallet cannot be redesigned as its own screen because those URLs redirect to subscription.
+Requirement detail, auction lot, inventory, buyer and manufacturer verification, subscription, requirements overview, saved manufacturers, supplier products, RFQ leads, quotations, business overview, payment success, not-found, blog, SEO hubs, buyer public profile, and AI match analytics now use their own glass headers or scan accents. Wallet URLs still redirect to subscription because that is the existing page.
+
+## API diff vs master
+
+`src/lib`, `src/db`, `src/hooks`, `src/contexts`, `supabase`, and `.github` are unchanged. No added or removed `supabase`, `fetch`, `axios`, or Razorpay calls. Form `onSubmit` handlers are the same functions. The homepage secondary button now goes to supplier registration (`/auth?tab=supplier`), which is the requested manufacturer call to action. Search still uses `handleSearchSubmit`.
 
 ## Verification
 

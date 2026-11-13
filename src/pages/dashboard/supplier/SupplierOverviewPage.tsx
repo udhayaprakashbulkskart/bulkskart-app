@@ -116,9 +116,9 @@ export default function SupplierOverviewPage() {
         <div className="max-w-5xl w-full mx-auto space-y-6">
 
           {/* Header */}
-          <div className="flex items-start justify-between flex-wrap gap-3">
+          <div className="bs-glass flex items-start justify-between flex-wrap gap-3 rounded-3xl p-4">
             <div>
-              <h1 className="text-xl font-bold text-foreground">Business Overview</h1>
+              <h1 className="text-xl font-black text-foreground">Business Overview</h1>
               <p className="text-sm text-muted-foreground">Your performance at a glance</p>
             </div>
             <Link to="/dashboard/supplier/products">

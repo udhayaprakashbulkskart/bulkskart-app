@@ -17,7 +17,7 @@ export default function PaymentSuccessPage() {
         keywords="payment confirmed, supplier subscription, BulkSkart plan, activate account"
       />
       <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-120px)] px-4 py-12">
-        <div className="w-full max-w-md text-center">
+        <div className="bs-glass w-full max-w-md rounded-3xl p-8 text-center">
           <div className="flex flex-col items-center gap-5">
             <div className="w-16 h-16 rounded-full bg-green-100 border-2 border-green-300 flex items-center justify-center">
               <CheckCircle className="w-8 h-8 text-green-600" />

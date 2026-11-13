@@ -7,7 +7,7 @@ import { WHATSAPP_CHAT_URL, WHATSAPP_DISPLAY } from '@/lib/supportContact';
 const footerLinks = {
   Products: [
     { label: 'Browse Products', href: '/products' },
-    { label: 'Categories', href: '/categories' },
+    { label: 'Categories', href: '/products' },
     { label: 'Manufacturers', href: '/manufacturers' },
     { label: 'Countries', href: '/manufacturers' },
   ],

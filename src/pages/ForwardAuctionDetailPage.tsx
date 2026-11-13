@@ -727,7 +727,7 @@ export default function ForwardAuctionDetailPage() {
         {isFullPageChat ? (
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4 pb-8 space-y-4">
             {/* Top Compact Lot Summary & Quick Bid Bar */}
-            <div className="p-4 rounded-3xl bg-card border border-border shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="bs-glass relative flex flex-col lg:flex-row lg:items-center justify-between gap-4 overflow-hidden rounded-3xl p-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted border border-border shrink-0">
                   <SafeImage
@@ -832,7 +832,8 @@ export default function ForwardAuctionDetailPage() {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-5">
           
           {/* ── 60-Minute Live Reverse Auction Title Banner ── */}
-          <div className="mb-5 p-4 rounded-3xl bg-card border border-border shadow-sm">
+          <div className="bs-glass relative mb-5 overflow-hidden rounded-3xl p-4">
+            <div className="bs-scan pointer-events-none absolute inset-x-[12%] top-0 h-14 bg-gradient-to-b from-transparent via-[#FF5A00]/20 to-transparent" aria-hidden="true" />
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">

@@ -119,8 +119,9 @@ export default function AIMatchAnalyticsPage() {
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-6xl w-full mx-auto space-y-6">
           {/* Header */}
-          <div>
-            <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+          <div className="bs-glass relative overflow-hidden rounded-3xl p-4">
+            <div className="bs-scan pointer-events-none absolute inset-x-[20%] top-0 h-12 bg-gradient-to-b from-transparent via-primary/20 to-transparent" aria-hidden="true" />
+            <h1 className="relative text-xl font-black text-foreground flex items-center gap-2">
               <Zap className="w-5 h-5 text-primary" />
               AI Match Analytics
             </h1>

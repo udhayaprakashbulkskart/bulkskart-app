@@ -63,7 +63,7 @@ export default function SavedManufacturersPage() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center gap-3">
+        <div className="bs-glass flex items-center gap-3 rounded-3xl p-4">
           <Heart className="w-6 h-6 text-primary" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Saved Manufacturers</h1>
