@@ -96,6 +96,46 @@ function formatPrice(product: Product, isIndia: boolean, rate: number): string {
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
+function productJsonLd(product: Product): Record<string, unknown> {
+  const price = Number(product.price_min ?? product.price_max);
+  const hasPrice = Number.isFinite(price) && price > 0;
+  const rating = Number(product.companies?.rating_avg);
+  const reviewCount = Number(product.companies?.review_count);
+  const hasRating = Number.isFinite(rating) && rating > 0 && Number.isFinite(reviewCount) && reviewCount > 0;
+  const currency = product.price_currency === '₹' || product.price_currency === 'INR' ? 'INR' : product.price_currency;
+  const schema: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    sku: product.id,
+  };
+  if (product.images?.[0]) schema.image = product.images[0];
+  if (product.description) schema.description = product.description;
+  if (product.categories?.name) schema.category = product.categories.name;
+  if (product.companies?.company_name) {
+    schema.brand = { '@type': 'Brand', name: product.companies.company_name };
+  }
+  if (hasPrice && currency) {
+    schema.offers = {
+      '@type': 'Offer',
+      price: String(price),
+      priceCurrency: currency,
+      url: `https://www.bulkskart.com/products/${product.slug || product.id}`,
+      ...(product.companies?.company_name
+        ? { seller: { '@type': 'Organization', name: product.companies.company_name } }
+        : {}),
+    };
+  }
+  if (hasRating) {
+    schema.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: String(rating),
+      reviewCount: String(reviewCount),
+    };
+  }
+  return schema;
+}
+
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { profile } = useAuth();
@@ -291,38 +331,7 @@ export default function ProductDetailPage() {
             ...(product.categories?.name ? [{ name: product.categories.name, item: `/products?category=${encodeURIComponent(product.categories.name)}` }] : []),
             { name: product.name, item: `/products/${product.slug || product.id}` },
           ]}
-          jsonLd={{
-            '@context': 'https://schema.org',
-            '@type': 'Product',
-            name: product.name,
-            image: product.images?.[0],
-            description: product.description || `Wholesale ${product.name} with bulk MOQ of ${product.moq ?? 1} ${product.moq_unit ?? 'units'}.`,
-            sku: product.id,
-            category: product.categories?.name,
-            brand: {
-              '@type': 'Brand',
-              name: product.companies?.company_name || 'BulkSkart Verified Manufacturer',
-            },
-            offers: {
-              '@type': 'Offer',
-              price: product.price_min || product.price_max || '0',
-              priceCurrency: product.price_currency === '₹' ? 'INR' : (product.price_currency || 'USD'),
-              availability: 'https://schema.org/InStock',
-              priceValidUntil: '2027-12-31',
-              url: `https://www.bulkskart.com/products/${product.slug || product.id}`,
-              seller: {
-                '@type': 'Organization',
-                name: product.companies?.company_name || 'Verified Supplier',
-              },
-            },
-            aggregateRating: product.companies?.rating_avg ? {
-              '@type': 'AggregateRating',
-              ratingValue: String(product.companies.rating_avg),
-              reviewCount: String(product.companies?.review_count || 12),
-              bestRating: '5',
-              worstRating: '1',
-            } : undefined,
-          }}
+          jsonLd={productJsonLd(product)}
         />
 
         {/* ── Mobile search bar ──────────────────────────────────────── */}
@@ -459,7 +468,7 @@ export default function ProductDetailPage() {
 
               {/* ── Product Info (mobile only — shown below gallery) ── */}
               <div className="md:hidden mb-5">
-                <h1 className="text-xl font-black text-foreground mb-2 leading-tight">{product.name}</h1>
+                <h2 className="text-xl font-black text-foreground mb-2 leading-tight">{product.name}</h2>
 
                 {isVerified && (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-full px-2.5 py-1 mb-3">

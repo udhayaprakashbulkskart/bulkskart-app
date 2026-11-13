@@ -95,8 +95,11 @@ export default function CategoriesAndStatsSection() {
         <img
           src="https://miaoda-site-img.s3cdn.medo.dev/images/KLing_8968ecea-7c21-468b-a30c-31275c92e5cc.jpg"
           alt="Industrial Sourcing Port & Container Shipping"
+          width={960}
+          height={540}
           className="w-full h-full object-cover object-center"
           loading="lazy"
+          decoding="async"
         />
         {/* Gradients blending into the dark section background */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#080C14] via-[#080C14]/50 to-transparent" />
@@ -163,8 +166,11 @@ export default function CategoriesAndStatsSection() {
                 <img
                   src={cat.img}
                   alt={cat.name}
+                  width={640}
+                  height={480}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
                   loading="lazy"
+                  decoding="async"
                 />
                 {/* Seamless ambient blend gradients */}
                 <div className="absolute inset-0 bg-gradient-to-r from-[#0c121e] via-[#0c121e]/70 to-transparent" />

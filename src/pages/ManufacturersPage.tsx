@@ -13,7 +13,7 @@ import {
 import SafeImage from '@/components/common/SafeImage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getCompanies, getOrCreateConversation, checkDirectMessageQuota, incrementMessageQuota } from '@/lib/api';
-import { TOTAL_VERIFIED_SUPPLIERS_COUNT } from '@/data/alibabaVerifiedSuppliers';
+import { TOTAL_VERIFIED_SUPPLIERS_COUNT } from '@/data/verifiedSupplierCount';
 import type { Company } from '@/types/types';
 import { useAuth } from '@/contexts/AuthContext';
 import SubscribeToContactDialog from '@/components/common/SubscribeToContactDialog';
