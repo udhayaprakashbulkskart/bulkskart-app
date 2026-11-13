@@ -1,282 +1,238 @@
 /**
  * razorpay-create-order
  *
- * Creates a Razorpay order for:
- * 1. Subscription plans (subscription_orders)
- * 2. Product Promotions (product_promotions)
- *
- * POST body for subscription: { type: 'subscription', plan_tier, plan_label, price_inr, billing_cycle, company_id }
- * POST body for promotion:    { type: 'promotion', product_id, promotion_type, duration_days, base_amount, gst_amount, total_amount, target_category, target_country, company_id }
+ * Creates a Razorpay order for a catalog price. The browser sends the SKU
+ * (plan, add-on, promotion, or auction fee). Amounts from the client are ignored.
  */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { isUuid, json, keysMissingResponse, razorpayConfig } from '../_shared/http.ts';
+import { createRazorpayOrder } from '../_shared/razorpayApi.ts';
+import { quoteAddon, quoteAuctionFee, quotePlan, quotePromotion, type PriceQuote } from '../_shared/razorpayCore.ts';
 
-const CORS = {
+const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
 
   try {
-    const keyId       = (Deno.env.get('RAZORPAY_KEY_ID') || '').trim();
-    const keySecret   = (Deno.env.get('RAZORPAY_KEY_SECRET') || '').trim();
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const { keyId, keySecret } = razorpayConfig();
+    if (!keyId || !keySecret) return keysMissingResponse();
 
-    if (!keyId || !keySecret) {
-      console.error('Razorpay keys missing: RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not set on edge runtime');
-      return new Response(JSON.stringify({
-        error: 'Payment gateway is not configured. Please contact support.',
-        code: 'RAZORPAY_KEYS_MISSING',
-      }), {
-        status: 503,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const authHeader = req.headers.get('Authorization') ?? '';
-    const supabase = createClient(supabaseUrl, serviceKey);
-
-    // Authenticate caller
-    const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+    const admin = createClient(supabaseUrl, serviceKey);
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
     });
-    const { data: { user }, error: authErr } = await userClient.auth.getUser();
-    if (authErr || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized: Please log in' }), {
-        status: 401,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
+    const { data: userData, error: authErr } = await userClient.auth.getUser();
+    const user = userData?.user;
+    if (authErr || !user) return json({ error: 'Unauthorized: Please log in' }, 401);
 
-    const body = await req.json();
-    const { type = 'subscription', company_id } = body;
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== 'object') return json({ error: 'Invalid JSON body' }, 400);
 
-    if (!company_id) {
-      return new Response(JSON.stringify({ error: 'Missing company_id' }), {
-        status: 400,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
+    const type = typeof body.type === 'string' ? body.type : 'subscription';
+    const companyId = body.company_id;
+    if (!isUuid(companyId)) return json({ error: 'Missing company_id' }, 400);
 
-    // Verify ownership of the company or admin role
-    const { data: company, error: compErr } = await supabase
+    const { data: company, error: compErr } = await admin
       .from('companies')
       .select('id, owner_id')
-      .eq('id', company_id)
+      .eq('id', companyId)
       .maybeSingle();
-
-    if (compErr || !company) {
-      return new Response(JSON.stringify({ error: 'Company not found' }), {
-        status: 404,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Check if user is owner or admin
+    if (compErr || !company) return json({ error: 'Company not found' }, 404);
     if (company.owner_id !== user.id) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (profile?.role !== 'admin') {
-        return new Response(JSON.stringify({ error: 'Forbidden: You do not own this company profile' }), {
-          status: 403,
-          headers: { ...CORS, 'Content-Type': 'application/json' },
-        });
-      }
+      const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle();
+      if (profile?.role !== 'admin') return json({ error: 'Forbidden: You do not own this company profile' }, 403);
     }
 
-    const credentials = btoa(`${keyId}:${keySecret}`);
-
-    // ========================================================
-    // CASE A: Product Promotion Order
-    // ========================================================
     if (type === 'promotion') {
-      const {
-        product_id,
-        promotion_type = 'featured',
-        duration_days = 7,
-        base_amount = 999,
-        gst_amount = 179.82,
-        total_amount = 1178.82,
-        target_category,
-        target_country = 'All Countries',
-      } = body;
-
-      if (!product_id) {
-        return new Response(JSON.stringify({ error: 'Missing product_id for promotion' }), {
-          status: 400,
-          headers: { ...CORS, 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Verify product belongs to this company
-      const { data: product, error: prodErr } = await supabase
-        .from('products')
-        .select('id, name, company_id')
-        .eq('id', product_id)
-        .eq('company_id', company_id)
-        .maybeSingle();
-
-      if (prodErr || !product) {
-        return new Response(JSON.stringify({ error: 'Product not found or does not belong to your company' }), {
-          status: 404,
-          headers: { ...CORS, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const totalVal = Math.max(1, Number(total_amount));
-      const amountPaise = Math.round(totalVal * 100);
-
-      // Create Razorpay Order
-      const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${credentials}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: amountPaise,
-          currency: 'INR',
-          receipt: `promo_${Date.now()}`,
-          notes: {
-            type: 'promotion',
-            company_id,
-            product_id,
-            promotion_type,
-            duration_days: String(duration_days),
-            user_id: user.id,
-            product_name: product.name,
-          },
-        }),
-      });
-
-      if (!rzpRes.ok) {
-        const err = await rzpRes.text();
-        console.error('Razorpay order creation failed for promotion:', err);
-        return new Response(JSON.stringify({ error: 'Failed to create Razorpay order for promotion', details: err }), {
-          status: 502,
-          headers: { ...CORS, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const rzpOrder = await rzpRes.json();
-
-      // Record pending promotion in product_promotions table
-      let promoRecordId: string | undefined;
-      const { data: promoRecord, error: promoErr } = await supabase
-        .from('product_promotions')
-        .insert({
-          company_id,
-          product_id,
-          promotion_type,
-          target_category: target_category || null,
-          target_country: target_country || 'All Countries',
-          duration_days: Number(duration_days),
-          base_amount: Number(base_amount),
-          gst_amount: Number(gst_amount),
-          total_budget: totalVal,
-          payment_amount: totalVal,
-          payment_currency: 'INR',
-          payment_status: 'pending',
-          payment_method: 'razorpay',
-          razorpay_order_id: rzpOrder.id,
-          status: 'pending_payment',
-        })
-        .select('id')
-        .maybeSingle();
-
-      if (promoErr) {
-        console.error('Warning inserting pending product promotion:', promoErr);
-      } else {
-        promoRecordId = promoRecord?.id;
-      }
-
-      return new Response(
-        JSON.stringify({
-          order_id: rzpOrder.id,
-          amount: rzpOrder.amount,
-          currency: rzpOrder.currency,
-          key_id: keyId,
-          promotion_id: promoRecordId,
-          product_name: product.name,
-        }),
-        { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } }
-      );
+      return await createPromotionOrder({ admin, userId: user.id, companyId, body, keyId, keySecret });
     }
-
-    // ========================================================
-    // CASE B: Subscription Order
-    // ========================================================
-    const { plan_tier, plan_label, price_inr, billing_cycle } = body;
-
-    if (!plan_tier || !price_inr) {
-      return new Response(JSON.stringify({ error: 'Missing required plan_tier or price_inr' }), {
-        status: 400,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
+    if (type === 'auction_fee') {
+      return await createCatalogOrder({
+        admin,
+        userId: user.id,
+        companyId,
+        quote: quoteAuctionFee(),
+        keyId,
+        keySecret,
+        receiptPrefix: 'auc',
       });
     }
 
-    const amount = Math.round(Number(price_inr) * 100);
-
-    const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        amount,
-        currency: 'INR',
-        receipt: `sub_${Date.now()}`,
-        notes: { plan_tier, plan_label, company_id, user_id: user.id },
-      }),
+    const tier = typeof body.plan_tier === 'string' ? body.plan_tier : '';
+    const cycle = typeof body.billing_cycle === 'string' ? body.billing_cycle : 'monthly';
+    const quote = quotePlan(tier, cycle) || quoteAddon(tier);
+    if (!quote) return json({ error: 'This plan is not available for online payment', code: 'UNKNOWN_PLAN' }, 400);
+    return await createCatalogOrder({
+      admin,
+      userId: user.id,
+      companyId,
+      quote,
+      keyId,
+      keySecret,
+      receiptPrefix: quote.kind === 'addon' ? 'add' : 'sub',
     });
-
-    if (!rzpRes.ok) {
-      const err = await rzpRes.text();
-      console.error('Razorpay order creation failed for subscription:', err);
-      return new Response(JSON.stringify({ error: 'Razorpay order creation failed', details: err }), {
-        status: 502,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const rzpOrder = await rzpRes.json();
-
-    const { error: dbErr } = await supabase.from('subscription_orders').insert({
-      company_id,
-      user_id: user.id,
-      plan_tier,
-      plan_label: plan_label ?? plan_tier,
-      price_inr: Number(price_inr),
-      billing_cycle: billing_cycle ?? 'monthly',
-      razorpay_order_id: rzpOrder.id,
-      status: 'pending',
-    });
-
-    if (dbErr) {
-      console.error('DB insert error:', dbErr);
-      return new Response(JSON.stringify({ error: 'DB error' }), {
-        status: 500,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    return new Response(
-      JSON.stringify({ order_id: rzpOrder.id, amount: rzpOrder.amount, currency: rzpOrder.currency, key_id: keyId }),
-      { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } }
-    );
-  } catch (e: any) {
-    console.error('Unhandled error:', e);
-    return new Response(JSON.stringify({ error: 'Internal server error', details: e?.message }), {
-      status: 500,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
-    });
+  } catch {
+    console.error('Unhandled create-order error');
+    return json({ error: 'Internal server error' }, 500);
   }
 });
+
+async function createPromotionOrder(input: {
+  admin: any;
+  userId: string;
+  companyId: string;
+  body: any;
+  keyId: string;
+  keySecret: string;
+}) {
+  const { admin, userId, companyId, body, keyId, keySecret } = input;
+  if (!isUuid(body.product_id)) return json({ error: 'Missing product_id for promotion' }, 400);
+  const quote = quotePromotion(String(body.promotion_type || ''), Number(body.duration_days));
+  if (!quote?.promotionType || !quote.durationDays) {
+    return json({ error: 'Unknown promotion or duration', code: 'UNKNOWN_PROMOTION' }, 400);
+  }
+
+  const { data: product, error: prodErr } = await admin
+    .from('products')
+    .select('id, name, company_id')
+    .eq('id', body.product_id)
+    .eq('company_id', companyId)
+    .maybeSingle();
+  if (prodErr || !product) return json({ error: 'Product not found or does not belong to your company' }, 404);
+
+  const since = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+  const { data: reusable } = await admin
+    .from('product_promotions')
+    .select('id, razorpay_order_id')
+    .eq('company_id', companyId)
+    .eq('product_id', product.id)
+    .eq('promotion_type', quote.promotionType)
+    .eq('duration_days', quote.durationDays)
+    .eq('payment_status', 'pending')
+    .eq('status', 'pending_payment')
+    .eq('total_budget', quote.totalInr)
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (reusable?.razorpay_order_id) {
+    return orderResponse(keyId, reusable.razorpay_order_id, quote, { promotion_id: reusable.id, product_name: product.name });
+  }
+
+  const created = await createRazorpayOrder(keyId, keySecret, quote, `promo_${Date.now()}`, {
+    type: 'promotion',
+    company_id: companyId,
+    product_id: product.id,
+    promotion_type: quote.promotionType,
+    duration_days: String(quote.durationDays),
+    user_id: userId,
+  });
+  if ('error' in created) return json({ error: 'Failed to create Razorpay order for promotion' }, 502);
+
+  const { data: promoRecord, error: promoErr } = await admin
+    .from('product_promotions')
+    .insert({
+      company_id: companyId,
+      product_id: product.id,
+      promotion_type: quote.promotionType,
+      target_category: typeof body.target_category === 'string' ? body.target_category : null,
+      target_country: typeof body.target_country === 'string' ? body.target_country : 'All Countries',
+      duration_days: quote.durationDays,
+      base_amount: quote.baseInr,
+      gst_amount: quote.gstInr,
+      total_budget: quote.totalInr,
+      payment_amount: quote.totalInr,
+      payment_currency: 'INR',
+      payment_status: 'pending',
+      payment_method: 'razorpay',
+      razorpay_order_id: created.id,
+      status: 'pending_payment',
+    })
+    .select('id')
+    .maybeSingle();
+  if (promoErr || !promoRecord) {
+    console.error('Pending promotion insert failed', promoErr?.code || promoErr?.message);
+    return json({ error: 'Could not record the promotion order' }, 500);
+  }
+
+  return orderResponse(keyId, created.id, quote, { promotion_id: promoRecord.id, product_name: product.name });
+}
+
+async function createCatalogOrder(input: {
+  admin: any;
+  userId: string;
+  companyId: string;
+  quote: PriceQuote;
+  keyId: string;
+  keySecret: string;
+  receiptPrefix: string;
+}) {
+  const { admin, userId, companyId, quote, keyId, keySecret, receiptPrefix } = input;
+  const since = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+  const { data: reusable } = await admin
+    .from('subscription_orders')
+    .select('razorpay_order_id')
+    .eq('company_id', companyId)
+    .eq('plan_tier', quote.sku)
+    .eq('billing_cycle', quote.billingCycle)
+    .eq('status', 'pending')
+    .eq('price_inr', quote.totalInr)
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (reusable?.razorpay_order_id) return orderResponse(keyId, reusable.razorpay_order_id, quote);
+
+  const created = await createRazorpayOrder(keyId, keySecret, quote, `${receiptPrefix}_${Date.now()}`, {
+    type: quote.kind,
+    sku: quote.sku,
+    company_id: companyId,
+    user_id: userId,
+    billing_cycle: quote.billingCycle,
+  });
+  if ('error' in created) return json({ error: 'Razorpay order creation failed' }, 502);
+
+  const { error: dbErr } = await admin.from('subscription_orders').insert({
+    company_id: companyId,
+    user_id: userId,
+    plan_tier: quote.sku,
+    plan_label: quote.label,
+    price_inr: quote.totalInr,
+    billing_cycle: quote.billingCycle,
+    razorpay_order_id: created.id,
+    status: 'pending',
+  });
+  if (dbErr) {
+    console.error('Order insert failed', dbErr.code || dbErr.message);
+    const constraint = String(dbErr.code || '') === '23514' || String(dbErr.message || '').includes('plan_tier');
+    return json({
+      error: constraint
+        ? 'This purchase needs the payment plan migration before it can be recorded.'
+        : 'Could not record the payment order',
+      code: constraint ? 'PLAN_TIER_CONSTRAINT' : 'DB_ERROR',
+    }, constraint ? 422 : 500);
+  }
+
+  return orderResponse(keyId, created.id, quote);
+}
+
+function orderResponse(keyId: string, orderId: string, quote: PriceQuote, extra: Record<string, unknown> = {}) {
+  return json({
+    order_id: orderId,
+    amount: quote.amountPaise,
+    currency: 'INR',
+    key_id: keyId,
+    livemode: keyId.startsWith('rzp_live_'),
+    total_inr: quote.totalInr,
+    description: quote.label,
+    ...extra,
+  });
+}

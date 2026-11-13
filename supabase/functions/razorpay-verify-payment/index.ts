@@ -1,301 +1,91 @@
 /**
  * razorpay-verify-payment
  *
- * Verifies Razorpay HMAC signature and securely activates:
- *  1. Subscription plan (subscriptions + subscription_orders)
- *  2. Product Promotion (product_promotions + products)
- *
- * POST body for subscription: { type: 'subscription', razorpay_order_id, razorpay_payment_id, razorpay_signature, company_id, plan_tier, billing_cycle }
- * POST body for promotion:    { type: 'promotion', razorpay_order_id, razorpay_payment_id, razorpay_signature, company_id, product_id }
+ * Confirms the checkout signature (HMAC-SHA256 of order_id|payment_id) and
+ * that Razorpay captured the catalog amount, then activates the stored order.
+ * Plan and amount come from the order row, not from the browser.
  */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { fulfillCapturedPayment } from '../_shared/fulfillPayment.ts';
+import { isUuid, json, keysMissingResponse, razorpayConfig } from '../_shared/http.ts';
+import { confirmedPayment, fetchRazorpayPayment } from '../_shared/razorpayApi.ts';
+import { verifyCheckoutSignature } from '../_shared/razorpayCore.ts';
 
-const CORS = {
+const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const PLAN_LIMITS: Record<string, { max_products: number; max_rfq_leads: number }> = {
-  starter:    { max_products: 5,         max_rfq_leads: 5      },
-  business:   { max_products: 50,        max_rfq_leads: 50     },
-  growth:     { max_products: 999999,    max_rfq_leads: 999999 },
-  enterprise: { max_products: 999999,    max_rfq_leads: 999999 },
-};
-
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
 
   try {
-    const keySecret   = (Deno.env.get('RAZORPAY_KEY_SECRET') || '').trim();
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const { keyId, keySecret } = razorpayConfig();
+    if (!keyId || !keySecret) return keysMissingResponse();
 
-    if (!keySecret) {
-      return new Response(JSON.stringify({
-        error: 'Payment gateway is not configured. Please contact support.',
-        code: 'RAZORPAY_KEYS_MISSING',
-      }), {
-        status: 503,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const authHeader = req.headers.get('Authorization') ?? '';
-    const supabase = createClient(supabaseUrl, serviceKey);
-
-    // Authenticate caller
-    const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const admin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '');
+    const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') || '', {
+      global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
     });
-    const { data: { user }, error: authErr } = await userClient.auth.getUser();
-    if (authErr || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized: Please log in' }), {
-        status: 401,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
+    const { data: userData, error: authErr } = await userClient.auth.getUser();
+    const user = userData?.user;
+    if (authErr || !user) return json({ error: 'Unauthorized: Please log in' }, 401);
+
+    const payload = await req.json().catch(() => null);
+    if (!payload || typeof payload !== 'object') return json({ error: 'Invalid JSON body' }, 400);
+
+    const orderId = typeof payload.razorpay_order_id === 'string' ? payload.razorpay_order_id : '';
+    const paymentId = typeof payload.razorpay_payment_id === 'string' ? payload.razorpay_payment_id : '';
+    const signature = typeof payload.razorpay_signature === 'string' ? payload.razorpay_signature : '';
+    const companyId = payload.company_id;
+    if (!orderId || !paymentId || !signature || !isUuid(companyId)) {
+      return json({ error: 'Missing required payment verification fields' }, 400);
     }
 
-    const payload = await req.json();
-    const {
-      type,
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      company_id,
-      product_id,
-      plan_tier,
-      billing_cycle,
-    } = payload;
+    const signatureOk = await verifyCheckoutSignature(keySecret, orderId, paymentId, signature);
+    if (!signatureOk) return json({ error: 'Payment verification failed: invalid signature' }, 400);
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !company_id) {
-      return new Response(JSON.stringify({ error: 'Missing required payment verification fields' }), {
-        status: 400,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
+    const { data: company } = await admin.from('companies').select('id, owner_id').eq('id', companyId).maybeSingle();
+    if (!company) return json({ error: 'Company not found' }, 404);
+    if (company.owner_id !== user.id) {
+      const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle();
+      if (profile?.role !== 'admin') return json({ error: 'Forbidden: You do not own this company profile' }, 403);
     }
 
-    // HMAC-SHA256 verification: body = order_id + "|" + payment_id
-    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const enc = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw',
-      enc.encode(keySecret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign'],
-    );
-    const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(body));
-    const expectedSig = Array.from(new Uint8Array(sigBuf))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
-
-    if (expectedSig !== razorpay_signature) {
-      console.error('Signature mismatch: expected', expectedSig, 'received', razorpay_signature);
-      return new Response(
-        JSON.stringify({ error: 'Payment verification failed: invalid signature' }),
-        { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // ========================================================
-    // CASE A: Promotion Verification & Activation
-    // ========================================================
-    if (type === 'promotion' || product_id) {
-      // Find matching promotion in product_promotions
-      const { data: promo, error: promoFindErr } = await supabase
-        .from('product_promotions')
-        .select('*')
-        .eq('razorpay_order_id', razorpay_order_id)
-        .eq('company_id', company_id)
-        .maybeSingle();
-
-      if (promoFindErr) {
-        console.error('Error finding promotion order:', promoFindErr);
-      }
-
-      const promoId = promo?.id;
-      const targetProductId = promo?.product_id || product_id;
-      const durationDays = promo?.duration_days || 7;
-      const promoType = promo?.promotion_type || 'featured';
-
-      const now = new Date();
-      const endsAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
-
-      // 1. Update product_promotions row
-      if (promoId) {
-        const { error: promoUpdErr } = await supabase
-          .from('product_promotions')
-          .update({
-            razorpay_payment_id,
-            razorpay_signature,
-            payment_status: 'paid',
-            status: 'active',
-            paid_at: now.toISOString(),
-            starts_at: now.toISOString(),
-            ends_at: endsAt.toISOString(),
-            updated_at: now.toISOString(),
-          })
-          .eq('id', promoId);
-
-        if (promoUpdErr) {
-          console.error('Error updating product promotion status:', promoUpdErr);
-        }
-      } else {
-        // If row wasn't pre-created, insert active promotion directly
-        await supabase.from('product_promotions').insert({
-          company_id,
-          product_id: targetProductId,
-          promotion_type: promoType,
-          duration_days: durationDays,
-          razorpay_order_id,
-          razorpay_payment_id,
-          razorpay_signature,
-          payment_status: 'paid',
-          status: 'active',
-          paid_at: now.toISOString(),
-          starts_at: now.toISOString(),
-          ends_at: endsAt.toISOString(),
-        });
-      }
-
-      // 2. Update product flags in products table
-      if (targetProductId) {
-        const updateProductPayload: Record<string, any> = {
-          is_promoted: true,
-          updated_at: now.toISOString(),
-        };
-
-        if (promoType === 'featured' || promoType === 'campaign') {
-          updateProductPayload.is_featured = true;
-        }
-        if (promoType === 'boost' || promoType === 'campaign') {
-          updateProductPayload.is_sponsored = true;
-        }
-
-        const { error: prodUpdErr } = await supabase
-          .from('products')
-          .update(updateProductPayload)
-          .eq('id', targetProductId);
-
-        if (prodUpdErr) {
-          console.error('Error updating product promotion flags:', prodUpdErr);
-        }
-      }
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'Product promotion verified and campaign activated successfully',
-          promotion_id: promoId,
-          product_id: targetProductId,
-          active_until: endsAt.toISOString(),
-        }),
-        { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // ========================================================
-    // CASE B: Subscription Verification & Activation
-    // ========================================================
-    const { error: orderErr } = await supabase
+    const { data: promo } = await admin
+      .from('product_promotions')
+      .select('company_id, total_budget, payment_amount')
+      .eq('razorpay_order_id', orderId)
+      .maybeSingle();
+    const { data: order } = await admin
       .from('subscription_orders')
-      .update({
-        razorpay_payment_id,
-        razorpay_signature,
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('razorpay_order_id', razorpay_order_id)
-      .eq('company_id', company_id);
+      .select('company_id, price_inr')
+      .eq('razorpay_order_id', orderId)
+      .maybeSingle();
 
-    if (orderErr) {
-      console.error('Order update error:', orderErr);
-      return new Response(
-        JSON.stringify({ error: 'DB error updating order' }),
-        { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } }
-      );
+    const recordCompanyId = promo?.company_id || order?.company_id;
+    const storedAmount = promo ? (promo.total_budget ?? promo.payment_amount) : order?.price_inr;
+    if (!recordCompanyId || storedAmount == null) return json({ error: 'Order not found' }, 404);
+    if (recordCompanyId !== companyId) return json({ error: 'Order does not belong to this company' }, 403);
+
+    const expectedPaise = Math.round(Number(storedAmount) * 100);
+    const payment = await fetchRazorpayPayment(keyId, keySecret, paymentId);
+    if ('error' in payment) return json({ error: payment.error }, 502);
+    if (!confirmedPayment(payment, orderId, expectedPaise)) {
+      return json({ error: 'Payment is not captured for this order' }, 400);
     }
 
-    const tierToUse = plan_tier ? String(plan_tier).toLowerCase() : 'starter';
-    const now = new Date();
-
-    // Check if this is an Add-on purchase
-    if (tierToUse === 'ai_accessibility' || tierToUse === 'ai_addon' || tierToUse === 'addon_ai') {
-      // Activate AI Accessibility for company
-      await supabase.from('companies').update({ has_ai_access: true }).eq('id', company_id);
-      await supabase.from('subscriptions').update({ has_ai_access: true }).eq('company_id', company_id);
-
-      return new Response(
-        JSON.stringify({ success: true, message: 'AI Accessibility Add-on activated successfully' }),
-        { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (tierToUse === 'flash_sell_24h' || tierToUse === 'flash_sell') {
-      // Activate 24 Hours Sell Products Spotlight
-      const flashUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
-      await supabase.from('companies').update({ flash_sell_until: flashUntil, is_featured: true }).eq('id', company_id);
-
-      return new Response(
-        JSON.stringify({ success: true, message: '24 Hours Sell Products Spotlight activated successfully', expires_at: flashUntil }),
-        { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const limits = PLAN_LIMITS[tierToUse] ?? PLAN_LIMITS.starter;
-    const endsAt = new Date(now);
-    endsAt.setMonth(endsAt.getMonth() + (billing_cycle === 'annual' ? 12 : 1));
-    const hasAiIncluded = ['business', 'growth', 'enterprise'].includes(tierToUse);
-
-    const priceMap: Record<string, number> = {
-      starter: 2500,
-      business: 7500,
-      growth: 15000,
-      enterprise: 35000,
-    };
-
-    const { error: subErr } = await supabase
-      .from('subscriptions')
-      .upsert(
-        {
-          company_id,
-          tier: tierToUse,
-          price_inr: priceMap[tierToUse] ?? 2500,
-          billing_cycle: billing_cycle ?? 'monthly',
-          status: 'active',
-          max_products: limits.max_products,
-          max_rfq_leads: limits.max_rfq_leads,
-          has_ai_access: hasAiIncluded,
-          starts_at: now.toISOString(),
-          ends_at: endsAt.toISOString(),
-          updated_at: now.toISOString(),
-        },
-        { onConflict: 'company_id' }
-      );
-
-    if (subErr) {
-      console.error('Subscription upsert error:', subErr);
-      return new Response(
-        JSON.stringify({ error: 'DB error activating subscription' }),
-        { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (hasAiIncluded) {
-      await supabase.from('companies').update({ has_ai_access: true }).eq('id', company_id);
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, message: 'Subscription activated successfully', tier: tierToUse }),
-      { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } }
-    );
-  } catch (e: any) {
-    console.error('Unhandled verification error:', e);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error', details: e?.message }),
-      { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } }
-    );
+    return await fulfillCapturedPayment({
+      admin,
+      orderId,
+      paymentId,
+      signature,
+      expectedPaise,
+    });
+  } catch {
+    console.error('Unhandled verification error');
+    return json({ error: 'Internal server error' }, 500);
   }
 });
