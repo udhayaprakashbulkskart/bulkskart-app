@@ -1,7 +1,7 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import IntersectObserver from '@/components/common/IntersectObserver';
-import LiveBuyerOrderAlert from '@/components/common/LiveBuyerOrderAlert';
+const LiveBuyerOrderAlert = lazy(() => import('@/components/common/LiveBuyerOrderAlert'));
 import AutoImageSyncManager from '@/components/common/AutoImageSyncManager';
 import VersionCheckSafetyNet from '@/components/common/VersionCheckSafetyNet';
 import PageSkeleton from '@/components/common/PageSkeleton';
@@ -50,7 +50,9 @@ const App: React.FC = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
-            <LiveBuyerOrderAlert />
+            <Suspense fallback={null}>
+              <LiveBuyerOrderAlert />
+            </Suspense>
             <AutoImageSyncManager />
             <VersionCheckSafetyNet />
             <AIChatAssistant />
