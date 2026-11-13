@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { trackSignUp } from '@/lib/analytics';
+import { pathAfterAuth } from '@/lib/postAuthPath';
+import { SUPPORT_EMAIL } from '@/lib/supportContact';
 
 // ── Industry mockup images (Optimized Unsplash CDN with auto-format) ────────────
 const INDUSTRY_SLIDES = [
@@ -226,7 +228,8 @@ function generateSlug(name: string) {
 }
 
 export default function AuthPage() {
-  const { user, profile, signIn, signUp, refreshProfile, resolvedRole, loading: authLoading, dashboardPath } = useAuth();
+  const { user, signIn, signUp, refreshProfile, resolvedRole, loading: authLoading, dashboardPath, passwordRecovery } = useAuth();
+  const skipAutoRedirect = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -249,18 +252,21 @@ export default function AuthPage() {
     setActiveTab(getResolvedTab());
   }, [location.pathname, searchParams]);
 
-  // Already signed in → return to the requested page, otherwise the role dashboard
+  // Already signed in → return to the requested page, otherwise the role dashboard.
+  // Signup sets skipAutoRedirect so this effect cannot override navigation into the wizard.
   useEffect(() => {
+    if (skipAutoRedirect.current || passwordRecovery) return;
     if (!user || authLoading) return;
     // Never default to buyer while role is still unknown
     if (!resolvedRole) return;
-    const customRedirect = searchParams.get('redirect') || searchParams.get('returnUrl');
+    const fromState = (location.state as { from?: string } | null)?.from;
+    const customRedirect = searchParams.get('redirect') || searchParams.get('returnUrl') || fromState;
     if (customRedirect && customRedirect.startsWith('/') && !customRedirect.startsWith('//')) {
       navigate(customRedirect, { replace: true });
       return;
     }
     navigate(dashboardPath, { replace: true });
-  }, [user, authLoading, resolvedRole, dashboardPath, navigate, searchParams]);
+  }, [user, authLoading, resolvedRole, dashboardPath, navigate, searchParams, passwordRecovery, location.state]);
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
@@ -284,10 +290,16 @@ export default function AuthPage() {
     setForgotLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
-        redirectTo: `${window.location.origin}/auth?tab=login`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) {
-        toast.error(error.message || 'Failed to send password reset email');
+        const raw = error.message || '';
+        const mailDown = /sending recovery email|error sending|smtp|unexpected_failure/i.test(raw);
+        toast.error(
+          mailDown
+            ? `We could not send the reset email. Mail delivery is unavailable right now. Contact ${SUPPORT_EMAIL} and we will help you reset it.`
+            : raw || 'Failed to send password reset email'
+        );
       } else {
         setForgotSent(true);
         toast.success('Password reset link has been dispatched to your email address');
@@ -314,23 +326,21 @@ export default function AuthPage() {
   const [policyOpen, setPolicyOpen] = useState(false);
   const [policyTab, setPolicyTab] = useState<'terms' | 'privacy'>('terms');
 
-  const getTargetRedirect = (role?: string | null) => {
-    const customRedirect = searchParams.get('redirect') || searchParams.get('returnUrl');
-    if (customRedirect && customRedirect.startsWith('/') && !customRedirect.startsWith('//')) {
-      return customRedirect;
-    }
-    if (role === 'admin') return '/dashboard/admin';
-    if (role === 'supplier') return '/dashboard/supplier';
-    if (role === 'buyer') return '/dashboard/buyer';
-    return dashboardPath !== '/auth' ? dashboardPath : '/dashboard/buyer';
+  const explicitRedirect = () => {
+    const fromState = (location.state as { from?: string } | null)?.from;
+    const customRedirect = searchParams.get('redirect') || searchParams.get('returnUrl') || fromState;
+    if (customRedirect && customRedirect.startsWith('/') && !customRedirect.startsWith('//')) return customRedirect;
+    return null;
   };
 
   const doLogin = async (email: string, pw: string) => {
     setError('');
     setLoading(true);
+    skipAutoRedirect.current = true;
     try {
       const { error: err } = await signIn(email.trim().toLowerCase(), pw);
       if (err) {
+        skipAutoRedirect.current = false;
         setError(err);
         toast.error(err);
         return;
@@ -345,8 +355,9 @@ export default function AuthPage() {
       await refreshProfile(currentUser.id);
       const { data: roleRow } = await supabase.from('profiles').select('role').eq('id', currentUser.id).maybeSingle();
       const metaRole = (currentUser.user_metadata?.role as string | undefined) || null;
-      navigate(getTargetRedirect(roleRow?.role || metaRole));
+      navigate(await pathAfterAuth(currentUser.id, roleRow?.role || metaRole, explicitRedirect()));
     } catch (err: any) {
+      skipAutoRedirect.current = false;
       const msg = err?.message || 'Login failed. Please check your credentials and try again.';
       setError(msg);
       toast.error(msg);
@@ -409,10 +420,12 @@ export default function AuthPage() {
     }
 
     setLoading(true);
+    skipAutoRedirect.current = true;
     try {
       const { error: err, user: registeredUser } = await signUp(cleanEmail, buyerData.password, cleanName, 'buyer');
 
       if (err) {
+        skipAutoRedirect.current = false;
         if (err.toLowerCase().includes('already exists') || err.toLowerCase().includes('already registered')) {
           setLoginEmail(cleanEmail);
           setActiveTab('login');
@@ -428,22 +441,30 @@ export default function AuthPage() {
       const activeUser = registeredUser || (await supabase.auth.getUser()).data.user;
       if (activeUser) {
         try {
+          await supabase.from('profiles').update({
+            phone: buyerData.phone?.trim() || null,
+            city: buyerData.city?.trim() || null,
+            country: buyerData.country,
+          }).eq('id', activeUser.id);
           await supabase.from('buyer_profiles').upsert({
             user_id: activeUser.id,
             company_name: buyerData.companyName?.trim() || cleanName || 'Buyer',
             city: buyerData.city?.trim() || null,
             country: buyerData.country,
+            onboarding_step: 1,
+            onboarding_completed: false,
           });
         } catch {
-          // silent
+          // The setup wizard saves these again if the first write is rejected.
         }
         await refreshProfile(activeUser.id);
       }
 
-      toast.success('Buyer account created! Welcome to BulkSkart.');
+      toast.success('Buyer account created! Let’s finish your business profile.');
       trackSignUp('buyer');
-      navigate(getTargetRedirect('buyer'));
+      navigate('/business-setup', { replace: true });
     } catch (err: any) {
+      skipAutoRedirect.current = false;
       const msg = err?.message || 'Failed to create buyer account. Please try again.';
       setError(msg);
       toast.error(msg);
@@ -507,10 +528,12 @@ export default function AuthPage() {
     }
 
     setLoading(true);
+    skipAutoRedirect.current = true;
     try {
       const { error: err, user: registeredUser } = await signUp(cleanEmail, supplierData.password, cleanName, 'supplier');
 
       if (err) {
+        skipAutoRedirect.current = false;
         if (err.toLowerCase().includes('already exists') || err.toLowerCase().includes('already registered')) {
           setLoginEmail(cleanEmail);
           setActiveTab('login');
@@ -548,11 +571,21 @@ export default function AuthPage() {
         };
 
         try {
-          const { data: newCo } = await supabase
+          await supabase.from('profiles').update({
+            phone: supplierData.phone?.trim() || null,
+            city: supplierData.city?.trim() || null,
+            state: supplierData.state?.trim() || null,
+            country: supplierData.country,
+          }).eq('id', activeUser.id);
+          const { data: newCo, error: companyErr } = await supabase
             .from('companies')
             .insert(newCompanyPayload)
             .select('id')
             .maybeSingle();
+          if (companyErr) {
+            console.warn('Company insert notice:', companyErr.message);
+            toast.error(`Account created, but the company profile did not save: ${companyErr.message}`);
+          }
 
           if (newCo?.id) {
             import('@/lib/api').then(({ triggerMatchNewManufacturer }) =>
@@ -568,8 +601,9 @@ export default function AuthPage() {
 
       toast.success('Supplier account created! Please complete your business profile.');
       trackSignUp('supplier');
-      navigate('/business-setup');
+      navigate('/business-setup', { replace: true });
     } catch (err: any) {
+      skipAutoRedirect.current = false;
       const msg = err?.message || 'Failed to complete supplier registration. Please try again.';
       setError(msg);
       toast.error(msg);

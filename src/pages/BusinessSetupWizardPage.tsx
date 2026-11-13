@@ -180,6 +180,11 @@ export default function BusinessSetupWizardPage() {
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const submitLock = React.useRef(false);
+  const persistRef = React.useRef<(opts: { step: number; completed: boolean }) => Promise<{ error: string | null }>>(
+    async () => ({ error: 'Still loading your account. Please try again.' })
+  );
 
   const clearFieldError = useCallback((key: string) => {
     setFieldErrors((prev) => {
@@ -304,7 +309,8 @@ export default function BusinessSetupWizardPage() {
     return errors;
   }, [accountType, personal, business, selectedCategories, productsSupplied]);
 
-  const handleNextStep = useCallback(() => {
+  const handleNextStep = useCallback(async () => {
+    if (submitLock.current) return;
     const errors = validateStep(currentStep);
     setFieldErrors(errors);
 
@@ -320,7 +326,22 @@ export default function BusinessSetupWizardPage() {
     }
 
     setFieldErrors({});
-    setCurrentStep((p) => Math.min(5, p + 1));
+    const nextStep = Math.min(5, currentStep + 1);
+    submitLock.current = true;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const saved = await persistRef.current({ step: nextStep, completed: false });
+      if (saved.error) {
+        setSaveError(saved.error);
+        toast.error(saved.error);
+        return;
+      }
+      setCurrentStep(nextStep);
+    } finally {
+      submitLock.current = false;
+      setSaving(false);
+    }
   }, [currentStep, validateStep, scrollToFirstError]);
 
   const handleBackStep = useCallback(() => {
@@ -457,6 +478,12 @@ export default function BusinessSetupWizardPage() {
             regDocUrl: targetCompany.reg_doc_url || undefined,
           });
           setVerificationStatus(targetCompany.verification_status as any || 'unverified');
+          setPersonal(prev => ({
+            ...prev,
+            state: prev.state || targetCompany.state || '',
+            city: prev.city || targetCompany.city || '',
+            country: prev.country || targetCompany.country || 'India',
+          }));
           if ((targetCompany as any).onboarding_step && (targetCompany as any).onboarding_step <= 5) {
             setCurrentStep((targetCompany as any).onboarding_step);
           }
@@ -526,7 +553,23 @@ export default function BusinessSetupWizardPage() {
         [`${type}DocUrl`]: docUrl,
       }));
       setVerificationStatus('pending');
-      toast.success(`${type.toUpperCase()} document uploaded successfully!`);
+      if (accountType === 'Buyer' && type === 'iec') {
+        toast.success('IEC document uploaded successfully!');
+        return;
+      }
+      const column = `${type}_doc_url`;
+      const table = accountType === 'Buyer' ? 'buyer_profiles' : 'companies';
+      const ownerColumn = accountType === 'Buyer' ? 'user_id' : 'owner_id';
+      const attach = await supabase.from(table).update({
+        [column]: docUrl,
+        verification_status: 'pending',
+        updated_at: new Date().toISOString(),
+      }).eq(ownerColumn, user.id);
+      if (attach.error) {
+        toast.error(`Uploaded, but it could not be attached to your profile yet: ${attach.error.message}`);
+      } else {
+        toast.success(`${type.toUpperCase()} document uploaded successfully!`);
+      }
     } catch (err: any) {
       toast.error(err?.message || 'Failed to upload document');
     } finally {
@@ -557,198 +600,21 @@ export default function BusinessSetupWizardPage() {
     return Math.min(100, score);
   };
 
-  // Save draft to database
-  const handleSaveDraft = async () => {
-    if (!user) {
-      toast.error('You must be logged in to save progress');
-      return;
-    }
-    setSaving(true);
+  const persistWizard = async (opts: { step: number; completed: boolean }): Promise<{ error: string | null }> => {
+    if (!user) return { error: 'You must be logged in to save progress.' };
+    const isBuyer = accountType === 'Buyer';
+    const completionScore = opts.completed ? Math.max(75, calculateCompletionScore()) : calculateCompletionScore();
+    const hasUploadedDoc = Boolean(docs.gstDocUrl || docs.panDocUrl || docs.regDocUrl || docs.iecDocUrl);
+    const status = opts.completed ? (hasUploadedDoc ? 'pending' : 'unverified') : verificationStatus;
+    const now = new Date().toISOString();
+    const legalName = business.legalName.trim();
+    const year = parseInt(business.yearEstablished, 10);
+
     try {
-      const completionScore = calculateCompletionScore();
-      const isBuyer = accountType === 'Buyer';
-
-      // 1. Update profiles table
-      await supabase.from('profiles').update({
-        full_name: personal.fullName || profile?.full_name,
-        phone: personal.phone || profile?.phone,
-        whatsapp_number: personal.whatsappNumber || null,
-        country: personal.country,
-        state: personal.state,
-        city: personal.city,
-        role: isBuyer ? 'buyer' : 'supplier',
-        updated_at: new Date().toISOString(),
-      }).eq('id', user.id);
-
-      if (isBuyer) {
-        // Upsert buyer_profiles
-        const buyerPayload = {
-          user_id: user.id,
-          company_name: business.legalName || 'My Procurement Business',
-          brand_name: business.brandName || null,
-          business_type: business.businessType || 'Buyer',
-          registration_number: business.registrationNumber || null,
-          gst_number: business.gstNumber || null,
-          pan_number: business.panNumber || null,
-          website: business.website || null,
-          address: business.address || null,
-          city: personal.city || null,
-          state: personal.state || null,
-          country: personal.country || 'India',
-          pincode: business.pincode || null,
-          description: business.description || null,
-          product_categories: selectedCategories,
-          target_products: productsSupplied,
-          trade_type: tradeType,
-          countries_served: countriesServed,
-          payment_terms: paymentTerms,
-          gst_doc_url: docs.gstDocUrl || null,
-          pan_doc_url: docs.panDocUrl || null,
-          reg_doc_url: docs.regDocUrl || null,
-          onboarding_step: currentStep,
-          onboarding_completed: false,
-          profile_completion: completionScore,
-          verification_status: verificationStatus,
-          updated_at: new Date().toISOString(),
-        };
-
-        const { data: existingBuyer } = await supabase.from('buyer_profiles').select('id').eq('user_id', user.id).maybeSingle();
-        if (existingBuyer?.id) {
-          await supabase.from('buyer_profiles').update(buyerPayload).eq('user_id', user.id);
-        } else {
-          await supabase.from('buyer_profiles').insert(buyerPayload);
-        }
-      } else {
-        // Upsert companies table
-        const slug = (business.legalName || 'supplier').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + user.id.slice(0, 6);
-        const companyPayload = {
-          owner_id: user.id,
-          company_name: business.legalName || 'My Industrial Company',
-          brand_name: business.brandName || null,
-          business_type: business.businessType || accountType,
-          registration_number: business.registrationNumber || null,
-          gst_number: business.gstNumber || null,
-          pan_number: business.panNumber || null,
-          iec_number: business.iecNumber || null,
-          address: business.address || null,
-          city: personal.city || null,
-          state: personal.state || null,
-          country: personal.country || 'India',
-          pincode: business.pincode || null,
-          website: business.website || null,
-          year_established: business.yearEstablished ? parseInt(business.yearEstablished, 10) : null,
-          description: business.description || null,
-          product_categories: selectedCategories,
-          key_products: productsSupplied,
-          moq_policy: moq || null,
-          production_capacity: capacity || null,
-          trade_type: tradeType,
-          export_destinations: countriesServed,
-          payment_terms: paymentTerms,
-          shipping_capabilities: shippingCapabilities.join(', '),
-          gst_doc_url: docs.gstDocUrl || null,
-          iec_doc_url: docs.iecDocUrl || null,
-          pan_doc_url: docs.panDocUrl || null,
-          reg_doc_url: docs.regDocUrl || null,
-          onboarding_step: currentStep,
-          onboarding_completed: false,
-          profile_completion: completionScore,
-          verification_status: verificationStatus,
-          updated_at: new Date().toISOString(),
-        };
-
-        const { data: existingCo } = await supabase.from('companies').select('id').eq('owner_id', user.id).maybeSingle();
-        if (existingCo?.id) {
-          await supabase.from('companies').update(companyPayload).eq('owner_id', user.id);
-        } else {
-          await supabase.from('companies').insert({
-            ...companyPayload,
-            slug,
-            verification_status: 'unverified',
-            is_verified: false,
-            is_featured: false,
-            total_products: 0,
-            total_quotes_sent: 0,
-          });
-        }
-      }
-
-      await refreshProfile();
-      toast.success('Draft saved successfully! You can resume anytime.');
-    } catch (err: any) {
-      console.error('Save draft error:', err);
-      toast.error(err?.message || 'Failed to save draft');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Complete profile & finalize
-  const handleCompleteProfile = async () => {
-    if (!user) return;
-
-    // Full multi-step validation before final submit
-    for (const step of [1, 2, 3, 4] as const) {
-      const errors = validateStep(step);
-      if (Object.keys(errors).length > 0) {
-        setFieldErrors(errors);
-        setCurrentStep(step);
-        toast.error('Please complete all required fields before launching your profile');
-        setTimeout(scrollToFirstError, 80);
-        return;
-      }
-    }
-
-    // Step 5 self-check (format-only leftovers already covered in steps 2–3)
-    const finalErrors = validateStep(5);
-    if (Object.keys(finalErrors).length > 0) {
-      setFieldErrors(finalErrors);
-      toast.error('Please fix the highlighted fields');
-      scrollToFirstError();
-      return;
-    }
-
-    setCompleting(true);
-    try {
-      const isBuyer = accountType === 'Buyer';
-      const completionScore = calculateCompletionScore();
-      const hasUploadedDoc = Boolean(docs.gstDocUrl || docs.panDocUrl || docs.regDocUrl || docs.iecDocUrl);
-      const finalStatus = hasUploadedDoc ? 'pending' : 'unverified';
-
-      // 1. Update profiles table
-      const finalRole = isBuyer ? 'buyer' : 'supplier';
-      const profRes = await withTimeout(supabase.from('profiles').update({
-        full_name: personal.fullName.trim(),
-        phone: personal.phone.trim(),
-        whatsapp_number: personal.whatsappNumber.trim() || null,
-        country: personal.country,
-        state: personal.state,
-        city: personal.city,
-        role: finalRole,
-        onboarding_completed: true,
-        updated_at: new Date().toISOString(),
-      }).eq('id', user.id));
-      if (profRes.error) {
-        throw new Error(`Could not save your personal details: ${profRes.error.message}`);
-      }
-
-      // Keep auth metadata in sync so dashboard routing never drifts after setup.
-      // Non-blocking: a slow auth call must not hold the user on "Completing Profile...".
-      void withTimeout(supabase.auth.updateUser({
-        data: {
-          role: finalRole,
-          full_name: personal.fullName.trim(),
-        },
-      }), 8000)
-        .then(metaRes => {
-          if (metaRes.error) console.warn('Auth metadata sync failed:', metaRes.error.message);
-        })
-        .catch(metaErr => console.warn('Auth metadata sync skipped:', metaErr));
-
       if (isBuyer) {
         const buyerPayload = {
           user_id: user.id,
-          company_name: business.legalName.trim(),
+          company_name: legalName || 'My Procurement Business',
           brand_name: business.brandName.trim() || null,
           business_type: business.businessType || 'Buyer',
           registration_number: business.registrationNumber.trim() || null,
@@ -769,27 +635,24 @@ export default function BusinessSetupWizardPage() {
           gst_doc_url: docs.gstDocUrl || null,
           pan_doc_url: docs.panDocUrl || null,
           reg_doc_url: docs.regDocUrl || null,
-          onboarding_step: 5,
-          onboarding_completed: true,
-          profile_completion: Math.max(75, completionScore),
-          verification_status: finalStatus,
-          updated_at: new Date().toISOString(),
+          onboarding_step: opts.step,
+          onboarding_completed: opts.completed,
+          profile_completion: completionScore,
+          verification_status: status,
+          updated_at: now,
         };
-
-        const { data: existingBuyer } = await withTimeout(
+        const existing = await withTimeout(
           supabase.from('buyer_profiles').select('id').eq('user_id', user.id).maybeSingle()
         );
-        const buyerRes = existingBuyer?.id
+        if (existing.error) return { error: `Could not read your business profile: ${existing.error.message}` };
+        const buyerRes = existing.data?.id
           ? await withTimeout(supabase.from('buyer_profiles').update(buyerPayload).eq('user_id', user.id))
           : await withTimeout(supabase.from('buyer_profiles').insert(buyerPayload));
-        if (buyerRes.error) {
-          throw new Error(`Could not save your business profile: ${buyerRes.error.message}`);
-        }
+        if (buyerRes.error) return { error: `Could not save your business profile: ${buyerRes.error.message}` };
       } else {
-        const slug = business.legalName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + user.id.slice(0, 6);
-        const companyPayload = {
+        const slug = (legalName || 'supplier').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + user.id.slice(0, 6);
+        const companyPayload: Record<string, unknown> = {
           owner_id: user.id,
-          company_name: business.legalName.trim(),
           brand_name: business.brandName.trim() || null,
           business_type: business.businessType || accountType,
           registration_number: business.registrationNumber.trim() || null,
@@ -802,7 +665,7 @@ export default function BusinessSetupWizardPage() {
           country: personal.country || 'India',
           pincode: business.pincode.trim() || null,
           website: business.website.trim() || null,
-          year_established: business.yearEstablished ? parseInt(business.yearEstablished, 10) : null,
+          year_established: Number.isFinite(year) ? year : null,
           description: business.description.trim() || null,
           product_categories: selectedCategories,
           key_products: productsSupplied,
@@ -816,49 +679,128 @@ export default function BusinessSetupWizardPage() {
           iec_doc_url: docs.iecDocUrl || null,
           pan_doc_url: docs.panDocUrl || null,
           reg_doc_url: docs.regDocUrl || null,
-          onboarding_step: 5,
-          onboarding_completed: true,
-          profile_completion: Math.max(75, completionScore),
-          verification_status: finalStatus,
-          updated_at: new Date().toISOString(),
+          onboarding_step: opts.step,
+          onboarding_completed: opts.completed,
+          profile_completion: completionScore,
+          verification_status: status,
+          updated_at: now,
         };
+        if (legalName) companyPayload.company_name = legalName;
 
-        const { data: existingCo } = await withTimeout(
+        const existing = await withTimeout(
           supabase.from('companies').select('id').eq('owner_id', user.id).maybeSingle()
         );
-        const companyRes = existingCo?.id
+        if (existing.error) return { error: `Could not read your company profile: ${existing.error.message}` };
+        const companyRes = existing.data?.id
           ? await withTimeout(supabase.from('companies').update(companyPayload).eq('owner_id', user.id))
           : await withTimeout(supabase.from('companies').insert({
               ...companyPayload,
+              company_name: legalName || 'My Industrial Company',
               slug,
-              verification_status: finalStatus,
+              verification_status: opts.completed ? status : 'unverified',
               is_verified: false,
               is_featured: false,
               total_products: 0,
               total_quotes_sent: 0,
             }));
-        if (companyRes.error) {
-          throw new Error(`Could not save your company profile: ${companyRes.error.message}`);
-        }
+        if (companyRes.error) return { error: `Could not save your company profile: ${companyRes.error.message}` };
       }
 
-      // Refresh is capped: the saved data is already committed, so a slow read must not keep the form spinning.
+      const profRes = await withTimeout(supabase.from('profiles').update({
+        full_name: personal.fullName.trim() || profile?.full_name,
+        phone: personal.phone.trim() || profile?.phone || null,
+        whatsapp_number: personal.whatsappNumber.trim() || null,
+        country: personal.country,
+        state: personal.state,
+        city: personal.city,
+        role: isBuyer ? 'buyer' : 'supplier',
+        ...(opts.completed ? { onboarding_completed: true } : {}),
+        updated_at: now,
+      }).eq('id', user.id));
+      if (profRes.error) return { error: `Could not save your personal details: ${profRes.error.message}` };
+      return { error: null };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save your profile. Please try again.';
+      return { error: message };
+    }
+  };
+  persistRef.current = persistWizard;
+
+  const handleSaveDraft = async () => {
+    if (submitLock.current) return;
+    if (!user) {
+      toast.error('You must be logged in to save progress');
+      return;
+    }
+    submitLock.current = true;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const saved = await persistWizard({ step: currentStep, completed: false });
+      if (saved.error) {
+        setSaveError(saved.error);
+        toast.error(saved.error);
+        return;
+      }
+      toast.success('Draft saved successfully! You can resume anytime.');
+    } finally {
+      submitLock.current = false;
+      setSaving(false);
+    }
+  };
+
+  const handleCompleteProfile = async () => {
+    if (!user || submitLock.current) return;
+
+    for (const step of [1, 2, 3, 4] as const) {
+      const errors = validateStep(step);
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        setCurrentStep(step);
+        toast.error('Please complete all required fields before launching your profile');
+        setTimeout(scrollToFirstError, 80);
+        return;
+      }
+    }
+
+    const finalErrors = validateStep(5);
+    if (Object.keys(finalErrors).length > 0) {
+      setFieldErrors(finalErrors);
+      toast.error('Please fix the highlighted fields');
+      scrollToFirstError();
+      return;
+    }
+
+    submitLock.current = true;
+    setCompleting(true);
+    setSaveError(null);
+    const isBuyer = accountType === 'Buyer';
+    try {
+      const saved = await persistWizard({ step: 5, completed: true });
+      if (saved.error) {
+        setSaveError(saved.error);
+        toast.error(saved.error);
+        return;
+      }
+
       try {
-        await withTimeout(refreshProfile(), 6000);
+        await withTimeout(refreshProfile(), 4000);
       } catch (refreshErr) {
         console.warn('Profile refresh after save did not finish:', refreshErr);
       }
       toast.success('Business profile setup completed successfully!');
-      if (isBuyer) {
-        navigate('/dashboard/buyer');
-        return;
-      }
-      navigate('/dashboard/supplier');
-      void seedWelcomeLeadsInBackground(user.id, business.legalName);
-    } catch (err: any) {
-      console.error('Complete profile error:', err);
-      toast.error(err?.message || 'Failed to complete profile');
+      const finalRole = isBuyer ? 'buyer' : 'supplier';
+      const fullName = personal.fullName.trim();
+      // After this click returns, so the auth lock cannot freeze "Completing Profile...".
+      window.setTimeout(() => {
+        void supabase.auth.updateUser({ data: { role: finalRole, full_name: fullName } }).then((metaRes) => {
+          if (metaRes.error) console.warn('Auth metadata sync failed:', metaRes.error.message);
+        }).catch((metaErr) => console.warn('Auth metadata sync skipped:', metaErr));
+      }, 0);
+      if (!isBuyer) void seedWelcomeLeadsInBackground(user.id, business.legalName);
+      navigate(isBuyer ? '/dashboard/buyer' : '/dashboard/supplier', { replace: true });
     } finally {
+      submitLock.current = false;
       setCompleting(false);
     }
   };
@@ -922,6 +864,12 @@ export default function BusinessSetupWizardPage() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 md:p-8 space-y-6">
+        {saveError && (
+          <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <p>{saveError}</p>
+          </div>
+        )}
         {loadError && (
           <div role="alert" className="flex flex-col gap-3 rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/10 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
@@ -1748,7 +1696,7 @@ export default function BusinessSetupWizardPage() {
                   disabled={saving || completing}
                   className="flex-1 sm:flex-initial bg-[#1A0C05] text-white hover:bg-primary/90 text-xs gap-1.5"
                 >
-                  Next Step <ArrowRight className="w-3.5 h-3.5" />
+                  {saving ? 'Saving...' : 'Next Step'} <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               ) : (
                 <Button

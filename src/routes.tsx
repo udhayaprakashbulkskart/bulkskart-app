@@ -16,6 +16,7 @@ const MyQuotationsPage        = lazy(() => import('./pages/MyQuotationsPage'));
 const HowItWorksPage          = lazy(() => import('./pages/HowItWorksPage'));
 const PricingPage             = lazy(() => import('./pages/PricingPage'));
 const AuthPage                = lazy(() => import('./pages/AuthPage'));
+const ResetPasswordPage       = lazy(() => import('./pages/ResetPasswordPage'));
 const ProductDetailPage       = lazy(() => import('./pages/ProductDetailPage'));
 const CompanyProfilePage      = lazy(() => import('./pages/CompanyProfilePage'));
 const BuyerPublicProfilePage  = lazy(() => import('./pages/BuyerPublicProfilePage'));
@@ -101,6 +102,7 @@ export const routes: RouteConfig[] = [
   { name: 'Login', path: '/login', element: <AuthPage />, public: true },
   { name: 'Register', path: '/register', element: <AuthPage />, public: true },
   { name: 'Signup', path: '/signup', element: <AuthPage />, public: true },
+  { name: 'Reset Password', path: '/reset-password', element: <ResetPasswordPage />, public: true },
 
   // ── Public Canonical SEO Landing Pages ───────────────────────
   { name: 'B2B Marketplace Hub', path: '/b2b-marketplace', element: <SEOHubPage forcedSlug="b2b-marketplace" />, public: true },
