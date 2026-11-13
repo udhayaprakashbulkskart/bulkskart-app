@@ -306,7 +306,7 @@ export default function PostRequirementPage() {
         description="Submit your product specs, order quantity, delivery timeline and budget. Receive competitive quotations from verified manufacturers within 24 hours."
       />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 md:py-8">
         
         {/* Header Breadcrumbs & Title */}
         <div className="mb-6">
@@ -377,7 +377,8 @@ export default function PostRequirementPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <form onSubmit={handleSubmit} className="bs-glass space-y-6 rounded-3xl p-4 sm:p-6">
           
           {/* Card 1: Product Identity & Reference Upload */}
           <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
@@ -695,6 +696,26 @@ export default function PostRequirementPage() {
             </div>
           </div>
         </form>
+        <aside className="bs-glass sticky top-24 hidden rounded-3xl p-4 lg:block">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Live brief</p>
+          <p className="mt-2 text-sm font-bold text-foreground">{form.title || 'Untitled requirement'}</p>
+          <dl className="mt-4 space-y-3 text-xs">
+            <div className="flex items-center justify-between gap-3 border-b border-border pb-2">
+              <dt className="text-muted-foreground">Quantity</dt>
+              <dd className="font-semibold text-foreground">{form.quantity ? `${form.quantity} ${form.quantityUnit}` : '—'}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-b border-border pb-2">
+              <dt className="text-muted-foreground">Destination</dt>
+              <dd className="font-semibold text-foreground">{form.destinationCity ? `${form.destinationCity}, ` : ''}{form.destinationCountry || '—'}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-muted-foreground">Window</dt>
+              <dd className="font-semibold text-foreground">{form.closingDuration || '—'}</dd>
+            </div>
+          </dl>
+          <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">This summary updates as you type. Publishing still uses the same form.</p>
+        </aside>
+        </div>
       </div>
     </MainLayout>
   );

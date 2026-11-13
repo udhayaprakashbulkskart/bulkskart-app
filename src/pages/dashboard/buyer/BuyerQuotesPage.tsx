@@ -140,8 +140,9 @@ export default function BuyerQuotesPage() {
       />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl w-full mx-auto">
-          <div className="mb-6">
-            <h1 className="text-xl font-bold text-foreground">Received Quotes</h1>
+          <div className="bs-glass mb-6 rounded-3xl p-4">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Compare quotations</p>
+            <h1 className="text-xl font-black text-foreground">Received Quotes</h1>
             <p className="text-sm text-muted-foreground">Review, compare, and respond to quotations from manufacturers</p>
           </div>
 
@@ -190,9 +191,19 @@ export default function BuyerQuotesPage() {
               <p className="text-sm text-muted-foreground mt-1">Manufacturers matched to your requirement will send quotes here.</p>
             </div>
           ) : (
+            <>
+            <div className="mb-4 flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory">
+              {quotations.map(q => (
+                <div key={`compare-${q.id}`} className="bs-glass min-w-[168px] snap-start rounded-2xl p-3">
+                  <p className="truncate text-xs font-semibold text-foreground">{q.companies?.company_name ?? 'Manufacturer'}</p>
+                  <p className="mt-1 text-lg font-black text-primary">{q.currency ?? 'INR'} {Number(q.unit_price).toLocaleString()}</p>
+                  <p className="text-[11px] text-muted-foreground">Unit price · MOQ {q.moq}</p>
+                </div>
+              ))}
+            </div>
             <div className="space-y-4">
               {quotations.map(q => (
-                <div key={q.id} className={`bg-card border rounded-xl p-5 transition-shadow hover:shadow-md ${q.status === 'accepted' ? 'border-green-400' : q.status === 'rejected' ? 'border-muted opacity-60' : q.status === 'revised' ? 'border-[#FF5A00]/30' : 'border-border'}`}>
+                <div key={q.id} className={`bs-glass rounded-3xl p-5 transition-shadow hover:shadow-hover ${q.status === 'accepted' ? 'border-green-400' : q.status === 'rejected' ? 'border-muted opacity-60' : q.status === 'revised' ? 'border-[#FF5A00]/30' : 'border-border'}`}>
                   {/* Header */}
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex items-start gap-3">
@@ -311,6 +322,7 @@ export default function BuyerQuotesPage() {
                 </div>
               ))}
             </div>
+            </>
           )}
         </div>
       </div>

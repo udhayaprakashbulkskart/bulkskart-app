@@ -357,7 +357,7 @@ export default function ProductDetailPage() {
           />
 
           {/* ── MAIN CONTENT GRID ───────────────────────────────────── */}
-          <div className="grid md:grid-cols-[1fr_360px] gap-6 md:gap-8">
+          <div className="grid md:grid-cols-[1fr_360px] gap-6 md:gap-8 items-start">
 
             {/* LEFT ─ images + tabs + content */}
             <div className="min-w-0">
@@ -942,7 +942,7 @@ export default function ProductDetailPage() {
 
             {/* RIGHT ─ sidebar (desktop only) ─────────────────────────── */}
             <div className="hidden md:block">
-              <div className="sticky top-[80px] space-y-4">
+              <div className="bs-glass sticky top-[80px] space-y-4 rounded-3xl p-4">
 
                 {/* Product title + badges */}
                 <div className="bg-card border border-border rounded-xl p-3 md:p-4">

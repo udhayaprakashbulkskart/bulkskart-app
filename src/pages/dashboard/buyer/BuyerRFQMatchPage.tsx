@@ -292,8 +292,9 @@ export default function BuyerRFQMatchPage() {
           {loadingReq ? (
             <Skeleton className="h-28 w-full rounded-xl" />
           ) : requirement ? (
-            <div className="bg-card border border-border rounded-xl p-5">
-              <div className="flex flex-col md:flex-row md:items-start gap-4">
+            <div className="bs-glass relative overflow-hidden rounded-3xl p-5">
+              <div className="bs-scan pointer-events-none absolute inset-x-[18%] top-0 h-16 bg-gradient-to-b from-transparent via-primary/20 to-transparent" aria-hidden="true" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-start gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1.5">
                     <h1 className="text-lg font-bold text-foreground">{requirement.title}</h1>

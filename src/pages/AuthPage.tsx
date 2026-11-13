@@ -600,10 +600,10 @@ export default function AuthPage() {
           </div>
 
           <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'login' | 'buyer' | 'supplier')}>
-            <TabsList className="w-full bg-muted border border-border mb-6 grid grid-cols-3">
-              <TabsTrigger value="login" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Login</TabsTrigger>
-              <TabsTrigger value="buyer" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Buyer</TabsTrigger>
-              <TabsTrigger value="supplier" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Supplier</TabsTrigger>
+            <TabsList className="mb-6 grid h-12 w-full grid-cols-3 rounded-2xl border border-border bg-muted p-1">
+              <TabsTrigger value="login" className="h-10 rounded-xl text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Login</TabsTrigger>
+              <TabsTrigger value="buyer" className="h-10 rounded-xl text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Buyer</TabsTrigger>
+              <TabsTrigger value="supplier" className="h-10 rounded-xl text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Supplier</TabsTrigger>
             </TabsList>
 
             {/* ===== LOGIN ===== */}

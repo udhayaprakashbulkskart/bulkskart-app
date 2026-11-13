@@ -68,7 +68,7 @@ export default function SupplierOrdersPage() {
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">Order Management</h1>
+            <h1 className="text-2xl font-black text-foreground">Order Management</h1>
             <p className="text-sm text-muted-foreground">Manage and update orders from confirmation to delivery</p>
           </div>
 

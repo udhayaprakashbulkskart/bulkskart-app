@@ -267,7 +267,7 @@ export default function CompanyProfilePage() {
         </button>
 
         {/* ── Hero / Banner ── */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden mb-6 shadow-sm">
+        <div className="bs-glass overflow-hidden rounded-3xl mb-6">
           <div className="relative aspect-[21/9] md:h-56 max-h-56 w-full overflow-hidden bg-muted">
             <SafeImage
               src={company.cover_url || company.banner_url || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80'}

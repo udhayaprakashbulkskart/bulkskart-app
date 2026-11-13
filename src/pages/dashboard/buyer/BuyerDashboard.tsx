@@ -175,7 +175,7 @@ export default function BuyerDashboard() {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
-                      <p className="text-2xl font-bold text-foreground">{loading ? '—' : s.value}</p>
+                      <p className="text-2xl font-bold text-foreground">{loading ? <span className="inline-block h-7 w-12 animate-pulse rounded-md bg-muted" /> : s.value}</p>
                     </div>
                     <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
                       <Icon className={`w-5 h-5 ${s.color}`} />

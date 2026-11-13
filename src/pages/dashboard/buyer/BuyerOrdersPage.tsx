@@ -66,8 +66,9 @@ export default function BuyerOrdersPage() {
       <PageMeta title="My Orders — Buyer | BulkSkart" description="" robots="noindex, nofollow" />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">My Orders</h1>
+          <div className="bs-glass mb-6 rounded-3xl p-4">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Fulfilment</p>
+            <h1 className="text-2xl font-black text-foreground">My Orders</h1>
             <p className="text-sm text-muted-foreground">Track your orders from placement to delivery</p>
           </div>
 

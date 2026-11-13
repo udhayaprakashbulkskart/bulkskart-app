@@ -164,7 +164,8 @@ export default function AISalesAssistantPage() {
 
       <div className="space-y-6 pb-12 max-w-7xl mx-auto">
         {/* Page Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-hidden rounded-3xl border border-white/10 bg-black/30 p-4">
+          <div className="bs-scan pointer-events-none absolute inset-x-[15%] top-0 h-16 bg-gradient-to-b from-transparent via-[#FF5A00]/25 to-transparent" aria-hidden="true" />
           <div>
             <div className="flex items-center gap-2">
               <span className="p-1.5 rounded-lg bg-[#FF5A00]/15 text-[#FF5A00]">

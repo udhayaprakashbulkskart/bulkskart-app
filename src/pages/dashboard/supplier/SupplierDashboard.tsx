@@ -294,7 +294,7 @@ export default function SupplierDashboard() {
                       <Icon className={`w-4 h-4 md:w-5 md:h-5 ${s.color}`} />
                     </div>
                   </div>
-                  <p className="text-xl md:text-2xl font-bold text-foreground">{loading ? '—' : s.value}<span className="text-xs md:text-sm font-normal text-muted-foreground">{s.sub ?? ''}</span></p>
+                  <p className="text-xl md:text-2xl font-bold text-foreground">{loading ? <span className="inline-block h-7 w-16 animate-pulse rounded-md bg-muted" /> : s.value}<span className="text-xs md:text-sm font-normal text-muted-foreground">{loading ? '' : (s.sub ?? '')}</span></p>
                   <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
                 </Link>
               );

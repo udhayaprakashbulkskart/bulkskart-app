@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import SafeImage from '@/components/common/SafeImage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import FilterDock from '@/components/layouts/FilterDock';
 import { getCompanies, getOrCreateConversation, checkDirectMessageQuota, incrementMessageQuota } from '@/lib/api';
 import { TOTAL_VERIFIED_SUPPLIERS_COUNT } from '@/data/alibabaVerifiedSuppliers';
 import type { Company } from '@/types/types';
@@ -569,18 +570,22 @@ export default function ManufacturersPage() {
         <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-4 md:py-8">
 
           {/* Filter bar */}
-          <div className="bg-card border border-border rounded-xl p-3 md:p-4 mb-4 md:mb-5 shadow-sm">
-            <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
-              {/* Search */}
-              <div className="flex-1 relative min-w-0">
+          <div className="bs-glass rounded-3xl p-3 md:p-4 mb-4 md:mb-5">
+            <div className="flex flex-col gap-3">
+              <div className="relative min-w-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search suppliers by name, product, category..."
-                  className="pl-9 bg-muted border-border text-[13px] h-10"
+                  className="pl-9 bg-muted border-border text-[13px] h-12 rounded-xl"
                 />
               </div>
+              <FilterDock
+                title="Filter suppliers"
+                activeCount={(selectedCountry !== 'all' ? 1 : 0) + (selectedIndustry !== 'all' ? 1 : 0) + (minRating !== 'all' ? 1 : 0) + (verifiedOnly ? 1 : 0)}
+              >
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
 
               {/* Country */}
               <Select value={selectedCountry} onValueChange={setSelectedCountry}>
@@ -640,6 +645,8 @@ export default function ManufacturersPage() {
               >
                 <BadgeCheck className="w-3.5 h-3.5" /> Verified Only
               </Button>
+              </div>
+              </FilterDock>
             </div>
 
             {/* Quick Worldwide Country Filter Pills */}

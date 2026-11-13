@@ -137,7 +137,7 @@ export default function MyQuotationsPage() {
       <div className="bg-background min-h-screen pb-20">
         
         {/* Top Header */}
-        <div className="bg-card border-b border-border sticky top-0 z-20 px-4 py-3 sm:px-6">
+        <div className="bg-card/90 backdrop-blur-xl border-b border-border sticky top-0 z-20 px-4 py-3 sm:px-6">
           <div className="max-w-[1200px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button

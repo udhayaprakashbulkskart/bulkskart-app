@@ -279,7 +279,7 @@ export default function SupplierProfilePage() {
           {/* Header */}
           <div className="flex items-start justify-between flex-wrap gap-3">
             <div>
-              <h1 className="text-xl font-bold text-foreground">Business Profile</h1>
+              <h1 className="text-xl font-black text-foreground">Business Profile</h1>
               <p className="text-sm text-muted-foreground">Manage your verified manufacturer profile</p>
             </div>
             <Button onClick={handleSave} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">

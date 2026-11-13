@@ -254,7 +254,7 @@ export default function SupplierAnalyticsPage() {
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bs-glass flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-3xl p-4">
             <div>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
                 <span>Performance & Credit Analytics</span>

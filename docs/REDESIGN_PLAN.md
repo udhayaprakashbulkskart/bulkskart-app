@@ -54,6 +54,42 @@ Also redesigned because they are real routes: pricing, how it works, contact, ab
 5. Dashboards keep the same metrics and links. Cards pick up elevation only where real stats are already rendered.
 6. Product cards keep image, name, manufacturer, location, MOQ, price, and verified state, and add a view affordance. Quote and sample actions stay on the detail and company screens that already implement them.
 
+## Per-page checklist (second pass)
+
+Shared chrome from the first pass still applies everywhere. This pass adds a layout that belongs to the page.
+
+| Page | What changed |
+| --- | --- |
+| RFQ marketplace `/requirements` | Larger live header. Location, category, and sort move into a phone bottom sheet. Requirement rows use glass cards. Status chips stay on the page. |
+| Post requirement `/post-requirement` | Form sits on a glass panel. A live brief on large screens mirrors the fields already typed. Submit, draft, and field names are unchanged. |
+| Product listing `/products` | Catalogue hero. Search stays visible. Category and origin filters open in a phone sheet. Skeleton cards while products load. |
+| Product details `/products/:slug` | Purchase panel is a sticky glass card. Gallery, quote, and sample actions are the same. |
+| Supplier discovery `/manufacturers` | Search stays visible. Country, industry, rating, sort, and verified toggle open in a phone sheet. Hub chips stay swipeable. |
+| Manufacturer profile `/manufacturers/:slug` | Profile banner uses the glass frame. Actions are unchanged. |
+| AI supplier match `/dashboard/buyer/rfq/:id` | Match summary gets a scan accent. Scores still come from the existing match data. |
+| Trade assistant `/trade-assistant` | Existing calculator keeps its scan header from the first pass. No new AI calls. |
+| AI sales assistant | Dark header with a scan line over the existing assistant. |
+| Received quotes | Header labels the page as compare. A sideways strip shows each real quote’s unit price and MOQ. Accept, revise, and decline are unchanged. |
+| Negotiation chat | Full-height thread, round bubbles, composer clear of the home indicator. |
+| Messages | Thread list fills the dashboard pane. Bubbles match the negotiation room. |
+| Orders | Buyer and supplier order headers. Existing status filters stay. |
+| Order tracking | Glass order header. Timeline’s current step pulses unless reduced motion is on. |
+| Buyer dashboard | Glass welcome. Counts show a skeleton while the real numbers load. No invented chart. |
+| Supplier dashboard | Same skeleton treatment on real counts. |
+| Supplier analytics | Glass header on the existing credit and response metrics. |
+| Lead credits / wallet | Still the existing redirect to subscription. There is no separate wallet screen to restyle. |
+| Notifications | Glass header, unread count, and the existing preference button. |
+| Profiles | Buyer and supplier profile titles. Forms are unchanged. |
+| Auctions | Scan line on the live auction hero. Lot cards and bid actions are unchanged. |
+| Admin | Glass control-panel header. Metrics stay the ones the admin page already loads. |
+| Login / registration | Taller tab targets and the glass form panel. |
+| Disputes, shipping calculator, my quotations | Page headers and the freight calculator panel. |
+| Other public pages | About, contact, legal, blog, pricing, how-it-works, categories, and SEO hubs keep the shared header, footer, buttons, and ink panels. |
+
+## Still thin
+
+Requirement detail, forward-auction detail, and a few dashboard sub-pages (inventory, verification, subscription) mostly inherit the shared system rather than a rebuilt layout. Wallet cannot be redesigned as its own screen because those URLs redirect to subscription.
+
 ## Verification
 
 Typecheck, lint, and the existing Vite build script. Smoke public routes in a browser at 390, 768, and 1440. Confirm console errors are absent on those shells and that navigation still hits the same paths.

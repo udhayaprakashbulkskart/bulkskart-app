@@ -218,9 +218,9 @@ export default function NegotiationRoomPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-[calc(100vh-120px)] max-w-3xl mx-auto">
+      <div className="flex flex-col h-[calc(100dvh-8.5rem)] lg:h-[calc(100dvh-6rem)] max-w-3xl mx-auto bs-glass rounded-none sm:rounded-3xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
+        <div className="flex items-center gap-3 px-3 py-3 border-b border-border bg-card/80 shrink-0">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -310,12 +310,12 @@ export default function NegotiationRoomPage() {
                     )}
                   </div>
                 )}
-                <div className={`max-w-[78%] rounded-xl px-3.5 py-2.5 shadow-xs ${
+                <div className={`max-w-[82%] px-3.5 py-2.5 shadow-xs ${
                   isMine
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md'
                     : isUrgent
-                    ? 'bg-card border-2 border-red-500/80 text-foreground ring-2 ring-red-500/20'
-                    : 'bg-muted text-foreground'
+                    ? 'bg-card border-2 border-red-500/80 text-foreground ring-2 ring-red-500/20 rounded-2xl rounded-bl-md'
+                    : 'bg-muted text-foreground rounded-2xl rounded-bl-md'
                 }`}>
                   {msg.is_file && msg.attachment_url ? (
                     <a
@@ -349,7 +349,7 @@ export default function NegotiationRoomPage() {
             <p className="text-sm text-muted-foreground">This conversation has been blocked.</p>
           </div>
         ) : (
-          <div className="px-4 py-3 border-t border-border bg-card shrink-0">
+          <div className="px-3 py-3 border-t border-border bg-card/95 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <div className="flex items-center gap-2">
               <Button type="button" variant="ghost" size="icon" onClick={() => fileRef.current?.click()} disabled={uploadingFile}>
                 {uploadingFile ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}

@@ -139,8 +139,9 @@ export default function ShippingCalculatorPage() {
         ]}
       />
       <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Shipping & Freight Calculator</h1>
+        <div className="bs-glass mb-8 rounded-3xl p-6 text-center">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-primary">Logistics</p>
+          <h1 className="text-2xl md:text-3xl font-black text-foreground mb-2">Shipping & Freight Calculator</h1>
           <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto">
             Delivery is free on every order placed on BulkSkart. These estimates show the freight cost the platform covers, so you can compare routes before you order.
           </p>
