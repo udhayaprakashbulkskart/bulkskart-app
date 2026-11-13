@@ -385,17 +385,17 @@ export default function LiveBuyerOrderAlert() {
     <>
       <style>{`
         @keyframes bsk-alert-in { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes bsk-card-arrive { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+        @keyframes bsk-card-arrive { from { opacity: 0; } to { opacity: 1; } }
         @keyframes bsk-live-glow {
-          0%, 100% { box-shadow: 0 0 0 1px rgba(255,101,0,0.75), 0 10px 28px -16px rgba(255,138,0,0.95); }
-          50% { box-shadow: 0 0 0 1px rgba(255,138,0,0.95), 0 12px 32px -12px rgba(255,101,0,1); }
+          0%, 100% { box-shadow: inset 0 0 0 1px rgba(255,101,0,0.85); }
+          50% { box-shadow: inset 0 0 0 1px rgba(255,138,0,1); }
         }
         @media (prefers-reduced-motion: reduce) {
           .bsk-alert-motion { animation: none !important; }
         }
       `}</style>
       <aside
-        className="bsk-alert-motion fixed z-40 w-[92%] max-w-[440px] overflow-hidden rounded-[22px] border border-[#FF6500]/75 bg-[#080808]/90 text-white shadow-[0_18px_40px_-24px_rgba(255,138,0,0.85)] backdrop-blur-xl bottom-[max(12px,env(safe-area-inset-bottom))] left-[4%] md:bottom-auto md:left-auto md:right-5 md:top-[116px] md:w-[440px]"
+        className="bsk-alert-motion fixed z-40 flex w-[92%] max-w-[400px] flex-col overflow-hidden rounded-[22px] border border-[#FF6500]/75 bg-[#080808]/92 text-left text-white shadow-[0_18px_40px_-24px_rgba(255,138,0,0.85)] backdrop-blur-xl bottom-[max(8px,env(safe-area-inset-bottom))] left-[4%] max-h-[min(340px,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-210px))] md:left-auto md:right-4 md:max-h-[min(420px,calc(100dvh-140px))] md:w-[400px]"
         style={{ animation: reduce ? undefined : 'bsk-alert-in 0.35s ease both' }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
@@ -411,11 +411,37 @@ export default function LiveBuyerOrderAlert() {
         aria-label="Live buyer alert"
         data-pos={active}
       >
+        <header className="flex shrink-0 items-center gap-2 border-b border-white/10 px-2.5 py-1.5">
+          <div className="min-w-0 flex-1 text-left">
+            <BrandLogo size="sm" variant="dark" linkTo={null} className="!h-5 !max-w-[108px]" />
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                <span className={`absolute inline-flex h-full w-full rounded-full bg-[#FF8A00] opacity-70 ${reduce ? '' : 'animate-ping'}`} />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#FF8A00]" />
+              </span>
+              <span className="text-[10px] font-black tracking-[0.14em]">LIVE</span>
+              {leads[active] && timeAgo(leads[active].created_at) && (
+                <span className="truncate text-[10px] text-white/60">{timeAgo(leads[active].created_at)}</span>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            data-no-drag
+            onClick={dismiss}
+            className="flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10"
+            aria-label="Close buyer alerts"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
         <div className="relative">
           <div
             ref={viewportRef}
             data-carousel
-            className="overflow-hidden py-3"
+            className="overflow-hidden py-1"
             style={{ touchAction: 'pan-y' }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -448,7 +474,6 @@ export default function LiveBuyerOrderAlert() {
                     reduce={reduce}
                     onView={() => openRequirement(req)}
                     onContact={() => contactBuyer(req)}
-                    onDismiss={dismiss}
                   />
                 );
               })}
@@ -459,7 +484,7 @@ export default function LiveBuyerOrderAlert() {
               <button
                 type="button"
                 onClick={() => step(-1)}
-                className="absolute left-1 top-1/2 z-10 flex h-11 min-h-[44px] w-11 min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-[#080808]/85 text-white hover:border-[#FF6500]"
+                className="absolute left-1 top-8 z-10 flex h-11 min-h-[44px] w-11 min-w-[44px] items-center justify-center rounded-full border border-white/15 bg-[#080808]/85 text-white hover:border-[#FF6500]"
                 aria-label="Previous lead"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -467,7 +492,7 @@ export default function LiveBuyerOrderAlert() {
               <button
                 type="button"
                 onClick={() => step(1)}
-                className="absolute right-1 top-1/2 z-10 flex h-11 min-h-[44px] w-11 min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-[#080808]/85 text-white hover:border-[#FF6500]"
+                className="absolute right-1 top-8 z-10 flex h-11 min-h-[44px] w-11 min-w-[44px] items-center justify-center rounded-full border border-white/15 bg-[#080808]/85 text-white hover:border-[#FF6500]"
                 aria-label="Next lead"
               >
                 <ChevronRight className="h-5 w-5" />
@@ -476,8 +501,8 @@ export default function LiveBuyerOrderAlert() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 px-3 pb-3">
-          <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5" role="tablist" aria-label="Buyer requirements">
+        <div className="relative flex h-12 items-center justify-center px-12">
+          <div className="flex max-w-full items-center justify-center" role="tablist" aria-label="Buyer requirements">
             {leads.map((req, index) => (
               <button
                 key={req.id}
@@ -486,7 +511,7 @@ export default function LiveBuyerOrderAlert() {
                 aria-label={`Show lead ${index + 1}: ${req.title}`}
                 aria-selected={index === active}
                 onClick={() => goTo(index)}
-                className="flex h-11 w-6 shrink-0 items-center justify-center"
+                className="flex h-11 w-5 shrink-0 items-center justify-center"
               >
                 <span className={`block h-2 rounded-full ${index === active ? 'w-4 bg-[#FF6500]' : 'w-2 bg-white/30'}`} />
               </button>
@@ -495,19 +520,20 @@ export default function LiveBuyerOrderAlert() {
           <button
             type="button"
             onClick={togglePause}
-            className="flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10"
+            className="absolute right-1 flex h-11 min-h-[44px] w-11 min-w-[44px] items-center justify-center rounded-full text-white hover:bg-white/10"
             aria-label={paused ? 'Resume buyer alerts' : 'Pause buyer alerts'}
           >
             {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
           </button>
         </div>
-        <div className="px-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+        <div className="px-3 pb-3">
           <Link
             to="/requirements"
-            className="flex h-11 w-full items-center justify-center rounded-full bg-[#FF6500] text-[13px] font-bold text-white hover:bg-[#FF8A00]"
+            className="flex min-h-[44px] w-full items-center justify-center rounded-full bg-[#FF6500] px-3 text-center text-[13px] font-bold leading-tight text-white hover:bg-[#FF8A00]"
           >
             View all buyer requirements
           </Link>
+        </div>
         </div>
       </aside>
 
@@ -534,7 +560,6 @@ function AlertCard({
   reduce,
   onView,
   onContact,
-  onDismiss,
 }: {
   req: Requirement;
   width: number;
@@ -543,93 +568,67 @@ function AlertCard({
   reduce: boolean;
   onView: () => void;
   onContact: () => void;
-  onDismiss: () => void;
 }) {
   const qty = quantityOf(req);
   const place = locationOf(req);
   const posted = timeAgo(req.created_at);
+  const meta = [qty, place, posted].filter(Boolean).join(' · ');
   return (
     <article
       data-card={req.id}
       data-active={active ? 'true' : 'false'}
+      aria-hidden={active ? undefined : true}
       className="shrink-0"
       style={{
         width: width || undefined,
-        transform: `scale(${active ? 1.03 : 0.94})`,
-        opacity: active ? 1 : 0.48,
-        zIndex: active ? 2 : 1,
-        transition: reduce ? 'none' : 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1), opacity 520ms ease',
+        opacity: active ? 1 : 0.38,
+        transition: reduce ? 'none' : 'opacity 520ms ease',
       }}
     >
       <div
-        className={`overflow-hidden rounded-[18px] border bg-[#080808] ${active ? 'border-[#FF6500]' : 'border-white/10'} ${active && !reduce ? 'bsk-alert-motion' : ''}`}
-        style={active && !reduce ? { animation: 'bsk-live-glow 3.8s ease-in-out infinite' } : undefined}
+        className={`overflow-hidden rounded-[18px] border bg-[#080808] text-left ${active ? 'border-[#FF6500]' : 'border-white/10'} ${active && !reduce ? 'bsk-alert-motion' : ''}`}
+        style={active && !reduce ? { animation: 'bsk-live-glow 3.8s ease-in-out infinite' } : arrived ? { animation: 'bsk-card-arrive 0.45s ease' } : undefined}
       >
-        <div
-          className="p-2.5"
-          style={arrived ? { animation: 'bsk-card-arrive 0.45s ease' } : undefined}
-        >
-          <header className="flex items-start gap-1">
-            <div className="min-w-0 flex-1">
-              <BrandLogo size="sm" variant="dark" linkTo={null} className="!h-5 !max-w-[108px]" />
-              <div className="mt-1 flex items-center gap-1.5">
-                <span className="relative flex h-1.5 w-1.5 shrink-0">
-                  <span className={`absolute inline-flex h-full w-full rounded-full bg-[#FF8A00] opacity-70 ${reduce ? '' : 'animate-ping'}`} />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#FF8A00]" />
-                </span>
-                <span className="text-[10px] font-black tracking-[0.14em] text-white">LIVE</span>
-                {posted && <span className="truncate text-[10px] text-white/60">{posted}</span>}
-              </div>
-            </div>
-            {active && (
-              <button
-                type="button"
-                data-no-drag
-                onClick={onDismiss}
-                className="flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10"
-                aria-label="Close buyer alerts"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </header>
-
-          <span className="mt-1 inline-flex rounded-md bg-[#FF6500] px-1.5 py-0.5 text-[9px] font-extrabold tracking-wide text-white">
+        <div className="p-2.5 text-left">
+          <span className="inline-flex rounded-md bg-[#FF6500] px-1.5 py-0.5 text-left text-[9px] font-extrabold tracking-wide text-white">
             New Buyer Requirement
           </span>
-          <div className="mt-2 flex gap-2">
-            <button type="button" onClick={onView} className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#141414]" aria-label={`View ${req.title}`}>
-              <img
-                src={leadImage(req)}
-                alt=""
-                width={112}
-                height={112}
-                loading="lazy"
-                decoding="async"
-                className="h-full w-full object-cover"
-              />
-            </button>
-            <button type="button" onClick={onView} className="min-w-0 flex-1 text-left">
-              <h3 className="line-clamp-3 break-words text-[13px] font-semibold leading-snug text-white">{req.title}</h3>
-            </button>
+          <div className="mt-2 flex items-start gap-2 text-left">
+            <img
+              src={leadImage(req)}
+              alt=""
+              width={88}
+              height={88}
+              loading="lazy"
+              decoding="async"
+              className="h-11 w-11 shrink-0 rounded-lg object-cover"
+            />
+            <div className="min-w-0 flex-1 text-left">
+              {active ? (
+                <button type="button" onClick={onView} className="block w-full text-left" style={{ textAlign: 'left' }}>
+                  <h3 className="line-clamp-2 break-words text-left text-[13px] font-semibold leading-snug text-white">{req.title}</h3>
+                </button>
+              ) : (
+                <h3 className="line-clamp-2 break-words text-left text-[13px] font-semibold leading-snug text-white">{req.title}</h3>
+              )}
+              {meta && <p className="mt-1 line-clamp-2 break-words text-left text-[11px] leading-snug text-white/75">{meta}</p>}
+              {active && req.is_verified_buyer && (
+                <p className="mt-1 flex items-center gap-1 text-left text-[11px] font-medium text-white">
+                  <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-[#FF8A00]" /> Verified Buyer
+                </p>
+              )}
+            </div>
           </div>
-          <div className="mt-2 space-y-0.5 text-[12px] leading-snug text-white/80">
-            {qty && <p className="break-words text-[#FF8A00]">Qty: {qty}</p>}
-            {place && <p className="break-words">{place}</p>}
-            {req.is_verified_buyer && (
-              <p className="inline-flex items-center gap-1 font-medium text-white">
-                <BadgeCheck className="h-3.5 w-3.5 text-[#FF8A00]" /> Verified Buyer
-              </p>
-            )}
-          </div>
-          <div className="mt-2.5 grid grid-cols-2 gap-2">
-            <button type="button" data-no-drag onClick={onView} className="h-11 min-h-[44px] rounded-full border border-white/20 text-[12px] font-semibold text-white hover:border-[#FF6500]">
-              View Lead
-            </button>
-            <button type="button" data-no-drag onClick={onContact} className="h-11 min-h-[44px] rounded-full bg-[#FF6500] text-[12px] font-bold text-white hover:bg-[#FF8A00]">
-              Contact Buyer
-            </button>
-          </div>
+          {active && (
+            <div className="mt-2.5 grid grid-cols-2 gap-2">
+              <button type="button" data-no-drag onClick={onView} className="flex min-h-[44px] min-w-0 items-center justify-center rounded-full border border-white/20 px-2 text-center text-[12px] font-semibold leading-tight text-white hover:border-[#FF6500]">
+                View Lead
+              </button>
+              <button type="button" data-no-drag onClick={onContact} className="flex min-h-[44px] min-w-0 items-center justify-center rounded-full bg-[#FF6500] px-2 text-center text-[12px] font-bold leading-tight text-white hover:bg-[#FF8A00]">
+                Contact Buyer
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </article>
