@@ -157,6 +157,10 @@ export default function LiveBuyerOrderAlert() {
     location.pathname.includes('/post-requirement') ||
     location.pathname.includes('/negotiation') ||
     location.pathname.includes('/auth') ||
+    location.pathname === '/login' ||
+    location.pathname === '/signup' ||
+    location.pathname === '/register' ||
+    location.pathname === '/reset-password' ||
     location.pathname.includes('/settings');
 
   const loadLeads = useCallback(async () => {

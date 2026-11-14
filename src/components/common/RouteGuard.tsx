@@ -36,9 +36,10 @@ export function RouteGuard({ children }: RouteGuardProps) {
     const isPublic = matchPublicRoute(location.pathname, PUBLIC_ROUTES);
 
     if (!user && !isPublic) {
-      navigate('/login', { state: { from: location.pathname }, replace: true });
+      const next = `${location.pathname}${location.search}`;
+      navigate(`/login?redirect=${encodeURIComponent(next)}`, { replace: true });
     }
-  }, [user, loading, location.pathname, navigate]);
+  }, [user, loading, location.pathname, location.search, navigate]);
 
   if (loading) {
     return (
@@ -47,6 +48,9 @@ export function RouteGuard({ children }: RouteGuardProps) {
       </div>
     );
   }
+
+  const isPublic = matchPublicRoute(location.pathname, PUBLIC_ROUTES);
+  if (!user && !isPublic) return null;
 
   return <>{children}</>;
 }

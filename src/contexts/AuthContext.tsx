@@ -28,6 +28,9 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   refreshProfile: (targetUserId?: string) => Promise<void>;
   refreshSubscription: () => Promise<void>;
+  /** True after a recovery link creates a session, until the new password is saved. */
+  passwordRecovery: boolean;
+  acknowledgePasswordRecovery: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -67,6 +70,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isPaidSubscriber, setIsPaidSubscriber] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [passwordRecovery, setPasswordRecovery] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const hash = window.location.hash;
+    return hash.includes('type=recovery') || hash.includes('type%3Drecovery');
+  });
 
   const fetchSubscription = async (companyId?: string | null, userRole?: string) => {
     if (userRole === 'admin') {
@@ -270,8 +278,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
 
-    const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange(async (event, s) => {
+    // Do not await Supabase calls inside this callback. updateUser holds the auth
+    // lock while it notifies subscribers, and getSession() waits on that same lock.
+    // Awaiting a profile query here deadlocks the client, so "Completing Profile…" never finishes.
+    const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange((event, s) => {
       if (!isMounted) return;
+
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecovery(true);
+        setSession(s);
+        setUser(s?.user ?? null);
+        setLoading(false);
+        return;
+      }
 
       // Avoid wiping profile on routine token refresh (causes buyer-dashboard flash)
       if (event === 'TOKEN_REFRESHED' && s?.user) {
@@ -280,18 +299,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      setProfile(null);
-      setCompany(null);
-      setBuyerProfile(null);
-      setSubscription(null);
-      setIsPaidSubscriber(false);
+      if (!s?.user) {
+        setPasswordRecovery(false);
+        setProfile(null);
+        setCompany(null);
+        setBuyerProfile(null);
+        setSubscription(null);
+        setIsPaidSubscriber(false);
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
 
       setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        await fetchProfile(s.user.id, s.user).catch(() => {});
-      }
-      if (isMounted) setLoading(false);
+      setUser(s.user);
+      const uid = s.user.id;
+      const authUser = s.user;
+      window.setTimeout(() => {
+        if (!isMounted) return;
+        fetchProfile(uid, authUser)
+          .catch(() => {})
+          .finally(() => {
+            if (isMounted) setLoading(false);
+          });
+      }, 0);
     });
 
     return () => {
@@ -468,6 +500,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsPaidSubscriber(false);
       setUser(null);
       setSession(null);
+      setPasswordRecovery(false);
       try {
         window.dispatchEvent(new Event('auth:signed_out'));
       } catch {
@@ -499,6 +532,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
         refreshProfile,
         refreshSubscription,
+        passwordRecovery,
+        acknowledgePasswordRecovery: () => setPasswordRecovery(false),
       }}
     >
       {children}
