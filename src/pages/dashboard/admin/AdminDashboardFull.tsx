@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,9 @@ import {
 import PageMeta from '@/components/common/PageMeta';
 import AdminLoanRequests from '@/components/dashboard/AdminLoanRequests';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { BarsChart, Gauge, Mini, Panel } from '@/components/dashboard/parts';
+import type { KpiTone } from '@/components/dashboard/parts';
+import { bucketByMonth, fetchMonthly, lastMonths, percentChange } from '@/components/dashboard/series';
 
 // ─── Types ───────────────────────────────────────────────────
 type CompanyRow = {
@@ -89,6 +92,10 @@ export default function AdminDashboardFull() {
     pendingWithdrawals: 0, totalRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
+  // The twelve months the growth chart covers: companies that joined and people who signed up in each
+  const slots = useMemo(() => lastMonths(12), []);
+  const [companiesByMonth, setCompaniesByMonth] = useState<number[]>(() => slots.map(() => 0));
+  const [usersByMonth, setUsersByMonth] = useState<number[]>(() => slots.map(() => 0));
   const [search, setSearch] = useState('');
   const [verFilter, setVerFilter] = useState('all');
   const [saving, setSaving] = useState<string | null>(null);
@@ -109,6 +116,8 @@ export default function AdminDashboardFull() {
 
     const allComp = (compRes.data ?? []) as unknown as CompanyRow[];
     setCompanies(allComp);
+    setCompaniesByMonth(bucketByMonth(allComp.map(c => c.created_at), slots));
+    fetchMonthly(slots, (since) => supabase.from('profiles').select('created_at').gte('created_at', since).limit(5000)).then(setUsersByMonth);
     setDisputes((dispRes.data ?? []) as unknown as DisputeRow[]);
     setFraudAlerts((fraudRes.data ?? []) as unknown as FraudRow[]);
     setWithdrawals((wdRes.data ?? []) as unknown as WithdrawalRow[]);
@@ -128,7 +137,7 @@ export default function AdminDashboardFull() {
       totalRevenue: 0,
     });
     setLoading(false);
-  }, []);
+  }, [slots]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -208,21 +217,27 @@ export default function AdminDashboardFull() {
     return matchSearch && matchFilter;
   });
 
-  const statCards = [
-    { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-primary' },
-    { label: 'Companies', value: stats.totalCompanies, icon: Building2, color: 'text-[#FF5A00]' },
-    { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, color: 'text-yellow-500' },
-    { label: 'Active RFQs', value: stats.activeReqs, icon: FileText, color: 'text-green-500' },
-    { label: 'Total Orders', value: stats.totalOrders, icon: Package, color: 'text-indigo-500' },
-    { label: 'Open Disputes', value: stats.openDisputes, icon: AlertTriangle, color: 'text-red-500' },
-    { label: 'Pending Withdrawals', value: stats.pendingWithdrawals, icon: Wallet, color: 'text-teal-500' },
+  const verifiedCompanies = companies.filter(c => c.verification_status === 'verified').length;
+  const verifiedRate = companies.length > 0 ? Math.round((verifiedCompanies / companies.length) * 1000) / 10 : null;
+  const last = slots.length - 1;
+  const companiesDelta = percentChange(companiesByMonth[last], companiesByMonth[last - 1]);
+  const usersDelta = percentChange(usersByMonth[last], usersByMonth[last - 1]);
+
+  const statCards: Array<{ label: string; value: number; icon: React.ElementType; tone: KpiTone; tab?: string }> = [
+    { label: 'Total Users', value: stats.totalUsers, icon: Users, tone: 'orange' },
+    { label: 'Companies', value: stats.totalCompanies, icon: Building2, tone: 'purple', tab: 'companies' },
+    { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, tone: 'yellow', tab: 'verifications' },
+    { label: 'Active RFQs', value: stats.activeReqs, icon: FileText, tone: 'green' },
+    { label: 'Total Orders', value: stats.totalOrders, icon: Package, tone: 'blue' },
+    { label: 'Open Disputes', value: stats.openDisputes, icon: AlertTriangle, tone: 'rose', tab: 'disputes' },
+    { label: 'Pending Withdrawals', value: stats.pendingWithdrawals, icon: Wallet, tone: 'teal', tab: 'withdrawals' },
   ];
 
   return (
     <DashboardLayout>
-      <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+      <div className="dpage">
+        <div className="min-w-0 space-y-3.5">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Admin Control Panel</h1>
               <p className="text-sm text-muted-foreground">Platform management — verifications, disputes, analytics</p>
@@ -233,21 +248,60 @@ export default function AdminDashboardFull() {
           </div>
 
           {/* Stats row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            {statCards.map(s => {
-              const Icon = s.icon;
-              return (
-                <div key={s.label} className="bg-card border border-border rounded-xl p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                      <Icon className={`w-5 h-5 ${s.color}`} />
-                    </div>
+          <div className="dgrid-kpi">
+            {statCards.map(card => {
+              const inside = (
+                <>
+                  <div className="dk-top">
+                    <span className="dk-title">{card.label}</span>
+                    <span className={`dk-chip is-${card.tone}`} aria-hidden="true">
+                      <card.icon />
+                    </span>
                   </div>
-                  <p className="text-2xl font-bold text-foreground">{loading ? '—' : s.value}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+                  <div className="dk-value">{loading ? '—' : card.value}</div>
+                  {card.tab && <span className="dk-more">Open ↗</span>}
+                </>
+              );
+              return card.tab ? (
+                <button key={card.label} type="button" className="dk" onClick={() => setTab(card.tab as string)}>
+                  {inside}
+                </button>
+              ) : (
+                <div key={card.label} className="dk">
+                  {inside}
                 </div>
               );
             })}
+          </div>
+
+          {/* Growth chart and verification gauge */}
+          <div className="dgrid-main">
+            <Panel
+              title="Platform growth"
+              subtitle="Companies that joined and people who signed up, by month"
+              legend={[
+                { label: 'New companies', color: '#f2802d' },
+                { label: 'New sign-ups', color: '#34d399' },
+              ]}
+              right={<span className="dp-pill">Last 12 months</span>}
+            >
+              <BarsChart
+                months={slots.map(slot => slot.label)}
+                bars={companiesByMonth}
+                barLabel="companies"
+                line={usersByMonth}
+                lineLabel="sign-ups"
+                emptyText="No new companies or sign-ups in the last 12 months."
+                ariaLabel="New companies and new sign-ups in each of the last 12 months"
+              />
+            </Panel>
+            <Panel title="Verification rate" subtitle="Companies that are verified">
+              <Gauge value={loading ? null : verifiedRate} label="Verified companies" emptyText="No companies yet" />
+              <div className="dminis">
+                <Mini label="New companies this month" value={companiesByMonth[last]} pct={companiesDelta} />
+                <Mini label="New sign-ups this month" value={usersByMonth[last]} pct={usersDelta} />
+              </div>
+            </Panel>
           </div>
 
           <Tabs value={tab} onValueChange={setTab}>

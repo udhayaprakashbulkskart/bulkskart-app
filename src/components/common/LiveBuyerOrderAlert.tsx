@@ -343,7 +343,7 @@ export default function LiveBuyerOrderAlert() {
 
   if (isDismissed || appearance === 'pill') {
     return (
-      <div className="fixed bottom-24 sm:bottom-6 left-3 sm:left-4 z-40">
+      <div className="fixed bottom-24 sm:bottom-6 left-3 sm:left-4 z-40" data-floating="buy-leads">
         <button
           type="button"
           onClick={handleRestore}
@@ -363,6 +363,7 @@ export default function LiveBuyerOrderAlert() {
   return (
     <>
       <div
+        data-floating="buy-leads"
         className={`fixed bottom-24 sm:bottom-6 left-3 sm:left-4 z-40 w-[min(100vw-1.5rem,380px)] transition-all duration-300 ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
         }`}

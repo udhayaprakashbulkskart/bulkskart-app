@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getProducts, getRequirements, getMyQuotations, ensureManufacturerWelcomeLeads } from '@/lib/api';
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
-import { Package, FileText, TrendingUp, Plus, ArrowRight, Shield, CreditCard, AlertCircle, BarChart3, Bell, ShieldCheck, CheckCircle2, MessageSquare, Clock, Wallet, AlertTriangle, RefreshCw, Sparkles, Building2 } from 'lucide-react';
+import { Package, FileText, TrendingUp, Plus, CreditCard, AlertCircle, BarChart3, Bell, ShieldCheck, CheckCircle2, Clock, Wallet, AlertTriangle, Sparkles, Building2, Banknote } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
+import { BarsChart, Gauge, Kpi, Mini, Panel, QuickLink } from '@/components/dashboard/parts';
+import { fetchMonthly, lastMonths, percentChange } from '@/components/dashboard/series';
 import MatchedRequirementsPanel from '@/components/common/MatchedRequirementsPanel';
 import AIOpportunityCard from '@/components/common/AIOpportunityCard';
 import {
@@ -45,6 +47,11 @@ export default function SupplierDashboard() {
     potentialBusinessINR: 0,
     potentialBusinessINRFormatted: '₹0',
   });
+
+  // The twelve months the chart covers: quotes the company sent and orders it received in each
+  const slots = useMemo(() => lastMonths(12), []);
+  const [quotesByMonth, setQuotesByMonth] = useState<number[]>(() => slots.map(() => 0));
+  const [ordersByMonth, setOrdersByMonth] = useState<number[]>(() => slots.map(() => 0));
 
   useEffect(() => {
     if (!user || !company) { setLoading(false); return; }
@@ -112,19 +119,23 @@ export default function SupplierDashboard() {
       if (!cancelled) setLoading(false);
     });
 
-    return () => { cancelled = true; };
-  }, [user, company]);
+    // The chart is filled in after the page, from the dates on the company's own rows
+    Promise.all([
+      fetchMonthly(slots, (since) => supabase.from('quotations').select('created_at').eq('supplier_company_id', company.id).eq('is_draft', false).gte('created_at', since).limit(5000)),
+      fetchMonthly(slots, (since) => supabase.from('orders').select('created_at').eq('supplier_company_id', company.id).gte('created_at', since).limit(5000)),
+    ]).then(([quotes, orders]) => {
+      if (cancelled) return;
+      setQuotesByMonth(quotes);
+      setOrdersByMonth(orders);
+    });
 
-  const statsCards = [
-    { label: 'Listed Products', value: stats.totalProducts, icon: Package, color: 'text-primary', to: '/dashboard/supplier/products' },
-    { label: 'Quotes Sent', value: stats.quotesSent, icon: FileText, color: 'text-green-500', to: '/dashboard/supplier/quotations' },
-    { label: 'Active Orders', value: stats.activeOrders, icon: TrendingUp, color: 'text-[#FF5A00]', to: '/dashboard/supplier/orders' },
-    { label: 'Completed Orders', value: stats.completedOrders, icon: CheckCircle2, color: 'text-green-600', to: '/dashboard/supplier/orders' },
-    { label: 'Response Rate', value: `${stats.responseRate}%`, icon: BarChart3, color: 'text-indigo-500', to: '/dashboard/supplier/analytics' },
-    { label: 'Avg Response Time', value: stats.avgResponseHours > 0 ? `${stats.avgResponseHours}h` : '—', icon: Clock, color: 'text-orange-500', to: '/dashboard/supplier/analytics' },
-    { label: 'Wallet Balance', value: `₹${Number(stats.walletBalance).toLocaleString()}`, icon: Wallet, color: 'text-teal-500', to: '/dashboard/supplier/wallet' },
-    { label: 'RFQ Leads Left', value: stats.leadsLeft, sub: `/ ${stats.maxLeads}`, icon: BarChart3, color: 'text-yellow-500', to: '/dashboard/supplier/rfqs' },
-  ];
+    return () => { cancelled = true; };
+  }, [user, company, slots]);
+
+  const last = slots.length - 1;
+  const quotesDelta = percentChange(quotesByMonth[last], quotesByMonth[last - 1]);
+  const ordersDelta = percentChange(ordersByMonth[last], ordersByMonth[last - 1]);
+  const dash = (value: number | string) => (loading ? '—' : value);
 
   return (
     <DashboardLayout>
@@ -133,210 +144,198 @@ export default function SupplierDashboard() {
         description="BulkSkart dashboard — manage your account, orders and trade activity."
         robots="noindex, nofollow"
       />
-      <div className="flex-1 min-w-0 p-3 md:p-4 lg:p-5">
-        <div className="max-w-[1400px] w-full mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-base md:text-xl font-bold text-foreground truncate max-w-[280px] sm:max-w-md">{company?.company_name ?? 'Your Dashboard'}</h1>
-                {company?.is_verified && (
-                  <Badge className="bg-green-100 text-green-700 border-green-300 text-[10px] px-1.5 py-0 gap-0.5 shrink-0">
-                    <ShieldCheck className="w-2.5 h-2.5" /> Verified
-                  </Badge>
-                )}
+      <div className="dpage">
+        {/* Company name and quick action */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <h1 className="text-base md:text-lg font-bold text-foreground truncate max-w-[280px] sm:max-w-md">{company?.company_name ?? 'Your Dashboard'}</h1>
+            {company?.is_verified && (
+              <Badge className="bg-green-100 text-green-700 border-green-300 text-[10px] px-1.5 py-0 gap-0.5 shrink-0">
+                <ShieldCheck className="w-2.5 h-2.5" /> Verified
+              </Badge>
+            )}
+          </div>
+          <Link to="/dashboard/supplier/products" className="hidden md:block">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 text-sm">
+              <Plus className="w-4 h-4" /> Add Product
+            </Button>
+          </Link>
+        </div>
+
+        {/* Mandatory Business Details Onboarding Banner */}
+        {(!company || !(company as any)?.onboarding_completed) && (
+          <div className="bg-gradient-to-r from-primary/10 via-orange-500/10 to-amber-500/5 border-2 border-primary/40 rounded-2xl p-4 sm:p-5 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-bold text-foreground text-sm sm:text-base">
+                      {!company ? 'Setup Your Business Profile (Mandatory)' : `Complete Business Profile (${(company as any)?.profile_completion || 35}% Complete)`}
+                    </p>
+                    <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
+                      Step {(company as any)?.onboarding_step || 1} of 5
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    {!company
+                      ? 'To unlock supplier features, publish products, and receive matched buyer RFQs, complete the official 5-step business profile setup.'
+                      : 'Complete your business profile, operations capacity, and document verification to unlock direct buyer contact details.'}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs md:text-sm text-muted-foreground truncate">Manage products, leads, and quotations</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {stats.unreadNotifs > 0 && (
-                <Link to="/dashboard/supplier/notifications">
-                  <Button variant="outline" size="sm" className="gap-1.5 relative">
-                    <Bell className="w-4 h-4" />
-                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold">{stats.unreadNotifs}</span>
-                  </Button>
-                </Link>
-              )}
-              <Link to="/dashboard/supplier/products" className="hidden md:block">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 text-sm">
-                  <Plus className="w-4 h-4" /> Add Product
+              <Link to="/business-setup" className="shrink-0 w-full sm:w-auto">
+                <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90 font-bold text-xs h-9 px-4 rounded-xl shadow-md gap-1.5">
+                  <Building2 className="w-3.5 h-3.5" />
+                  {!company ? 'Start Setup Wizard' : 'Resume Profile Setup'}
                 </Button>
               </Link>
             </div>
           </div>
+        )}
 
-          {/* Mandatory Business Details Onboarding Banner */}
-          {(!company || !(company as any)?.onboarding_completed) && (
-            <div className="mb-4 bg-gradient-to-r from-primary/10 via-orange-500/10 to-amber-500/5 border-2 border-primary/40 rounded-2xl p-4 sm:p-5 shadow-sm">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5">
-                    <Building2 className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-foreground text-sm sm:text-base">
-                        {!company ? 'Setup Your Business Profile (Mandatory)' : `Complete Business Profile (${(company as any)?.profile_completion || 35}% Complete)`}
-                      </p>
-                      <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
-                        Step {(company as any)?.onboarding_step || 1} of 5
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      {!company
-                        ? 'To unlock supplier features, publish products, and receive matched buyer RFQs, complete the official 5-step business profile setup.'
-                        : 'Complete your business profile, operations capacity, and document verification to unlock direct buyer contact details.'}
-                    </p>
-                  </div>
-                </div>
-                <Link to="/business-setup" className="shrink-0 w-full sm:w-auto">
-                  <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90 font-bold text-xs h-9 px-4 rounded-xl shadow-md gap-1.5">
-                    <Building2 className="w-3.5 h-3.5" />
-                    {!company ? 'Start Setup Wizard' : 'Resume Profile Setup'}
-                  </Button>
-                </Link>
-              </div>
+        {/* Verification banners */}
+        {company?.verification_status === 'pending' && (
+          <div className="flex items-start gap-3 bg-yellow-50 border border-yellow-200 rounded-2xl p-3 md:p-4 text-sm">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-yellow-600" />
+            <div>
+              <p className="font-semibold text-yellow-800">Verification in progress</p>
+              <p className="text-xs mt-0.5 text-yellow-700">Your documents are under review. You'll be notified when approved.</p>
             </div>
-          )}
+          </div>
+        )}
+        {company?.verification_status === 'unverified' && (
+          <div className="flex items-start gap-3 bg-muted border border-border rounded-2xl p-3 md:p-4 text-sm text-muted-foreground">
+            <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5 text-primary" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-foreground">Get Verified Manufacturer Badge</p>
+              <p className="text-xs mt-0.5">Upload GST, PAN, and bank documents to get verified and accept more orders.</p>
+            </div>
+            <Link to="/dashboard/supplier/verification" className="shrink-0">
+              <Button size="sm" className="bg-primary text-primary-foreground text-xs">Verify Now</Button>
+            </Link>
+          </div>
+        )}
 
-          {/* Verification banners */}
-          {company?.verification_status === 'pending' && (
-            <div className="mb-4 flex items-start gap-3 bg-yellow-50 border border-yellow-200 rounded-xl p-3 md:p-4 text-sm">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-yellow-600" />
+        {/* Open disputes */}
+        {stats.openDisputes > 0 && (
+          <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-3 text-sm">
+            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+            <span className="text-red-700">{stats.openDisputes} open dispute{stats.openDisputes > 1 ? 's' : ''}</span>
+            <Link to="/dashboard/supplier/disputes" className="ml-auto shrink-0">
+              <Button variant="outline" size="sm" className="text-xs border-red-300 text-red-600 hover:bg-red-50">View</Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Subscription banner */}
+        {!subscription && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border-2 border-amber-500/30 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+                <CreditCard className="w-5 h-5" />
+              </div>
               <div>
-                <p className="font-semibold text-yellow-800">Verification in progress</p>
-                <p className="text-xs mt-0.5 text-yellow-700">Your documents are under review. You'll be notified when approved.</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-black text-foreground text-sm">Action Required: Unpaid Manufacturer Account</p>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30 uppercase">
+                    Contacts Locked
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Buyer contact phone numbers, bidding participant contact numbers, direct WhatsApp dialers, and official quotation submissions are strictly reserved for paid manufacturers. Upgrade your plan now to unlock all buyer contacts and active trade negotiation.
+                </p>
               </div>
             </div>
-          )}
-          {company?.verification_status === 'unverified' && (
-            <div className="mb-4 flex items-start gap-3 bg-muted border border-border rounded-xl p-3 md:p-4 text-sm text-muted-foreground">
-              <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5 text-primary" />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground">Get Verified Manufacturer Badge</p>
-                <p className="text-xs mt-0.5">Upload GST, PAN, and bank documents to get verified and accept more orders.</p>
-              </div>
-              <Link to="/dashboard/supplier/verification" className="shrink-0">
-                <Button size="sm" className="bg-primary text-primary-foreground text-xs">Verify Now</Button>
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+              <Link to="/dashboard/supplier/subscription" className="w-full sm:w-auto">
+                <Button size="sm" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Pay Subscription Now
+                </Button>
               </Link>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Open disputes */}
-          {stats.openDisputes > 0 && (
-            <div className="mb-4 flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-3 text-sm">
-              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-              <span className="text-red-700">{stats.openDisputes} open dispute{stats.openDisputes > 1 ? 's' : ''}</span>
-              <Link to="/dashboard/supplier/disputes" className="ml-auto shrink-0">
-                <Button variant="outline" size="sm" className="text-xs border-red-300 text-red-600 hover:bg-red-50">View</Button>
+        {/* Wallet summary */}
+        {stats.walletBalance > 0 && (
+          <div className="flex items-center gap-4 bg-teal-50 border border-teal-200 rounded-2xl p-3 md:p-4 text-sm flex-wrap">
+            <Wallet className="w-5 h-5 text-teal-600 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="font-semibold text-teal-800">Wallet: ₹{Number(stats.walletBalance).toLocaleString()}</span>
+              <span className="text-teal-600 ml-3">Withdrawable: ₹{Number(stats.withdrawableBalance).toLocaleString()}</span>
+            </div>
+            {stats.withdrawableBalance > 0 && (
+              <Link to="/dashboard/supplier/wallet" className="shrink-0">
+                <Button size="sm" variant="outline" className="text-xs border-teal-300 text-teal-700">Withdraw</Button>
               </Link>
-            </div>
-          )}
-
-          {/* Subscription banner */}
-          {!subscription && (
-            <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border-2 border-amber-500/30 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 mt-0.5">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-black text-foreground text-sm">Action Required: Unpaid Manufacturer Account</p>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30 uppercase">
-                      Contacts Locked
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Buyer contact phone numbers, bidding participant contact numbers, direct WhatsApp dialers, and official quotation submissions are strictly reserved for paid manufacturers. Upgrade your plan now to unlock all buyer contacts and active trade negotiation.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                <Link to="/dashboard/supplier/subscription" className="w-full sm:w-auto">
-                  <Button size="sm" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" /> Pay Subscription Now
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* Wallet summary */}
-          {stats.walletBalance > 0 && (
-            <div className="mb-4 flex items-center gap-4 bg-teal-50 border border-teal-200 rounded-xl p-3 md:p-4 text-sm flex-wrap">
-              <Wallet className="w-5 h-5 text-teal-600 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <span className="font-semibold text-teal-800">Wallet: ₹{Number(stats.walletBalance).toLocaleString()}</span>
-                <span className="text-teal-600 ml-3">Withdrawable: ₹{Number(stats.withdrawableBalance).toLocaleString()}</span>
-              </div>
-              {stats.withdrawableBalance > 0 && (
-                <Link to="/dashboard/supplier/wallet" className="shrink-0">
-                  <Button size="sm" variant="outline" className="text-xs border-teal-300 text-teal-700">Withdraw</Button>
-                </Link>
-              )}
-            </div>
-          )}
-
-          {/* AI Opportunity Card */}
-          <div className="mb-5">
-            <AIOpportunityCard summary={aiSummary} hasProducts={stats.totalProducts > 0} />
+            )}
           </div>
+        )}
 
-          {/* Stats grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 mb-4 md:mb-5">
-            {statsCards.map(s => {
-              const Icon = s.icon;
-              return (
-                <Link key={s.label} to={s.to} className="bg-card border border-border rounded-xl p-3 md:p-4 hover:shadow-md transition-shadow block">
-                  <div className="flex items-start justify-between mb-1.5 md:mb-2">
-                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                      <Icon className={`w-4 h-4 md:w-5 md:h-5 ${s.color}`} />
-                    </div>
-                  </div>
-                  <p className="text-xl md:text-2xl font-bold text-foreground">{loading ? '—' : s.value}<span className="text-xs md:text-sm font-normal text-muted-foreground">{s.sub ?? ''}</span></p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
-                </Link>
-              );
-            })}
-          </div>
+        {/* The four main figures */}
+        <div className="dgrid-kpi">
+          <Kpi title="Listed Products" value={dash(stats.totalProducts)} icon={Package} tone="orange" to="/dashboard/supplier/products" />
+          <Kpi title="Quotes Sent" value={dash(stats.quotesSent)} icon={FileText} tone="purple" to="/dashboard/supplier/quotations" delta={{ pct: quotesDelta, label: 'vs last month' }} />
+          <Kpi title="Active Orders" value={dash(stats.activeOrders)} icon={TrendingUp} tone="green" to="/dashboard/supplier/orders" delta={{ pct: ordersDelta, label: 'new orders vs last month' }} />
+          <Kpi title="Completed Orders" value={dash(stats.completedOrders)} icon={CheckCircle2} tone="blue" to="/dashboard/supplier/orders" />
+        </div>
 
-          {/* Matched Buyer Requirements — live AI matches */}
-          <MatchedRequirementsPanel />
+        {/* Chart and gauge */}
+        <div className="dgrid-main">
+          <Panel
+            title="Performance"
+            subtitle="Quotes you sent and orders you received, by month"
+            legend={[
+              { label: 'Quotes sent', color: '#f2802d' },
+              { label: 'Orders received', color: '#34d399' },
+            ]}
+            right={<span className="dp-pill">Last 12 months</span>}
+          >
+            <BarsChart
+              months={slots.map((slot) => slot.label)}
+              bars={quotesByMonth}
+              barLabel="quotes"
+              line={ordersByMonth}
+              lineLabel="orders"
+              emptyText="No quotes or orders in the last 12 months yet."
+              ariaLabel="Quotes sent and orders received in each of the last 12 months"
+            />
+          </Panel>
 
-          {/* Quick actions */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-            <Link to="/dashboard/supplier/products" className="bg-card border border-border rounded-xl p-3 md:p-4 card-hover block">
-              <Package className="w-6 h-6 text-primary mb-2" />
-              <p className="text-sm font-semibold text-foreground">Manage Products</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Add, edit, delete product listings</p>
-            </Link>
-            <Link to="/dashboard/supplier/rfqs" className="bg-card border border-border rounded-xl p-3 md:p-4 card-hover block">
-              <FileText className="w-6 h-6 text-primary mb-2" />
-              <p className="text-sm font-semibold text-foreground">View RFQ Leads</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Browse matching buyer requirements</p>
-            </Link>
-            <Link to="/dashboard/supplier/quotations" className="bg-card border border-border rounded-xl p-3 md:p-4 card-hover block">
-              <TrendingUp className="w-6 h-6 text-primary mb-2" />
-              <p className="text-sm font-semibold text-foreground">My Quotations</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Track sent quotes and responses</p>
-            </Link>
-            <Link to="/dashboard/supplier/verification" className="bg-card border border-border rounded-xl p-3 md:p-4 card-hover block">
-              <ShieldCheck className="w-6 h-6 text-primary mb-2" />
-              <p className="text-sm font-semibold text-foreground">Verification</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Submit KYC documents</p>
-            </Link>
-            <Link to="/dashboard/supplier/notifications" className="bg-card border border-border rounded-xl p-3 md:p-4 card-hover block">
-              <Bell className="w-6 h-6 text-primary mb-2" />
-              <p className="text-sm font-semibold text-foreground">Notifications</p>
-              <p className="text-xs text-muted-foreground mt-0.5">View alerts and updates</p>
-            </Link>
-            <Link to="/dashboard/supplier/disputes" className="bg-card border border-border rounded-xl p-3 md:p-4 card-hover block">
-              <AlertTriangle className="w-6 h-6 text-primary mb-2" />
-              <p className="text-sm font-semibold text-foreground">Disputes</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Raise or view disputes</p>
-            </Link>
-          </div>
+          <Panel title="Response rate" subtitle="How often you reply to buyers" to="/dashboard/supplier/analytics">
+            <Gauge value={loading ? null : stats.responseRate} label="Replying to buyers" emptyText="Loading…" />
+            <div className="dminis">
+              <Mini label="Quotes this month" value={quotesByMonth[last]} pct={quotesDelta} />
+              <Mini label="Orders this month" value={ordersByMonth[last]} pct={ordersDelta} />
+            </div>
+          </Panel>
+        </div>
+
+        {/* The other figures */}
+        <div className="dgrid-kpi">
+          <Kpi title="Wallet Balance" value={dash(`₹${Number(stats.walletBalance).toLocaleString()}`)} icon={Wallet} tone="teal" to="/dashboard/supplier/wallet" />
+          <Kpi title="Total Revenue" value={dash(`₹${Number(stats.totalRevenue).toLocaleString()}`)} icon={Banknote} tone="yellow" to="/dashboard/supplier/analytics" />
+          <Kpi title="Avg Response Time" value={dash(stats.avgResponseHours > 0 ? `${stats.avgResponseHours}h` : '—')} icon={Clock} tone="rose" to="/dashboard/supplier/analytics" />
+          <Kpi title="RFQ Leads Left" value={dash(stats.leadsLeft)} suffix={`/ ${stats.maxLeads}`} icon={BarChart3} tone="blue" to="/dashboard/supplier/rfqs" />
+        </div>
+
+        {/* AI Opportunity Card */}
+        <AIOpportunityCard summary={aiSummary} hasProducts={stats.totalProducts > 0} />
+
+        {/* Matched Buyer Requirements — live AI matches */}
+        <MatchedRequirementsPanel />
+
+        {/* Quick actions */}
+        <div className="dgrid-q">
+          <QuickLink to="/dashboard/supplier/products" icon={Package} label="Manage Products" />
+          <QuickLink to="/dashboard/supplier/rfqs" icon={FileText} label="View RFQ Leads" />
+          <QuickLink to="/dashboard/supplier/quotations" icon={TrendingUp} label="My Quotations" />
+          <QuickLink to="/dashboard/supplier/verification" icon={ShieldCheck} label="Verification" />
+          <QuickLink to="/dashboard/supplier/notifications" icon={Bell} label="Notifications" count={stats.unreadNotifs} />
+          <QuickLink to="/dashboard/supplier/disputes" icon={AlertTriangle} label="Disputes" count={stats.openDisputes} />
         </div>
       </div>
     </DashboardLayout>

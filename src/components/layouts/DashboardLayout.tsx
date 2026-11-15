@@ -1,19 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import CopyPublicProfileButton from '@/components/common/CopyPublicProfileButton';
+import NotificationBell from '@/components/common/NotificationBell';
 import BrandLogo from '@/components/common/BrandLogo';
 import PageMeta from '@/components/common/PageMeta';
 import {
   LayoutDashboard, Package, FileText, MessageSquare, Bell,
   Settings, LogOut, Menu, Globe, BarChart3, TrendingUp,
   Shield, Flag, CreditCard, Building2, UserCircle,
-  Warehouse, Zap, Truck, Sparkles, Lock, AlertTriangle, Calculator,
+  Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
+  Search, CircleHelp, Store, ChevronDown, Wrench, LifeBuoy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import '@/components/dashboard/dashboard.css';
 
 /** Routes unpaid manufacturers may still open (subscribe / setup / inbox / browse). */
 const UNPAID_SUPPLIER_ALLOWLIST = [
@@ -41,9 +44,11 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
+  /** Shown in the amber "Tools" list instead of the main list. */
+  tool?: boolean;
 }
 
-const buyerNavItems: NavItem[] = [
+export const buyerNavItems: NavItem[] = [
   { label: 'Overview', href: '/dashboard/buyer', icon: LayoutDashboard },
   { label: 'My Requirements', href: '/dashboard/buyer/requirements', icon: FileText },
   { label: 'Received Quotes', href: '/dashboard/buyer/quotes', icon: Package },
@@ -51,14 +56,14 @@ const buyerNavItems: NavItem[] = [
   { label: 'Messages', href: '/dashboard/buyer/messages', icon: MessageSquare },
   { label: 'Notifications', href: '/dashboard/buyer/notifications', icon: Bell },
   { label: 'Saved Manufacturers', href: '/dashboard/buyer/saved-manufacturers', icon: Building2 },
-  { label: 'Shipping Calculator', href: '/shipping-calculator', icon: Truck },
-  { label: 'Order Loan Calculator', href: '/loan-calculator', icon: Calculator },
   { label: 'KYC Verification', href: '/dashboard/buyer/verification', icon: Shield },
   { label: 'Disputes', href: '/dashboard/buyer/disputes', icon: Flag },
   { label: 'Profile', href: '/dashboard/buyer/profile', icon: Settings },
+  { label: 'Shipping Calculator', href: '/shipping-calculator', icon: Truck, tool: true },
+  { label: 'Order Loan Calculator', href: '/loan-calculator', icon: Calculator, tool: true },
 ];
 
-const supplierNavItems: NavItem[] = [
+export const supplierNavItems: NavItem[] = [
   { label: 'Overview', href: '/dashboard/supplier', icon: LayoutDashboard },
   { label: 'AI Sales Assistant', href: '/dashboard/supplier/ai-assistant', icon: Sparkles },
   { label: 'Business Overview', href: '/dashboard/supplier/overview', icon: BarChart3 },
@@ -76,10 +81,173 @@ const supplierNavItems: NavItem[] = [
   { label: 'Business Profile', href: '/dashboard/supplier/profile', icon: UserCircle },
 ];
 
-const adminNavItems: NavItem[] = [
+export const adminNavItems: NavItem[] = [
   { label: 'Control Panel', href: '/dashboard/admin', icon: LayoutDashboard },
   { label: 'AI Match Analytics', href: '/dashboard/admin/ai-match-analytics', icon: Zap },
 ];
+
+/**
+ * While a dashboard page is open the whole document wears the dashboard colours, so pop-ups (menus, dialogs, toasts) match.
+ * Moving from one dashboard page to another unmounts and mounts the layout, so in that case the class is only taken off
+ * after a short pause with no dashboard on screen; that keeps the page from flashing in the site's colours between two
+ * pages. Leaving the dashboard for the rest of the site takes it off at once.
+ */
+let dashUsers = 0;
+let dashTimer: ReturnType<typeof setTimeout> | null = null;
+function retainDashTheme(): () => void {
+  dashUsers += 1;
+  if (dashTimer) {
+    clearTimeout(dashTimer);
+    dashTimer = null;
+  }
+  document.documentElement.classList.add('dash-active');
+  return () => {
+    dashUsers -= 1;
+    if (dashUsers > 0) return;
+    // the address has already changed when the old page is removed, so it says where the visitor is going
+    if (!window.location.pathname.startsWith('/dashboard')) {
+      document.documentElement.classList.remove('dash-active');
+      return;
+    }
+    dashTimer = setTimeout(() => {
+      if (dashUsers === 0) document.documentElement.classList.remove('dash-active');
+      dashTimer = null;
+    }, 600);
+  };
+}
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/** The LCD clock: the visitor's own time and date, and whether the browser is online. */
+function DashClock() {
+  const [now, setNow] = useState(() => new Date());
+  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
+  }, []);
+
+  const date = now.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' }).replace(/,/g, '').toUpperCase();
+  return (
+    <div className={cn('dsh-clock', !online && 'is-offline')}>
+      <span className="sr-only">
+        {`Local time ${pad(now.getHours())}:${pad(now.getMinutes())}, ${date}, ${online ? 'online' : 'offline'}`}
+      </span>
+      <div className="dsh-clock-time" aria-hidden="true">
+        <b>{pad(now.getHours())}</b>
+        <i>:</i>
+        <b>{pad(now.getMinutes())}</b>
+        <small>{pad(now.getSeconds())}</small>
+      </div>
+      <div className="dsh-clock-meta" aria-hidden="true">
+        <span>{date}</span>
+        <span>{online ? 'Online' : 'Offline'}</span>
+      </div>
+    </div>
+  );
+}
+
+interface SidebarProps {
+  items: NavItem[];
+  isActive: (href: string) => boolean;
+  onNavigate: () => void;
+  onSignOut: () => void;
+  roleLabel: string;
+  unpaid: boolean;
+  inSheet?: boolean;
+  showPublicProfile?: boolean;
+}
+
+function Sidebar({ items, isActive, onNavigate, onSignOut, roleLabel, unpaid, inSheet = false, showPublicProfile = false }: SidebarProps) {
+  const [toolsOpen, setToolsOpen] = useState(true);
+  const main = items.filter((item) => !item.tool);
+  const tools = items.filter((item) => item.tool);
+  return (
+    <aside className={cn('dsh-side', inSheet && 'is-sheet')} aria-label="Dashboard menu">
+      <Link to="/" className="dsh-brand" onClick={onNavigate} aria-label="BulkSkart home">
+        <BrandLogo size="md" variant="dark" linkTo={null} />
+      </Link>
+
+      <span className="dsh-plaque">{roleLabel}</span>
+
+      <nav className="dsh-navbox" aria-label="Dashboard sections">
+        {main.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              onClick={onNavigate}
+              className={cn('dsh-link', active && 'is-active')}
+              aria-current={active ? 'page' : undefined}
+            >
+              <Icon aria-hidden="true" />
+              <span>{item.label}</span>
+              {item.href === '/dashboard/supplier/subscription' && unpaid && <span className="dsh-flag">Unpaid</span>}
+            </Link>
+          );
+        })}
+
+        {tools.length > 0 && (
+          <>
+            <button type="button" className="dsh-link" aria-expanded={toolsOpen} aria-controls="dsh-tools" onClick={() => setToolsOpen((open) => !open)}>
+              <Wrench aria-hidden="true" />
+              <span>Tools</span>
+              <ChevronDown className="dsh-caret" aria-hidden="true" />
+            </button>
+            {toolsOpen && (
+              <div className="dsh-term" id="dsh-tools">
+                {tools.map((item) => (
+                  <Link key={item.href} to={item.href} onClick={onNavigate} className={cn(isActive(item.href) && 'is-active')}>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </nav>
+
+      <DashClock />
+
+      <div className="dsh-foot">
+        {inSheet && showPublicProfile && <CopyPublicProfileButton />}
+        <Link to="/contact" onClick={onNavigate} className="dsh-link">
+          <LifeBuoy aria-hidden="true" />
+          <span>Help Desk</span>
+        </Link>
+        <div className="dsh-foot-row">
+          <Link to="/" onClick={onNavigate} className="dsh-link">
+            <Globe aria-hidden="true" />
+            <span>Market</span>
+          </Link>
+          <button type="button" onClick={onSignOut} className="dsh-link is-danger">
+            <LogOut aria-hidden="true" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+const SUBTITLES: Record<string, string> = {
+  buyer: 'Manage your bulk requirements and received quotes',
+  supplier: 'Manage products, leads and quotations',
+  admin: 'Monitor users, verifications and disputes',
+};
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -90,6 +258,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useLayoutEffect(() => retainDashTheme(), []);
 
   const role = resolvedRole || profile?.role || null;
   const isUnpaidManufacturer = role === 'supplier' && !isPaidSubscriber;
@@ -128,6 +300,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [isUnpaidManufacturer, location.pathname, navigate]);
 
+  // "/" jumps to the search box, as the key hint in it says
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) return;
+      const box = searchRef.current;
+      if (!box || box.offsetParent === null) return;
+      event.preventDefault();
+      box.focus();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const navItems = role === 'admin'
     ? adminNavItems
     : role === 'supplier'
@@ -152,149 +339,138 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return location.pathname.startsWith(href);
   };
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-sidebar-border">
-        <BrandLogo size="md" variant="auto" linkTo="/" />
-      </div>
+  const roleLabel = role === 'supplier' ? 'Supplier hub' : role === 'admin' ? 'Admin' : role === 'buyer' ? 'Buyer hub' : 'Workspace';
+  const roleName = role === 'supplier' ? 'Supplier' : role === 'admin' ? 'Admin' : role === 'buyer' ? 'Buyer' : 'Account';
+  const firstName = (displayName || '').trim().split(/\s+/)[0] || 'there';
+  const initials = (displayName || 'U')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('') || 'U';
+  const profilePath = role === 'supplier' ? '/dashboard/supplier/profile' : role === 'admin' ? '/dashboard/admin' : '/dashboard/buyer/profile';
+  const showPublicProfile = role === 'supplier' || role === 'buyer';
 
-      {/* User info */}
-      <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-            {(displayName || 'U')[0]?.toUpperCase() ?? 'U'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-sidebar-foreground truncate">
-              {loading ? 'Loading…' : displayName}
-            </div>
-            <div className="text-xs text-muted-foreground capitalize">
-              {loading ? '…' : role === 'supplier' ? 'Supplier' : role === 'admin' ? 'Admin' : role === 'buyer' ? 'Buyer' : 'Account'}
-            </div>
-          </div>
-        </div>
-      </div>
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    const q = query.trim();
+    if (q) navigate(`/products?q=${encodeURIComponent(q)}`);
+  };
 
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-        {navItems.map(item => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors min-h-10',
-                active
-                  ? 'bg-sidebar-primary/20 text-primary font-medium'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground'
-              )}
-            >
-              <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-primary' : 'text-muted-foreground')} />
-              <span className="truncate">{item.label}</span>
-              {item.href === '/dashboard/supplier/subscription' && isUnpaidManufacturer && (
-                <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30 uppercase tracking-wider">
-                  Unpaid
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="p-3 border-t border-sidebar-border space-y-0.5">
-        <Link to="/" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
-          <Globe className="w-4 h-4 text-muted-foreground" /> Marketplace
-        </Link>
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-destructive hover:bg-destructive/10 transition-colors w-full text-left"
-        >
-          <LogOut className="w-4 h-4" /> Sign Out
-        </button>
-      </div>
-    </div>
-  );
+  const sidebarProps = {
+    items: navItems,
+    isActive,
+    onSignOut: handleSignOut,
+    roleLabel,
+    unpaid: isUnpaidManufacturer,
+    showPublicProfile,
+  };
 
   return (
-    <div className="flex h-dvh max-h-dvh w-full overflow-hidden bg-background">
+    <div className="dsh">
       <PageMeta
         title="Dashboard — BulkSkart B2B Marketplace"
         description="BulkSkart secure account management and trade negotiation dashboard."
         robots="noindex, nofollow"
       />
-      {/* Desktop Sidebar — fixed viewport height */}
-      <aside className="hidden md:flex flex-col w-56 lg:w-60 shrink-0 h-full bg-sidebar border-r border-sidebar-border overflow-hidden">
-        <SidebarContent />
-      </aside>
 
-        {/* Main */}
-        <div className="flex-1 min-w-0 min-h-0 overflow-hidden flex flex-col w-full">
-          {/* Mobile top bar */}
-          <div className="md:hidden flex items-center gap-3 px-3 sm:px-4 h-12 border-b border-border bg-background shrink-0 w-full">
-            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-foreground shrink-0" aria-label="Open sidebar menu">
-                  <Menu className="w-5 h-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[min(280px,85vw)] p-0 bg-sidebar border-sidebar-border">
-                <SidebarContent />
-              </SheetContent>
-            </Sheet>
-            <BrandLogo size="sm" variant="auto" linkTo="/" />
-            <div className="ml-auto">
-              <CopyPublicProfileButton compact />
-            </div>
+      <Sidebar {...sidebarProps} onNavigate={() => undefined} />
+
+      <div className="dsh-main">
+        <header className="dsh-bar">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <button type="button" className="dsh-burger" aria-label="Open sidebar menu">
+                <Menu className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[min(292px,88vw)] border-0 bg-transparent p-2 shadow-none">
+              <Sidebar {...sidebarProps} onNavigate={() => setMobileOpen(false)} inSheet />
+            </SheetContent>
+          </Sheet>
+
+          <div className="dsh-hello">
+            <p className="dsh-hello-title">{loading ? 'Welcome back' : `Hi, ${firstName}! Welcome back.`}</p>
+            <p>{SUBTITLES[role ?? ''] ?? 'Manage your account and trade activity'}</p>
           </div>
-          {(role === 'supplier' || role === 'buyer') && (
-            <div className="hidden md:flex items-center justify-end h-12 px-4 border-b border-border bg-background shrink-0">
+
+          <form className="dsh-search" role="search" onSubmit={handleSearch}>
+            <Search aria-hidden="true" />
+            <input
+              ref={searchRef}
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search products…"
+              aria-label="Search the marketplace for products"
+            />
+            <kbd className="dsh-kbd" aria-hidden="true">/</kbd>
+          </form>
+
+          {showPublicProfile && (
+            <div className="dsh-pub">
               <CopyPublicProfileButton />
             </div>
           )}
 
-          {/* ── UNPAID MANUFACTURER SUBSCRIPTION NOTIFICATION BANNER ── */}
-          {isUnpaidManufacturer && (
-            <div className="w-full bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/10 border-b-2 border-amber-500/30 px-3 md:px-5 py-2 shrink-0 flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
-                  <Lock className="w-3.5 h-3.5" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs sm:text-sm font-extrabold text-foreground">
-                      Unpaid Manufacturer Account
-                    </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30 uppercase tracking-wider">
-                      Contacts Locked
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate sm:whitespace-normal hidden sm:block">
-                    Subscribe to unlock buyer contacts, RFQ quotes, product listings, and premium tools.
-                  </p>
-                </div>
+          <div className="dsh-icons">
+            <NotificationBell className="dsh-ibtn" />
+            <Link to="/contact" className="dsh-ibtn is-hide-sm" aria-label="Help desk" title="Help desk">
+              <CircleHelp aria-hidden="true" />
+            </Link>
+            <Link to="/" className="dsh-ibtn is-hide-sm" aria-label="Open the marketplace" title="Open the marketplace">
+              <Store aria-hidden="true" />
+            </Link>
+          </div>
+
+          <Link to={profilePath} className="dsh-user" aria-label={`${displayName || 'Your'} profile`}>
+            <span className="dsh-avatar" aria-hidden="true">{initials}</span>
+            <div>
+              <b>{loading ? '…' : displayName}</b>
+              <small>{roleName}</small>
+            </div>
+          </Link>
+        </header>
+
+        {/* ── UNPAID MANUFACTURER SUBSCRIPTION NOTIFICATION BANNER ── */}
+        {isUnpaidManufacturer && (
+          <div className="w-full bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/10 border-2 border-amber-500/30 rounded-2xl px-3 md:px-5 py-2 shrink-0 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                <Lock className="w-3.5 h-3.5" />
               </div>
-              <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
-                <Link to="/pricing" className="hidden sm:block">
-                  <Button variant="outline" size="sm" className="h-8 text-xs border-amber-500/30 hover:bg-amber-500/10">
-                    Compare Plans
-                  </Button>
-                </Link>
-                <Link to="/dashboard/supplier/subscription">
-                  <Button size="sm" className="h-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs shadow-md gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Subscribe Now</span>
-                  </Button>
-                </Link>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs sm:text-sm font-extrabold text-foreground">
+                    Unpaid Manufacturer Account
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30 uppercase tracking-wider">
+                    Contacts Locked
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate sm:whitespace-normal hidden sm:block">
+                  Subscribe to unlock buyer contacts, RFQ quotes, product listings, and premium tools.
+                </p>
               </div>
             </div>
-          )}
+            <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+              <Link to="/pricing" className="hidden sm:block">
+                <Button variant="outline" size="sm" className="h-8 text-xs border-amber-500/30 hover:bg-amber-500/10">
+                  Compare Plans
+                </Button>
+              </Link>
+              <Link to="/dashboard/supplier/subscription">
+                <Button size="sm" className="h-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs shadow-md gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Subscribe Now</span>
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
 
-          <main className="flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
-            {children}
-          </main>
-        </div>
+        <main className="dsh-content">{children}</main>
+      </div>
     </div>
   );
 }
