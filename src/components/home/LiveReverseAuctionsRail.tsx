@@ -1,98 +1,47 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Flame, Clock, MapPin, Users, ArrowRight,
-  TrendingUp, CheckCircle2, ShieldCheck, ChevronRight, ChevronLeft,
-  Pause, Play, RefreshCw, Sparkles
+  ChevronRight, ChevronLeft,
+  Pause, Play, RefreshCw, Sparkles, ImageOff
 } from 'lucide-react';
-import SafeImage from '@/components/common/SafeImage';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/db/supabase';
 import CreateReverseAuctionDialog from '@/components/auctions/CreateReverseAuctionDialog';
-import { getSimulatedAuctions } from '@/data/simulatedLiveAuctions';
-import { assignDistinctAuctionImages, resolveAuctionImage } from '@/lib/auctionImageResolver';
-
-export interface ReverseAuctionCardItem {
-  id: string;
-  auctionNumber: string;
-  auctionType: 'reverse' | 'forward';
-  title: string;
-  category: string;
-  quantity: string;
-  priceRange: string;
-  location: string;
-  quotedCount: number;
-  initialSeconds: number;
-  image: string;
-}
-
-function simulatedAsRailCards(): ReverseAuctionCardItem[] {
-  const mapped = getSimulatedAuctions().map((a) => ({
-    id: a.id,
-    auctionNumber: a.auction_number,
-    auctionType: a.auction_type,
-    title: a.title,
-    category: a.auction_type === 'forward' ? 'Surplus Liquidation' : 'Industrial Bulk',
-    quantity: `${a.total_quantity.toLocaleString('en-IN')} ${a.quantity_unit}`,
-    priceRange: `₹${a.starting_price.toLocaleString('en-IN')} / ${a.quantity_unit}`,
-    location: a.delivery_location,
-    quotedCount: a.total_bids,
-    initialSeconds: Math.max(
-      0,
-      Math.floor((new Date(a.end_time).getTime() - Date.now()) / 1000)
-    ),
-    image: resolveAuctionImage({ id: a.id, title: a.title, existing: a.images }),
-  }));
-  return assignDistinctAuctionImages(mapped);
-}
-
-const FALLBACK_AUCTIONS: ReverseAuctionCardItem[] = simulatedAsRailCards();
+import { getCategories } from '@/lib/api';
+import { auctionMoney, auctionPhase, getAuctionListings, secondsLeft, type AuctionListing } from '@/lib/auctionListing';
 
 const CYCLE_SECONDS = 25;
 /** 3 roomier cards fit laptop screens better than a cramped 4-up row */
 const ITEMS_PER_PAGE = 3;
-const MAX_RAIL_SECONDS = 24 * 60 * 60;
 
-function isUuidLike(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim());
-}
-
-function friendlyCategory(raw: unknown, auctionType: 'reverse' | 'forward'): string {
-  const value = String(raw || '').trim();
-  if (!value || isUuidLike(value)) {
-    return auctionType === 'forward' ? 'Surplus Liquidation' : 'Industrial Bulk';
-  }
-  return value;
-}
-
+/** "02:14:09", or "3d 4h" when more than a day is left. */
 function formatTime(totalSeconds: number): string {
   if (totalSeconds <= 0) return '00:00:00';
-  const capped = Math.min(totalSeconds, MAX_RAIL_SECONDS);
-  const hours = Math.floor(capped / 3600);
-  const minutes = Math.floor((capped % 3600) / 60);
-  const seconds = capped % 60;
+  const days = Math.floor(totalSeconds / 86_400);
+  if (days > 0) return `${days}d ${Math.floor((totalSeconds % 86_400) / 3600)}h`;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
+/**
+ * Live and upcoming auctions from the database. No sample lots, no restarted clocks on auctions that
+ * have ended, and no made-up bid counts: when nothing is live the rail says so.
+ */
 export default function LiveReverseAuctionsRail() {
   const navigate = useNavigate();
-  const [allAuctions, setAllAuctions] = useState<ReverseAuctionCardItem[]>(FALLBACK_AUCTIONS);
+  const [allAuctions, setAllAuctions] = useState<AuctionListing[]>([]);
+  const [categoryNames, setCategoryNames] = useState<Map<string, string>>(new Map());
+  const [loaded, setLoaded] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [secondsRemaining, setSecondsRemaining] = useState(CYCLE_SECONDS);
   const [isPaused, setIsPaused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  const [timers, setTimers] = useState<Record<string, number>>(() => {
-    const nextTimers: Record<string, number> = {};
-    FALLBACK_AUCTIONS.forEach(a => {
-      nextTimers[a.id] = a.initialSeconds;
-    });
-    return nextTimers;
-  });
+  const [now, setNow] = useState(() => Date.now());
 
   const totalPages = Math.max(1, Math.ceil(allAuctions.length / ITEMS_PER_PAGE));
 
@@ -100,97 +49,18 @@ export default function LiveReverseAuctionsRail() {
     if (page > totalPages - 1) setPage(0);
   }, [page, totalPages]);
 
-  // Query live database auctions (synced with Auctions Hub)
+  useEffect(() => {
+    getCategories().then((list) => setCategoryNames(new Map(list.map((c) => [c.id, c.name]))));
+  }, []);
+
+  // Live and upcoming auctions, as stored
   const fetchLiveAuctions = useCallback(async () => {
-    try {
-      setIsSyncing(true);
-      const currentTime = Date.now();
-      const { data, error } = await supabase
-        .from('auctions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(60);
-
-      if (!error && data && data.length > 0) {
-        // Filter out explicitly concluded or cancelled auctions
-        const validAuctions = data.filter((d: any) => 
-          d.status !== 'cancelled' && d.status !== 'sold' && d.status !== 'unsold'
-        );
-
-        const listToMap = validAuctions.length > 0 ? validAuctions : data;
-
-        const mappedFromDb: ReverseAuctionCardItem[] = listToMap.map((d: any, idx: number) => {
-          const end = d.end_time ? new Date(d.end_time).getTime() : 0;
-          let remaining = Math.max(0, Math.floor((end - currentTime) / 1000));
-          // Keep live feel inside a 24h window; never dump raw UUID category ids onto the UI
-          if (remaining <= 0 || remaining > MAX_RAIL_SECONDS) {
-            remaining = ((idx * 2741) % (6 * 3600)) + 45 * 60;
-          }
-
-          const auctionType: 'reverse' | 'forward' = d.auction_type === 'forward' ? 'forward' : 'reverse';
-          const defaultImg = auctionType === 'forward'
-            ? 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80'
-            : 'https://cdn.pixabay.com/photo/2016/11/29/09/32/welding-1868731_1280.jpg';
-
-          const auctionNumber = String(d.auction_number || '').trim();
-          const safeNumber =
-            auctionNumber && !isUuidLike(auctionNumber)
-              ? auctionNumber
-              : `AUC-${String(d.id).replace(/-/g, '').slice(0, 6).toUpperCase()}`;
-
-          return {
-            id: d.id,
-            auctionNumber: safeNumber,
-            auctionType,
-            title: d.title,
-            category: friendlyCategory(d.category_name || d.category || d.category_id, auctionType),
-            quantity: d.total_quantity ? `${d.total_quantity.toLocaleString()} ${d.quantity_unit || 'Units'}` : 'Bulk Lot',
-            priceRange: d.starting_price
-              ? `₹${Number(d.starting_price).toLocaleString('en-IN')} / ${d.quantity_unit || 'unit'}`
-              : 'Competitive Bidding',
-            location: d.delivery_location || 'Pan-India',
-            quotedCount: Number(d.total_bids) || (idx % 6) + 1,
-            initialSeconds: Math.min(remaining, MAX_RAIL_SECONDS),
-            image: resolveAuctionImage({
-              id: d.id,
-              title: d.title || '',
-              existing: d.images?.[0] || defaultImg,
-            }),
-          };
-        });
-
-        const sims = simulatedAsRailCards();
-        const merged = assignDistinctAuctionImages([
-          ...mappedFromDb,
-          ...sims.filter((s) => !mappedFromDb.some((d) => d.id === s.id)),
-        ]);
-        setAllAuctions(merged);
-        const nextTimers: Record<string, number> = {};
-        merged.forEach((a) => {
-          nextTimers[a.id] = a.initialSeconds;
-        });
-        setTimers(nextTimers);
-      } else {
-        const sims = simulatedAsRailCards();
-        setAllAuctions(sims);
-        const nextTimers: Record<string, number> = {};
-        sims.forEach((a) => {
-          nextTimers[a.id] = a.initialSeconds;
-        });
-        setTimers(nextTimers);
-      }
-    } catch (err) {
-      console.error('Error fetching live auctions for 24h rail:', err);
-      const sims = simulatedAsRailCards();
-      setAllAuctions(sims);
-      const nextTimers: Record<string, number> = {};
-      sims.forEach((a) => {
-        nextTimers[a.id] = a.initialSeconds;
-      });
-      setTimers(nextTimers);
-    } finally {
-      setIsSyncing(false);
-    }
+    setIsSyncing(true);
+    const result = await getAuctionListings(60);
+    const open = result.rows.filter((a) => !auctionPhase(a).ended);
+    setAllAuctions(open);
+    setLoaded(true);
+    setIsSyncing(false);
   }, []);
 
   useEffect(() => {
@@ -216,18 +86,9 @@ export default function LiveReverseAuctionsRail() {
     return () => clearInterval(timer);
   }, [isPaused, isHovered, totalPages, fetchLiveAuctions]);
 
-  // Real-time Auction Lot Expiry Countdown Ticker
+  // Tick the countdowns once a second
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimers(prev => {
-        const next: Record<string, number> = {};
-        Object.keys(prev).forEach(key => {
-          next[key] = Math.max(0, prev[key] - 1);
-        });
-        return next;
-      });
-    }, 1000);
-
+    const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -246,13 +107,9 @@ export default function LiveReverseAuctionsRail() {
     setSecondsRemaining(CYCLE_SECONDS);
   };
 
-  // Compute current visible 4 cards
+  // The cards on the current page
   const startIndex = page * ITEMS_PER_PAGE;
-  const currentAuctions = allAuctions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  // Fill if less than 4
-  const displayAuctions = currentAuctions.length === ITEMS_PER_PAGE
-    ? currentAuctions
-    : allAuctions.slice(0, ITEMS_PER_PAGE);
+  const displayAuctions = allAuctions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const progressPercent = ((CYCLE_SECONDS - secondsRemaining) / CYCLE_SECONDS) * 100;
 
@@ -275,7 +132,13 @@ export default function LiveReverseAuctionsRail() {
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FF5A00]/15 border border-[#FF5A00]/30 text-white text-[11px] font-medium">
             <RefreshCw className={`w-3 h-3 text-[#FF5A00] ${isSyncing ? 'animate-spin' : ''}`} />
             <span>
-              {isHovered ? (
+              {!loaded ? (
+                <span>Loading auctions…</span>
+              ) : allAuctions.length === 0 ? (
+                <span>No live auctions right now</span>
+              ) : totalPages <= 1 ? (
+                <span>{allAuctions.length} open {allAuctions.length === 1 ? 'auction' : 'auctions'}</span>
+              ) : isHovered ? (
                 <span className="text-amber-400 font-semibold">Paused on hover</span>
               ) : isPaused ? (
                 <span className="text-amber-400 font-semibold">Feed Paused</span>
@@ -364,6 +227,19 @@ export default function LiveReverseAuctionsRail() {
       </div>
 
       {/* 3 equal cards on desktop — readable on laptop; swipe on mobile */}
+      {loaded && allAuctions.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-700/80 bg-slate-900/60 p-6 text-center">
+          <p className="text-sm font-semibold text-white">No auctions are live right now.</p>
+          <p className="text-xs text-slate-400 mt-1">Have bulk stock to sell? List it and buyers can bid on it live.</p>
+          <Button
+            type="button"
+            onClick={() => setIsCreateOpen(true)}
+            className="mt-3 bg-[#FF5A00] hover:bg-[#e04e00] text-white text-xs font-bold h-9 px-4 rounded-xl"
+          >
+            <Sparkles className="w-3.5 h-3.5 mr-1" /> List Product in 24h
+          </Button>
+        </div>
+      ) : (
       <AnimatePresence mode="wait">
         <motion.div
           key={page}
@@ -374,57 +250,74 @@ export default function LiveReverseAuctionsRail() {
           className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible sm:pb-0"
         >
           {displayAuctions.map((auction) => {
-            const timeLeft = timers[auction.id] !== undefined ? timers[auction.id] : auction.initialSeconds;
+            const phase = auctionPhase(auction, now);
+            const timeLeft = secondsLeft(auction.endTime, now);
+            const detailPath = `/auctions/${auction.auctionType === 'forward' ? 'forward' : 'reverse'}/${auction.id}`;
+            const price = auctionMoney(auction.startingPrice, auction.currency);
+            const category = auction.categoryId ? categoryNames.get(auction.categoryId) : undefined;
 
             return (
               <div
                 key={auction.id}
                 role="link"
                 tabIndex={0}
-                onClick={() =>
-                  navigate(
-                    `/auctions/${auction.auctionType === 'forward' ? 'forward' : 'reverse'}/${auction.id}`
-                  )
-                }
+                onClick={() => navigate(detailPath)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    navigate(
-                      `/auctions/${auction.auctionType === 'forward' ? 'forward' : 'reverse'}/${auction.id}`
-                    );
+                    navigate(detailPath);
                   }
                 }}
                 className="snap-start shrink-0 w-[78vw] max-w-[320px] sm:w-auto sm:max-w-none group bg-slate-900/85 hover:bg-slate-900 border border-slate-800/90 hover:border-[#FF5A00]/60 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer min-h-0"
               >
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-950 shrink-0">
-                  <SafeImage
-                    src={auction.image}
-                    alt={auction.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                  {auction.image ? (
+                    <img
+                      src={auction.image}
+                      alt={auction.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-500">
+                      <ImageOff className="w-7 h-7" />
+                      <span className="text-[11px] font-medium">No photo from the seller</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
 
                   <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1.5 text-[10px] font-bold">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="px-2 py-0.5 rounded-md bg-red-600 text-white font-extrabold flex items-center gap-1 shadow-sm shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                        LIVE
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-white border border-slate-700/80 font-mono flex items-center gap-1 shrink-0">
-                        <Clock className="w-3 h-3 text-[#FF5A1F]" />
-                        {formatTime(timeLeft)}
-                      </span>
+                      {phase.key === 'live' ? (
+                        <span className="px-2 py-0.5 rounded-md bg-red-600 text-white font-extrabold flex items-center gap-1 shadow-sm shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                          LIVE
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-md bg-slate-700 text-white font-extrabold shadow-sm shrink-0 uppercase">
+                          {phase.label}
+                        </span>
+                      )}
+                      {phase.key === 'live' && (
+                        <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-white border border-slate-700/80 font-mono flex items-center gap-1 shrink-0">
+                          <Clock className="w-3 h-3 text-[#FF5A1F]" />
+                          {formatTime(timeLeft)}
+                        </span>
+                      )}
                     </div>
                     <span className="px-1.5 py-0.5 rounded-md bg-black/60 text-slate-300 font-mono text-[9px] truncate max-w-[38%]">
                       {auction.auctionNumber}
                     </span>
                   </div>
 
-                  <div className="absolute bottom-2 left-2 max-w-[75%]">
-                    <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-slate-200 border border-slate-700/60 text-[10px] font-semibold truncate inline-block max-w-full">
-                      {auction.category}
-                    </span>
-                  </div>
+                  {category && (
+                    <div className="absolute bottom-2 left-2 max-w-[75%]">
+                      <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-slate-200 border border-slate-700/60 text-[10px] font-semibold truncate inline-block max-w-full">
+                        {category}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2.5 min-w-0">
@@ -432,22 +325,28 @@ export default function LiveReverseAuctionsRail() {
                     <h3 className="font-bold text-white text-sm group-hover:text-[#FF5A1F] transition-colors line-clamp-2 leading-snug">
                       {auction.title}
                     </h3>
-                    <div className="text-xs text-slate-300 font-medium mt-1 truncate">
-                      {auction.quantity}
-                    </div>
+                    {auction.totalQuantity !== null && (
+                      <div className="text-xs text-slate-300 font-medium mt-1 truncate">
+                        {auction.totalQuantity.toLocaleString('en-IN')} {auction.quantityUnit}
+                      </div>
+                    )}
                     <div className="text-sm sm:text-base font-extrabold text-[#FF5A1F] mt-1 truncate">
-                      {auction.priceRange}
+                      {price ? `${price} / ${auction.quantityUnit}` : 'Starting price not stated'}
                     </div>
                   </div>
 
                   <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 gap-2">
                     <div className="flex items-center gap-1 min-w-0 flex-1">
-                      <MapPin className="w-3 h-3 text-[#FF5A1F] shrink-0" />
-                      <span className="truncate">{auction.location}</span>
+                      {auction.deliveryLocation && (
+                        <>
+                          <MapPin className="w-3 h-3 text-[#FF5A1F] shrink-0" />
+                          <span className="truncate">{auction.deliveryLocation}</span>
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 font-semibold text-slate-200 shrink-0">
                       <Users className="w-3 h-3 text-[#FF5A1F]" />
-                      <span>{auction.quotedCount} Quoted</span>
+                      <span>{auction.totalBids} {auction.totalBids === 1 ? 'bid' : 'bids'}</span>
                     </div>
                   </div>
                 </div>
@@ -456,11 +355,12 @@ export default function LiveReverseAuctionsRail() {
           })}
         </motion.div>
       </AnimatePresence>
+      )}
 
       {/* Mobile Indicator Footer with Batch Label */}
       {allAuctions.length > 0 && (
         <div className="flex md:hidden items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
-          <span>Batch {page + 1} of {totalPages} ({allAuctions.length} live auctions)</span>
+          <span>Batch {page + 1} of {totalPages} ({allAuctions.length} open {allAuctions.length === 1 ? 'auction' : 'auctions'})</span>
           <span className="text-[#FF5A00] font-medium">Swipe to browse cards</span>
         </div>
       )}

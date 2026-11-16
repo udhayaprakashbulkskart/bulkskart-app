@@ -9,11 +9,11 @@ import {
   AlertCircle, Share2, Heart, Download, FileText, Check, DollarSign,
   Package, MapPin, Truck, RefreshCw, Flame, Building2, MessageSquare,
   Sparkles, Award, ChevronRight, ShoppingCart, Receipt, Maximize2, Minimize2,
-  Lock, LogIn, UserCheck
+  Lock, LogIn, UserCheck, ImageOff
 } from 'lucide-react';
 import { toast } from 'sonner';
-import SafeImage from '@/components/common/SafeImage';
 import { supabase } from '@/db/supabase';
+import { auctionPhase, secondsLeft, sellerPhoto } from '@/lib/auctionListing';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
@@ -25,11 +25,6 @@ import {
 import BidderProfileModal from '@/components/auctions/BidderProfileModal';
 import AuctionLiveChat from '@/components/auctions/AuctionLiveChat';
 import ProtectedContact from '@/components/common/ProtectedContact';
-import {
-  getSimulatedAuctionById,
-  getSimulatedBidHistory,
-  isSimulatedAuctionId,
-} from '@/data/simulatedLiveAuctions';
 
 interface BidRecord {
   id: string;
@@ -81,53 +76,24 @@ export default function ForwardAuctionDetailPage() {
       setLoading(true);
 
       try {
-        if (isSimulatedAuctionId(id)) {
-          const sim = getSimulatedAuctionById(id);
-          if (sim && isMounted) {
-            const remSec = Math.max(
-              0,
-              Math.floor((new Date(sim.end_time).getTime() - Date.now()) / 1000)
-            );
-            setSecondsRemaining(remSec);
-            setIsSoldConcluded(false);
-            setAuction({
-              ...sim,
-              specifications: {
-                note: 'Temporary sample lot for live-board demonstration. No personal seller identity is shown.',
-              },
-              manufacturer_name: sim.manufacturer_name,
-            });
-            setBidHistory(
-              getSimulatedBidHistory(sim).map((b) => ({
-                ...b,
-                timestamp: new Date(b.timestamp).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                }),
-              }))
-            );
-            setQuotations([]);
-          } else if (isMounted) {
-            setAuction(null);
-          }
-          if (isMounted) setLoading(false);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('auctions')
-          .select('*')
-          .or(`id.eq.${id},auction_number.eq.${id}`)
-          .maybeSingle();
+        const key = String(id).trim();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);
+        const lookup = supabase.from('auctions').select('*');
+        const { data, error } = await (isUuid ? lookup.eq('id', key) : lookup.eq('auction_number', key)).limit(1).maybeSingle();
 
         if (!error && data && isMounted) {
-          const now = Date.now();
-          let remSec = 45 * 60;
-          if (data.end_time) {
-            remSec = Math.max(0, Math.floor((new Date(data.end_time).getTime() - now) / 1000));
-          }
+          const remSec = secondsLeft(data.end_time);
           setSecondsRemaining(remSec);
-          setIsSoldConcluded(remSec <= 0 || data.status === 'concluded' || data.status === 'sold');
+          setIsSoldConcluded(auctionPhase({ status: data.status || 'live', startTime: data.start_time, endTime: data.end_time }).ended);
+
+          // The seller's company name, when it can be read
+          let sellerName: string | null = null;
+          let sellerVerified = false;
+          if (data.seller_company_id) {
+            const { data: seller } = await supabase.from('companies').select('company_name, verification_status').eq('id', data.seller_company_id).maybeSingle();
+            sellerName = seller?.company_name?.trim() || null;
+            sellerVerified = seller?.verification_status === 'verified';
+          }
 
           // Fetch real bids from auction_bids table first to determine leading bid
           const { data: bidsData } = await supabase
@@ -138,7 +104,7 @@ export default function ForwardAuctionDetailPage() {
 
           const hasRealBids = Boolean(bidsData && bidsData.length > 0);
           const realLeadingBid = hasRealBids ? Number(bidsData![0].bid_amount) : null;
-          const realLeadingBidder = hasRealBids ? (bidsData![0].bidder_company_name || 'Verified Enterprise') : null;
+          const realLeadingBidder = hasRealBids ? (bidsData![0].bidder_company_name || bidsData![0].bidder_name || 'Bidder') : null;
 
           setAuction({
             ...data,
@@ -150,20 +116,21 @@ export default function ForwardAuctionDetailPage() {
             min_bid_increment: Number(data.min_bid_increment) || 1,
             total_quantity: Number(data.total_quantity) || 1,
             quantity_unit: data.quantity_unit || 'Units',
-            images: data.images?.length ? data.images : ['https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=800'],
+            images: (Array.isArray(data.images) ? data.images : []).filter((img: unknown) => typeof img === 'string' && sellerPhoto([img])),
             specifications: data.specifications || {},
-            manufacturer_name: data.seller_company_id ? 'Verified Factory' : 'Direct Supplier'
+            manufacturer_name: sellerName || 'Seller',
+            seller_verified: sellerVerified
           });
 
           if (hasRealBids && isMounted) {
             setBidHistory(bidsData!.map((b: any, idx: number) => ({
               id: b.id,
-              bidder_name: (b.bidder_name || b.bidder_company_name || 'Verified Enterprise').replace(/INFOPOD/gi, 'UDHAYAPRAKASH'),
+              bidder_name: (b.bidder_name || b.bidder_company_name || 'Bidder').replace(/INFOPOD/gi, 'UDHAYAPRAKASH'),
               bid_amount: Number(b.bid_amount),
               quantity: Number(b.quantity) || data.total_quantity,
               timestamp: new Date(b.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               status: idx === 0 ? 'winning' : 'outbid',
-              contact_phone: (b as any).contact_phone || '+91 98201 44892'
+              contact_phone: (b as any).contact_phone || undefined
             })));
           } else if (isMounted) {
             setBidHistory([]);
@@ -179,15 +146,15 @@ export default function ForwardAuctionDetailPage() {
           if (quoteData && quoteData.length > 0 && isMounted) {
             setQuotations(quoteData.map((q: any) => ({
               id: q.id,
-              supplier_name: q.supplier_name || 'Verified Industrial Supplier',
-              supplier_location: q.supplier_location || 'India',
+              supplier_name: q.supplier_name || 'Supplier',
+              supplier_location: q.supplier_location || '',
               unit_price: Number(q.unit_price) || Number(q.price_per_unit) || 0,
-              moq: Number(q.moq) || Number(data.total_quantity) || 1000,
-              lead_time_days: Number(q.lead_time_days) || 7,
+              moq: Number(q.moq) || null,
+              lead_time_days: Number(q.lead_time_days) || null,
               gst_percent: Number(q.gst_rate) || 18,
               freight_included: Boolean(q.freight_included),
-              validity_days: Number(q.validity_days) || 14,
-              rating: Number(q.rating) || 4.9,
+              validity_days: Number(q.validity_days) || null,
+              rating: Number(q.rating) || null,
               is_shortlisted: Boolean(q.is_shortlisted),
               status: q.status || 'active',
               submitted_at: q.created_at ? new Date(q.created_at).toLocaleDateString() : 'Active'
@@ -208,43 +175,6 @@ export default function ForwardAuctionDetailPage() {
 
     loadAuctionData();
 
-    if (isSimulatedAuctionId(id)) {
-      const simTick = setInterval(() => {
-        if (!isMounted || !id) return;
-        const sim = getSimulatedAuctionById(id);
-        if (!sim) return;
-        const remSec = Math.max(
-          0,
-          Math.floor((new Date(sim.end_time).getTime() - Date.now()) / 1000)
-        );
-        setSecondsRemaining(remSec);
-        setIsSoldConcluded(false);
-        setAuction((prev: any) =>
-          prev
-            ? {
-                ...prev,
-                ...sim,
-                manufacturer_name: sim.manufacturer_name,
-              }
-            : prev
-        );
-        setBidHistory(
-          getSimulatedBidHistory(sim).map((b) => ({
-            ...b,
-            timestamp: new Date(b.timestamp).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            }),
-          }))
-        );
-      }, 8000);
-
-      return () => {
-        isMounted = false;
-        clearInterval(simTick);
-      };
-    }
-
     // Setup Realtime Sync for incoming bids on this auction
     const bidsChannel = supabase
       .channel(`live_bids_sync_${id}`)
@@ -261,7 +191,7 @@ export default function ForwardAuctionDetailPage() {
             setBidHistory(prev => [
               {
                 id: newBid.id,
-                bidder_name: newBid.bidder_company_name || 'Verified Enterprise',
+                bidder_name: newBid.bidder_company_name || newBid.bidder_name || 'Bidder',
                 bid_amount: Number(newBid.bid_amount),
                 quantity: Number(newBid.quantity) || 1,
                 timestamp: new Date(newBid.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -273,7 +203,7 @@ export default function ForwardAuctionDetailPage() {
             setAuction((prev: any) => prev ? ({
               ...prev,
               current_highest_bid: Number(newBid.bid_amount),
-              highest_bidder_name: newBid.bidder_company_name || 'Verified Enterprise',
+              highest_bidder_name: newBid.bidder_company_name || newBid.bidder_name || 'Bidder',
               total_bids: (prev.total_bids || 0) + 1
             }) : prev);
           }
@@ -294,11 +224,6 @@ export default function ForwardAuctionDetailPage() {
   const [isAwardingOrder, setIsAwardingOrder] = useState(false);
 
   // Supplier quote submission fields
-  const [quoteUnitPrice, setQuoteUnitPrice] = useState<string>('');
-  const [quoteMoq, setQuoteMoq] = useState<number>(1000);
-  const [quoteLeadTime, setQuoteLeadTime] = useState<number>(7);
-  const [quoteFreight, setQuoteFreight] = useState<'included' | 'extra'>('included');
-  const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
 
   const isBuyerRole = !profile?.role || profile?.role === 'buyer' || company?.business_type !== 'manufacturer';
 
@@ -377,49 +302,6 @@ export default function ForwardAuctionDetailPage() {
     }
   };
 
-  const handleSubmitSupplierQuote = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      toast.error('Authentication Required: Please sign in as a manufacturer to submit quotations.');
-      setAuthDialogOpen(true);
-      return;
-    }
-
-    const priceNum = parseFloat(quoteUnitPrice);
-    if (isNaN(priceNum) || priceNum <= 0) {
-      toast.error('Please enter a valid quotation unit price.');
-      return;
-    }
-
-    setIsSubmittingQuote(true);
-    try {
-      const supplierName = company?.company_name || profile?.full_name || 'Your Verified Enterprise (You)';
-      const newQ = {
-        id: `quote-${Date.now()}`,
-        supplier_name: supplierName,
-        supplier_location: company?.city ? `${company.city}, ${company.state || 'India'}` : 'Direct Factory Quotation',
-        unit_price: priceNum,
-        moq: quoteMoq,
-        lead_time_days: quoteLeadTime,
-        gst_percent: 18,
-        freight_included: quoteFreight === 'included',
-        validity_days: 14,
-        rating: 5.0,
-        is_shortlisted: false,
-        status: 'active',
-        submitted_at: 'Just now'
-      };
-
-      setQuotations(prev => [newQ, ...prev]);
-      setActiveTab('quotes');
-      toast.success(`Quotation of ₹${priceNum}/${auction.quantity_unit} submitted successfully!`, {
-        description: 'The buyer has been notified and can now review and award your quotation.'
-      });
-      setQuoteUnitPrice('');
-    } finally {
-      setIsSubmittingQuote(false);
-    }
-  };
 
   // Form bid calculation - Fix Bug 5: Initial State is EMPTY string, not 0!
   const [bidInput, setBidInput] = useState<string>('');
@@ -529,38 +411,34 @@ export default function ForwardAuctionDetailPage() {
           ? company.company_name.trim()
           : 'UDHAYAPRAKASH';
 
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(auction.id);
-      if (isUUID) {
-        try {
-          const { data: rpcRes, error: rpcErr } = await supabase.rpc('place_forward_bid', {
-            p_auction_id: auction.id,
-            p_bid_amount: numericBid,
-            p_quantity: auction.total_quantity,
-            p_bidder_company_name: authenticatedBidderName
-          });
-
-          if (rpcErr) {
-            await supabase.from('auction_bids').insert({
-              auction_id: auction.id,
-              bidder_user_id: user?.id,
-              bidder_name: authenticatedBidderName,
-              bid_amount: numericBid,
-              quantity: auction.total_quantity,
-              status: 'valid'
-            });
-          } else if (rpcRes && rpcRes.anti_sniping_extended) {
-            setSecondsRemaining(prev => prev + 120);
-            toast.info('⚡ Anti-Sniping triggered: Auction extended by +2 minutes!');
-          }
-        } catch (dbErr) {
-          console.warn('DB bid error:', dbErr);
-        }
-      } else {
-        // Anti-sniping check
-        if (secondsRemaining <= 120 && auction.anti_sniping_enabled) {
+      // The bid counts only once the database has it.
+      let saved = false;
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc('place_forward_bid', {
+        p_auction_id: auction.id,
+        p_bid_amount: numericBid,
+        p_quantity: auction.total_quantity,
+        p_bidder_company_name: authenticatedBidderName
+      });
+      if (!rpcErr) {
+        saved = true;
+        if (rpcRes && rpcRes.anti_sniping_extended) {
           setSecondsRemaining(prev => prev + 120);
           toast.info('⚡ Anti-Sniping triggered: Auction extended by +2 minutes!');
         }
+      } else {
+        const { error: insertErr } = await supabase.from('auction_bids').insert({
+          auction_id: auction.id,
+          bidder_user_id: user?.id,
+          bidder_name: authenticatedBidderName,
+          bid_amount: numericBid,
+          quantity: auction.total_quantity,
+          status: 'valid'
+        });
+        saved = !insertErr;
+      }
+      if (!saved) {
+        toast.error('Your bid could not be saved. Nothing was placed; please try again.');
+        return;
       }
 
       const newBid: BidRecord = {
@@ -570,7 +448,7 @@ export default function ForwardAuctionDetailPage() {
         quantity: auction.total_quantity,
         timestamp: 'Just now',
         status: 'winning',
-        contact_phone: (profile as any)?.phone || '+91 98201 44892'
+        contact_phone: (profile as any)?.phone || undefined
       };
 
       setBidHistory(prev => [newBid, ...prev.map(b => ({ ...b, status: 'outbid' as const }))]);
@@ -581,7 +459,7 @@ export default function ForwardAuctionDetailPage() {
         highest_bidder_name: `${authenticatedBidderName} (Your Active Bid)`
       }));
 
-      toast.success(`Live Bid of ₹${numericBid.toLocaleString('en-IN')} recorded! You currently hold the leading bid.`);
+      toast.success(`Your bid of ₹${numericBid.toLocaleString('en-IN')} is placed and leads for now.`);
     } catch (err: any) {
       toast.error(err.message || 'Failed to place bid');
     } finally {
@@ -729,12 +607,12 @@ export default function ForwardAuctionDetailPage() {
             {/* Top Compact Lot Summary & Quick Bid Bar */}
             <div className="p-4 rounded-3xl bg-card border border-border shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted border border-border shrink-0">
-                  <SafeImage
-                    src={auction.images?.[0] || 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=300&q=80'}
-                    alt={auction.title}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center">
+                  {auction.images?.[0] ? (
+                    <img src={auction.images[0]} alt={auction.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageOff className="w-5 h-5 text-muted-foreground/70" aria-label="No photo from the seller" />
+                  )}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -744,9 +622,11 @@ export default function ForwardAuctionDetailPage() {
                     <span className="text-[11px] font-mono font-bold text-muted-foreground">
                       {auction.auction_number}
                     </span>
-                    <Badge className="bg-emerald-600 text-white text-[9px]">
-                      Verified Manufacturer
-                    </Badge>
+                    {auction.seller_verified && (
+                      <Badge className="bg-emerald-600 text-white text-[9px]">
+                        Verified seller
+                      </Badge>
+                    )}
                   </div>
                   <h1 className="text-sm sm:text-base font-bold text-foreground truncate max-w-[500px]">
                     {auction.title}
@@ -940,11 +820,14 @@ export default function ForwardAuctionDetailPage() {
               {/* Image Preview & Thumbnails */}
               <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
                 <div className="relative aspect-[16/10] bg-muted">
-                  <SafeImage
-                    src={auction.images?.[selectedImage] || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=800'}
-                    alt={auction.title}
-                    className="w-full h-full object-cover"
-                  />
+                  {auction.images?.[selectedImage] ? (
+                    <img src={auction.images[selectedImage]} alt={auction.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground/70">
+                      <ImageOff className="w-10 h-10" />
+                      <span className="text-sm font-medium">No photo from the seller</span>
+                    </div>
+                  )}
                   
                   {/* Floating Countdown Badge */}
                   <div className="absolute top-4 left-4 flex items-center gap-2">
@@ -975,7 +858,7 @@ export default function ForwardAuctionDetailPage() {
                           selectedImage === idx ? 'border-[#FF5A1F] scale-105' : 'border-transparent opacity-70 hover:opacity-100'
                         }`}
                       >
-                        <SafeImage src={img} alt="" className="w-full h-full object-cover" />
+                        <img src={img} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -1132,7 +1015,7 @@ export default function ForwardAuctionDetailPage() {
                                   <span className="inline-flex items-center gap-1">
                                     <span className="text-[10px] text-muted-foreground">Phone:</span>
                                     <ProtectedContact
-                                      phone={bid.contact_phone || '+91 98201 44892'}
+                                      phone={bid.contact_phone || ''}
                                       contactType="bidder"
                                       variant="inline"
                                       showActions={false}
@@ -1207,7 +1090,7 @@ export default function ForwardAuctionDetailPage() {
                                 <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                                   <span>{quote.supplier_location}</span>
                                   <span>•</span>
-                                  <span>⭐ {quote.rating} Rating</span>
+                                  {quote.rating ? <span>⭐ {quote.rating} Rating</span> : null}
                                   <span>•</span>
                                   <span>{quote.submitted_at}</span>
                                 </div>
@@ -1228,11 +1111,11 @@ export default function ForwardAuctionDetailPage() {
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-border/50 text-[11px]">
                               <div className="bg-background/80 p-2 rounded-xl border border-border/50">
                                 <span className="text-muted-foreground block text-[10px]">MOQ:</span>
-                                <span className="font-bold text-foreground">{quote.moq.toLocaleString()} {auction.quantity_unit}</span>
+                                <span className="font-bold text-foreground">{quote.moq ? `${quote.moq.toLocaleString()} ${auction.quantity_unit}` : 'Not stated'}</span>
                               </div>
                               <div className="bg-background/80 p-2 rounded-xl border border-border/50">
                                 <span className="text-muted-foreground block text-[10px]">Lead Time:</span>
-                                <span className="font-bold text-foreground">{quote.lead_time_days} Days Dispatch</span>
+                                <span className="font-bold text-foreground">{quote.lead_time_days ? `${quote.lead_time_days} Days Dispatch` : 'Not stated'}</span>
                               </div>
                               <div className="bg-background/80 p-2 rounded-xl border border-border/50">
                                 <span className="text-muted-foreground block text-[10px]">Freight:</span>
@@ -1242,7 +1125,7 @@ export default function ForwardAuctionDetailPage() {
                               </div>
                               <div className="bg-background/80 p-2 rounded-xl border border-border/50">
                                 <span className="text-muted-foreground block text-[10px]">Quote Validity:</span>
-                                <span className="font-bold text-foreground">{quote.validity_days} Days</span>
+                                <span className="font-bold text-foreground">{quote.validity_days ? `${quote.validity_days} Days` : 'Not stated'}</span>
                               </div>
                             </div>
 
@@ -1506,25 +1389,27 @@ export default function ForwardAuctionDetailPage() {
                   </div>
                 </div>
 
-                {/* 24-Hour Compulsory Subscription & Verified Tax Invoice Card */}
-                <div className="mt-3.5 p-3.5 rounded-2xl bg-orange-50/60 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-foreground">
-                    <span className="flex items-center gap-1.5 text-[#FF5A1F]">
-                      <Receipt className="w-3.5 h-3.5" />
-                      ₹5,000 Participation Fee Paid (₹5,900 Total)
-                    </span>
-                    <Badge className="bg-emerald-600 text-white text-[9px]">
-                      Verified Manufacturer
-                    </Badge>
+                {/* Posting fee, as recorded with the lot */}
+                {auction.specifications?.['Posting Fee Paid'] && (
+                  <div className="mt-3.5 p-3.5 rounded-2xl bg-orange-50/60 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 space-y-2">
+                    <div className="flex items-center justify-between gap-2 text-xs font-bold text-foreground">
+                      <span className="flex items-center gap-1.5 text-[#FF5A1F]">
+                        <Receipt className="w-3.5 h-3.5" />
+                        Posting fee paid: {String(auction.specifications['Posting Fee Paid'])}
+                      </span>
+                      {auction.seller_verified && (
+                        <Badge className="bg-emerald-600 text-white text-[9px]">
+                          Verified seller
+                        </Badge>
+                      )}
+                    </div>
+                    {auction.specifications?.['Payment Ref'] && (
+                      <div className="pt-2 border-t border-[#FF5A1F]/20 text-[10px] text-muted-foreground">
+                        Payment reference: <span className="font-mono font-semibold text-foreground">{String(auction.specifications['Payment Ref'])}</span>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-[11px] text-muted-foreground leading-snug">
-                    This lot was verified and published under the compulsory 24-Hour Sell Products Bidding Participation with statutory 18% GST paid in full.
-                  </p>
-                  <div className="pt-2 border-t border-[#FF5A1F]/20 flex items-center justify-between text-[10px] text-muted-foreground">
-                    <span>Tax Jurisdiction: <strong>India (18% GST)</strong></span>
-                    <span className="font-mono font-semibold text-foreground">Inv #BS-INV-2026-89412</span>
-                  </div>
-                </div>
+                )}
 
               </div>
 
@@ -1608,7 +1493,7 @@ export default function ForwardAuctionDetailPage() {
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Estimated Dispatch Window:</span>
-                <span className="font-semibold text-foreground">{selectedQuoteForAward.lead_time_days} Days from Escrow Confirmation</span>
+                <span className="font-semibold text-foreground">{selectedQuoteForAward.lead_time_days ? `${selectedQuoteForAward.lead_time_days} Days from Escrow Confirmation` : 'Not stated'}</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-border font-bold text-sm text-foreground">
                 <span>Total Escrow Amount:</span>
