@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,9 +8,24 @@ import { supabase } from '@/db/supabase';
 import { checkDirectMessageQuota } from '@/lib/api';
 import SubscribeToContactDialog from '@/components/common/SubscribeToContactDialog';
 import { toast } from 'sonner';
-import { FileText, Plus, RefreshCw, ChevronLeft, Download, CheckCircle2, XCircle, MessageSquare, Edit3 } from 'lucide-react';
+import { BadgeIndianRupee, Bell, Box, CalendarClock, ClipboardList, Clock, Download, Factory, FileText, Handshake, IndianRupee, Loader2, Plus, RefreshCw, Save, Send, Truck } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Actions,
+  CountedTextArea,
+  DELIVERY_TERMS,
+  Field,
+  FormDialog,
+  IconBox,
+  KitButton,
+  NativeSelect,
+  PAYMENT_TERMS,
+  SectionTitle,
+  Stepper,
+  TextInput,
+  type FormPoint,
+} from '@/components/formkit';
+import { unitsWith } from '@/components/formkit/units';
 import PageMeta from '@/components/common/PageMeta';
 
 type QuotationRow = {
@@ -27,6 +39,12 @@ type QuotationRow = {
 };
 
 type ReqOption = { id: string; title: string; quantity: number; quantity_unit: string };
+
+const QUOTE_POINTS: FormPoint[] = [
+  { icon: ClipboardList, title: 'Pick a requirement', detail: 'Any active buyer request' },
+  { icon: BadgeIndianRupee, title: 'Your price and terms', detail: 'Quantity, MOQ, delivery, payment' },
+  { icon: Bell, title: 'Send it or keep a draft', detail: 'The buyer is notified when you send' },
+];
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-700 border-yellow-300',
@@ -46,10 +64,11 @@ export default function SupplierQuotationsPage() {
   const [availableRfqs, setAvailableRfqs] = useState<ReqOption[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    requirement_id: '', quantity: '', unit_price: '', moq: '1', moq_unit: 'pcs',
+    requirement_id: '', quantity: '', unit_price: '', moq: '1', moq_unit: 'Pcs',
     delivery_days: '', production_days: '', validity_days: '30',
     payment_terms: '', delivery_terms: '', notes: '', is_draft: false,
   });
+  const [formErrors, setFormErrors] = useState<{ requirement?: string; price?: string }>({});
 
   const fetchQuotations = async () => {
     if (!user) { setLoading(false); return; }
@@ -102,8 +121,14 @@ export default function SupplierQuotationsPage() {
 
   const handleSubmit = async (isDraft: boolean) => {
     if (!company?.id || !user) return;
-    if (!form.requirement_id) { toast.error('Select an RFQ'); return; }
-    if (!form.unit_price) { toast.error('Enter unit price'); return; }
+    const found: { requirement?: string; price?: string } = {};
+    if (!form.requirement_id) found.requirement = 'Please select the requirement you are quoting for.';
+    if (!(parseFloat(form.unit_price) > 0)) found.price = 'Please enter a unit price greater than 0.';
+    setFormErrors(found);
+    if (found.requirement || found.price) {
+      document.getElementById(found.requirement ? 'quote-rfq' : 'quote-price')?.focus();
+      return;
+    }
 
     // Find buyer_id from requirement
     const { data: req } = await supabase
@@ -123,7 +148,7 @@ export default function SupplierQuotationsPage() {
       unit_price: parseFloat(form.unit_price),
       total_price: totalPrice ? parseFloat(totalPrice) : null,
       moq: parseInt(form.moq) || 1,
-      moq_unit: form.moq_unit || 'pcs',
+      moq_unit: form.moq_unit || 'Pcs',
       delivery_days: form.delivery_days ? parseInt(form.delivery_days) : null,
       production_days: form.production_days ? parseInt(form.production_days) : null,
       validity_days: parseInt(form.validity_days) || 30,
@@ -157,7 +182,8 @@ export default function SupplierQuotationsPage() {
     }
 
     setDialogOpen(false);
-    setForm({ requirement_id: '', quantity: '', unit_price: '', moq: '1', moq_unit: 'pcs', delivery_days: '', production_days: '', validity_days: '30', payment_terms: '', delivery_terms: '', notes: '', is_draft: false });
+    setForm({ requirement_id: '', quantity: '', unit_price: '', moq: '1', moq_unit: 'Pcs', delivery_days: '', production_days: '', validity_days: '30', payment_terms: '', delivery_terms: '', notes: '', is_draft: false });
+    setFormErrors({});
     setSaving(false);
     fetchQuotations();
   };
@@ -227,82 +253,155 @@ export default function SupplierQuotationsPage() {
       </div>
 
       {/* New Quotation Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-2xl max-h-[90dvh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Quotation</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Select RFQ *</Label>
-              <select
-                className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background"
+      <FormDialog
+        open={dialogOpen}
+        onOpenChange={(next) => {
+          if (!saving) setDialogOpen(next);
+        }}
+        busy={saving}
+        title={
+          <>
+            Create <em>Quotation</em>
+          </>
+        }
+        description="Quote a price and terms on an active buyer requirement."
+        points={QUOTE_POINTS}
+        width={1040}
+      >
+        <form
+          noValidate
+          className="fk-form fk-stack"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit(false);
+          }}
+        >
+          <SectionTitle>Requirement</SectionTitle>
+          <Field htmlFor="quote-rfq" label="Select RFQ" required error={formErrors.requirement}>
+            <IconBox icon={ClipboardList}>
+              <NativeSelect
+                id="quote-rfq"
                 value={form.requirement_id}
-                onChange={e => setForm(p => ({ ...p, requirement_id: e.target.value }))}
+                onChange={(e) => {
+                  setForm((p) => ({ ...p, requirement_id: e.target.value }));
+                  setFormErrors((p) => ({ ...p, requirement: undefined }));
+                }}
+                invalid={Boolean(formErrors.requirement)}
+                iconPadding
               >
-                <option value="">-- Select matched RFQ --</option>
-                {availableRfqs.map(r => (
-                  <option key={r.id} value={r.id}>{r.title} ({r.quantity} {r.quantity_unit})</option>
+                <option value="">{availableRfqs.length ? 'Select an active requirement…' : 'No active requirements right now'}</option>
+                {availableRfqs.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.title} ({r.quantity} {r.quantity_unit})
+                  </option>
                 ))}
-              </select>
-            </div>
-            <div className="grid grid-cols-1 gap-3">
-              <div className="space-y-1.5">
-                <Label>Quantity</Label>
-                <Input type="number" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))} placeholder="e.g. 100" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Unit Price (INR) *</Label>
-                <Input type="number" value={form.unit_price} onChange={e => setForm(p => ({ ...p, unit_price: e.target.value }))} placeholder="e.g. 5000" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>MOQ</Label>
-                <Input type="number" value={form.moq} onChange={e => setForm(p => ({ ...p, moq: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Unit</Label>
-                <Input value={form.moq_unit} onChange={e => setForm(p => ({ ...p, moq_unit: e.target.value }))} placeholder="pcs" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Production Time (days)</Label>
-                <Input type="number" value={form.production_days} onChange={e => setForm(p => ({ ...p, production_days: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Delivery Time (days)</Label>
-                <Input type="number" value={form.delivery_days} onChange={e => setForm(p => ({ ...p, delivery_days: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Validity (days)</Label>
-                <Input type="number" value={form.validity_days} onChange={e => setForm(p => ({ ...p, validity_days: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Payment Terms</Label>
-                <Input value={form.payment_terms} placeholder="e.g. 50% advance" onChange={e => setForm(p => ({ ...p, payment_terms: e.target.value }))} />
-              </div>
-            </div>
-            {totalPrice && (
-              <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-                <p className="text-sm font-medium">Total Price: <span className="text-primary font-bold">INR {Number(totalPrice).toLocaleString()}</span></p>
-              </div>
-            )}
-            <div className="space-y-1.5">
-              <Label>Delivery Terms</Label>
-              <Input value={form.delivery_terms} placeholder="e.g. Ex-works, FOB Mumbai" onChange={e => setForm(p => ({ ...p, delivery_terms: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Additional Notes</Label>
-              <Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={3} />
-            </div>
+              </NativeSelect>
+            </IconBox>
+          </Field>
+
+          <SectionTitle>Your Quote</SectionTitle>
+          <div className="fk-grid">
+            <Field htmlFor="quote-price" label="Unit Price (₹)" required error={formErrors.price}>
+              <IconBox icon={IndianRupee} accent>
+                <TextInput
+                  id="quote-price"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="any"
+                  value={form.unit_price}
+                  onChange={(e) => {
+                    setForm((p) => ({ ...p, unit_price: e.target.value }));
+                    setFormErrors((p) => ({ ...p, price: undefined }));
+                  }}
+                  placeholder="e.g. 5000"
+                  invalid={Boolean(formErrors.price)}
+                  iconPadding
+                />
+              </IconBox>
+            </Field>
+            <Field htmlFor="quote-qty" label="Quantity" optional>
+              <Stepper id="quote-qty" value={form.quantity} onChange={(value) => setForm((p) => ({ ...p, quantity: value }))} min={1} unitName={form.moq_unit} />
+            </Field>
+            <Field htmlFor="quote-moq" label="MOQ">
+              <Stepper id="quote-moq" value={form.moq} onChange={(value) => setForm((p) => ({ ...p, moq: value }))} min={1} unitName={`MOQ ${form.moq_unit}`} />
+            </Field>
+            <Field htmlFor="quote-unit" label="Unit">
+              <IconBox icon={Box}>
+                <NativeSelect id="quote-unit" value={form.moq_unit} onChange={(e) => setForm((p) => ({ ...p, moq_unit: e.target.value }))} iconPadding>
+                  {unitsWith(form.moq_unit).map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </IconBox>
+            </Field>
+            <Field htmlFor="quote-production" label="Production Time (days)" optional>
+              <IconBox icon={Factory}>
+                <TextInput id="quote-production" type="number" inputMode="numeric" min="0" value={form.production_days} onChange={(e) => setForm((p) => ({ ...p, production_days: e.target.value }))} iconPadding />
+              </IconBox>
+            </Field>
+            <Field htmlFor="quote-delivery-days" label="Delivery Time (days)" optional>
+              <IconBox icon={Clock}>
+                <TextInput id="quote-delivery-days" type="number" inputMode="numeric" min="0" value={form.delivery_days} onChange={(e) => setForm((p) => ({ ...p, delivery_days: e.target.value }))} iconPadding />
+              </IconBox>
+            </Field>
+            <Field htmlFor="quote-validity" label="Quote Valid For (days)">
+              <IconBox icon={CalendarClock}>
+                <TextInput id="quote-validity" type="number" inputMode="numeric" min="1" value={form.validity_days} onChange={(e) => setForm((p) => ({ ...p, validity_days: e.target.value }))} iconPadding />
+              </IconBox>
+            </Field>
+            <Field htmlFor="quote-payment" label="Payment Terms" optional>
+              <IconBox icon={Handshake}>
+                <TextInput id="quote-payment" list="quote-payment-list" value={form.payment_terms} placeholder="e.g. 50% Advance" onChange={(e) => setForm((p) => ({ ...p, payment_terms: e.target.value }))} iconPadding />
+              </IconBox>
+              <datalist id="quote-payment-list">
+                {PAYMENT_TERMS.map((t) => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
+            </Field>
+            <Field htmlFor="quote-delivery-terms" label="Delivery Terms" optional wide>
+              <IconBox icon={Truck}>
+                <TextInput id="quote-delivery-terms" list="quote-delivery-list" value={form.delivery_terms} placeholder="e.g. Ex-Works, FOB Mumbai" onChange={(e) => setForm((p) => ({ ...p, delivery_terms: e.target.value }))} iconPadding />
+              </IconBox>
+              <datalist id="quote-delivery-list">
+                {DELIVERY_TERMS.map((t) => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
+            </Field>
           </div>
-          <DialogFooter className="flex-col md:flex-row gap-2">
-            <Button variant="outline" onClick={() => handleSubmit(true)} disabled={saving}>Save as Draft</Button>
-            <Button onClick={() => handleSubmit(false)} disabled={saving} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Submit to Buyer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+          <Field htmlFor="quote-notes" label="Additional Notes" optional>
+            <CountedTextArea
+              id="quote-notes"
+              icon={FileText}
+              rows={3}
+              maxLength={1000}
+              value={form.notes}
+              onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+              placeholder="Specifications, packaging, what the price includes…"
+            />
+          </Field>
+
+          <div className="fk-total" aria-live="polite">
+            <span>Total price</span>
+            <b>{totalPrice ? `₹${Number(totalPrice).toLocaleString('en-IN')}` : '—'}</b>
+          </div>
+
+          <Actions>
+            <KitButton type="submit" disabled={saving}>
+              {saving ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+              {saving ? 'Saving…' : 'Submit to Buyer'}
+            </KitButton>
+            <KitButton variant="ghost" onClick={() => handleSubmit(true)} disabled={saving}>
+              <Save aria-hidden="true" /> Save as Draft
+            </KitButton>
+          </Actions>
+        </form>
+      </FormDialog>
     </DashboardLayout>
   );
 }

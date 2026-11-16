@@ -833,6 +833,62 @@
     min-width: 200px;
   }
 }
+/* two choices side by side ("Add stock" / "Remove") */
+.fk-segment {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border-radius: 14px;
+  background: hsl(var(--muted));
+}
+.fk-segment > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 0.93rem;
+  font-weight: 700;
+  color: var(--fk-ink-2);
+  cursor: pointer;
+}
+.fk-segment > button svg {
+  width: 18px;
+  height: 18px;
+}
+.fk-segment > button[aria-pressed='true'] {
+  background: var(--fk-surface);
+  color: var(--fk-ink);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.14);
+}
+.fk-segment > button[aria-pressed='true'].is-add {
+  color: var(--fk-orange);
+}
+.fk-segment > button[aria-pressed='true'].is-remove {
+  color: hsl(var(--destructive));
+}
+.fk-segment > button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.35);
+}
+/* a control with a button beside it */
+.fk-inline-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.fk-inline-row > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+.fk-inline-row > .fk-btn {
+  flex: none;
+  min-height: 0;
+}
 /* a running total ("Estimated total ₹1,20,000") */
 .fk-total {
   display: flex;

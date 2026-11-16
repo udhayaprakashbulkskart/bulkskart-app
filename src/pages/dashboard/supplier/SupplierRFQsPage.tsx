@@ -2,22 +2,38 @@ import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   getPendingApprovalQuotations, approveAutoQuotation, dismissAutoQuotation,
   type AutoQuotationRow,
 } from '@/lib/autoQuotationApi';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Actions,
+  CountedTextArea,
+  EntityCard,
+  Field,
+  FormDialog,
+  IconBox,
+  KitButton,
+  NativeSelect,
+  PAYMENT_TERMS,
+  SectionTitle,
+  Stepper,
+  TextInput,
+  type FormPoint,
+} from '@/components/formkit';
 import { toast } from 'sonner';
-import { Shield, MapPin, Calendar, Package, Lock, Send, Zap, CheckCircle, XCircle, RefreshCw, TrendingUp, Clock } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Shield, MapPin, Calendar, Package, Lock, Send, Zap, CheckCircle, XCircle, RefreshCw, TrendingUp, Clock, Coins, FileText, Handshake, Loader2, Phone, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/db/supabase';
 import PageMeta from '@/components/common/PageMeta';
 import { buildRefreshLeadBoard, createLeadSeed, type RefreshLead } from '@/lib/refreshLeadBoard';
+
+const LEAD_POINTS: FormPoint[] = [
+  { icon: Wallet, title: 'Your price and MOQ' },
+  { icon: Clock, title: 'Delivery and payment terms' },
+  { icon: FileText, title: 'Notes for the buyer' },
+];
 
 type QuoteForm = { unitPrice: string; currency: string; moq: string; moqUnit: string; deliveryDays: string; paymentTerms: string; validityDays: string; notes: string; };
 const emptyQuote: QuoteForm = { unitPrice: '', currency: 'INR', moq: '', moqUnit: 'Pcs', deliveryDays: '30', paymentTerms: 'T/T 30% advance', validityDays: '30', notes: '' };
@@ -31,6 +47,7 @@ export default function SupplierRFQsPage() {
   const [selectedLead, setSelectedLead] = useState<RefreshLead | null>(null);
   const [quoteForm, setQuoteForm] = useState<QuoteForm>(emptyQuote);
   const [sending, setSending] = useState(false);
+  const [priceError, setPriceError] = useState('');
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
   const [pendingAQs, setPendingAQs] = useState<AutoQuotationRow[]>([]);
   const [approvingId, setApprovingId] = useState<string | null>(null);
@@ -78,6 +95,11 @@ export default function SupplierRFQsPage() {
   const handleSendQuote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLead) return;
+    if (!(parseFloat(quoteForm.unitPrice) > 0)) {
+      setPriceError('Please enter a unit price greater than 0.');
+      document.getElementById('lead-price')?.focus();
+      return;
+    }
     setSending(true);
     setSentIds(prev => new Set([...prev, selectedLead.id]));
     setSelectedLead(null);
@@ -261,61 +283,9 @@ export default function SupplierRFQsPage() {
                     {sentIds.has(lead.id) ? (
                       <Badge variant="outline" className="text-xs text-green-400 border-green-400/30">Quote noted</Badge>
                     ) : canViewFull ? (
-                      <Dialog onOpenChange={open => { if (open) setSelectedLead(lead); else setSelectedLead(null); }}>
-                        <DialogTrigger asChild>
-                          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs gap-1">
-                            <Send className="w-3 h-3" /> Send Quote
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg bg-card border-border max-h-[90dvh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle className="text-foreground text-sm">Send Quotation</DialogTitle>
-                          </DialogHeader>
-                          <div className="text-xs text-muted-foreground bg-muted rounded-lg p-3 mb-4">
-                            <p className="font-medium text-foreground">{lead.title}</p>
-                            <p>Qty: {lead.quantity.toLocaleString('en-IN')} {lead.quantityUnit} · {lead.city}, {lead.country}</p>
-                            {canViewFull && <p className="mt-1 font-mono text-foreground">{lead.phone}</p>}
-                          </div>
-                          <form onSubmit={handleSendQuote} className="space-y-3">
-                            <div className="grid grid-cols-1 gap-3">
-                              <div className="space-y-1.5">
-                                <Label className="text-xs text-muted-foreground">Unit Price *</Label>
-                                <Input value={quoteForm.unitPrice} onChange={e => setQF('unitPrice', e.target.value)} type="number" required placeholder="e.g. 250" className="bg-input border-border" />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-xs text-muted-foreground">Currency</Label>
-                                <Select value={quoteForm.currency} onValueChange={v => setQF('currency', v)}>
-                                  <SelectTrigger className="bg-input border-border"><SelectValue /></SelectTrigger>
-                                  <SelectContent className="bg-card border-border">
-                                    {['INR', 'USD', 'EUR', 'GBP', 'AED'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="space-y-1.5">
-                                <Label className="text-xs text-muted-foreground">MOQ *</Label>
-                                <Input value={quoteForm.moq} onChange={e => setQF('moq', e.target.value)} type="number" required className="bg-input border-border" />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-xs text-muted-foreground">Delivery (days)</Label>
-                                <Input value={quoteForm.deliveryDays} onChange={e => setQF('deliveryDays', e.target.value)} type="number" className="bg-input border-border" />
-                              </div>
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs text-muted-foreground">Payment Terms</Label>
-                              <Input value={quoteForm.paymentTerms} onChange={e => setQF('paymentTerms', e.target.value)} placeholder="e.g. T/T 30% advance, 70% before shipment" className="bg-input border-border" />
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs text-muted-foreground">Notes</Label>
-                              <Textarea value={quoteForm.notes} onChange={e => setQF('notes', e.target.value)} rows={2} placeholder="Any additional information..." className="bg-input border-border resize-none" />
-                            </div>
-                            <Button type="submit" disabled={sending} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                              {sending ? 'Sending...' : 'Send Quotation'}
-                            </Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
+                      <Button size="sm" onClick={() => setSelectedLead(lead)} className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs gap-1">
+                        <Send className="w-3 h-3" /> Send Quote
+                      </Button>
                     ) : (
                       <Link to="/dashboard/supplier/subscription" className="text-xs text-primary border border-primary/40 rounded-md px-2 py-1 flex items-center gap-1 hover:bg-primary/10 transition-colors font-semibold">
                         <Lock className="w-3 h-3" /> Subscribe
@@ -328,6 +298,101 @@ export default function SupplierRFQsPage() {
           </div>
         </div>
       </div>
+
+      <FormDialog
+        open={Boolean(selectedLead)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedLead(null);
+        }}
+        busy={sending}
+        title={
+          <>
+            Send <em>Quotation</em>
+          </>
+        }
+        description="Your price and terms for this lead."
+        points={LEAD_POINTS}
+        width={980}
+      >
+        {selectedLead && (
+          <form onSubmit={handleSendQuote} noValidate className="fk-form fk-stack">
+            <EntityCard
+              fallbackIcon={Package}
+              name={selectedLead.title}
+              byLabel="Buyer:"
+              by={selectedLead.buyerCompany}
+              meta={[
+                { icon: Package, children: `${selectedLead.quantity.toLocaleString('en-IN')} ${selectedLead.quantityUnit}` },
+                { icon: MapPin, children: `${selectedLead.city}, ${selectedLead.country}` },
+                ...(canViewFull ? [{ icon: Phone, children: selectedLead.phone }] : []),
+              ]}
+            />
+            <SectionTitle>Your Quote</SectionTitle>
+            <div className="fk-grid">
+              <Field htmlFor="lead-price" label={`Unit Price (${quoteForm.currency})`} required error={priceError}>
+                <IconBox icon={Wallet} accent>
+                  <TextInput
+                    id="lead-price"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="any"
+                    value={quoteForm.unitPrice}
+                    onChange={(e) => {
+                      setQF('unitPrice', e.target.value);
+                      if (priceError) setPriceError('');
+                    }}
+                    placeholder="e.g. 250"
+                    invalid={Boolean(priceError)}
+                    iconPadding
+                  />
+                </IconBox>
+              </Field>
+              <Field htmlFor="lead-currency" label="Currency">
+                <IconBox icon={Coins}>
+                  <NativeSelect id="lead-currency" value={quoteForm.currency} onChange={(e) => setQF('currency', e.target.value)} iconPadding>
+                    {['INR', 'USD', 'EUR', 'GBP', 'AED'].map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </IconBox>
+              </Field>
+              <Field htmlFor="lead-moq" label="MOQ">
+                <Stepper id="lead-moq" value={quoteForm.moq} onChange={(value) => setQF('moq', value)} min={1} unitName={`MOQ ${selectedLead.quantityUnit}`} />
+              </Field>
+              <Field htmlFor="lead-days" label="Delivery (days)" optional>
+                <IconBox icon={Clock}>
+                  <TextInput id="lead-days" type="number" inputMode="numeric" min="0" value={quoteForm.deliveryDays} onChange={(e) => setQF('deliveryDays', e.target.value)} iconPadding />
+                </IconBox>
+              </Field>
+              <Field htmlFor="lead-payment" label="Payment Terms" optional wide>
+                <IconBox icon={Handshake}>
+                  <TextInput id="lead-payment" list="lead-payment-list" value={quoteForm.paymentTerms} onChange={(e) => setQF('paymentTerms', e.target.value)} placeholder="e.g. T/T 30% advance, 70% before shipment" iconPadding />
+                </IconBox>
+                <datalist id="lead-payment-list">
+                  {PAYMENT_TERMS.map((t) => (
+                    <option key={t} value={t} />
+                  ))}
+                </datalist>
+              </Field>
+            </div>
+            <Field htmlFor="lead-notes" label="Notes" optional>
+              <CountedTextArea id="lead-notes" icon={FileText} rows={3} maxLength={1000} value={quoteForm.notes} onChange={(e) => setQF('notes', e.target.value)} placeholder="Any additional information..." />
+            </Field>
+            <Actions>
+              <KitButton type="submit" disabled={sending}>
+                {sending ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+                {sending ? 'Sending…' : 'Send Quotation'}
+              </KitButton>
+              <KitButton variant="ghost" onClick={() => setSelectedLead(null)} disabled={sending}>
+                Cancel
+              </KitButton>
+            </Actions>
+          </form>
+        )}
+      </FormDialog>
     </DashboardLayout>
   );
 }
