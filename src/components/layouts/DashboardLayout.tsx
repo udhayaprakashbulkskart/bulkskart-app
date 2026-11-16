@@ -268,9 +268,11 @@ function MobileMenu({ items, isActive, onNavigate, onSignOut, roleLabel, unpaid,
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  /** The page explains the unpaid state itself, so the notice under the bar is left out (the lock on pages stays). */
+  hideUnpaidNotice?: boolean;
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, hideUnpaidNotice = false }: DashboardLayoutProps) {
   const { isPaidSubscriber, signOut, loading, resolvedRole, displayName, profile } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
@@ -284,7 +286,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   useLayoutEffect(() => retainDashTheme(), []);
 
   const role = resolvedRole || profile?.role || null;
-  const isUnpaidManufacturer = role === 'supplier' && !isPaidSubscriber;
+  // Whether a manufacturer has paid is only known once the account has finished loading: the subscription is looked up
+  // after the profile. Before that every manufacturer would look unpaid, and a paying one would be sent away from a page.
+  const isUnpaidManufacturer = role === 'supplier' && !loading && !isPaidSubscriber;
 
   // Route users to the dashboard that matches their signup role
   useEffect(() => {
@@ -361,11 +365,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
+  // /dashboard/manufacturer/... is the same dashboard as /dashboard/supplier/...
+  const here = location.pathname.replace(/^\/dashboard\/manufacturer/, '/dashboard/supplier');
   const isActive = (href: string) => {
     if (href === '/dashboard/buyer' || href === '/dashboard/supplier' || href === '/dashboard/admin') {
-      return location.pathname === href;
+      return here === href;
     }
-    return location.pathname.startsWith(href);
+    return here.startsWith(href);
   };
 
   const roleLabel = role === 'supplier' ? 'Supplier hub' : role === 'admin' ? 'Admin' : role === 'buyer' ? 'Buyer hub' : 'Workspace';
@@ -530,7 +536,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </header>
 
       {/* ── UNPAID MANUFACTURER SUBSCRIPTION NOTIFICATION BANNER ── */}
-      {isUnpaidManufacturer && (
+      {isUnpaidManufacturer && !hideUnpaidNotice && (
         <div className="dsh-notice">
           <div className="flex min-w-0 items-center gap-3">
             <span className="dsh-notice-ico">

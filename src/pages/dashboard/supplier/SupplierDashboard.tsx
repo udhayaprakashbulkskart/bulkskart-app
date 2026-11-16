@@ -26,7 +26,7 @@ type MfrStats = {
 };
 
 export default function SupplierDashboard() {
-  const { user, profile, company, displayName } = useAuth();
+  const { user, profile, company, displayName, loading: authLoading } = useAuth();
   const [stats, setStats] = useState<MfrStats>({
     totalProducts: 0, rfqLeads: 0, quotesSent: 0, leadsLeft: 0, maxLeads: 10,
     activeOrders: 0, completedOrders: 0, responseRate: 0, avgResponseHours: 0,
@@ -36,7 +36,9 @@ export default function SupplierDashboard() {
   const [subscription, setSubscription] = useState<{
     tier: string; ends_at: string | null; max_rfq_leads: number; used_rfq_leads: number; max_products: number;
   } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setLoading] = useState(true);
+  // everything on the page waits for the account too: the company and its subscription arrive after the sign-in
+  const loading = authLoading || dataLoading;
   const [aiSummary, setAiSummary] = useState<AIOpportunitySummary>({
     totalOpportunities: 0,
     highPriorityCount: 0,
@@ -55,6 +57,7 @@ export default function SupplierDashboard() {
 
   useEffect(() => {
     if (!user || !company) { setLoading(false); return; }
+    setLoading(true);
     let cancelled = false;
 
     // Auto-deliver 5 sample buyer leads into Messages (one-time per company)
@@ -140,10 +143,11 @@ export default function SupplierDashboard() {
   const initialsOf = (text: string) => text.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('') || 'U';
   const completion = Number((company as { profile_completion?: number } | null)?.profile_completion);
   const verificationLabel = company?.verification_status === 'verified' ? 'Verified' : company?.verification_status === 'pending' ? 'In review' : 'Not verified';
-  const planLabel = subscription ? `${subscription.tier.charAt(0).toUpperCase()}${subscription.tier.slice(1)}` : 'No plan';
+  const planLabel = loading ? '—' : subscription ? `${subscription.tier.charAt(0).toUpperCase()}${subscription.tier.slice(1)}` : 'No plan';
+  const count = (value: number | string) => (loading ? '—' : value);
 
   return (
-    <DashboardLayout>
+    <DashboardLayout hideUnpaidNotice>
       <PageMeta
         title="Supplier Dashboard | BulkSkart"
         description="BulkSkart dashboard — manage your account, orders and trade activity."
@@ -228,8 +232,8 @@ export default function SupplierDashboard() {
           />
         )}
 
-        {/* Subscription banner */}
-        {!subscription && (
+        {/* Subscription banner: only once the subscription has been looked up, so a paying manufacturer never sees it flash */}
+        {!loading && !subscription && (
           <Notice
             icon={CreditCard}
             tone="warn"
@@ -280,10 +284,10 @@ export default function SupplierDashboard() {
             rows={[
               { icon: ShieldCheck, label: 'Verification', value: verificationLabel },
               { icon: CreditCard, label: 'Plan', value: planLabel },
-              { icon: Package, label: 'Products listed', value: stats.totalProducts },
-              { icon: CalendarClock, label: 'RFQ leads left', value: `${stats.leadsLeft} / ${stats.maxLeads}` },
-              { icon: FileText, label: 'Quotes sent', value: stats.quotesSent },
-              { icon: TrendingUp, label: 'Orders in progress', value: stats.activeOrders },
+              { icon: Package, label: 'Products listed', value: count(stats.totalProducts) },
+              { icon: CalendarClock, label: 'RFQ leads left', value: count(`${stats.leadsLeft} / ${stats.maxLeads}`) },
+              { icon: FileText, label: 'Quotes sent', value: count(stats.quotesSent) },
+              { icon: TrendingUp, label: 'Orders in progress', value: count(stats.activeOrders) },
             ]}
             progress={Number.isFinite(completion) && completion > 0 ? { label: 'Profile completion', value: completion } : undefined}
           />

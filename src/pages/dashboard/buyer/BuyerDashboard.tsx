@@ -128,8 +128,8 @@ export default function BuyerDashboard() {
           }
         />
 
-        {/* Verification banner */}
-        {!stats.buyerVerified && (
+        {/* Verification banner: only once it is known, so a verified buyer never sees it flash */}
+        {!loading && !stats.buyerVerified && (
           <Notice
             icon={ShieldCheck}
             title="Get Verified Buyer Badge"
@@ -188,12 +188,12 @@ export default function BuyerDashboard() {
             role="Buyer"
             to="/dashboard/buyer/profile"
             rows={[
-              { icon: ShieldCheck, label: 'Verification', value: stats.buyerVerified ? 'Verified' : 'Not verified' },
-              { icon: FileText, label: 'Requirements', value: stats.totalReqs },
-              { icon: Package, label: 'Quotes received', value: stats.totalQuotes },
-              { icon: TrendingUp, label: 'Orders in progress', value: stats.activeOrders },
-              { icon: Heart, label: 'Saved manufacturers', value: stats.savedMfrs },
-              { icon: MessageSquare, label: 'Active chats', value: stats.activeConvs },
+              { icon: ShieldCheck, label: 'Verification', value: loading ? '—' : stats.buyerVerified ? 'Verified' : 'Not verified' },
+              { icon: FileText, label: 'Requirements', value: loading ? '—' : stats.totalReqs },
+              { icon: Package, label: 'Quotes received', value: loading ? '—' : stats.totalQuotes },
+              { icon: TrendingUp, label: 'Orders in progress', value: loading ? '—' : stats.activeOrders },
+              { icon: Heart, label: 'Saved manufacturers', value: loading ? '—' : stats.savedMfrs },
+              { icon: MessageSquare, label: 'Active chats', value: loading ? '—' : stats.activeConvs },
             ]}
             progress={Number.isFinite(completion) && completion > 0 ? { label: 'Profile completion', value: completion } : undefined}
           />

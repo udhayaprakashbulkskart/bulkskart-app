@@ -36,7 +36,13 @@ vi.mock('@/lib/api', () => api);
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), message: vi.fn(), info: vi.fn() } }));
 // the shell has its own tests; these pages are checked for the figures they work out
-vi.mock('@/components/layouts/DashboardLayout', () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
+const layoutProps = vi.hoisted(() => ({ hideUnpaidNotice: undefined as boolean | undefined }));
+vi.mock('@/components/layouts/DashboardLayout', () => ({
+  default: ({ children, hideUnpaidNotice }: { children: React.ReactNode; hideUnpaidNotice?: boolean }) => {
+    layoutProps.hideUnpaidNotice = hideUnpaidNotice;
+    return <div>{children}</div>;
+  },
+}));
 vi.mock('@/components/common/PageMeta', () => ({ default: () => null }));
 vi.mock('@/components/common/MatchedRequirementsPanel', () => ({ default: () => <div>matched requirements</div> }));
 vi.mock('@/components/common/AIOpportunityCard', () => ({ default: () => <div>ai opportunities</div> }));
@@ -218,6 +224,15 @@ describe('Buyer dashboard: the figures', () => {
     expect(screen.getByRole('link', { name: 'Verify Now' })).toHaveAttribute('href', '/dashboard/buyer/verification');
   });
 
+  it('never shows the "get verified" prompt, or "Not verified", to a buyer who is verified', async () => {
+    renderPage();
+    expect(screen.queryByText('Get Verified Buyer Badge')).not.toBeInTheDocument();
+    const account = screen.getByRole('heading', { name: 'Account' }).closest('section') as HTMLElement;
+    expect(within(account).queryByText('Not verified')).not.toBeInTheDocument();
+    await waitFor(() => expect(within(account).getByText('Verified')).toBeInTheDocument());
+    expect(screen.queryByText('Get Verified Buyer Badge')).not.toBeInTheDocument();
+  });
+
   it('keeps the profile prompt for a buyer who has not finished it', () => {
     auth.value = { ...auth.value, buyerProfile: { onboarding_completed: false, profile_completion: 40 } };
     renderPage();
@@ -375,6 +390,40 @@ describe('Supplier dashboard: the figures', () => {
     expect(screen.getByRole('link', { name: /Pay Subscription Now/ })).toHaveAttribute('href', '/dashboard/supplier/subscription');
     const account = screen.getByRole('heading', { name: 'Account' }).closest('section') as HTMLElement;
     expect(within(account).getByText('Plan').parentElement).toHaveTextContent('No plan');
+  });
+
+  it('does not call a paying manufacturer unpaid while its account and subscription are still loading', async () => {
+    // the company and its subscription arrive after the sign-in: until then the page has nothing to judge by
+    auth.value = { ...auth.value, loading: true, company: null };
+    const { container, rerender } = renderPage();
+    expect(screen.queryByText('Action Required: Unpaid Manufacturer Account')).not.toBeInTheDocument();
+    expect(container.querySelectorAll('.dk .dskel').length).toBeGreaterThan(0);
+    const account = screen.getByRole('heading', { name: 'Account' }).closest('section') as HTMLElement;
+    expect(within(account).getByText('Plan').parentElement).toHaveTextContent('—');
+    auth.value = {
+      ...auth.value,
+      loading: false,
+      company: { id: 'co-1', company_name: 'Vadodara Polymer Pipe Industries', is_verified: true, onboarding_completed: true, verification_status: 'verified' },
+    };
+    rerender(
+      <MemoryRouter>
+        <SupplierDashboard />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(within(account).getByText('Plan').parentElement).toHaveTextContent('Growth'));
+    expect(screen.queryByText('Action Required: Unpaid Manufacturer Account')).not.toBeInTheDocument();
+  });
+
+  it('shows the unpaid prompt only after the subscription has been looked up and there is none', async () => {
+    db.rows.subscriptions = [];
+    renderPage();
+    expect(screen.queryByText('Action Required: Unpaid Manufacturer Account')).not.toBeInTheDocument();
+    expect(await screen.findByText('Action Required: Unpaid Manufacturer Account')).toBeInTheDocument();
+  });
+
+  it('asks the layout to leave out its own unpaid notice, because the page explains it', () => {
+    renderPage();
+    expect(layoutProps.hideUnpaidNotice).toBe(true);
   });
 
   it('asks a company that has not finished its profile to do so', () => {

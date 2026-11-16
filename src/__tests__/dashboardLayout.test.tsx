@@ -30,15 +30,15 @@ function Probe() {
   return <output data-testid="where">{location.pathname + location.search}</output>;
 }
 
-function renderAt(path: string) {
-  return render(
+function treeAt(path: string, props: { hideUnpaidNotice?: boolean } = {}) {
+  return (
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route
           path="*"
           element={
             <>
-              <DashboardLayout>
+              <DashboardLayout {...props}>
                 <p>the page</p>
               </DashboardLayout>
               <Probe />
@@ -46,8 +46,12 @@ function renderAt(path: string) {
           }
         />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
+}
+
+function renderAt(path: string, props: { hideUnpaidNotice?: boolean } = {}) {
+  return render(treeAt(path, props));
 }
 
 function signIn(role: 'buyer' | 'supplier' | 'admin', overrides: Record<string, unknown> = {}) {
@@ -446,6 +450,80 @@ describe('Dashboard shell: the menu on a phone', () => {
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign Out' }));
     expect(auth.value.signOut).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(where()).toBe('/'));
+  });
+});
+
+describe('Dashboard shell: a manufacturer whose account is still loading', () => {
+  it('is not taken for an unpaid one: no notice, no flag, and no being sent away from a page', () => {
+    // the subscription is looked up after the profile, so for a moment every manufacturer looks unpaid
+    signIn('supplier', { loading: true, isPaidSubscriber: false });
+    renderAt('/dashboard/supplier/inventory');
+    expect(where()).toBe('/dashboard/supplier/inventory');
+    expect(toastMock.message).not.toHaveBeenCalled();
+    expect(screen.queryByText('Unpaid Manufacturer Account')).not.toBeInTheDocument();
+    expect(menu().getByRole('button', { name: /More/ }).querySelector('.dsh-dot')).toBeNull();
+  });
+
+  it('stays on the page it asked for once the account has loaded and shows that it has paid', () => {
+    signIn('supplier', { loading: true, isPaidSubscriber: false });
+    const view = renderAt('/dashboard/supplier/orders');
+    signIn('supplier', { loading: false, isPaidSubscriber: true });
+    view.rerender(treeAt('/dashboard/supplier/orders'));
+    expect(where()).toBe('/dashboard/supplier/orders');
+    expect(toastMock.message).not.toHaveBeenCalled();
+    expect(screen.queryByText('Unpaid Manufacturer Account')).not.toBeInTheDocument();
+  });
+
+  it('is kept to the pages it may open once the account has loaded and it has not paid', () => {
+    signIn('supplier', { loading: true, isPaidSubscriber: false });
+    const view = renderAt('/dashboard/supplier/orders');
+    expect(where()).toBe('/dashboard/supplier/orders');
+    signIn('supplier', { loading: false, isPaidSubscriber: false });
+    view.rerender(treeAt('/dashboard/supplier/orders'));
+    expect(where()).toBe('/dashboard/supplier/subscription');
+    expect(toastMock.message).toHaveBeenCalledWith('Subscription required', expect.anything());
+    expect(screen.getByText('Unpaid Manufacturer Account')).toBeInTheDocument();
+  });
+
+  it('can leave out the notice under the bar for a page that explains the unpaid state itself, and keeps the rest', async () => {
+    const user = userEvent.setup();
+    signIn('supplier', { isPaidSubscriber: false });
+    renderAt('/dashboard/supplier', { hideUnpaidNotice: true });
+    expect(screen.queryByText('Unpaid Manufacturer Account')).not.toBeInTheDocument();
+    const more = menu().getByRole('button', { name: /More/ });
+    expect(more.querySelector('.dsh-dot')).not.toBeNull();
+    await user.click(more);
+    expect(screen.getByRole('menuitem', { name: /Subscription/ })).toHaveTextContent('Unpaid');
+  });
+});
+
+describe('Dashboard shell: the manufacturer addresses', () => {
+  it('mark the same sections as the supplier addresses', () => {
+    signIn('supplier');
+    const overview = renderAt('/dashboard/manufacturer');
+    expect(menu().getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
+    overview.unmount();
+    const products = renderAt('/dashboard/manufacturer/products');
+    expect(menu().getByRole('link', { name: 'My Products' })).toHaveAttribute('aria-current', 'page');
+    expect(menu().getByRole('link', { name: 'Overview' })).not.toHaveAttribute('aria-current');
+    products.unmount();
+    renderAt('/dashboard/manufacturer/quotations');
+    expect(menu().getByRole('link', { name: 'Quotations' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('light the More menu for a section that lives in it', () => {
+    signIn('supplier');
+    renderAt('/dashboard/manufacturer/inventory');
+    expect(menu().getByRole('button', { name: /More/ })).toHaveClass('is-active');
+  });
+
+  it('keep an unpaid manufacturer to the pages it may open, like the supplier addresses', () => {
+    signIn('supplier', { isPaidSubscriber: false });
+    const allowed = renderAt('/dashboard/manufacturer/products');
+    expect(where()).toBe('/dashboard/manufacturer/products');
+    allowed.unmount();
+    renderAt('/dashboard/manufacturer/inventory');
+    expect(where()).toBe('/dashboard/supplier/subscription');
   });
 });
 
