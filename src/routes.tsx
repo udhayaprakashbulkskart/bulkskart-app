@@ -72,6 +72,9 @@ const DisputeCenterPage     = lazy(() => import('./pages/dashboard/shared/Disput
 const AdminDashboardFull    = lazy(() => import('./pages/dashboard/admin/AdminDashboardFull'));
 const AIMatchAnalyticsPage  = lazy(() => import('./pages/dashboard/admin/AIMatchAnalyticsPage'));
 const AdminReportsPage      = lazy(() => import('./pages/dashboard/admin/AdminReportsPage'));
+const AdminPaymentsPage     = lazy(() => import('./pages/dashboard/admin/AdminPaymentsPage'));
+const SupplierPayoutsPage   = lazy(() => import('./pages/dashboard/supplier/SupplierPayoutsPage'));
+const FactoryVisitsPage     = lazy(() => import('./pages/dashboard/shared/FactoryVisitsPage'));
 
 // ─── Lazy: footer / company pages ─────────────────────────────────────────────
 const AboutPage         = lazy(() => import('./pages/AboutPage'));
@@ -172,6 +175,7 @@ export const routes: RouteConfig[] = [
   { name: 'Buyer Disputes', path: '/dashboard/buyer/disputes', element: <DisputeCenterPage /> },
   { name: 'Buyer Orders', path: '/dashboard/buyer/orders', element: <BuyerOrdersPage /> },
   { name: 'Buyer Order Tracking', path: '/dashboard/buyer/orders/:orderId', element: <OrderTrackingPage /> },
+  { name: 'Buyer Factory Visits', path: '/dashboard/buyer/visits', element: <FactoryVisitsPage /> },
   { name: 'Buyer RFQ Match', path: '/dashboard/buyer/rfq/:id', element: <BuyerRFQMatchPage /> },
   { name: 'Buyer Negotiation', path: '/dashboard/buyer/negotiation/:conversationId', element: <NegotiationRoomPage /> },
 
@@ -190,6 +194,8 @@ export const routes: RouteConfig[] = [
   { name: 'Supplier Disputes', path: '/dashboard/supplier/disputes', element: <DisputeCenterPage /> },
   { name: 'Supplier Orders', path: '/dashboard/supplier/orders', element: <SupplierOrdersPage /> },
   { name: 'Supplier Order Tracking', path: '/dashboard/supplier/orders/:orderId', element: <OrderTrackingPage /> },
+  { name: 'Supplier Payouts', path: '/dashboard/supplier/payouts', element: <SupplierPayoutsPage /> },
+  { name: 'Supplier Factory Visits', path: '/dashboard/supplier/visits', element: <FactoryVisitsPage /> },
   { name: 'Supplier Negotiation', path: '/dashboard/supplier/negotiation/:conversationId', element: <NegotiationRoomPage /> },
   { name: 'Supplier Analytics', path: '/dashboard/supplier/analytics', element: <SupplierAnalyticsPage /> },
   { name: 'Supplier Inventory', path: '/dashboard/supplier/inventory', element: <SupplierInventoryPage /> },
@@ -242,6 +248,7 @@ export const routes: RouteConfig[] = [
   { name: 'Admin Dashboard', path: '/dashboard/admin', element: <AdminDashboardFull /> },
   { name: 'AI Match Analytics', path: '/dashboard/admin/ai-match-analytics', element: <AIMatchAnalyticsPage /> },
   { name: 'Admin Reports', path: '/dashboard/admin/reports', element: <AdminReportsPage /> },
+  { name: 'Admin Payments', path: '/dashboard/admin/payments', element: <AdminPaymentsPage /> },
 
   // ── Company / Legal ───────────────────────────────────────────
   { name: 'About Us',      path: '/about',         element: <AboutPage />,        public: true },

@@ -5,12 +5,13 @@
  *  1. Subscription plan or add-on (subscriptions + subscription_orders)
  *  2. Product Promotion (product_promotions + products)
  *  3. Auction posting fee: publishes the auction stored with the order (auction_fee_orders + auctions)
+ *  4. Order payment: the money is held for the buyer ('escrow') until they release it on delivery
  *
  * What gets activated always comes from the order row saved by razorpay-create-order (plan, promotion, lot), and
  * that row must belong to the signed-in user. The plan or company named in the request is never trusted.
  * Calling it again for an order that is already done returns the same success without doing anything twice.
  *
- * POST body: { type: 'subscription' | 'promotion' | 'auction_fee', razorpay_order_id, razorpay_payment_id, razorpay_signature }
+ * POST body: { type: 'subscription' | 'promotion' | 'auction_fee' | 'order_payment', razorpay_order_id, razorpay_payment_id, razorpay_signature }
  */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -75,7 +76,7 @@ serve(async (req) => {
 
     const payload = await req.json();
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = payload;
-    const type = payload.type === 'promotion' || payload.type === 'auction_fee' ? payload.type : 'subscription';
+    const type = ['promotion', 'auction_fee', 'order_payment'].includes(payload.type) ? payload.type : 'subscription';
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return json(400, { error: 'Missing required payment verification fields' });
@@ -91,6 +92,45 @@ serve(async (req) => {
     const { data: callerProfile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
     const isAdmin = callerProfile?.role === 'admin';
     const now = new Date();
+
+    // ========================================================
+    // CASE 0: Order payment → held for the buyer until they release it
+    // ========================================================
+    if (type === 'order_payment') {
+      const { data: order } = await supabase
+        .from('orders')
+        .select('id, order_number, buyer_id, total_amount, currency, payment_status, supplier_company_id')
+        .eq('razorpay_order_id', razorpay_order_id)
+        .maybeSingle();
+      if (!order || (order.buyer_id !== user.id && !isAdmin)) return json(404, { error: 'Order not found' });
+      if (order.payment_status && order.payment_status !== 'pending') {
+        return json(200, { success: true, order_id: order.id, payment_status: order.payment_status });
+      }
+      const { data: held, error: holdErr } = await supabase
+        .from('orders')
+        .update({ payment_status: 'escrow', payment_method: 'online', paid_amount: order.total_amount, paid_at: now.toISOString(), razorpay_payment_id })
+        .eq('id', order.id)
+        .eq('payment_status', 'pending')
+        .select('id');
+      if (holdErr) {
+        console.error('Could not mark the order paid:', holdErr);
+        return json(500, { error: 'Payment received, but the order could not be updated yet. Please contact support with your payment reference.', payment_id: razorpay_payment_id });
+      }
+      if (held && held.length > 0) {
+        await supabase.from('order_payment_events').insert({ order_id: order.id, event: 'paid_online', amount: order.total_amount, actor_id: user.id, note: razorpay_payment_id });
+        const { data: company } = await supabase.from('companies').select('owner_id').eq('id', order.supplier_company_id).maybeSingle();
+        if (company?.owner_id) {
+          await supabase.from('notifications').insert({
+            user_id: company.owner_id,
+            title: 'Buyer paid online',
+            message: `Order #${order.order_number}: the buyer paid ${order.currency} ${order.total_amount}. BulkSkart holds it until the buyer confirms delivery, then it comes to your payout balance.`,
+            type: 'order_payment',
+            link: `/dashboard/supplier/orders/${order.id}`,
+          });
+        }
+      }
+      return json(200, { success: true, order_id: order.id, payment_status: 'escrow' });
+    }
 
     // ========================================================
     // CASE A: Auction posting fee → publish the stored lot

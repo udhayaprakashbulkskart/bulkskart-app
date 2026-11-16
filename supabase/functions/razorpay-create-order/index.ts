@@ -5,6 +5,7 @@
  * 1. Subscription plans and add-ons (subscription_orders)
  * 2. Product Promotions (product_promotions)
  * 3. Auction posting fees (auction_fee_orders); the auction itself is published by razorpay-verify-payment
+ * 4. Paying for an order online; razorpay-verify-payment then holds the money until the buyer releases it
  *
  * Every amount is set here from pricing.ts. Amounts sent by the browser (price_inr, total_amount, ...) are ignored.
  *
@@ -13,6 +14,7 @@
  * POST body for auction fee:  { type: 'auction_fee', auction: { title, description, total_quantity, quantity_unit, starting_price,
  *                               reserve_price, min_bid_increment, duration: '1h' | '24h', delivery_location, lead_time, specs,
  *                               billing_name, tax_id, images } }
+ * POST body for an order:     { type: 'order_payment', order_id }   (the amount is the order's own total)
  */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -153,6 +155,53 @@ serve(async (req) => {
         JSON.stringify({ order_id: rzpOrder.id, amount: rzpOrder.amount, currency: rzpOrder.currency, key_id: keyId }),
         { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } },
       );
+    }
+
+    // ========================================================
+    // CASE 0b: Paying for an order (the buyer of that order)
+    // ========================================================
+    if (type === 'order_payment') {
+      const reply = (status: number, payload: unknown) =>
+        new Response(JSON.stringify(payload), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
+      const { data: order } = await supabase
+        .from('orders')
+        .select('id, order_number, buyer_id, total_amount, currency, payment_status, order_status, supplier_company_id')
+        .eq('id', String(body.order_id || ''))
+        .maybeSingle();
+      if (!order || order.buyer_id !== user.id) return reply(404, { error: 'Order not found' });
+      if ((order.payment_status ?? 'pending') !== 'pending') return reply(409, { error: 'This order is already paid' });
+      if (order.order_status === 'cancelled') return reply(409, { error: 'This order is cancelled' });
+      if ((order.currency ?? 'INR') !== 'INR') {
+        return reply(400, { error: 'Online payment is available for orders in rupees. Pay at the factory, or ask the manufacturer to quote in INR.' });
+      }
+      const amountPaise = Math.round(Number(order.total_amount) * 100);
+      if (!Number.isFinite(amountPaise) || amountPaise < 100) return reply(400, { error: 'This order has no amount to pay' });
+
+      const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amountPaise,
+          currency: 'INR',
+          receipt: `ord_${String(order.order_number).slice(0, 30)}`,
+          notes: { type: 'order_payment', order_id: order.id, order_number: order.order_number, buyer_id: user.id },
+        }),
+      });
+      if (!rzpRes.ok) {
+        const err = await rzpRes.text();
+        console.error('Razorpay order creation failed for order payment:', err);
+        return reply(502, { error: 'The payment could not be started. Large amounts may need netbanking, or a higher limit on the Razorpay account.', details: err });
+      }
+      const rzpOrder = await rzpRes.json();
+      const { error: saveErr } = await supabase
+        .from('orders')
+        .update({ razorpay_order_id: rzpOrder.id, payment_method: 'online' })
+        .eq('id', order.id);
+      if (saveErr) {
+        console.error('Could not record the payment order on the order:', saveErr);
+        return reply(500, { error: 'Could not start the payment. Please try again.' });
+      }
+      return reply(200, { order_id: rzpOrder.id, amount: rzpOrder.amount, currency: rzpOrder.currency, key_id: keyId });
     }
 
     if (!company_id) {

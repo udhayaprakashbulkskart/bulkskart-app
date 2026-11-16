@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
 import AdminLoanRequests from '@/components/dashboard/AdminLoanRequests';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BarsChart, Gauge, Kpi, Mini, PageHeader, Panel, Segmented } from '@/components/dashboard/parts';
 import type { KpiTone } from '@/components/dashboard/parts';
 import { bucketByMonth, fetchMonthly, lastMonths, percentChange, sum } from '@/components/dashboard/series';
@@ -200,16 +200,6 @@ export default function AdminDashboardFull() {
     fetchAll();
   };
 
-  const approveWithdrawal = async (id: string) => {
-    await supabase.from('withdrawal_requests').update({ status: 'approved', processed_at: new Date().toISOString() }).eq('id', id);
-    toast.success('Withdrawal approved');
-    fetchAll();
-  };
-  const rejectWithdrawal = async (id: string) => {
-    await supabase.from('withdrawal_requests').update({ status: 'rejected', processed_at: new Date().toISOString() }).eq('id', id);
-    toast.success('Withdrawal rejected');
-    fetchAll();
-  };
 
   const filteredCompanies = companies.filter(c => {
     const q = search.toLowerCase();
@@ -633,14 +623,9 @@ export default function AdminDashboardFull() {
                         <td className="px-3 py-3 text-xs text-muted-foreground">{new Date(w.created_at).toLocaleDateString()}</td>
                         <td className="px-3 py-3">
                           {w.status === 'pending' && (
-                            <div className="flex gap-1">
-                              <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => approveWithdrawal(w.id)}>
-                                <CheckCircle className="w-3 h-3" />
-                              </Button>
-                              <Button size="sm" variant="outline" className="h-7 text-xs border-red-300 text-red-600" onClick={() => rejectWithdrawal(w.id)}>
-                                <XCircle className="w-3 h-3" />
-                              </Button>
-                            </div>
+                            <Link to="/dashboard/admin/payments" className="text-xs font-semibold text-primary hover:underline">
+                              Send in Payments
+                            </Link>
                           )}
                         </td>
                       </tr>

@@ -1719,7 +1719,7 @@ export async function createOrder(payload: {
 export async function getOrdersForBuyer(buyerId: string): Promise<OrderRow[]> {
   const { data } = await supabase
     .from('orders')
-    .select('id,order_number,milestone,total_amount,currency,quantity,quantity_unit,created_at,updated_at,quotations(unit_price,payment_terms,delivery_terms),requirements(title,quantity_unit),companies:supplier_company_id(company_name,slug,logo_url,verification_status)')
+    .select('id,order_number,milestone,total_amount,currency,quantity,quantity_unit,created_at,updated_at,order_status,payment_status,payment_method,paid_amount,paid_at,payout_amount,commission_amount,commission_pct,released_at,refunded_at,quotations(unit_price,payment_terms,delivery_terms),requirements(title,quantity_unit),companies:supplier_company_id(company_name,slug,logo_url,verification_status)')
     .eq('buyer_id', buyerId)
     .order('created_at', { ascending: false });
   return (data ?? []) as unknown as OrderRow[];
@@ -1728,7 +1728,7 @@ export async function getOrdersForBuyer(buyerId: string): Promise<OrderRow[]> {
 export async function getOrdersForSupplier(companyId: string): Promise<OrderRow[]> {
   const { data } = await supabase
     .from('orders')
-    .select('id,order_number,milestone,total_amount,currency,quantity,quantity_unit,created_at,updated_at,quotations(unit_price,payment_terms,delivery_terms),requirements(title,quantity_unit),buyer:profiles!buyer_id(full_name,avatar_url)')
+    .select('id,order_number,milestone,total_amount,currency,quantity,quantity_unit,created_at,updated_at,order_status,payment_status,payment_method,paid_amount,paid_at,payout_amount,commission_amount,commission_pct,released_at,refunded_at,quotations(unit_price,payment_terms,delivery_terms),requirements(title,quantity_unit),buyer:profiles!buyer_id(full_name,avatar_url)')
     .eq('supplier_company_id', companyId)
     .order('created_at', { ascending: false });
   return (data ?? []) as unknown as OrderRow[];

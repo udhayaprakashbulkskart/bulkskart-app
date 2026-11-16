@@ -13,7 +13,7 @@ import {
   Settings, LogOut, Menu, Globe, BarChart3, TrendingUp,
   Shield, Flag, CreditCard, Building2, UserCircle,
   Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
-  Search, LifeBuoy, Plus, Sun, Moon,
+  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -27,6 +27,8 @@ const UNPAID_SUPPLIER_ALLOWLIST = [
   '/dashboard/supplier/verification',
   '/dashboard/supplier/messages',
   '/dashboard/supplier/notifications',
+  '/dashboard/supplier/payouts', // their own money, plan or not
+  '/dashboard/supplier/visits',
   '/dashboard/supplier/overview',
   '/dashboard/supplier/products', // browse catalog — Add Product gated in-page
   '/dashboard/supplier/rfqs', // browse only — contacts & quotes gated in-page
@@ -54,6 +56,7 @@ export const buyerNavItems: NavItem[] = [
   { label: 'My Requirements', href: '/dashboard/buyer/requirements', icon: FileText },
   { label: 'Received Quotes', href: '/dashboard/buyer/quotes', icon: Package },
   { label: 'Orders', href: '/dashboard/buyer/orders', icon: Package },
+  { label: 'Factory Visits', href: '/dashboard/buyer/visits', icon: Factory },
   { label: 'Messages', href: '/dashboard/buyer/messages', icon: MessageSquare },
   { label: 'Notifications', href: '/dashboard/buyer/notifications', icon: Bell },
   { label: 'Saved Manufacturers', href: '/dashboard/buyer/saved-manufacturers', icon: Building2 },
@@ -73,6 +76,8 @@ export const supplierNavItems: NavItem[] = [
   { label: 'RFQ Leads', href: '/dashboard/supplier/rfqs', icon: FileText },
   { label: 'Quotations', href: '/dashboard/supplier/quotations', icon: TrendingUp },
   { label: 'Orders', href: '/dashboard/supplier/orders', icon: Building2 },
+  { label: 'Payouts', href: '/dashboard/supplier/payouts', icon: Wallet },
+  { label: 'Factory Visits', href: '/dashboard/supplier/visits', icon: Factory },
   { label: 'Messages', href: '/dashboard/supplier/messages', icon: MessageSquare },
   { label: 'Notifications', href: '/dashboard/supplier/notifications', icon: Bell },
   { label: 'Verification', href: '/dashboard/supplier/verification', icon: Shield },
@@ -86,6 +91,7 @@ export const adminNavItems: NavItem[] = [
   { label: 'Control Panel', href: '/dashboard/admin', icon: LayoutDashboard },
   { label: 'AI Match Analytics', href: '/dashboard/admin/ai-match-analytics', icon: Zap },
   { label: 'Reports', href: '/dashboard/admin/reports', icon: Flag },
+  { label: 'Payments', href: '/dashboard/admin/payments', icon: Wallet },
 ];
 
 /**

@@ -289,6 +289,17 @@ export interface OrderRow {
   requirements?: { title: string; quantity_unit: string } | null;
   companies?: { company_name: string; slug: string; logo_url: string | null; verification_status: string } | null;
   buyer?: { full_name: string | null; avatar_url: string | null } | null;
+  // payment (migration 00063)
+  order_status?: string | null;
+  payment_status?: 'pending' | 'paid' | 'escrow' | 'released' | 'refunded' | null;
+  payment_method?: 'online' | 'at_factory' | null;
+  paid_amount?: number | null;
+  paid_at?: string | null;
+  payout_amount?: number | null;
+  commission_amount?: number | null;
+  commission_pct?: number | null;
+  released_at?: string | null;
+  refunded_at?: string | null;
 }
 
 export interface Conversation {

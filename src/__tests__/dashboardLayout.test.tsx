@@ -144,6 +144,7 @@ describe('Dashboard shell: the top bar', () => {
       'My Requirements',
       'Received Quotes',
       'Orders',
+      'Factory Visits',
       'Messages',
       'Notifications',
       'Saved Manufacturers',
@@ -171,6 +172,8 @@ describe('Dashboard shell: the top bar', () => {
       'RFQ Leads',
       'Quotations',
       'Orders',
+      'Payouts',
+      'Factory Visits',
       'Messages',
       'Notifications',
       'Verification',
@@ -183,10 +186,10 @@ describe('Dashboard shell: the top bar', () => {
     expect(menu().getByRole('link', { name: 'My Products' })).not.toHaveAttribute('aria-current');
   });
 
-  it('has three sections for an admin, including the reports users send', () => {
+  it('has four sections for an admin: control panel, analytics, reports and payments', () => {
     signIn('admin');
     renderAt('/dashboard/admin');
-    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Reports']);
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Reports', 'Payments']);
   });
 
   it('has no More button: nothing in the menu is hidden behind a button', () => {
@@ -402,6 +405,7 @@ describe('Dashboard shell: the menu on a phone', () => {
       'My Requirements',
       'Received Quotes',
       'Orders',
+      'Factory Visits',
       'Messages',
       'Notifications',
       'Saved Manufacturers',

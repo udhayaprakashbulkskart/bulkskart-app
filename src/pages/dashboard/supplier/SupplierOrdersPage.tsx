@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
+import PaymentBadge from '@/components/orders/PaymentBadge';
+import { money } from '@/lib/orderPayments';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -72,6 +74,24 @@ export default function SupplierOrdersPage() {
             <p className="text-sm text-muted-foreground">Manage and update orders from confirmation to delivery</p>
           </div>
 
+          {/* Buyers' online payments held until they confirm delivery */}
+          {(() => {
+            const held = orders.filter(o => o.payment_status === 'escrow' && o.order_status !== 'cancelled');
+            if (!held.length) return null;
+            const total = held.reduce((sum, o) => sum + Number(o.paid_amount ?? o.total_amount), 0);
+            return (
+              <div className="mb-5 rounded-xl border border-sky-500/30 bg-sky-500/5 p-4 text-sm flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-foreground">Paid by buyers, held by BulkSkart: {money(total)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    It comes to your payout balance (less 2% commission) when each buyer confirms delivery.
+                  </p>
+                </div>
+                <Link to="/dashboard/supplier/payouts" className="text-xs font-semibold text-primary hover:underline">Payouts</Link>
+              </div>
+            );
+          })()}
+
           <div className="flex gap-2 mb-5 flex-wrap">
             {(['all', 'active', 'delivered', 'cancelled'] as const).map(f => (
               <button key={f} onClick={() => setFilter(f)}
@@ -138,6 +158,7 @@ export default function SupplierOrdersPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
+                        <PaymentBadge order={order} viewer="supplier" />
                         <Badge variant="outline" className={`text-xs ${meta.cls}`}>{meta.label}</Badge>
                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>

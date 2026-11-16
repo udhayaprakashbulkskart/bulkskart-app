@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRequirements } from '@/lib/api';
 import type { Requirement } from '@/types/types';
-import { FileText, MessageSquare, Package, TrendingUp, Plus, Heart, Bell, AlertTriangle, ShieldCheck, CheckCircle2, Building2, Eye, Settings } from 'lucide-react';
+import { FileText, MessageSquare, Package, TrendingUp, Plus, Heart, Bell, AlertTriangle, ShieldCheck, CheckCircle2, Building2, Eye, Settings, Wallet } from 'lucide-react';
+import { money } from '@/lib/orderPayments';
 import { supabase } from '@/db/supabase';
 import PageMeta from '@/components/common/PageMeta';
 import { AccountCard, ActionsCard, BarsChart, Gauge, Kpi, Mini, Notice, PageHeader, Panel, QuickLink, Segmented } from '@/components/dashboard/parts';
@@ -23,6 +24,21 @@ export default function BuyerDashboard() {
   const navigate = useNavigate();
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [loading, setLoading] = useState(true);
+  // Money paid online that BulkSkart is holding for this buyer until they confirm delivery
+  const [held, setHeld] = useState<{ total: number; count: number }>({ total: 0, count: 0 });
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('orders')
+      .select('paid_amount,total_amount,order_status')
+      .eq('buyer_id', user.id)
+      .eq('payment_status', 'escrow')
+      .then(({ data }) => {
+        const rows = ((data ?? []) as { paid_amount: number | null; total_amount: number; order_status: string | null }[]).filter((o) => o.order_status !== 'cancelled');
+        setHeld({ total: rows.reduce((s, o) => s + Number(o.paid_amount ?? o.total_amount), 0), count: rows.length });
+      });
+  }, [user]);
+
   const [stats, setStats] = useState<BuyerStats>({
     totalReqs: 0, totalQuotes: 0, activeConvs: 0,
     activeOrders: 0, completedOrders: 0, savedMfrs: 0,
@@ -180,6 +196,20 @@ export default function BuyerDashboard() {
           <Kpi title="Active Orders" value={stats.activeOrders} loading={loading} icon={TrendingUp} tone="green" to="/dashboard/buyer/orders" hint="Being made or on the way" />
           <Kpi title="Completed Orders" value={stats.completedOrders} loading={loading} icon={CheckCircle2} tone="blue" to="/dashboard/buyer/orders" hint="Delivered and closed" />
         </div>
+
+        {held.count > 0 && (
+          <Notice
+            icon={Wallet}
+            title={`${money(held.total)} held by BulkSkart for you`}
+            action={
+              <Button asChild size="sm">
+                <Link to="/dashboard/buyer/orders">View orders</Link>
+              </Button>
+            }
+          >
+            Paid online for {held.count} order{held.count === 1 ? '' : 's'}. The manufacturer gets it only when you confirm the goods arrived.
+          </Notice>
+        )}
 
         <div className="dgrid-trio">
           <AccountCard

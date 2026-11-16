@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import PageMeta from '@/components/common/PageMeta';
+import OrderPaymentPanel from '@/components/orders/OrderPaymentPanel';
+import type { OrderPaymentFields } from '@/lib/orderPayments';
 
 // ---------- Status meta (badge colours) ----------
 const STATUS_META: Record<PipelineStatus, { label: string; cls: string }> = {
@@ -46,7 +48,7 @@ const ADVANCE_LABEL: Partial<Record<PipelineStatus, { icon: React.ElementType; l
   shipped:   { icon: CheckCircle2, label: 'Mark as Delivered' },
 };
 
-type OrderData = {
+type OrderData = OrderPaymentFields & {
   id: string; order_number: string; order_status: PipelineStatus; milestone: string;
   total_amount: number; currency: string; quantity: number;
   notes: string | null; cancelled_reason: string | null; created_at: string;
@@ -263,6 +265,9 @@ export default function OrderTrackingPage() {
               {order.quotations?.delivery_terms && <div><p className="text-xs text-muted-foreground">Delivery Terms</p><p className="font-medium">{order.quotations.delivery_terms}</p></div>}
             </CardContent>
           </Card>
+
+          {/* Payment: online (held by BulkSkart until delivery is confirmed) or at the factory */}
+          {role && <OrderPaymentPanel order={order} viewer={role} onChanged={fetchAll} />}
 
           {/* Tracking details (if shipped) */}
           {(curStatus === 'shipped' || curStatus === 'delivered') && (order.tracking_number || order.tracking_courier) && (
