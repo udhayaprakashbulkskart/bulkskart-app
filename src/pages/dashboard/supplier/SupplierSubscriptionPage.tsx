@@ -31,6 +31,7 @@ import { useRazorpay } from '@/hooks/useRazorpay';
 import { supabase } from '@/db/supabase';
 import { toast } from 'sonner';
 import type { Subscription } from '@/types/types';
+import { buildPlans, type SubscriptionPlan as Plan } from '@/lib/subscriptionPlans';
 
 interface SubscriptionInvoice {
   id: string;
@@ -51,19 +52,6 @@ interface SubscriptionInvoice {
   created_at: string;
 }
 
-interface Plan {
-  tier: string;
-  label: string;
-  basePrice: number | null;
-  priceInr: number | null;
-  priceDisplay: string;
-  tagline: string;
-  features: string[];
-  highlight: string;
-  popular: boolean;
-  enterprise: boolean;
-}
-
 const TIER_ICONS: Record<string, React.ReactNode> = {
   starter:    <Zap className="w-5 h-5" />,
   business:   <Star className="w-5 h-5" />,
@@ -79,7 +67,7 @@ const TRUST_ITEMS = [
 ];
 
 export default function SupplierSubscriptionPage() {
-  const { user, profile, company } = useAuth();
+  const { user, profile, company, refreshProfile } = useAuth();
   const {
     countryConfig,
     setCountry,
@@ -97,56 +85,7 @@ export default function SupplierSubscriptionPage() {
   const [confirmPlan, setConfirmPlan]   = useState<Plan | null>(null);
   const { startCheckout, loading: checkoutLoading } = useRazorpay();
 
-  const localizedPlans: Plan[] = [
-    {
-      tier: 'starter',
-      label: 'Starter',
-      basePrice: countryConfig.plans.starter,
-      priceInr: Math.round(countryConfig.plans.starter * (countryConfig.currency === 'INR' ? 1 : 83.5)),
-      priceDisplay: formatLocalPrice(countryConfig.plans.starter),
-      tagline: 'Perfect for new suppliers — allows only 5 post responses',
-      highlight: '5 RFQ responses / month (Strict Limit)',
-      features: ['5 product listings', '5 Post / RFQ responses / month (Strict)', 'Direct buyer messaging (within 5 quotes)', 'Standard directory visibility', 'Email support', 'Basic analytics'],
-      popular: false,
-      enterprise: false,
-    },
-    {
-      tier: 'business',
-      label: 'Business',
-      basePrice: countryConfig.plans.business,
-      priceInr: Math.round(countryConfig.plans.business * (countryConfig.currency === 'INR' ? 1 : 83.5)),
-      priceDisplay: formatLocalPrice(countryConfig.plans.business),
-      tagline: 'Most popular for growing businesses — 50 post responses + AI accessibility',
-      highlight: '50 RFQ responses/mo + AI Accessibility',
-      features: ['Full AI Accessibility Suite included', 'AI Product Matching (94%+ Spec Match)', '1-Click AI Quotation Generator', '50 Post / RFQ responses / month', 'Send Quotations to Live RFQs', '50 product listings', 'Priority visibility', 'Verified supplier badge', 'Priority chat support'],
-      popular: true,
-      enterprise: false,
-    },
-    {
-      tier: 'growth',
-      label: 'Growth',
-      basePrice: countryConfig.plans.growth,
-      priceInr: Math.round(countryConfig.plans.growth * (countryConfig.currency === 'INR' ? 1 : 83.5)),
-      priceDisplay: formatLocalPrice(countryConfig.plans.growth),
-      tagline: 'For high-volume exporters — UNLIMITED post responses',
-      highlight: 'UNLIMITED responses (No lead limits)',
-      features: ['UNLIMITED Post / RFQ responses', 'Full AI Accessibility Suite included', 'Unlimited product listings', 'Top visibility ranking', 'Featured in categories', 'Advanced analytics & export trends', '3 team members', 'VIP Phone & WhatsApp support', 'Priority badge'],
-      popular: false,
-      enterprise: false,
-    },
-    {
-      tier: 'enterprise',
-      label: 'Enterprise',
-      basePrice: null,
-      priceInr: null,
-      priceDisplay: 'Custom',
-      tagline: 'For large enterprises & OEMs',
-      highlight: 'Unlimited leads & dedicated SLA',
-      features: ['Unlimited product listings', 'Unlimited RFQ leads', 'Dedicated account manager', 'Custom branded storefront', 'API access', '10+ team members', 'SLA guarantee'],
-      popular: false,
-      enterprise: true,
-    },
-  ];
+  const localizedPlans: Plan[] = buildPlans(countryConfig, formatLocalPrice);
 
   useEffect(() => {
     if (!company?.id) { setLoadingSub(false); setLoadingInv(false); return; }
@@ -225,6 +164,8 @@ export default function SupplierSubscriptionPage() {
       user_email:    user.email ?? '',
       onSuccess: () => {
         getActiveSubscription(company.id).then(sub => setActiveSub(sub as Subscription | null));
+        // the rest of the dashboard only knows about a new plan once the account is read again
+        void refreshProfile(user.id);
         setTimeout(fetchInvoices, 4000); // allow EF time to generate
       },
     });

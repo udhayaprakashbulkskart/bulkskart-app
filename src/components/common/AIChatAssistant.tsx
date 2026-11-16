@@ -182,8 +182,8 @@ export default function AIChatAssistant() {
     target.style.height = `${Math.min(target.scrollHeight, 110)}px`;
   };
 
-  // Do not show floating assistant on full-page negotiation rooms
-  if (location.pathname.includes('/negotiation')) {
+  // Do not show floating assistant on full-page negotiation rooms, or over the signup (which has its own assistant)
+  if (location.pathname.includes('/negotiation') || location.pathname.startsWith('/signup/manufacturer') || location.pathname.startsWith('/register/manufacturer')) {
     return null;
   }
 

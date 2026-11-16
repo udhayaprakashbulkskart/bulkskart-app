@@ -16,12 +16,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import PageMeta from '@/components/common/PageMeta';
 import { cn } from '@/lib/utils';
+import { GSTIN_REGEX, IEC_REGEX, PAN_REGEX, PRODUCT_CATEGORIES } from '@/lib/signup/vocab';
 
 type FieldErrors = Record<string, string>;
-
-const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-const IEC_REGEX = /^[0-9]{10}$/;
 
 function digitCount(value: string): number {
   return (value.match(/\d/g) || []).length;
@@ -64,22 +61,6 @@ const ACCOUNT_TYPES = [
   { id: 'Buyer', label: 'Bulk Buyer / Procurement', desc: 'Procures raw materials, industrial equipment, or wholesale batches', role: 'buyer' },
   { id: 'Importer', label: 'Importer', desc: 'Imports products in bulk containers for domestic distribution', role: 'supplier' },
   { id: 'Exporter', label: 'Exporter', desc: 'Exports certified goods and components to international markets', role: 'supplier' },
-];
-
-const PRODUCT_CATEGORIES = [
-  'Machinery & Industrial Equipment',
-  'Packaging & Printing',
-  'Textiles & Apparel',
-  'Chemicals & Raw Materials',
-  'Construction & Building Materials',
-  'Electronics & Electricals',
-  'Auto Parts & Vehicles',
-  'Pharmaceuticals & Healthcare',
-  'Agriculture & Food Products',
-  'Plastics & Rubber',
-  'Furniture & Home Decor',
-  'Gems & Jewellery',
-  'Handicrafts & Gifts',
 ];
 
 const PAYMENT_TERMS = ['L/C (Letter of Credit)', 'T/T (Telegraphic Transfer)', 'D/P (Documents Against Payment)', 'D/A (Documents Against Acceptance)', 'Escrow Trade Assurance', 'Cash Against Documents', 'Advance Payment'];

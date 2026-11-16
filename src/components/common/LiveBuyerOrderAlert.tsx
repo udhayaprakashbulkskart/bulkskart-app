@@ -335,6 +335,8 @@ export default function LiveBuyerOrderAlert() {
     location.pathname.includes('/post-requirement') ||
     location.pathname.includes('/negotiation') ||
     location.pathname.includes('/auth') ||
+    location.pathname.includes('/signup') ||
+    location.pathname.includes('/register/manufacturer') ||
     location.pathname.includes('/settings');
 
   if (isExcludedPage || !entered) {

@@ -249,6 +249,13 @@ export default function AuthPage() {
     setActiveTab(getResolvedTab());
   }, [location.pathname, searchParams]);
 
+  // Manufacturers register with the signup assistant (a minute, not a long form) unless they asked for the full form
+  useEffect(() => {
+    if (user || authLoading || activeTab !== 'supplier' || searchParams.get('form') === 'full') return;
+    const back = searchParams.get('redirect') || searchParams.get('returnUrl');
+    navigate(`/signup/manufacturer${back ? `?redirect=${encodeURIComponent(back)}` : ''}`, { replace: true });
+  }, [user, authLoading, activeTab, searchParams, navigate]);
+
   // Already signed in → return to the requested page, otherwise the role dashboard
   useEffect(() => {
     if (!user || authLoading) return;
@@ -577,6 +584,15 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
+
+  // on its way to the signup assistant: no flash of the long form
+  if (!user && activeTab === 'supplier' && searchParams.get('form') !== 'full') {
+    return (
+      <div role="status" aria-label="Loading" className="grid min-h-screen place-items-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
