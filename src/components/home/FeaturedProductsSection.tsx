@@ -578,8 +578,9 @@ export default function FeaturedProductsSection() {
         const comp = p.companies;
         const cat = p.categories;
         const pCountry = comp?.country || (p.export_destinations && p.export_destinations[0]) || 'India';
-        const rating = Number(comp?.rating_avg ?? (4.7 + ((index % 3) * 0.1)));
-        const reviewCount = Number(comp?.review_count ?? (120 + ((index * 37) % 450)));
+        // only what the company really has: no made-up stars or review counts
+        const rating = Number(comp?.rating_avg ?? 0);
+        const reviewCount = Number(comp?.review_count ?? 0);
 
         // Dynamic badges
         let badgeType: DisplayProduct['badgeType'] = 'popular';
@@ -618,7 +619,7 @@ export default function FeaturedProductsSection() {
           badgeLabel,
           rating,
           reviewCount,
-          isVerifiedSupplier: comp?.verification_status === 'verified' || true,
+          isVerifiedSupplier: comp?.verification_status === 'verified',
           supplierName: comp?.company_name || 'Verified Export Manufacturer',
           country: pCountry,
           countryFlag: COUNTRY_FLAGS[pCountry] || '🌐',

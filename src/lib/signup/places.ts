@@ -192,6 +192,9 @@ for (const state of INDIAN_STATES) {
   for (const spelling of [state.name, ...(state.aliases ?? [])]) STATE_BY_PHRASE.set(normalise(spelling), state.name);
 }
 
+/** The usual names of the towns in the list, A to Z: suggestions for a city box. */
+export const CITY_NAMES: readonly string[] = [...new Set([...CITY_BY_PHRASE.values()].map((city) => city.name))].sort((a, b) => a.localeCompare(b));
+
 const CUES = new Set(['in', 'at', 'from', 'near', 'around', 'of', 'based', 'located', 'situated', 'within', ',']);
 const NOT_A_CITY = new Set([
   'the', 'our', 'a', 'an', 'india', 'indian', 'and', 'also', 'state', 'city', 'area', 'region', 'district', 'western', 'eastern', 'northern',

@@ -1,0 +1,928 @@
+/*
+ * The form kit: one look for every form on the site.
+ *
+ *   1. the pop-up shell   (.fk-dialog: a split card on desktop, a sheet on a phone)
+ *   2. the fields         (.fk-form: labels, inputs, selects, text areas, the stepper, the tick row)
+ *   3. the pieces         (.fk-entity, .fk-section, .fk-actions, .fk-done)
+ *
+ * Colours come from the site's own tokens, so both themes work; the orange is the brand's.
+ */
+
+.fk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(8, 12, 20, 0.62);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: fk-fade 0.18s ease-out both;
+}
+
+/* ───────────── 1. the pop-up shell ───────────── */
+.fk-dialog {
+  --fk-orange: #ff5a00;
+  --fk-orange-hi: #ff7a1a;
+  --fk-orange-lo: #ee4f00;
+  --fk-tint: hsl(var(--primary) / 0.1);
+  --fk-tint-2: hsl(var(--primary) / 0.16);
+  --fk-line: hsl(var(--border));
+  --fk-ink: hsl(var(--foreground));
+  --fk-ink-2: hsl(var(--muted-foreground));
+  --fk-surface: hsl(var(--card));
+  --fk-night: #0e1014;
+
+  position: fixed;
+  z-index: 50;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 94dvh;
+  overflow: hidden;
+  border-radius: 28px 28px 0 0;
+  border: 1px solid var(--fk-line);
+  border-bottom: 0;
+  background: var(--fk-surface);
+  color: var(--fk-ink);
+  box-shadow: 0 -18px 60px -20px rgba(0, 0, 0, 0.55);
+  outline: none;
+  animation: fk-rise 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.fk-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.fk-handle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 10px 0 2px;
+  touch-action: none;
+  cursor: grab;
+}
+.fk-handle::before {
+  content: '';
+  width: 44px;
+  height: 5px;
+  border-radius: 99px;
+  background: hsl(var(--muted-foreground) / 0.45);
+}
+.fk-close {
+  position: absolute;
+  z-index: 3;
+  top: 18px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  background: hsl(var(--muted));
+  color: var(--fk-ink);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.fk-close:hover {
+  background: hsl(var(--muted-foreground) / 0.22);
+}
+.fk-close:active {
+  transform: scale(0.94);
+}
+.fk-close:focus-visible {
+  outline: 2px solid var(--fk-orange);
+  outline-offset: 2px;
+}
+.fk-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* the introduction: on a phone it is the top of the sheet, on desktop the dark panel on the left */
+.fk-intro {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 4px 18px 0;
+}
+.fk-intro-top {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding-right: 52px; /* room for the close button */
+}
+.fk-logo {
+  height: 40px;
+  width: auto;
+  max-width: 190px;
+  object-fit: contain;
+}
+.fk-logo.is-panel {
+  display: none;
+}
+.fk-intro-text {
+  min-width: 0;
+  padding: 6px 0 4px;
+}
+.fk-title {
+  margin: 0;
+  font-size: clamp(1.3rem, 5.6vw, 1.75rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--fk-ink);
+}
+.fk-title em {
+  font-style: normal;
+  color: var(--fk-orange);
+}
+.fk-desc {
+  margin: 6px 0 0;
+  font-size: 0.93rem;
+  line-height: 1.4;
+  color: var(--fk-ink-2);
+}
+.fk-points {
+  display: none;
+}
+.fk-art-sheet {
+  width: clamp(84px, 26vw, 128px);
+  height: auto;
+  align-self: center;
+}
+.fk-art-panel {
+  display: none;
+}
+.fk-main {
+  padding: 14px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 900px) {
+  .fk-dialog {
+    left: 50%;
+    right: auto;
+    top: 50%;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    display: grid;
+    grid-template-columns: var(--fk-side, 340px) minmax(0, 1fr);
+    width: min(var(--fk-width, 1080px), calc(100vw - 48px));
+    max-height: min(860px, calc(100dvh - 40px));
+    border-radius: 22px;
+    border-bottom: 1px solid var(--fk-line);
+    box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.7);
+    animation-name: fk-pop;
+  }
+  .fk-dialog.is-plain {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(var(--fk-width, 620px), calc(100vw - 48px));
+  }
+  .fk-handle {
+    display: none;
+  }
+  .fk-scroll {
+    display: contents;
+  }
+  .fk-close {
+    top: 16px;
+    right: 16px;
+    width: 42px;
+    height: 42px;
+  }
+
+  /* the dark panel */
+  .fk-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--fk-night);
+    color: #fff;
+    border-radius: 21px 0 0 21px;
+  }
+  .fk-intro-top {
+    position: relative;
+    flex: none;
+    min-height: 0;
+    padding: 26px 24px 24px;
+    background: #fff;
+    overflow: hidden;
+  }
+  /* the orange slash that cuts the white strip */
+  .fk-intro-top::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 34%;
+    height: 78%;
+    background: linear-gradient(to bottom right, transparent 49.4%, var(--fk-orange-hi) 50%, var(--fk-orange) 72%, var(--fk-night) 72.6%);
+  }
+  .fk-logo.is-sheet {
+    display: none;
+  }
+  .fk-logo.is-panel {
+    position: relative;
+    z-index: 1;
+    display: block;
+    height: 54px;
+    max-width: 78%;
+  }
+  .fk-intro-text {
+    flex: none;
+    padding: 24px 26px 0;
+  }
+  .fk-title {
+    font-size: clamp(2rem, 2.9vw, 2.55rem);
+    line-height: 1.08;
+    color: #fff;
+  }
+  .fk-title em {
+    display: block;
+  }
+  .fk-desc {
+    margin-top: 12px;
+    font-size: 1rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  .fk-points {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    display: block;
+    margin: 18px 26px 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fk-point {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 0;
+  }
+  .fk-point + .fk-point {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .fk-point-ico {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(255, 122, 26, 0.28), rgba(255, 90, 0, 0.14));
+    box-shadow: inset 0 0 0 1px rgba(255, 122, 26, 0.3);
+    color: var(--fk-orange-hi);
+  }
+  .fk-point-ico svg {
+    width: 22px;
+    height: 22px;
+  }
+  .fk-point b {
+    display: block;
+    font-size: 0.97rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: #fff;
+  }
+  .fk-point span {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: rgba(255, 255, 255, 0.92);
+  }
+  .fk-art-sheet {
+    display: none;
+  }
+  .fk-art-panel {
+    display: block;
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 120px;
+    margin-top: -6px;
+    object-fit: cover;
+    object-position: center bottom;
+  }
+  .fk-dialog.is-plain .fk-intro {
+    display: none;
+  }
+  .fk-dialog.is-plain .fk-plain-head {
+    display: block;
+  }
+  .fk-main {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 28px 30px 26px;
+  }
+}
+/* a small form with no side panel still needs its title on desktop */
+.fk-plain-head {
+  display: none;
+  margin: 0 52px 16px 0;
+}
+.fk-plain-head .fk-title {
+  font-size: 1.5rem;
+  color: var(--fk-ink);
+}
+.fk-plain-head .fk-title em {
+  display: inline;
+}
+.fk-plain-head .fk-desc {
+  color: var(--fk-ink-2);
+  font-size: 0.93rem;
+}
+
+/* ───────────── 2. the fields ───────────── */
+.fk-dialog,
+.fk-form {
+  --fk-orange: #ff5a00;
+  --fk-orange-hi: #ff7a1a;
+  --fk-orange-lo: #ee4f00;
+  --fk-tint: hsl(var(--primary) / 0.1);
+  --fk-tint-2: hsl(var(--primary) / 0.16);
+  --fk-line: hsl(var(--border));
+  --fk-field-line: hsl(var(--foreground) / 0.2);
+  --fk-ink: hsl(var(--foreground));
+  --fk-ink-2: hsl(var(--muted-foreground));
+  --fk-surface: hsl(var(--card));
+  --fk-h: 48px;
+  --fk-r: 12px;
+}
+.fk-form {
+  color: var(--fk-ink);
+}
+.fk-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+.fk-grid.is-one,
+.fk-grid > .is-wide {
+  grid-column: 1 / -1;
+}
+.fk-grid.is-one {
+  grid-template-columns: minmax(0, 1fr);
+}
+.fk-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fk-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+/* the star on a required field, "(optional)", a message under a field */
+.fk-req {
+  margin-left: 4px;
+  color: #e5261f;
+}
+.fk-opt {
+  margin-left: 6px;
+  font-weight: 500;
+  color: var(--fk-ink-2);
+}
+.fk-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: hsl(var(--destructive));
+}
+.fk-error svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+}
+
+/* number boxes without the browser's spinner arrows; a native select with the kit's chevron */
+.fk-num {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.fk-num::-webkit-outer-spin-button,
+.fk-num::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.fk-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 20px 20px;
+}
+.dark .fk-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23e5e7eb' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* a box with an icon in front (and sometimes something behind) */
+.fk-ctl {
+  position: relative;
+  min-width: 0;
+}
+.fk-ctl > .fk-ico {
+  position: absolute;
+  z-index: 1;
+  left: 14px;
+  top: calc(var(--fk-h) / 2);
+  width: 22px;
+  height: 22px;
+  transform: translateY(-50%);
+  color: var(--fk-ink);
+  pointer-events: none;
+}
+.fk-ctl.is-accent > .fk-ico {
+  color: var(--fk-orange);
+}
+.fk-ctl.is-area > .fk-ico {
+  top: 24px;
+}
+/* the chevron of a box that offers choices: on desktop only, like the design (a phone needs the room for text) */
+.fk-ctl > .fk-trail {
+  display: none;
+  position: absolute;
+  right: 14px;
+  top: calc(var(--fk-h) / 2);
+  width: 20px;
+  height: 20px;
+  transform: translateY(-50%);
+  color: var(--fk-ink);
+  pointer-events: none;
+}
+.fk-count {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--fk-ink-2);
+  pointer-events: none;
+}
+
+/* the number box with a minus and a plus */
+.fk-stepper {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 56px;
+  height: var(--fk-h);
+  border: 1.5px solid var(--fk-field-line);
+  border-radius: var(--fk-r);
+  background: var(--fk-surface);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.fk-stepper:focus-within {
+  border-color: var(--fk-orange);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2);
+}
+.fk-stepper > button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: linear-gradient(180deg, hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.17));
+  color: var(--fk-orange);
+  transition: background-color 0.15s ease, filter 0.15s ease;
+}
+.fk-stepper > button:hover:not(:disabled) {
+  filter: brightness(0.95) saturate(1.3);
+}
+.fk-stepper > button:active:not(:disabled) {
+  filter: brightness(0.9) saturate(1.5);
+}
+.fk-stepper > button:focus-visible {
+  outline: 2px solid var(--fk-orange);
+  outline-offset: -3px;
+}
+.fk-stepper > button svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 3;
+}
+.fk-stepper > input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--fk-ink);
+  text-align: center;
+  font-size: 1.12rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+/* the tinted row with a tick box */
+.fk-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 16px;
+  border-radius: var(--fk-r);
+  background: var(--fk-tint);
+  cursor: pointer;
+  user-select: none;
+}
+.fk-check,
+.fk-check label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--fk-ink);
+}
+.fk-check > svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  color: var(--fk-orange);
+}
+.fk-check input[type='checkbox'] {
+  flex: none;
+  appearance: none;
+  -webkit-appearance: none;
+  display: grid;
+  place-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  border: 2px solid var(--fk-orange);
+  border-radius: 6px;
+  background: var(--fk-surface);
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+.fk-check input[type='checkbox']::after {
+  content: '';
+  width: 13px;
+  height: 8px;
+  margin-top: -3px;
+  border-left: 3px solid #fff;
+  border-bottom: 3px solid #fff;
+  transform: rotate(-45deg) scale(0);
+  transition: transform 0.12s ease;
+}
+.fk-check input[type='checkbox']:checked {
+  background: var(--fk-orange);
+}
+.fk-check input[type='checkbox']:checked::after {
+  transform: rotate(-45deg) scale(1);
+}
+.fk-check input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--fk-orange);
+  outline-offset: 2px;
+}
+
+/* ───────────── 3. the pieces ───────────── */
+.fk-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--fk-ink);
+}
+.fk-section::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 1.1em;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--fk-orange-hi), var(--fk-orange));
+}
+
+/* what the form is about: a product, a supplier, a requirement */
+.fk-entity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px;
+  border: 1.5px solid hsl(var(--primary) / 0.55);
+  border-radius: 16px;
+  background: linear-gradient(100deg, var(--fk-surface) 55%, hsl(var(--primary) / 0.09));
+  box-shadow: 0 8px 22px -14px hsl(var(--primary) / 0.55);
+}
+.fk-entity-img {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(84px, 24vw, 124px);
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: hsl(var(--muted));
+  color: var(--fk-ink-2);
+  overflow: hidden;
+}
+.fk-entity-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fk-entity-img svg {
+  width: 34%;
+  height: 34%;
+}
+.fk-entity-body {
+  min-width: 0;
+  flex: 1;
+}
+.fk-entity-name {
+  margin: 0;
+  font-size: clamp(1rem, 4.3vw, 1.2rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.fk-entity-by {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  margin: 5px 0 0;
+  font-size: 0.9rem;
+  color: var(--fk-ink-2);
+}
+.fk-entity-by b {
+  font-weight: 700;
+  color: var(--fk-orange);
+}
+.fk-badge {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--fk-orange);
+}
+.fk-entity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 4px;
+  /* every item has a divider on its left; the one that starts a line sits just outside and is cut off */
+  margin: 8px 0 0 -12px;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  font-size: 0.8rem;
+  color: var(--fk-ink);
+}
+.fk-entity-meta li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: -1px;
+  padding: 0 11px 0 12px;
+  border-left: 1px solid hsl(var(--foreground) / 0.3);
+  white-space: nowrap;
+}
+.fk-entity-meta svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+.fk-entity-meta .is-star {
+  color: #f59e0b;
+  fill: currentColor;
+}
+.fk-entity-meta .is-rating {
+  display: none;
+}
+.fk-entity-meta small {
+  font-size: 0.8em;
+  color: var(--fk-ink-2);
+}
+
+/* the two buttons at the end */
+.fk-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.fk-btn svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+.fk-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.fk-btn:focus-visible {
+  outline: 2px solid var(--fk-orange);
+  outline-offset: 3px;
+}
+.fk-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.fk-btn.is-primary {
+  background: linear-gradient(180deg, var(--fk-orange-hi) 0%, var(--fk-orange) 58%, var(--fk-orange-lo) 100%);
+  color: #fff;
+  box-shadow: inset 0 -3px 0 rgba(150, 40, 0, 0.3), 0 14px 26px -14px rgba(255, 90, 0, 0.9);
+}
+.fk-btn.is-primary:hover:not(:disabled) {
+  filter: brightness(1.06) saturate(1.08);
+}
+.fk-btn.is-ghost {
+  background: var(--fk-surface);
+  border-color: hsl(var(--foreground) / 0.78);
+  color: var(--fk-ink);
+}
+.fk-btn.is-ghost:hover:not(:disabled) {
+  background: hsl(var(--muted));
+}
+.fk-note {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--fk-ink-2);
+  text-align: center;
+}
+.fk-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--fk-r);
+  border: 1px solid hsl(var(--primary) / 0.28);
+  background: var(--fk-tint);
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: var(--fk-ink);
+}
+.fk-callout svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--fk-orange);
+}
+
+/* after it is sent */
+.fk-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 26px 6px 8px;
+  text-align: center;
+}
+.fk-done-ico {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: hsl(152 60% 42% / 0.14);
+  color: hsl(152 62% 36%);
+}
+.dark .fk-done-ico {
+  color: hsl(152 60% 55%);
+}
+.fk-done-ico svg {
+  width: 36px;
+  height: 36px;
+}
+.fk-done h3 {
+  margin: 4px 0 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+.fk-done p {
+  margin: 0;
+  max-width: 44ch;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--fk-ink-2);
+}
+.fk-done p b {
+  color: var(--fk-ink);
+}
+.fk-done .fk-actions {
+  width: 100%;
+  margin-top: 12px;
+}
+
+@media (min-width: 900px) {
+  .fk-entity {
+    gap: 22px;
+    padding: 10px;
+    border: 1px solid var(--fk-line);
+    background: var(--fk-surface);
+    box-shadow: 0 6px 20px -10px rgba(16, 24, 40, 0.28);
+  }
+  .fk-entity-img {
+    width: 172px;
+  }
+  .fk-entity-name {
+    /* clear of the close button that sits over the card's corner */
+    padding-right: 34px;
+    font-size: 1.36rem;
+  }
+  .fk-entity-by {
+    margin-top: 8px;
+    font-size: 1.02rem;
+  }
+  .fk-badge {
+    width: 22px;
+    height: 22px;
+  }
+  .fk-entity-meta {
+    flex-wrap: nowrap;
+    margin-top: 14px;
+    font-size: 0.93rem;
+  }
+  .fk-entity-meta li {
+    padding: 0 15px 0 16px;
+  }
+  .fk-entity-meta li:last-child {
+    min-width: 0;
+  }
+  .fk-entity-meta .is-rating {
+    display: inline-flex;
+  }
+  .fk-ctl > .fk-trail {
+    display: block;
+  }
+  .fk-section {
+    font-size: 1.3rem;
+  }
+  .fk-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
+    gap: 16px;
+  }
+  .fk-actions.is-single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fk-btn {
+    min-height: 54px;
+    border-radius: 14px;
+  }
+}
+@media (max-width: 380px) {
+  .fk-grid:not(.is-keep) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@keyframes fk-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fk-rise {
+  from {
+    opacity: 0.4;
+    transform: translateY(40px);
+  }
+}
+@keyframes fk-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fk-overlay,
+  .fk-dialog {
+    animation: none;
+  }
+}
