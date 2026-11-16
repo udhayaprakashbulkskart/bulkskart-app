@@ -13,6 +13,7 @@ import {
   Clock, AlertCircle, Phone, Mail, User, Sparkles, Loader2, ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatPriceRange, productCurrency } from '@/lib/productPrice';
 
 interface Props {
   open: boolean;
@@ -244,7 +245,7 @@ export default function SupplierDirectChatModal({
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-foreground truncate">{selectedProduct.name}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  MOQ: {selectedProduct.moq} {selectedProduct.moq_unit || 'Units'} • {selectedProduct.price_currency || 'USD'} {selectedProduct.price_min || 'RFQ'}
+                  MOQ: {selectedProduct.moq} {selectedProduct.moq_unit || 'Units'} • {formatPriceRange(selectedProduct.price_min, selectedProduct.price_max, selectedProduct.price_currency, productCurrency(selectedProduct.price_currency))}
                 </p>
               </div>
             </div>

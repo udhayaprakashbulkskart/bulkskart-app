@@ -23,6 +23,7 @@ import {
 import ProductReviewsAndRatingSection from '@/components/common/ProductReviewsAndRatingSection';
 import CountryChargesFeesModal from '@/components/common/CountryChargesFeesModal';
 import ReportItemModal from '@/components/common/ReportItemModal';
+import { formatPriceRange, priceInCurrency, productCurrency } from '@/lib/productPrice';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountry } from '@/contexts/CurrencyContext';
 import PageMeta from '@/components/common/PageMeta';
@@ -74,30 +75,16 @@ function parseSpecifications(raw: string | null): [string, string][] {
     .map(parts => [parts[0], parts.slice(1).join(': ')] as [string, string]);
 }
 
-/** Format a price display string from the product */
-function formatPrice(product: Product, isIndia: boolean, rate: number): string {
-  if (!product.price_min) return 'Price on request';
-  const cur = product.price_currency ?? (isIndia ? 'INR' : 'USD');
-  const isUsd = !cur || cur.toUpperCase() === 'USD' || product.price_min < 1000;
-  const convertedMin = isIndia && isUsd ? product.price_min * (rate || 83.5) : product.price_min;
-  const convertedMax = product.price_max
-    ? (isIndia && isUsd ? product.price_max * (rate || 83.5) : product.price_max)
-    : null;
-  const symbol = isIndia ? '₹' : (cur === 'USD' ? '$' : cur);
-  const minStr = Math.round(convertedMin).toLocaleString(isIndia ? 'en-IN' : 'en-US');
-
-  if (convertedMax && convertedMax !== convertedMin) {
-    const maxStr = Math.round(convertedMax).toLocaleString(isIndia ? 'en-IN' : 'en-US');
-    return `${symbol} ${minStr} – ${maxStr}`;
-  }
-  return `${symbol} ${minStr}+`;
+/** The product's price as the visitor sees it ("Price on request" when the supplier gave none). */
+function formatPrice(product: Product, visitorCurrency: string, rates?: Record<string, number>): string {
+  return formatPriceRange(product.price_min, product.price_max, product.price_currency, visitorCurrency, rates);
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { profile } = useAuth();
-  const { countryConfig, currencyInfo } = useCountry();
+  const { countryConfig, currencyInfo, rates } = useCountry();
   const navigate = useNavigate();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -177,12 +164,12 @@ export default function ProductDetailPage() {
 
   const hasImages = images.length > 0;
   const isVerified = product.companies?.verification_status === 'verified';
-  const isIndia =
-    countryConfig.code === 'IN' ||
-    currencyInfo.currency === 'INR' ||
-    product.companies?.country === 'India';
-  const rate = currencyInfo.rate || 83.5;
-  const priceDisplay = formatPrice(product, isIndia, rate);
+  const visitorCurrency = currencyInfo.currency || countryConfig.currency || 'INR';
+  const priceDisplay = formatPrice(product, visitorCurrency, rates);
+  // the calculator and the fee breakdown work in the shown currency; both need a real price
+  const shownMin = priceInCurrency(product.price_min, product.price_currency, visitorCurrency, rates);
+  const shownMax = priceInCurrency(product.price_max, product.price_currency, visitorCurrency, rates);
+  const priceInRupees = priceInCurrency(product.price_min ?? product.price_max, product.price_currency, 'INR', rates);
   const companyName = product.companies?.company_name ?? 'Supplier';
   const companySlug = product.companies?.slug ?? '#';
   const city = product.companies?.city ?? '';
@@ -301,18 +288,18 @@ export default function ProductDetailPage() {
               '@type': 'Brand',
               name: product.companies?.company_name || 'BulkSkart Verified Manufacturer',
             },
-            offers: {
+            offers: (product.price_min || product.price_max) ? {
               '@type': 'Offer',
-              price: product.price_min || product.price_max || '0',
-              priceCurrency: product.price_currency === '₹' ? 'INR' : (product.price_currency || 'USD'),
+              price: product.price_min || product.price_max,
+              priceCurrency: productCurrency(product.price_currency),
               availability: 'https://schema.org/InStock',
               priceValidUntil: '2027-12-31',
               url: `https://www.bulkskart.com/products/${product.slug || product.id}`,
               seller: {
                 '@type': 'Organization',
-                name: product.companies?.company_name || 'Verified Supplier',
+                name: product.companies?.company_name || 'Supplier',
               },
-            },
+            } : undefined,
             aggregateRating: product.companies?.rating_avg && product.companies?.review_count ? {
               '@type': 'AggregateRating',
               ratingValue: String(product.companies.rating_avg),
@@ -509,13 +496,15 @@ export default function ProductDetailPage() {
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Price Range</p>
                     <p className="text-base font-black text-primary leading-tight">{priceDisplay}</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">Excl. GST</p>
-                    <button
-                      type="button"
-                      onClick={() => setShowCountryTaxesModal(true)}
-                      className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-[#00D2FF] hover:underline"
-                    >
-                      <Calculator className="w-3 h-3" /> Country Taxes &amp; Fees
-                    </button>
+                    {priceInRupees && (
+                      <button
+                        type="button"
+                        onClick={() => setShowCountryTaxesModal(true)}
+                        className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-[#00D2FF] hover:underline"
+                      >
+                        <Calculator className="w-3 h-3" /> Country Taxes &amp; Fees
+                      </button>
+                    )}
                   </div>
                   <div className="bg-muted border border-border rounded-xl p-3">
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Min. Order Qty</p>
@@ -855,9 +844,7 @@ export default function ProductDetailPage() {
                   </div>
                   <div className="flex gap-3 overflow-x-auto pb-2">
                     {similar.map(p => {
-                      const simPrice = p.price_min
-                        ? formatPrice(p, isIndia, rate)
-                        : 'Price on request';
+                      const simPrice = formatPrice(p, visitorCurrency, rates);
                       const simImg = p.images?.[0] ?? null;
                       return (
                         <Link key={p.id} to={`/products/${p.slug}`}
@@ -1016,14 +1003,16 @@ export default function ProductDetailPage() {
                     <p className="text-xl font-black text-primary">{priceDisplay}</p>
                     <div className="flex items-center justify-between mt-0.5">
                       <p className="text-[10px] text-muted-foreground">(Excl. GST)</p>
-                      <button
-                        type="button"
-                        onClick={() => setShowCountryTaxesModal(true)}
-                        className="flex items-center gap-1 text-[11px] font-semibold text-[#00D2FF] hover:underline"
-                      >
-                        <Calculator className="w-3.5 h-3.5" />
-                        Country Taxes, GST &amp; Fees
-                      </button>
+                      {priceInRupees && (
+                        <button
+                          type="button"
+                          onClick={() => setShowCountryTaxesModal(true)}
+                          className="flex items-center gap-1 text-[11px] font-semibold text-[#00D2FF] hover:underline"
+                        >
+                          <Calculator className="w-3.5 h-3.5" />
+                          Country Taxes, GST &amp; Fees
+                        </button>
+                      )}
                     </div>
                     <p className="text-xs text-primary mt-1 font-medium">Better pricing for bulk orders</p>
                   </div>
@@ -1067,21 +1056,11 @@ export default function ProductDetailPage() {
                 {/* Bulk Price Calculator — uses current product's actual price */}
                 <BulkPriceCalculator
                   productId={product.id}
-                  priceMin={
-                    isIndia && (!product.price_currency || product.price_currency === 'USD' || (product.price_min ?? 0) < 1000)
-                      ? (product.price_min ?? 0) * rate
-                      : (product.price_min ?? null)
-                  }
-                  priceMax={
-                    product.price_max
-                      ? (isIndia && (!product.price_currency || product.price_currency === 'USD' || product.price_max < 1000)
-                          ? product.price_max * rate
-                          : product.price_max)
-                      : null
-                  }
+                  priceMin={shownMin?.amount ?? null}
+                  priceMax={shownMax && shownMin && shownMax.currency === shownMin.currency ? shownMax.amount : null}
                   moq={product.moq ?? 1}
                   moqUnit={product.moq_unit ?? 'Pcs'}
-                  currency={isIndia ? 'INR' : (product.price_currency ?? 'USD')}
+                  currency={shownMin?.currency ?? productCurrency(product.price_currency)}
                 />
 
                 {/* Supplier card — from product.companies */}
@@ -1229,7 +1208,7 @@ export default function ProductDetailPage() {
       <CountryChargesFeesModal
         open={showCountryTaxesModal}
         onOpenChange={setShowCountryTaxesModal}
-        baseAmount={product.price_min || 1000}
+        baseAmount={priceInRupees?.amount ?? 0}
         itemTitle={product.name}
       />
       <ReportItemModal

@@ -21,6 +21,7 @@ import SupplierDirectChatModal from '@/components/common/SupplierDirectChatModal
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import CompanyReviewsAndRatingSection from '@/components/common/CompanyReviewsAndRatingSection';
 import ReportItemModal from '@/components/common/ReportItemModal';
+import { formatPriceRange, productCurrency } from '@/lib/productPrice';
 
 const FALLBACK_BANNER = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80';
 
@@ -216,8 +217,7 @@ export default function CompanyProfilePage() {
               description: prod.description,
               url: `https://www.bulkskart.com/products/${prod.slug || prod.id}`,
             },
-            price: prod.price_min || prod.price_max || '0',
-            priceCurrency: prod.price_currency || 'USD',
+            ...(prod.price_min || prod.price_max ? { price: prod.price_min || prod.price_max, priceCurrency: productCurrency(prod.price_currency) } : {}),
           })),
         },
       } : {}),
@@ -510,9 +510,9 @@ export default function CompanyProfilePage() {
                               {p.name}
                             </Link>
                             <p className="text-xs text-muted-foreground mt-0.5">MOQ: {p.moq.toLocaleString()} {p.moq_unit}</p>
-                            {p.price_min && (
+                            {(p.price_min || p.price_max) && (
                               <p className="text-xs text-primary font-semibold mt-1">
-                                {p.price_currency} {p.price_min.toLocaleString()}{p.price_max ? ` – ${p.price_max.toLocaleString()}` : '+'}
+                                {formatPriceRange(p.price_min, p.price_max, p.price_currency, productCurrency(p.price_currency))}
                               </p>
                             )}
                           </div>

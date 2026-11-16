@@ -37,6 +37,7 @@ import type { Category } from '@/types/types';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { CURATED_INDUSTRIAL_PRODUCTS, type CuratedProduct } from '@/data/curatedIndustrialProducts';
 import { isGenericOrDuplicateImage } from '@/lib/productImageMatchingEngine';
+import { formatMoney, priceInCurrency } from '@/lib/productPrice';
 
 
 // Export DisplayProduct for compatibility with QuickQuoteModal and other components
@@ -48,8 +49,13 @@ export interface DisplayProduct {
   companyId?: string;
   supplierOwnerId?: string;
   moq: string;
-  usdMin: number;
-  usdMax: number;
+  /** the price as saved, in `priceCurrency`; empty when the supplier gave none */
+  priceMin?: number | null;
+  priceMax?: number | null;
+  priceCurrency?: string;
+  /** curated samples carry both a dollar and a rupee price */
+  usdMin?: number;
+  usdMax?: number;
   inrMin?: number;
   inrMax?: number;
   badgeType: 'popular' | 'best_seller' | 'new_arrival' | 'bulk_deal' | 'trending';
@@ -241,6 +247,9 @@ function curatedToDisplay(p: CuratedProduct): DisplayProduct {
     countryFlag: p.countryFlag,
     isVerifiedSupplier: p.isVerifiedSupplier,
     moq: p.moq,
+    priceMin: p.usdMin,
+    priceMax: p.usdMax,
+    priceCurrency: 'USD',
     usdMin: p.usdMin,
     usdMax: p.usdMax,
     inrMin: p.inrMin,
@@ -345,7 +354,7 @@ function getInitialDisplayProducts(seed = createVisitSeed()): DisplayProduct[] {
 }
 
 export default function FeaturedProductsSection() {
-  const { formatPrice, countryConfig, currencyInfo, setCountry } = useCurrency();
+  const { countryConfig, currencyInfo, setCountry, rates } = useCurrency();
 
   // Dynamic state
   const [categories, setCategories] = useState<Category[]>([]);
@@ -610,17 +619,17 @@ export default function FeaturedProductsSection() {
           slug: p.slug,
           companyId: p.company_id || comp?.id,
           supplierOwnerId: comp?.owner_id,
-          moq: `MOQ: ${p.moq || 100} ${p.moq_unit || 'Pcs'}`,
-          usdMin: p.price_min ?? 25,
-          usdMax: p.price_max ?? 45,
-          inrMin: (p.price_min ?? 25) * 83.5,
-          inrMax: (p.price_max ?? 45) * 83.5,
+          moq: p.moq ? `MOQ: ${p.moq} ${p.moq_unit || 'Pcs'}` : 'MOQ: On request',
+          // the price exactly as the supplier saved it (the database fills in rupees when no currency is given)
+          priceMin: p.price_min ?? null,
+          priceMax: p.price_max ?? null,
+          priceCurrency: p.price_currency || 'INR',
           badgeType,
           badgeLabel,
           rating,
           reviewCount,
           isVerifiedSupplier: comp?.verification_status === 'verified',
-          supplierName: comp?.company_name || 'Verified Export Manufacturer',
+          supplierName: comp?.company_name || 'Supplier',
           country: pCountry,
           countryFlag: COUNTRY_FLAGS[pCountry] || '🌐',
           img: authenticImg,
@@ -657,6 +666,9 @@ export default function FeaturedProductsSection() {
             slug: item.slug,
             companyId: item.companyId,
             moq: item.moq,
+            priceMin: item.usdMin,
+            priceMax: item.usdMax,
+            priceCurrency: 'USD',
             usdMin: item.usdMin,
             usdMax: item.usdMax,
             inrMin: item.inrMin,
@@ -800,19 +812,16 @@ export default function FeaturedProductsSection() {
   const cards = useMemo<ProductCard[]>(
     () =>
       products.map((product) => {
-        const isIndia =
-          countryFilter === 'India' ||
-          product.country === 'India' ||
-          countryConfig.code === 'IN' ||
-          countryConfig.currency === 'INR' ||
-          currencyInfo.currency === 'INR';
-        const inrRate = currencyInfo.rate || 83.5;
-        const minPrice = isIndia
-          ? `₹${Math.round(product.inrMin || (product.usdMin * inrRate)).toLocaleString('en-IN')}`
-          : formatPrice(product.usdMin);
-        const maxPrice = isIndia
-          ? `₹${Math.round(product.inrMax || (product.usdMax * inrRate)).toLocaleString('en-IN')}`
-          : formatPrice(product.usdMax);
+        const visitorCurrency = currencyInfo.currency || countryConfig.currency || 'INR';
+        // curated samples have their own rupee prices; everything else is shown from the saved price and currency
+        const own =
+          visitorCurrency === 'INR' && product.inrMin
+            ? { min: product.inrMin, max: product.inrMax ?? null, currency: 'INR' }
+            : { min: product.priceMin ?? null, max: product.priceMax ?? null, currency: product.priceCurrency || 'INR' };
+        const low = priceInCurrency(own.min, own.currency, visitorCurrency, rates);
+        const high = priceInCurrency(own.max, own.currency, visitorCurrency, rates);
+        const minPrice = low ? formatMoney(low) : 'Price on request';
+        const maxPrice = high ? formatMoney({ ...high, approximate: false }) : '';
         const moq = describeMoq(product.moq);
         return {
           id: product.id,
@@ -821,8 +830,8 @@ export default function FeaturedProductsSection() {
           img: product.img,
           categoryName: product.categoryName,
           price: minPrice,
-          priceTitle: product.usdMax && product.usdMax !== product.usdMin ? `${minPrice} - ${maxPrice}` : undefined,
-          priceUnit: moq.priceUnit,
+          priceTitle: low && high && Math.round(high.amount) !== Math.round(low.amount) ? `${minPrice} - ${maxPrice}` : undefined,
+          priceUnit: low ? moq.priceUnit : undefined,
           moq,
           supplier: product.supplierName,
           verified: product.isVerifiedSupplier,
@@ -831,7 +840,7 @@ export default function FeaturedProductsSection() {
           source: product,
         };
       }),
-    [products, countryFilter, countryConfig, currencyInfo, formatPrice],
+    [products, countryConfig, currencyInfo, rates],
   );
 
   const status: ShowcaseStatus =

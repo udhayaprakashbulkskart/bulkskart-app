@@ -12,6 +12,7 @@ import type { Product, Category } from '@/types/types';
 import SafeImage from '@/components/common/SafeImage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCountry } from '@/contexts/CurrencyContext';
+import { formatMoney, priceInCurrency } from '@/lib/productPrice';
 import { CURATED_INDUSTRIAL_PRODUCTS } from '@/data/curatedIndustrialProducts';
 import { matchProductImage } from '@/lib/productImageMatchingEngine';
 
@@ -62,50 +63,35 @@ function getProductFallback(product: Product, index: number): string {
   return matched.primaryImage || matched.categoryPlaceholder;
 }
 
-function formatProductPrice(val: number, isIndia: boolean, cur: string, rate: number): string {
-  // If India is active or selected, convert USD base prices to INR
-  const isUsd = !cur || cur.toUpperCase() === 'USD' || val < 1000;
-  const converted = isIndia && isUsd ? val * (rate || 83.5) : val;
-  const symbol = isIndia ? '₹' : (cur === 'USD' ? '$' : cur);
-
-  if (converted >= 10000000) {
-    return `${symbol}${(converted / 10000000).toFixed(1)}Cr`;
-  }
-  if (converted >= 100000) {
-    return `${symbol}${(converted / 100000).toFixed(1)}L`;
-  }
-  if (converted >= 1000) {
-    return `${symbol}${(converted / 1000).toFixed(converted % 1000 === 0 ? 0 : 1)}K`;
-  }
-  return `${symbol}${Math.round(converted).toLocaleString(isIndia ? 'en-IN' : 'en-US')}`;
-}
-
 function PriceRange({
   min,
   max,
   currency,
-  isIndia,
-  rate,
+  visitorCurrency,
+  rates,
 }: {
   min: number | null;
   max: number | null;
-  currency: string;
-  isIndia: boolean;
-  rate: number;
+  /** the currency the price was saved in */
+  currency: string | null | undefined;
+  visitorCurrency: string;
+  rates?: Record<string, number>;
 }) {
-  if (!min) return null;
+  const low = priceInCurrency(min, currency, visitorCurrency, rates);
+  if (!low) return null;
+  const high = priceInCurrency(max, currency, visitorCurrency, rates);
   return (
     <div className="flex items-center gap-1.5">
       <TrendingUp className="w-3 h-3 text-[#FF5A00] shrink-0" />
       <span className="text-sm font-bold text-foreground">
-        {formatProductPrice(min, isIndia, currency, rate)}
-        {max && max !== min ? (
+        {formatMoney(low, { compact: true })}
+        {high && Math.round(high.amount) !== Math.round(low.amount) ? (
           <span className="font-medium text-muted-foreground">
-            {' '}– {formatProductPrice(max, isIndia, currency, rate)}
+            {' '}– {formatMoney({ ...high, approximate: false }, { compact: true })}
           </span>
         ) : null}
       </span>
-      {isIndia && (
+      {low.currency === 'INR' && (
         <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.2 rounded ml-1">
           INR
         </span>
@@ -136,14 +122,9 @@ function ProductCard({
   activeCountry: string;
   isDuplicate?: boolean;
 }) {
-  const { countryConfig, currencyInfo } = useCountry();
+  const { countryConfig, currencyInfo, rates } = useCountry();
   const isVerified = product.companies?.verification_status === 'verified';
-  const isIndia =
-    activeCountry === 'India' ||
-    product.companies?.country === 'India' ||
-    countryConfig.code === 'IN' ||
-    currencyInfo.currency === 'INR';
-  const rate = currencyInfo.rate || 83.5;
+  const visitorCurrency = currencyInfo.currency || countryConfig.currency || 'INR';
   return (
     <Link
       to={`/products/${product.slug}`}
@@ -216,9 +197,9 @@ function ProductCard({
           <PriceRange
             min={product.price_min}
             max={product.price_max}
-            currency={product.price_currency || 'USD'}
-            isIndia={isIndia}
-            rate={rate}
+            currency={product.price_currency}
+            visitorCurrency={visitorCurrency}
+            rates={rates}
           />
           <MoqBadge moq={product.moq} unit={product.moq_unit} />
         </div>

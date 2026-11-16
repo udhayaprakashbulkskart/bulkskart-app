@@ -45,8 +45,8 @@ export interface ShowcaseProduct {
   price: string;
   /** The longer price text shown as a tooltip (a range, for example). */
   priceTitle?: string;
-  /** What the price is per, for example "Piece". */
-  priceUnit: string;
+  /** What the price is per, for example "Piece"; left out when there is no price. */
+  priceUnit?: string;
   moq: MoqParts;
   supplier: string;
   verified: boolean;
@@ -379,7 +379,7 @@ export default function ProductsShowcase<T extends ShowcaseProduct>({
 
                       <p className="pv-price" title={product.priceTitle}>
                         <b>{product.price}</b>
-                        <span>/ {product.priceUnit}</span>
+                        {product.priceUnit && <span>/ {product.priceUnit}</span>}
                       </p>
 
                       <p className="pv-moq">

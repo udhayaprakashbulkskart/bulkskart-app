@@ -282,6 +282,7 @@ const dbProduct = {
   moq_unit: 'Pcs',
   price_min: 12.5,
   price_max: 12.5,
+  price_currency: 'USD',
   company_id: 'co-9',
   created_at: '2026-01-01T00:00:00Z',
   categories: { slug: 'machinery-industrial', name: 'Machinery' },
@@ -329,6 +330,39 @@ describe('Featured Products: the section with its products and filters', () => {
     expect(card.getByText('Acme Works')).toBeInTheDocument();
     expect(card.getByText('China')).toBeInTheDocument();
     expect(card.getByRole('link', { name: 'Hydraulic Press 200T' })).toHaveAttribute('href', '/products/hydraulic-press-200t');
+  });
+
+  it('shows a rupee price exactly as saved to a visitor who sees rupees, and no made-up price when there is none', async () => {
+    const before = { countryConfig: currency.countryConfig, currencyInfo: currency.currencyInfo };
+    currency.countryConfig = { code: 'IN', currency: 'INR' };
+    currency.currencyInfo = { currency: 'INR', rate: 83.5 };
+    try {
+      api.getMarketplaceProducts.mockResolvedValue({
+        products: [
+          { ...dbProduct, id: 'db-2', name: 'Steel Tiffin 3-Tier', slug: 'steel-tiffin', price_min: 450, price_max: 600, price_currency: 'INR' },
+          { ...dbProduct, id: 'db-3', name: 'Custom Gearbox', slug: 'custom-gearbox', price_min: null, price_max: null, price_currency: 'INR' },
+        ],
+        totalCount: 2,
+        hasMore: false,
+      });
+      renderSection();
+      await waitFor(() => expect(api.getCategories).toHaveBeenCalled());
+      await act(async () => {});
+      fireEvent.click(screen.getByRole('button', { name: 'Machinery' }));
+      const tiffin = await waitFor(() => {
+        const found = screen.getAllByRole('article').find((a) => within(a).queryByText('Steel Tiffin 3-Tier'));
+        expect(found).toBeTruthy();
+        return within(found as HTMLElement);
+      });
+      expect(tiffin.getByText('₹450')).toBeInTheDocument();
+      expect(tiffin.getByText('₹450').closest('p')).toHaveAttribute('title', '₹450 - ₹600');
+      const gearbox = within(screen.getAllByRole('article').find((a) => within(a).queryByText('Custom Gearbox')) as HTMLElement);
+      expect(gearbox.getByText('Price on request')).toBeInTheDocument();
+      expect(gearbox.queryByText(/^\/ /)).not.toBeInTheDocument();
+    } finally {
+      currency.countryConfig = before.countryConfig;
+      currency.currencyInfo = before.currencyInfo;
+    }
   });
 
   it('opens the quote form for the product on its card', async () => {
