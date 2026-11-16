@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { getProducts, getRequirements, getMyQuotations, ensureManufacturerWelcomeLeads } from '@/lib/api';
+import { getProducts, getRequirements, getMyQuotations } from '@/lib/api';
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
 import { Package, FileText, TrendingUp, Plus, CreditCard, AlertCircle, BarChart3, Bell, ShieldCheck, CheckCircle2, Clock, Wallet, AlertTriangle, Sparkles, Building2, Banknote, Send, CalendarClock } from 'lucide-react';
@@ -59,18 +59,6 @@ export default function SupplierDashboard() {
     if (!user || !company) { setLoading(false); return; }
     setLoading(true);
     let cancelled = false;
-
-    // Auto-deliver 5 sample buyer leads into Messages (one-time per company)
-    try {
-      const { seeded } = ensureManufacturerWelcomeLeads(company.id, company.company_name || 'Your Factory');
-      if (seeded) {
-        toast.success('5 sample buyer leads are in your Messages inbox', {
-          description: 'Open Messages → Inquiries to reply.',
-        });
-      }
-    } catch {
-      /* ignore seed errors */
-    }
 
     // Fast path: lightweight count queries only — paint the dashboard ASAP
     Promise.all([

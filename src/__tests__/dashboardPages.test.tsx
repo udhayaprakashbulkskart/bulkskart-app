@@ -30,7 +30,6 @@ const api = vi.hoisted(() => ({
   getRequirements: vi.fn(),
   getProducts: vi.fn(),
   getMyQuotations: vi.fn(),
-  ensureManufacturerWelcomeLeads: vi.fn(() => ({ seeded: false })),
 }));
 vi.mock('@/lib/api', () => api);
 

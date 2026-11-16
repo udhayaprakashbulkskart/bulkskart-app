@@ -10,7 +10,6 @@ import {
   markConversationRead,
   getSupplierInquiries,
   replyToSupplierInquiry,
-  ensureManufacturerWelcomeLeads,
 } from '@/lib/api';
 import type { Conversation, Message, SupplierInquiry } from '@/types/types';
 import { supabase } from '@/db/supabase';
@@ -21,13 +20,16 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import PageMeta from '@/components/common/PageMeta';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { exportChatTranscript } from '@/utils/exportChatTranscript';
 import ProtectedContact from '@/components/common/ProtectedContact';
 
 export default function MessagesPage() {
   const { user, profile, company, isPaidSubscriber } = useAuth();
+  // ?conv=<id> opens that conversation (used by "Message Buyer" and "Message Supplier")
+  const [searchParams] = useSearchParams();
+  const requestedConvId = searchParams.get('conv');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [inquiries, setInquiries] = useState<SupplierInquiry[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
@@ -101,18 +103,30 @@ export default function MessagesPage() {
       data = await getConversations(user.id, company?.id);
       setConversations(data);
     }
-    // Manufacturers: ensure 5 sample lead messages exist (one-time, automatic)
-    if (user && company?.id && profile?.role === 'supplier') {
-      ensureManufacturerWelcomeLeads(company.id, company.company_name || 'Your Factory');
-    }
     const inqs = getSupplierInquiries(company?.id, user?.id);
     setInquiries(inqs);
     setLoadingConvs(false);
     if (!selectedConv && !selectedInquiry) {
-      if (inqs.length > 0) setSelectedInquiry(inqs[0]);
-      else if (data.length > 0) setSelectedConv(data[0]);
+      const requested = requestedConvId ? data.find((c) => c.id === requestedConvId) : undefined;
+      if (requested) {
+        setSelectedConv(requested);
+        setMobileView('chat');
+      } else if (data.length > 0) setSelectedConv(data[0]);
+      else if (inqs.length > 0) setSelectedInquiry(inqs[0]);
     }
-  }, [user, company?.id, company?.company_name, profile?.role, selectedConv, selectedInquiry]);
+  }, [user, company?.id, requestedConvId, selectedConv, selectedInquiry]);
+
+  // A different ?conv= while the page is open (for example from a notification) switches to that chat once.
+  const appliedConvRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!requestedConvId || appliedConvRef.current === requestedConvId) return;
+    const target = conversations.find((c) => c.id === requestedConvId);
+    if (!target) return;
+    appliedConvRef.current = requestedConvId;
+    setSelectedConv(target);
+    setSelectedInquiry(null);
+    setMobileView('chat');
+  }, [requestedConvId, conversations]);
 
   useEffect(() => {
     loadConversations();

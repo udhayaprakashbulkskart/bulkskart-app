@@ -1,165 +1,127 @@
 import type { Requirement } from '@/types/types';
-import { resolveRfqImage } from '@/lib/contentImages';
 
 /**
- * Visual metadata and image resolver for requirements
- * Matches the layout and aesthetic of the reference screenshots:
- * - Image 1: Live Feed on Home Page
- * - Image 2: Active Buying Requirements on /requirements
+ * What a requirement card shows, taken only from what the buyer saved. Nothing is guessed from the
+ * title: no stock photo, no made-up place, no random "urgent" tag and no "verified" badge the buyer
+ * has not earned. Where the buyer left something out, the card says so or leaves it out.
  */
 
+export type RequirementTagType = 'urgent' | 'new' | 'expiring' | 'open';
+
 export interface RequirementVisualInfo {
-  image: string;
+  /** the buyer's own photo, or null (cards then show a plain tile, never a stock photo) */
+  image: string | null;
+  /** delivery city and country as the buyer typed them, or "Location not stated" */
   locationDisplay: string;
+  hasLocation: boolean;
   tag: {
     label: string;
-    type: 'urgent' | 'new' | 'expiring' | 'live' | 'bulk' | 'regular' | 'export';
+    type: RequirementTagType;
     bgClass: string;
     textClass: string;
   };
+  /** "Verified buyer" only when the buyer is verified, otherwise empty */
   verifiedStatus: string;
+  /** the buyer's deadline ("Needed by 12 Dec") or how many quotes it has, otherwise empty */
   orderAttribute: string;
-  attributeIcon: 'building' | 'truck' | 'ship' | 'box';
+  attributeIcon: 'calendar' | 'quotes' | 'none';
+  /** first line of the description or specifications, otherwise empty */
   subtitle: string;
   cleanTitle: string;
   quantityDisplay: string;
 }
 
-export function getRequirementVisualInfo(req: Requirement, index = 0): RequirementVisualInfo {
-  const titleLower = (req.title || '').toLowerCase();
-  const catSlug = req.categories?.slug?.toLowerCase() || '';
-  const catName = req.categories?.name?.toLowerCase() || '';
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+/** How long a requirement counts as new, and how close a deadline counts as closing soon. */
+export const NEW_REQUIREMENT_HOURS = 48;
+export const CLOSING_SOON_DAYS = 7;
 
-  // 1. Resolve requirement-specific image (uploaded reference photo or exact commodity photo)
-  const image = resolveRfqImage({
-    title: req.title,
-    attachment_url: req.attachment_url,
-    imageUrl: (req as any).imageUrl,
-    category: catName || catSlug,
-    categories: req.categories,
-  });
+const IMAGE_FILE = /\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i;
 
-  // 2. Resolve clean title and quantity
-  let cleanTitle = req.title;
-  let quantityDisplay = `${req.quantity.toLocaleString()} ${req.quantity_unit || 'Pieces'}`;
-  
-  if (req.title.includes(' - ')) {
-    const parts = req.title.split(' - ');
-    cleanTitle = parts[0];
-    if (parts[1] && (parts[1].toLowerCase().includes('piece') || parts[1].toLowerCase().includes('mt') || parts[1].toLowerCase().includes('kg') || parts[1].toLowerCase().includes('pcs'))) {
-      quantityDisplay = parts[1];
-    }
+/** The buyer's attachment when it is a picture. */
+export function buyerImage(req: Pick<Requirement, 'attachment_url'>): string | null {
+  const url = (req.attachment_url ?? '').trim();
+  if (!url) return null;
+  return IMAGE_FILE.test(url) || url.startsWith('data:image/') ? url : null;
+}
+
+/** "5,000 kg"; a quantity of zero or less reads "Quantity not stated". */
+export function quantityLabel(req: Pick<Requirement, 'quantity' | 'quantity_unit'>): string {
+  const amount = Number(req.quantity);
+  if (!Number.isFinite(amount) || amount <= 0) return 'Quantity not stated';
+  return `${amount.toLocaleString('en-IN')} ${(req.quantity_unit ?? '').trim()}`.trim();
+}
+
+/** "Chennai, India", "India", or null when the buyer named no place. */
+export function placeLabel(req: Pick<Requirement, 'destination_city' | 'destination_country'>): string | null {
+  const parts = [req.destination_city, req.destination_country].map((part) => (part ?? '').trim()).filter(Boolean);
+  const unique = parts.filter((part, i) => parts.findIndex((other) => other.toLowerCase() === part.toLowerCase()) === i);
+  return unique.length ? unique.join(', ') : null;
+}
+
+/** Midnight at the end of the deadline day, so a requirement stays open through its last day. */
+function deadlineEnd(deadline: string | null | undefined): number | null {
+  if (!deadline) return null;
+  const day = new Date(`${deadline.slice(0, 10)}T23:59:59`);
+  return Number.isNaN(day.getTime()) ? null : day.getTime();
+}
+
+export function requirementTag(
+  req: Pick<Requirement, 'created_at' | 'deadline'> & { is_urgent?: boolean | null },
+  now = Date.now(),
+): RequirementVisualInfo['tag'] {
+  if (req.is_urgent) return { label: 'URGENT', type: 'urgent', bgClass: 'bg-[#ff3b30]', textClass: 'text-white' };
+  const end = deadlineEnd(req.deadline);
+  if (end !== null && end >= now && end - now <= CLOSING_SOON_DAYS * DAY) {
+    return { label: 'CLOSING SOON', type: 'expiring', bgClass: 'bg-[#e5a800]', textClass: 'text-white' };
   }
-
-  // 3. Resolve location
-  let locationDisplay = (req as any).delivery_location || (req.destination_city && req.destination_country ? `${req.destination_city}, ${req.destination_country}` : req.destination_country || 'Global Sourcing');
-  if (!locationDisplay || locationDisplay === 'Global Sourcing') {
-    if (titleLower.includes('saree')) {
-      locationDisplay = 'Surat, Gujarat, India';
-    } else if (titleLower.includes('t-shirt')) {
-      locationDisplay = 'Tiruppur, Tamil Nadu, India';
-    } else if (titleLower.includes('corrugated') || titleLower.includes('box')) {
-      locationDisplay = 'Bangalore, Karnataka, India';
-    } else if (titleLower.includes('jute')) {
-      locationDisplay = 'Kolkata, West Bengal, India';
-    } else if (titleLower.includes('rice')) {
-      locationDisplay = 'Delhi NCR, India';
-    } else if (titleLower.includes('chilli')) {
-      locationDisplay = 'Guntur, Andhra Pradesh, India';
-    } else if (titleLower.includes('cnc')) {
-      locationDisplay = 'Coimbatore, Tamil Nadu, India';
-    } else if (titleLower.includes('steel')) {
-      locationDisplay = 'Chennai, Tamil Nadu, India';
-    } else if (titleLower.includes('shrimp')) {
-      locationDisplay = 'Cochin, Kerala, India';
-    } else if (titleLower.includes('solar')) {
-      locationDisplay = 'Gujarat, India';
-    } else if (titleLower.includes('earbud') || titleLower.includes('headphone')) {
-      locationDisplay = 'Los Angeles, CA, USA';
-    } else if (req.destination_country) {
-      locationDisplay = `${req.destination_country}, Global`;
-    }
+  const posted = new Date(req.created_at).getTime();
+  if (Number.isFinite(posted) && now - posted <= NEW_REQUIREMENT_HOURS * HOUR) {
+    return { label: 'NEW', type: 'new', bgClass: 'bg-[#FF5A00]', textClass: 'text-white' };
   }
+  return { label: 'OPEN', type: 'open', bgClass: 'bg-muted', textClass: 'text-foreground' };
+}
 
-  // 4. Resolve subtitle / specifications
-  let subtitle = req.specifications || (req as any).specs || req.description?.slice(0, 85) || 'Verified B2B Procurement Requirement';
-  if (subtitle.length > 85) {
-    subtitle = subtitle.slice(0, 82) + '...';
-  }
+function firstLine(text?: string | null, max = 90): string {
+  const line = (text ?? '')
+    .split('\n')
+    .map((part) => part.trim())
+    .find(Boolean);
+  if (!line) return '';
+  return line.length > max ? `${line.slice(0, max - 1).trimEnd()}…` : line;
+}
 
-  // 5. Urgency Tag determination
-  const tagMod = (index + req.id.charCodeAt(0)) % 7;
-  let tag: RequirementVisualInfo['tag'] = {
-    label: 'URGENT',
-    type: 'urgent',
-    bgClass: 'bg-[#ff3b30]',
-    textClass: 'text-white',
-  };
+export function getRequirementVisualInfo(
+  req: Requirement & { is_urgent?: boolean | null },
+  _index = 0,
+  now = Date.now(),
+): RequirementVisualInfo {
+  const place = placeLabel(req);
+  const deadline = deadlineEnd(req.deadline);
+  const quotes = Number(req.quote_count) || 0;
 
-  if (titleLower.includes('saree') || titleLower.includes('cnc') || tagMod === 0) {
-    tag = { label: 'URGENT', type: 'urgent', bgClass: 'bg-[#ff3b30]', textClass: 'text-white' };
-  } else if (titleLower.includes('t-shirt') || titleLower.includes('jute') || titleLower.includes('ldpe') || tagMod === 1) {
-    tag = { label: 'NEW', type: 'new', bgClass: 'bg-[#FF5A00]', textClass: 'text-white' };
-  } else if (titleLower.includes('chilli') || tagMod === 2) {
-    tag = { label: 'EXPIRING', type: 'expiring', bgClass: 'bg-[#e5a800]', textClass: 'text-white' };
-  } else if (titleLower.includes('corrugated') || tagMod === 3) {
-    tag = { label: 'LIVE', type: 'live', bgClass: 'bg-[#ff3b30]', textClass: 'text-white' };
-  } else if (titleLower.includes('rice') || tagMod === 4) {
-    tag = { label: 'BULK ORDER', type: 'bulk', bgClass: 'bg-[#7c3aed]', textClass: 'text-white' };
-  } else if (titleLower.includes('steel') || tagMod === 5) {
-    tag = { label: 'REGULAR', type: 'regular', bgClass: 'bg-[#2563eb]', textClass: 'text-white' };
-  } else {
-    tag = { label: 'EXPORT', type: 'export', bgClass: 'bg-[#d97706]', textClass: 'text-white' };
-  }
-
-  // 6. Verification and order attributes
-  let verifiedStatus = 'Verified Buyer';
-  if (titleLower.includes('cnc') || titleLower.includes('steel')) {
-    verifiedStatus = 'Verified Company';
-  } else if (titleLower.includes('corrugated') && !titleLower.includes('pcs')) {
-    verifiedStatus = 'Business Verified';
-  }
-
-  let orderAttribute = 'Direct Sourcing';
-  let attributeIcon: RequirementVisualInfo['attributeIcon'] = 'building';
-
-  if (titleLower.includes('saree')) {
-    orderAttribute = 'Direct Sourcing';
-    attributeIcon = 'building';
-  } else if (titleLower.includes('t-shirt')) {
-    orderAttribute = 'Bulk Purchase';
-    attributeIcon = 'building';
-  } else if (titleLower.includes('corrugated')) {
-    if (titleLower.includes('25,000')) {
-      orderAttribute = 'Delivery in 15 Days';
-      attributeIcon = 'truck';
-    } else {
-      orderAttribute = 'Long Term Requirement';
-      attributeIcon = 'building';
-    }
-  } else if (titleLower.includes('rice') || titleLower.includes('shrimp') || titleLower.includes('chilli') || titleLower.includes('ldpe')) {
-    orderAttribute = 'Export Requirement';
-    attributeIcon = 'ship';
-  } else if (titleLower.includes('jute')) {
-    orderAttribute = 'Delivery in 30 Days';
-    attributeIcon = 'truck';
-  } else if (titleLower.includes('cnc')) {
-    orderAttribute = 'Long Term Supply';
-    attributeIcon = 'building';
-  } else if (titleLower.includes('steel')) {
-    orderAttribute = 'Project Supply';
-    attributeIcon = 'building';
+  let orderAttribute = '';
+  let attributeIcon: RequirementVisualInfo['attributeIcon'] = 'none';
+  if (deadline !== null) {
+    const day = new Date(deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    orderAttribute = deadline >= now ? `Needed by ${day}` : `Deadline was ${day}`;
+    attributeIcon = 'calendar';
+  } else if (quotes > 0) {
+    orderAttribute = `${quotes} quote${quotes === 1 ? '' : 's'} received`;
+    attributeIcon = 'quotes';
   }
 
   return {
-    image,
-    locationDisplay,
-    tag,
-    verifiedStatus,
+    image: buyerImage(req),
+    locationDisplay: place ?? 'Location not stated',
+    hasLocation: place !== null,
+    tag: requirementTag(req, now),
+    verifiedStatus: req.is_verified_buyer ? 'Verified buyer' : '',
     orderAttribute,
     attributeIcon,
-    subtitle,
-    cleanTitle,
-    quantityDisplay,
+    subtitle: firstLine(req.description) || firstLine(req.specifications),
+    cleanTitle: (req.title ?? '').trim() || 'Untitled requirement',
+    quantityDisplay: quantityLabel(req),
   };
 }

@@ -1,56 +1,34 @@
 /**
- * LiveRequirementsFeed - Redesigned to exact specification of Image 1
+ * LiveRequirementsFeed: the newest open buying requirements on the home page.
  *
- * - Premium Dark Background (#090b11) with Bulkskart Orange (#FF5A00) accent
- * - LIVE FEED header with glowing indicator
- * - "Live Buying Requirements" title ("Live" in white, "Buying Requirements" in #FF5A00)
- * - "Real business inquiries from verified buyers" subtitle
- * - Fresh RFQs trigger button with purple border & refresh icon
- * - 52,480 Active RFQs live counter badge with green pulse indicator
- * - View All solid orange button linking to /requirements
- * - Horizontally scrollable Category Filter tabs (All Categories, Machinery & Equipment, Textiles, Packaging, Electrical, etc.)
- * - LIVE STREAM controls bar: Live indicator, Next unique post in 13s countdown, < and > controls, Speed: 1x selector, AUTO LIVE toggle
- * - Exact RFQ Cards:
- *   - Product image thumbnail on left
- *   - Badges (Urgent / New / Bulk Order / Paid Companies Only)
- *   - Product title and clean specifications subtitle
- *   - Quantity (with Package icon in orange) and Location (with MapPin)
- *   - Verified Company / Buyer status (in emerald green) and Supply type (Long Term / Regular / Project Basis)
- *   - 2-Column Action Buttons: "View Details" (dark outline) & "Send Message ->" (solid orange)
- * - Live Alerts toggle pill (🇮🇳 Live Alerts | Turn On)
- * - 100% connected to existing Supabase DB, real-time channel, RequirementDetailDrawer, and SupplierRespondDialog
+ * Everything shown comes from the requirements table: the newest open posts (no generated or
+ * demonstration rows), the real number of open requirements, and new posts as they are saved (the
+ * realtime channel adds them to the top). Badges come from what the buyer entered (urgent, deadline,
+ * verified buyer) and nothing is assigned by position.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowRight, CheckCircle2, MapPin, Building2,
-  Lock, Zap, Timer, RefreshCw,
-  ChevronLeft, ChevronRight, ChevronDown,
-  LayoutGrid, Settings, Shirt, Package, Wheat, FlaskConical
+  ArrowRight, Calendar, CheckCircle2, ChevronLeft, ChevronRight, LayoutGrid, MapPin, MessageSquare, Package, RefreshCw, Zap,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/db/supabase';
-import { getRequirements, checkDirectMessageQuota, checkSupplierPaidSubscription } from '@/lib/api';
-import type { Requirement } from '@/types/types';
+import { checkSupplierPaidSubscription, countOpenRequirements, getCategories, getOpenRequirements } from '@/lib/api';
+import type { Category, Requirement } from '@/types/types';
 import { useAuth } from '@/contexts/AuthContext';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
-import RequirementDetailDrawer from '@/components/common/RequirementDetailDrawer';
-import SafeImage from '@/components/common/SafeImage';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
+import RequirementThumb, { categoryIcon } from '@/components/common/RequirementThumb';
 import { getRequirementVisualInfo } from '@/lib/requirementVisuals';
-import {
-  generateSyntheticRequirement,
-  TOTAL_SYSTEM_ACTIVE_RFQS
-} from '@/lib/largeRequirementsDataset';
+import { isSeededRequirement } from '@/lib/seedData';
 
-function AnimatedCount({ target }: { target: number }) {
-  return <>{target.toLocaleString()}</>;
-}
+const FEED_SIZE = 16;
+const CARDS_PER_VIEW = 4;
+const REFRESH_MS = 2 * 60 * 1000;
 
 function timeAgo(iso?: string): string {
-  if (!iso) return 'Just now';
+  if (!iso) return '';
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'Just now';
@@ -61,115 +39,66 @@ function timeAgo(iso?: string): string {
   return `${days}d ago`;
 }
 
-// Category filter tabs matching Image 1
-const CATEGORY_TABS = [
-  { id: 'all', name: 'All Categories', icon: LayoutGrid },
-  { id: 'machinery-industrial', name: 'Machinery & Equipment', icon: Settings },
-  { id: 'textiles-apparel', name: 'Textiles', icon: Shirt },
-  { id: 'packaging', name: 'Packaging', icon: Package },
-  { id: 'electronics-electricals', name: 'Electrical', icon: Zap },
-  { id: 'agriculture-food', name: 'Agriculture & Food', icon: Wheat },
-  { id: 'chemicals-raw-materials', name: 'Chemicals', icon: FlaskConical },
-];
-
 export default function LiveRequirementsFeed() {
   const { user, profile, company } = useAuth();
+  const navigate = useNavigate();
 
   const [reqs, setReqs] = useState<Requirement[]>([]);
-  const [totalCount, setTotalCount] = useState(TOTAL_SYSTEM_ACTIVE_RFQS);
+  const [openTotal, setOpenTotal] = useState<number | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Live Stream Controls
-  const [autoScroll, setAutoScroll] = useState(true);
-  const [liveSpeed, setLiveSpeed] = useState<'0.5x' | '1x' | '2x' | '3x'>('1x');
-  const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
-  const [countdownSec, setCountdownSec] = useState(13);
   const [pageOffset, setPageOffset] = useState(0);
+  const [tick, setTick] = useState(0);
 
-  // Live Alerts state
-  const [liveAlertsOn, setLiveAlertsOn] = useState(false);
-
-  // Dialog and drawer state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogReason, setDialogReason] = useState<SubscriptionReason>('not_logged_in');
-  const [selectedReq, setSelectedReq] = useState<Requirement | null>(null);
-  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [respondDialogReq, setRespondDialogReq] = useState<Requirement | null>(null);
 
-  // Dynamic 5-minute rotation tracking
-  const initial5MinCycle = Math.floor(Date.now() / (5 * 60 * 1000));
-  const nextCatalogPointerRef = useRef((initial5MinCycle * 19) % 600 + 16);
-  // Session-wide deduplication tracking: no RFQ appears more than once in the same feed/session
-  const displayedRfqIdsRef = useRef<Set<string>>(new Set());
-  const displayedTitlesRef = useRef<Set<string>>(new Set());
-  const displayedReqNumsRef = useRef<Set<string>>(new Set());
-
-  const normalizeTitle = (title?: string) => (title || '').toLowerCase().trim().replace(/\s+/g, ' ');
-
-  const isRfqAlreadyDisplayed = useCallback((r: Requirement) => {
-    if (!r || !r.id) return true;
-    if (displayedRfqIdsRef.current.has(r.id)) return true;
-    if (r.req_number && displayedReqNumsRef.current.has(r.req_number)) return true;
-    const norm = normalizeTitle(r.title);
-    if (norm && displayedTitlesRef.current.has(norm)) return true;
-    return false;
+  useEffect(() => {
+    getCategories().then(setCategories);
   }, []);
 
-  const recordRfqDisplayed = useCallback((r: Requirement) => {
-    if (!r || !r.id) return;
-    displayedRfqIdsRef.current.add(r.id);
-    if (r.req_number) displayedReqNumsRef.current.add(r.req_number);
-    const norm = normalizeTitle(r.title);
-    if (norm) displayedTitlesRef.current.add(norm);
-  }, []);
+  const categoryTabs = useMemo(
+    () => [
+      { id: 'all', name: 'All Categories', icon: LayoutGrid as ReturnType<typeof categoryIcon> },
+      ...categories
+        .filter((c) => !c.parent_id)
+        .slice(0, 8)
+        .map((c) => ({ id: c.id, name: c.name, icon: categoryIcon(c.slug || c.name) })),
+    ],
+    [categories],
+  );
 
-  // ── 1. Load Data from Supabase Active DB Items ──────────────────────────────
+  const categoryIds = useMemo(() => {
+    if (selectedCategory === 'all') return undefined;
+    return [selectedCategory, ...categories.filter((c) => c.parent_id === selectedCategory).map((c) => c.id)];
+  }, [selectedCategory, categories]);
+
+  // ── The newest open requirements, and how many are open in all ─────────────
   const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const items: Requirement[] = [];
-
-      try {
-        const dbData = await getRequirements({ status: 'active', limit: 16 });
-        if (Array.isArray(dbData) && dbData.length > 0) {
-          for (const item of dbData) {
-            if (!isRfqAlreadyDisplayed(item)) {
-              recordRfqDisplayed(item);
-              items.push(item);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('DB getRequirements error (using synthetic pool):', err);
-      }
-
-      // Top-up feed to guarantee rich catalog with strictly unique requirements
-      let attempts = 0;
-      while (items.length < 16 && attempts < 100) {
-        const idx = nextCatalogPointerRef.current++;
-        const candidate = generateSyntheticRequirement(idx);
-        if (!isRfqAlreadyDisplayed(candidate)) {
-          recordRfqDisplayed(candidate);
-          items.push(candidate);
-        }
-        attempts++;
-      }
-
-      setReqs(items);
-    } catch (e) {
-      console.error('Failed to load live requirements feed', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [isRfqAlreadyDisplayed, recordRfqDisplayed]);
+    const [page, counts] = await Promise.all([
+      getOpenRequirements({ page: 1, pageSize: FEED_SIZE, sort: 'latest', categoryIds }),
+      countOpenRequirements({}, ['all']),
+    ]);
+    setReqs(page.rows);
+    setFailed(Boolean(page.error));
+    setOpenTotal(counts.all);
+    setLoading(false);
+    // tick reloads the feed every two minutes and on "Fresh RFQs"
+  }, [categoryIds, tick]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // ── Auto Filter Clear Listener (Landing page requirement) ────────────────
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), REFRESH_MS);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     const handleClear = () => {
       setSelectedCategory('all');
@@ -179,25 +108,7 @@ export default function LiveRequirementsFeed() {
     return () => window.removeEventListener('bulkskart-clear-landing-filters', handleClear);
   }, []);
 
-  // ── 5-Minute Dynamic Rotation of Posts and Photos ───────────────────────
-  useEffect(() => {
-    const FIVE_MINUTES_MS = 5 * 60 * 1000;
-    const interval = setInterval(() => {
-      // Clear displayed memo so fresh batch of items and photos cycle in
-      displayedRfqIdsRef.current.clear();
-      displayedTitlesRef.current.clear();
-      displayedReqNumsRef.current.clear();
-
-      const newCycle = Math.floor(Date.now() / FIVE_MINUTES_MS);
-      nextCatalogPointerRef.current = (newCycle * 23) % 700 + 12;
-      loadData();
-      toast.info('Live requirements feed refreshed with new buyer RFQs', { duration: 3000 });
-    }, FIVE_MINUTES_MS);
-
-    return () => clearInterval(interval);
-  }, [loadData]);
-
-  // ── 2. Realtime Updates via Supabase Channel ────────────────────────────────
+  // ── New requirements as buyers post them ───────────────────────────────────
   useEffect(() => {
     const isBot =
       typeof window !== 'undefined' &&
@@ -206,204 +117,63 @@ export default function LiveRequirementsFeed() {
 
     let channel: ReturnType<typeof supabase.channel> | null = null;
     try {
-      const channelName = `live-feed-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'requirements' },
-          async payload => {
-            if (!payload?.new?.id) return;
-            const { data } = await supabase
-              .from('requirements')
-              .select('*, profiles!buyer_id(id,full_name,email), categories!category_id(id,name,slug)')
-              .eq('id', payload.new.id)
-              .maybeSingle();
-
-            if (!data) return;
-            if (isRfqAlreadyDisplayed(data)) return;
-            recordRfqDisplayed(data);
-
-            setReqs(prev => {
-              if (prev.some(p => p.id === data.id || normalizeTitle(p.title) === normalizeTitle(data.title))) return prev;
-              return [data, ...prev.slice(0, 23)];
-            });
-            setTotalCount(c => c + 1);
-            if (liveAlertsOn) {
-              toast.info(`New RFQ Received: ${data.title}`);
-            }
-          }
-        )
+        .channel(`live-feed-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requirements' }, async (payload) => {
+          const id = (payload?.new as { id?: string } | undefined)?.id;
+          if (!id) return;
+          const { data } = await supabase
+            .from('requirements')
+            .select('*, profiles!buyer_id(id,full_name,company_name), categories!category_id(id,name,slug)')
+            .eq('id', id)
+            .maybeSingle();
+          const row = data as Requirement | null;
+          if (!row || row.status !== 'active' || isSeededRequirement(row)) return;
+          if (categoryIds && !categoryIds.includes(row.category_id ?? '')) return;
+          setReqs((prev) => (prev.some((p) => p.id === row.id) ? prev : [row, ...prev].slice(0, FEED_SIZE)));
+          setOpenTotal((n) => (n === null ? n : n + 1));
+        })
         .subscribe((status, err) => {
-          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
-            if (channel) {
-              supabase.removeChannel(channel);
-              channel = null;
-            }
+          if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) && channel) {
+            supabase.removeChannel(channel);
+            channel = null;
           }
         });
     } catch {
-      // Gracefully continue
+      // The feed still works without realtime; it reloads every two minutes.
     }
-
     return () => {
       if (channel) supabase.removeChannel(channel);
     };
-  }, [liveAlertsOn, isRfqAlreadyDisplayed, recordRfqDisplayed]);
+  }, [categoryIds]);
 
-  // ── 3. Pull Next Fresh Unshown Post (Auto Live Stream & Refresh) ────────────
-  // When Auto Live Stream loads next post, if already displayed, skips it and loads next unique RFQ
-  const pullNextPost = useCallback(() => {
-    let attempts = 0;
-    let nextUniqueCandidate: Requirement | null = null;
-
-    while (attempts < 150) {
-      const idx = nextCatalogPointerRef.current++;
-      const candidate = generateSyntheticRequirement(idx);
-      if (!isRfqAlreadyDisplayed(candidate)) {
-        nextUniqueCandidate = candidate;
-        recordRfqDisplayed(candidate);
-        break;
-      }
-      attempts++;
-    }
-
-    if (nextUniqueCandidate) {
-      const candidate = nextUniqueCandidate;
-      setReqs(current => {
-        const filtered = current.filter(c => c.id !== candidate.id && normalizeTitle(c.title) !== normalizeTitle(candidate.title));
-        return [candidate, ...filtered].slice(0, 24);
-      });
-      setTotalCount(c => c + 1);
-    }
-  }, [isRfqAlreadyDisplayed, recordRfqDisplayed]);
-
-  // ── 4. Live Stream Countdown & Auto-Rotation ────────────────────────────────
-  useEffect(() => {
-    if (!autoScroll) return;
-
-    const speedMultiplier = liveSpeed === '3x' ? 3 : liveSpeed === '2x' ? 2 : liveSpeed === '0.5x' ? 0.5 : 1;
-    const intervalMs = Math.round(1000 / speedMultiplier);
-
-    const interval = setInterval(() => {
-      setCountdownSec(prev => {
-        if (prev <= 1) {
-          pullNextPost();
-          return 15;
-        }
-        return prev - 1;
-      });
-    }, intervalMs);
-
-    return () => clearInterval(interval);
-  }, [autoScroll, liveSpeed, pullNextPost]);
-
-  // ── 5. User Controls: Fresh RFQs, Next, Prev, Alerts ───────────────────────
   const handleFreshRFQs = () => {
     setIsRefreshing(true);
-    pullNextPost();
-    toast.success('Fresh buyer inquiries loaded!');
+    setPageOffset(0);
+    setTick((t) => t + 1);
     setTimeout(() => setIsRefreshing(false), 600);
   };
 
-  const handleNext = () => {
-    setPageOffset(prev => prev + 1);
-    pullNextPost();
-  };
+  const pageCount = Math.max(1, Math.ceil(reqs.length / CARDS_PER_VIEW));
+  const currentPage = Math.min(pageOffset, pageCount - 1);
+  const visibleReqs = reqs.slice(currentPage * CARDS_PER_VIEW, currentPage * CARDS_PER_VIEW + CARDS_PER_VIEW);
+  const firstShown = reqs.length ? currentPage * CARDS_PER_VIEW + 1 : 0;
+  const lastShown = currentPage * CARDS_PER_VIEW + visibleReqs.length;
 
-  const handlePrev = () => {
-    setPageOffset(prev => Math.max(0, prev - 1));
-  };
-
-  const toggleLiveAlerts = () => {
-    setLiveAlertsOn(prev => {
-      const next = !prev;
-      if (next) {
-        toast.success('Live buying alerts activated for verified Indian buyers');
-      } else {
-        toast.info('Live buying alerts paused');
-      }
-      return next;
-    });
-  };
-
-  // ── 6. Category Filtering ───────────────────────────────────────────────────
-  const filteredReqs = useMemo(() => {
-    return reqs.filter(r => {
-      if (selectedCategory === 'all') return true;
-      const catId = (r.category_id || '').toLowerCase();
-      const slug = (r.categories?.slug || '').toLowerCase();
-      const catName = (r.categories?.name || '').toLowerCase();
-      const title = (r.title || '').toLowerCase();
-      const specs = (r.specifications || '').toLowerCase();
-
-      if (selectedCategory === 'machinery-industrial') {
-        return slug.includes('machin') || catName.includes('machin') || title.includes('cnc') || title.includes('motor') || title.includes('grinder') || title.includes('pump') || title.includes('machine') || specs.includes('machin');
-      }
-      if (selectedCategory === 'textiles-apparel') {
-        return slug.includes('textile') || catName.includes('textile') || title.includes('saree') || title.includes('shirt') || title.includes('fabric') || title.includes('cotton') || title.includes('yarn') || specs.includes('fabric');
-      }
-      if (selectedCategory === 'packaging') {
-        return slug.includes('packag') || catName.includes('packag') || title.includes('box') || title.includes('carton') || title.includes('pouch') || title.includes('bag') || title.includes('bottle');
-      }
-      if (selectedCategory === 'electronics-electricals') {
-        return slug.includes('electr') || catName.includes('electr') || title.includes('solar') || title.includes('headphone') || title.includes('copper') || title.includes('wire') || title.includes('led');
-      }
-      if (selectedCategory === 'agriculture-food') {
-        return slug.includes('agri') || slug.includes('food') || catName.includes('agri') || title.includes('rice') || title.includes('chilli') || title.includes('spice') || title.includes('grain');
-      }
-      if (selectedCategory === 'chemicals-raw-materials') {
-        return slug.includes('chemic') || catName.includes('chemic') || title.includes('granule') || title.includes('polymer') || title.includes('dye') || title.includes('acid');
-      }
-      return slug === selectedCategory || catId === selectedCategory;
-    });
-  }, [reqs, selectedCategory]);
-
-  const visibleReqs = useMemo(() => {
-    if (filteredReqs.length === 0) return [];
-
-    // Deduplicate filtered items so that no post appears more than once in the view
-    const seenIds = new Set<string>();
-    const seenTitles = new Set<string>();
-    const uniqueFiltered: Requirement[] = [];
-
-    for (const r of filteredReqs) {
-      if (!r || !r.id) continue;
-      const norm = normalizeTitle(r.title);
-      if (seenIds.has(r.id) || (norm && seenTitles.has(norm))) continue;
-      seenIds.add(r.id);
-      if (norm) seenTitles.add(norm);
-      uniqueFiltered.push(r);
-    }
-
-    const len = uniqueFiltered.length;
-    if (len === 0) return [];
-
-    // Window of 4 items for grid layout without repeating within the same screen
-    const start = pageOffset % len;
-    const slice = uniqueFiltered.slice(start, start + 4);
-    if (slice.length < 4 && len > slice.length) {
-      const needed = Math.min(4 - slice.length, len - slice.length);
-      const sliceIds = new Set(slice.map(s => s.id));
-      const complement = uniqueFiltered.filter(item => !sliceIds.has(item.id)).slice(0, needed);
-      return [...slice, ...complement];
-    }
-    return slice;
-  }, [filteredReqs, pageOffset]);
-
-  // ── 7. Card Interactions ───────────────────────────────────────────────────
-  const navigate = useNavigate();
   const handleViewRFQ = (req: Requirement) => {
     navigate(`/requirement/${req.req_number || req.id}`);
   };
 
+  // Send Quote: only a registered business with a paid plan can quote, as on the requirement page.
   const handleOpenRespond = async (req: Requirement) => {
     if (!user || !profile) { setDialogReason('not_logged_in'); setDialogOpen(true); return; }
     if (!company) { setDialogReason('not_registered_business'); setDialogOpen(true); return; }
-    const subCheck = await checkSupplierPaidSubscription(company.id, company);
-    if (!subCheck.allowed) { setDialogReason(subCheck.reason); setDialogOpen(true); return; }
-    const quota = await checkDirectMessageQuota(company.id, company);
-    if (quota !== 'ok') { setDialogReason(quota); setDialogOpen(true); return; }
+    const check = await checkSupplierPaidSubscription(company.id, company);
+    if (!check.allowed) {
+      setDialogReason(check.reason === 'no_subscription' ? 'quotation_subscription' : check.reason);
+      setDialogOpen(true);
+      return;
+    }
     setRespondDialogReq(req);
   };
 
@@ -423,23 +193,22 @@ export default function LiveRequirementsFeed() {
             Live <span className="text-[#FF5A00]">Buying Requirements</span>
           </h2>
           <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-            Real business inquiries from verified buyers
+            The newest requirements posted by buyers on BulkSkart
           </p>
         </div>
 
         {/* ── STATS & ACTIONS ROW ─────────────────────────── */}
         <div className="flex items-center justify-between gap-1.5 sm:gap-2.5 mb-2.5 w-full">
-          {/* Fresh RFQs */}
           <button
+            type="button"
             onClick={handleFreshRFQs}
             className="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 px-2 min-[360px]:px-3 py-1.5 rounded-lg bg-card hover:bg-muted border border-purple-500/40 text-purple-700 dark:text-purple-300 text-[11px] min-[360px]:text-xs font-bold shadow-sm transition-all active:scale-95 h-9 shrink-0"
-            title="Refresh and pull fresh buyer requirements"
+            title="Check for new requirements"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#FF5A00] shrink-0 transition-transform duration-500 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-[#FF5A00] shrink-0 transition-transform duration-500 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span className="truncate">Fresh RFQs</span>
           </button>
 
-          {/* Active RFQs Count Badge */}
           <div className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 bg-card border border-border rounded-lg px-2 min-[360px]:px-3 py-1 shadow-sm h-9">
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -447,13 +216,12 @@ export default function LiveRequirementsFeed() {
             </span>
             <div className="text-left leading-tight truncate">
               <div className="text-xs sm:text-sm font-black text-foreground leading-tight">
-                <AnimatedCount target={totalCount} />
+                {openTotal === null ? '–' : openTotal.toLocaleString()}
               </div>
-              <div className="text-[8.5px] min-[360px]:text-[9px] text-muted-foreground font-medium leading-none">Active RFQs</div>
+              <div className="text-[8.5px] min-[360px]:text-[9px] text-muted-foreground font-medium leading-none">Open RFQs</div>
             </div>
           </div>
 
-          {/* View All Button */}
           <Link to="/requirements" className="flex-1 sm:flex-initial">
             <Button className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-9 px-2.5 min-[360px]:px-3 text-[11px] min-[360px]:text-xs gap-1 sm:gap-1.5 rounded-lg shadow-[0_2px_8px_rgba(255,90,0,0.3)] transition-all">
               <span className="truncate">View All</span> <ArrowRight className="w-3.5 h-3.5 shrink-0" />
@@ -463,12 +231,14 @@ export default function LiveRequirementsFeed() {
 
         {/* ── CATEGORY FILTER TABS ────────────────────────── */}
         <div className="w-full max-w-full flex items-center gap-1.5 overflow-x-auto pb-1.5 mb-2 scrollbar-none scroll-smooth overscroll-x-contain touch-pan-x">
-          {CATEGORY_TABS.map(cat => {
+          {categoryTabs.map(cat => {
             const active = selectedCategory === cat.id;
             const Icon = cat.icon;
             return (
               <button
+                type="button"
                 key={cat.id}
+                aria-pressed={active}
                 onClick={() => {
                   setSelectedCategory(cat.id);
                   setPageOffset(0);
@@ -486,91 +256,43 @@ export default function LiveRequirementsFeed() {
           })}
         </div>
 
-        {/* ── LIVE STREAM CONTROLS BAR matching Image 2 ────────────────────── */}
-        <div className="bg-card border border-border rounded-2xl p-2.5 sm:p-3 mb-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 shadow-sm">
-          {/* Top Row on Mobile: LIVE STREAM badge + countdown */}
-          <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3 w-full sm:w-auto">
+        {/* ── FEED BAR: what is shown, and paging ───────────────────────── */}
+        <div className="bg-card border border-border rounded-2xl p-2.5 sm:p-3 mb-3.5 flex items-center justify-between gap-2.5 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <span className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[11px] shadow-sm shrink-0">
               <span className="relative flex h-2 w-2 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              LIVE STREAM
+              NEWEST FIRST
             </span>
-
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5 shrink-0">
-              <Timer className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
-              <span>
-                Next unique post in <strong className="text-foreground font-mono">{countdownSec}s</strong>
-              </span>
-            </div>
+            <span className="text-xs text-muted-foreground truncate">
+              {reqs.length > 0 ? (
+                <>Showing <strong className="text-foreground">{firstShown}–{lastShown}</strong> of the {reqs.length} newest</>
+              ) : (
+                'New posts appear here as buyers post them'
+              )}
+            </span>
           </div>
 
-          {/* Bottom Row on Mobile: Prev / Next + Speed + AUTO LIVE Toggle */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-            {/* Prev / Next & Speed */}
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={handlePrev}
-                aria-label="Previous requirement"
-                className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 text-foreground flex items-center justify-center border border-border transition-colors min-h-[32px] min-w-[32px]"
-                title="Previous RFQ"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleNext}
-                aria-label="Next requirement"
-                className="w-8 h-8 rounded-lg bg-[#FF5A00] hover:bg-[#e04f00] text-white flex items-center justify-center font-bold shadow-sm transition-colors min-h-[32px] min-w-[32px]"
-                title="Next RFQ"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              {/* Speed selector dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setSpeedMenuOpen(prev => !prev)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted text-foreground hover:bg-muted/80 border border-border text-xs font-medium transition-colors min-h-[32px]"
-                >
-                  <span>Speed: {liveSpeed}</span>
-                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
-                </button>
-                {speedMenuOpen && (
-                  <div className="absolute left-0 sm:right-0 top-full mt-1 w-24 bg-popover border border-border rounded-lg shadow-xl z-30 py-1">
-                    {(['0.5x', '1x', '2x', '3x'] as const).map(s => (
-                      <button
-                        key={s}
-                        onClick={() => {
-                          setLiveSpeed(s);
-                          setSpeedMenuOpen(false);
-                        }}
-                        className={`w-full text-left px-3 py-1 text-xs transition-colors ${
-                          liveSpeed === s
-                            ? 'text-[#FF5A00] font-bold bg-muted'
-                            : 'text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        Speed: {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* AUTO LIVE toggle */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
-              onClick={() => setAutoScroll(prev => !prev)}
-              aria-label={autoScroll ? "Pause auto live" : "Resume auto live"}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border shrink-0 min-h-[32px] ${
-                autoScroll
-                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/40 shadow-sm'
-                  : 'bg-muted text-muted-foreground border-border hover:text-foreground'
-              }`}
+              type="button"
+              onClick={() => setPageOffset(Math.max(0, currentPage - 1))}
+              disabled={currentPage === 0}
+              aria-label="Previous requirements"
+              className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 text-foreground flex items-center justify-center border border-border transition-colors min-h-[32px] min-w-[32px] disabled:opacity-40"
             >
-              <span className={`w-2 h-2 rounded-full ${autoScroll ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/40'}`} />
-              <span>AUTO LIVE: {autoScroll ? 'ON' : 'OFF'}</span>
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPageOffset(Math.min(pageCount - 1, currentPage + 1))}
+              disabled={currentPage >= pageCount - 1}
+              aria-label="Next requirements"
+              className="w-8 h-8 rounded-lg bg-[#FF5A00] hover:bg-[#e04f00] text-white flex items-center justify-center font-bold shadow-sm transition-colors min-h-[32px] min-w-[32px] disabled:opacity-40"
+            >
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -578,42 +300,31 @@ export default function LiveRequirementsFeed() {
         {/* ── RFQ CARDS (Compact 2-col desktop layout) ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
           {loading && reqs.length === 0 ? (
-            <div className="flex flex-col gap-3">
-              {[1, 2, 3].map(n => (
-                <div key={n} className="h-44 rounded-2xl bg-white/5 animate-pulse border border-white/5" />
-              ))}
-            </div>
+            [1, 2, 3, 4].map(n => (
+              <div key={n} className="h-44 rounded-2xl bg-muted/40 animate-pulse border border-border" />
+            ))
           ) : visibleReqs.length === 0 ? (
-            <div className="text-center py-12 w-full bg-card rounded-2xl border border-border">
-              <p className="text-white/60 text-xs sm:text-sm">No live requirements currently in this category.</p>
+            <div className="text-center py-12 w-full bg-card rounded-2xl border border-border md:col-span-2">
+              <p className="text-muted-foreground text-xs sm:text-sm">
+                {failed
+                  ? 'Requirements could not be loaded just now.'
+                  : selectedCategory === 'all'
+                    ? 'No open requirements right now.'
+                    : 'No open requirements in this category right now.'}
+              </p>
               <Button
                 size="sm"
-                onClick={() => setSelectedCategory('all')}
+                onClick={() => (selectedCategory === 'all' ? handleFreshRFQs() : setSelectedCategory('all'))}
                 className="mt-3 text-xs h-9 px-4 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-semibold rounded-lg"
               >
-                View All Categories
+                {selectedCategory === 'all' ? 'Check again' : 'View All Categories'}
               </Button>
             </div>
           ) : (
             visibleReqs.map((req, index) => {
               const visual = getRequirementVisualInfo(req, index);
-
-              // Assign badges matching Image 2
-              const cardIdx = (index + pageOffset) % 4;
-              const isUrgent = cardIdx === 0;
-              const isNew = cardIdx === 1 || cardIdx === 3;
-              const isVerifiedBuyer = cardIdx === 2;
-              const isBulkOrder = cardIdx === 1 || cardIdx === 2;
-              const isPaidOnly = cardIdx !== 2;
-
-              const supplyType =
-                cardIdx === 0
-                  ? 'Long Term Supply'
-                  : cardIdx === 1
-                  ? 'Regular Supply'
-                  : cardIdx === 2
-                  ? 'Project Basis'
-                  : 'Bulk Quantity';
+              const isMine = Boolean(user && req.buyer_id === user.id);
+              const quotes = Number(req.quote_count) || 0;
 
               return (
                 <div
@@ -621,61 +332,43 @@ export default function LiveRequirementsFeed() {
                   className="bg-card hover:bg-muted/50 border border-border hover:border-[#FF5A00]/50 rounded-xl p-2.5 sm:p-3 transition-all shadow-sm group flex flex-col justify-between w-full min-w-0"
                 >
                   <div className="w-full min-w-0">
-                    {/* Top Row: Thumbnail on left + Information stack on right */}
                     <div className="flex gap-2.5 sm:gap-3 items-start w-full min-w-0">
-                      {/* Left Product Thumbnail */}
-                      <div
+                      {/* The buyer's own photo, or a plain tile */}
+                      <button
+                        type="button"
                         onClick={() => handleViewRFQ(req)}
+                        aria-label={`Open ${visual.cleanTitle}`}
                         className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-muted border border-border relative cursor-pointer aspect-square shadow-sm"
                       >
-                        <SafeImage
-                          src={visual.image}
-                          alt={visual.cleanTitle}
-                          category={req.categories?.name || req.category_id}
-                          fallbackType="rfq"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width: 640px) 64px, 80px"
-                        />
-                      </div>
+                        <RequirementThumb src={visual.image} alt={visual.cleanTitle} slug={req.categories?.slug || req.categories?.name || ''} />
+                      </button>
 
-                      {/* Right Info Stack */}
                       <div className="flex-1 min-w-0">
-                        {/* Badges Stack */}
                         <div className="flex items-center gap-1 flex-wrap">
-                          {isUrgent && (
+                          {visual.tag.type === 'urgent' ? (
                             <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase flex items-center gap-0.5 bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
                               <Zap className="w-2.5 h-2.5 fill-current text-rose-500" />
                               URGENT
                             </span>
-                          )}
-                          {isNew && (
+                          ) : visual.tag.type === 'new' ? (
                             <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-emerald-600 text-white">
                               New
                             </span>
-                          )}
-                          {isVerifiedBuyer && (
+                          ) : visual.tag.type === 'expiring' ? (
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                              Closing soon
+                            </span>
+                          ) : null}
+                          {visual.verifiedStatus && (
                             <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-[#FF5A00] text-white">
-                              Verified
+                              Verified buyer
                             </span>
                           )}
-                          {isBulkOrder && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-purple-600 text-white">
-                              Bulk
-                            </span>
-                          )}
-                          {isPaidOnly && (
-                            <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-md flex items-center gap-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                              <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
-                              Paid
-                            </span>
-                          )}
-                          <span className="text-[9.5px] text-muted-foreground ml-auto font-mono shrink-0 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-[9.5px] text-muted-foreground ml-auto font-mono shrink-0">
                             {timeAgo(req.created_at)}
                           </span>
                         </div>
 
-                        {/* Product Title */}
                         <h3
                           onClick={() => handleViewRFQ(req)}
                           className="text-xs sm:text-sm font-bold text-foreground mt-1 leading-snug line-clamp-1 group-hover:text-[#FF5A00] transition-colors cursor-pointer"
@@ -683,14 +376,13 @@ export default function LiveRequirementsFeed() {
                           {visual.cleanTitle}
                         </h3>
 
-                        {/* Subtitle / Specifications */}
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight line-clamp-1">
-                          {visual.subtitle}
-                        </p>
+                        {visual.subtitle && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight line-clamp-1">
+                            {visual.subtitle}
+                          </p>
+                        )}
 
-                        {/* 2x2 Key Metrics Matrix */}
                         <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1.5 pt-1.5 border-t border-border text-[11px]">
-                          {/* Col 1, Row 1: Quantity */}
                           <div className="min-w-0">
                             <div className="font-bold text-[#FF5A00] flex items-center gap-1 leading-tight truncate">
                               <Package className="w-3 h-3 text-[#FF5A00] shrink-0" />
@@ -699,40 +391,44 @@ export default function LiveRequirementsFeed() {
                             <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Quantity</div>
                           </div>
 
-                          {/* Col 2, Row 1: Location */}
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1 text-foreground font-medium leading-tight truncate">
+                            <div className={`flex items-center gap-1 font-medium leading-tight truncate ${visual.hasLocation ? 'text-foreground' : 'text-muted-foreground italic'}`}>
                               <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
                               <span className="truncate" title={visual.locationDisplay}>
-                                {visual.locationDisplay}
+                                {visual.hasLocation ? visual.locationDisplay : 'Not stated'}
                               </span>
                             </div>
-                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Location</div>
+                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Delivery to</div>
                           </div>
 
-                          {/* Col 1, Row 2: Buyer Verified */}
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold leading-tight truncate">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                              <span className="truncate">Verified Co.</span>
-                            </div>
-                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Status</div>
-                          </div>
-
-                          {/* Col 2, Row 2: Business / Supply Type */}
                           <div className="min-w-0">
                             <div className="flex items-center gap-1 text-foreground font-medium leading-tight truncate">
-                              <Building2 className="w-3 h-3 text-muted-foreground shrink-0" />
-                              <span className="truncate">{supplyType}</span>
+                              <Calendar className="w-3 h-3 text-muted-foreground shrink-0" />
+                              <span className="truncate">
+                                {req.deadline
+                                  ? new Date(`${req.deadline.slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+                                  : 'Not set'}
+                              </span>
                             </div>
-                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Supply Type</div>
+                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Deadline</div>
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1 text-foreground font-medium leading-tight truncate">
+                              {visual.verifiedStatus ? (
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                              ) : (
+                                <MessageSquare className="w-3 h-3 text-muted-foreground shrink-0" />
+                              )}
+                              <span className="truncate">{quotes} quote{quotes === 1 ? '' : 's'}</span>
+                            </div>
+                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Received</div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Bottom Action Buttons: View Details & Send Quote */}
                   <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mt-2 pt-2 border-t border-border">
                     <Button
                       variant="outline"
@@ -741,13 +437,23 @@ export default function LiveRequirementsFeed() {
                     >
                       <span className="truncate">View Details</span>
                     </Button>
-                    <Button
-                      onClick={() => handleOpenRespond(req)}
-                      className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-[11px] sm:text-xs h-8 rounded-lg shadow-sm gap-1 transition-all px-1"
-                    >
-                      <span className="truncate">Contact Buyer</span>
-                      <ArrowRight className="w-3 h-3 shrink-0" />
-                    </Button>
+                    {isMine ? (
+                      <Button
+                        variant="outline"
+                        onClick={() => handleViewRFQ(req)}
+                        className="w-full font-bold text-[11px] sm:text-xs h-8 rounded-lg gap-1 transition-all px-1"
+                      >
+                        <span className="truncate">Your requirement</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleOpenRespond(req)}
+                        className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-[11px] sm:text-xs h-8 rounded-lg shadow-sm gap-1 transition-all px-1"
+                      >
+                        <span className="truncate">Send Quote</span>
+                        <ArrowRight className="w-3 h-3 shrink-0" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
@@ -756,19 +462,6 @@ export default function LiveRequirementsFeed() {
         </div>
 
       </div>
-
-      {/* Drawer and Dialogs */}
-      {selectedReq && (
-        <RequirementDetailDrawer
-          requirement={selectedReq}
-          open={detailDrawerOpen}
-          onClose={() => setDetailDrawerOpen(false)}
-          onRequirementUpdated={updated => {
-            setSelectedReq(updated);
-            setReqs(prev => prev.map(r => (r.id === updated.id ? updated : r)));
-          }}
-        />
-      )}
 
       {respondDialogReq && user && company && (
         <SupplierRespondDialog
@@ -779,7 +472,7 @@ export default function LiveRequirementsFeed() {
           supplierCompanyId={company.id}
           onResponded={() => {
             setRespondDialogReq(null);
-            loadData();
+            setTick((t) => t + 1);
           }}
         />
       )}

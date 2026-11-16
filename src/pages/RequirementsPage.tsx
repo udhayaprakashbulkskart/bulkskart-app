@@ -1,18 +1,25 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import MainLayout from '@/components/layouts/MainLayout';
 import {
-  Search, Shield, ArrowRight, FileText, Lock, MessageSquare,
-  RefreshCw, Globe, Clock, ChevronUp, BadgeCheck,
-  Package, TrendingUp, Zap, Filter, ChevronDown, Plus, Eye, Send,
-  Radio, User, Calendar, MapPin, Tag, CheckCircle2, Truck, Ship, Building2,
-  Boxes, Cpu, Scissors, Sprout, FlaskConical, HardHat, Sparkles
+  Search, ArrowRight, FileText, MessageSquare, Clock,
+  Package, Zap, Plus, Eye, Calendar,
+  Radio, User, MapPin, Tag, CheckCircle2,
+  Boxes, Sparkles, RefreshCw
 } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
-import { getRequirements, getCategories, getOrCreateConversation, checkDirectMessageQuota, incrementMessageQuota } from '@/lib/api';
+import {
+  getCategories,
+  checkSupplierPaidSubscription,
+  getOpenRequirements,
+  countOpenRequirements,
+  getOpenRequirementPlaces,
+  type OpenRequirementSort,
+  type OpenRequirementTab,
+} from '@/lib/api';
 import type { Requirement, Category } from '@/types/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,14 +28,13 @@ import { toast } from 'sonner';
 import PostRequirementDialog from '@/components/common/PostRequirementDialog';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import RequirementDetailDrawer from '@/components/common/RequirementDetailDrawer';
-import SafeImage from '@/components/common/SafeImage';
-import { getRequirementVisualInfo } from '@/lib/requirementVisuals';
-import {
-  TOTAL_SYSTEM_ACTIVE_RFQS,
-  queryLargeRequirementsCatalog,
-} from '@/lib/largeRequirementsDataset';
+import { getRequirementVisualInfo, placeLabel, quantityLabel } from '@/lib/requirementVisuals';
+import RequirementThumb, { categoryIcon } from '@/components/common/RequirementThumb';
 
 const REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
+const PAGE_SIZE = 12;
+
+type GateReason = React.ComponentProps<typeof SubscribeToContactDialog>['reason'];
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -46,7 +52,7 @@ function AnimatedCount({ target }: { target: number }) {
   const [display, setDisplay] = useState(0);
   useEffect(() => {
     let start = 0;
-    const step = Math.ceil(target / 40);
+    const step = Math.max(1, Math.ceil(target / 40));
     const timer = setInterval(() => {
       start += step;
       if (start >= target) { setDisplay(target); clearInterval(timer); }
@@ -57,21 +63,11 @@ function AnimatedCount({ target }: { target: number }) {
   return <>{display.toLocaleString()}</>;
 }
 
-// Category pills matching Image 2 + Exact Commercial Bulk Products
-const TOP_CATEGORIES = [
-  { id: 'all', name: 'All Categories', icon: Boxes },
-  { id: 'food-trucks', name: 'Food Trucks & Trailers', icon: Truck },
-  { id: 'industrial-grinders', name: 'Industrial Grinders', icon: Cpu },
-  { id: 'commercial-washing', name: 'Washing Machines', icon: Package },
-  { id: 'commercial-kitchen', name: 'Commercial Kitchen', icon: Boxes },
-  { id: 'heavy-equipment', name: 'Heavy Equipment', icon: HardHat },
-  { id: 'machinery-industrial', name: 'Machinery', icon: Cpu },
-  { id: 'packaging', name: 'Packaging', icon: Package },
-  { id: 'electronics-electricals', name: 'Electrical', icon: Zap },
-  { id: 'textiles-apparel', name: 'Textiles', icon: Scissors },
-  { id: 'agriculture-food', name: 'Agriculture', icon: Sprout },
-  { id: 'chemicals-raw-materials', name: 'Chemicals', icon: FlaskConical },
-  { id: 'construction-building', name: 'Construction', icon: HardHat },
+const TAB_LABELS: { key: OpenRequirementTab; label: string; icon?: React.ComponentType<{ className?: string }>; iconClass?: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'urgent', label: 'Urgent', icon: Zap, iconClass: 'text-rose-500' },
+  { key: 'new', label: 'New', icon: Sparkles, iconClass: 'text-orange-500' },
+  { key: 'expiring', label: 'Closing soon', icon: Clock, iconClass: 'text-amber-500' },
 ];
 
 // Deal status pipeline config for My Requirements tab
@@ -110,12 +106,12 @@ function StatusPipeline({ current }: { current: DealStatus }) {
                 ? 'bg-[#FF5A00] text-white shadow-sm'
                 : done
                   ? 'bg-emerald-500/20 text-emerald-400'
-                  : 'bg-white/5 text-white/40'
+                  : 'bg-muted text-muted-foreground'
             }`}>
               {done && <CheckCircle2 className="w-2.5 h-2.5" />}
               {stage.short}
             </div>
-            {!last && <span className="text-white/20 mx-0.5 text-xs">›</span>}
+            {!last && <span className="text-muted-foreground/50 mx-0.5 text-xs">›</span>}
           </div>
         );
       })}
@@ -138,13 +134,13 @@ function MyRequirementCard({
         <span className={`text-[10px] font-semibold border rounded-full px-2.5 py-0.5 ${STATUS_COLOR[dealStatus]}`}>
           {DEAL_STAGES.find(s => s.key === dealStatus)?.label ?? dealStatus}
         </span>
-        <span className="text-[11px] text-white/40">
+        <span className="text-[11px] text-muted-foreground">
           {new Date(req.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
         </span>
       </div>
 
       <div>
-        <h3 className="text-base font-bold text-white leading-snug line-clamp-2">{req.title}</h3>
+        <h3 className="text-base font-bold text-foreground leading-snug line-clamp-2">{req.title}</h3>
         {req.categories && (
           <div className="flex items-center gap-1 mt-1">
             <Tag className="w-3 h-3 text-[#FF5A00]" />
@@ -153,7 +149,7 @@ function MyRequirementCard({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/60">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <Package className="w-3 h-3 shrink-0 text-[#FF5A00]" />
           {req.quantity.toLocaleString()} {req.quantity_unit}
@@ -185,20 +181,26 @@ export default function RequirementsPage() {
 
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [places, setPlaces] = useState<{ value: string; label: string; count: number }[]>([]);
+  const [latest, setLatest] = useState<Requirement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [selectedCat, setSelectedCat] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
-  const [selectedSort, setSelectedSort] = useState('latest');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'urgent' | 'new' | 'expiring' | 'live'>('all');
-  const [totalCount, setTotalCount] = useState(TOTAL_SYSTEM_ACTIVE_RFQS);
+  const [selectedSort, setSelectedSort] = useState<OpenRequirementSort>('latest');
+  const [statusFilter, setStatusFilter] = useState<OpenRequirementTab>('all');
+  const [totalCount, setTotalCount] = useState(0);
+  const [tabCounts, setTabCounts] = useState<Record<OpenRequirementTab, number | null>>({ all: null, urgent: null, new: null, expiring: null });
+  const [openTotal, setOpenTotal] = useState<number | null>(null);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(Math.ceil(TOTAL_SYSTEM_ACTIVE_RFQS / 12));
-  const PAGE_SIZE = 12;
+  const [refreshTick, setRefreshTick] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   // Dialog and drawer state
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogReason, setDialogReason] = useState<'not_logged_in' | 'not_registered_business' | 'no_subscription' | 'quota_exceeded'>('no_subscription');
+  const [dialogReason, setDialogReason] = useState<GateReason>('no_subscription');
   const [postDialogOpen, setPostDialogOpen] = useState(false);
   const [respondDialogReq, setRespondDialogReq] = useState<Requirement | null>(null);
   const [detailDrawerReq, setDetailDrawerReq] = useState<Requirement | null>(null);
@@ -209,88 +211,91 @@ export default function RequirementsPage() {
   const [myReqs, setMyReqs] = useState<Requirement[]>([]);
   const [myReqsLoading, setMyReqsLoading] = useState(false);
 
-  const isSupplier = profile?.role === 'supplier';
-  const isBuyer = profile?.role === 'buyer';
-
   // Load categories
   useEffect(() => {
     getCategories().then(setCategories);
   }, []);
 
-  // Fetch requirements with 50,000+ catalog querying & pagination
+  // Category chips: the top-level categories, in the site's own order.
+  const categoryChips = useMemo(
+    () => [
+      { id: 'all', name: 'All Categories', icon: Boxes as React.ComponentType<{ className?: string }> },
+      ...categories
+        .filter((c) => !c.parent_id)
+        .slice(0, 12)
+        .map((c) => ({ id: c.id, name: c.name, icon: categoryIcon(c.slug || c.name) })),
+    ],
+    [categories],
+  );
+
+  // A chosen category also covers its sub-categories.
+  const categoryIds = useMemo(() => {
+    if (selectedCat === 'all') return undefined;
+    return [selectedCat, ...categories.filter((c) => c.parent_id === selectedCat).map((c) => c.id)];
+  }, [selectedCat, categories]);
+
+  // Apply what is typed in the search box after a short pause.
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Check for new requirements every two minutes.
+  useEffect(() => {
+    const timer = setInterval(() => setRefreshTick((t) => t + 1), REFRESH_INTERVAL);
+    return () => clearInterval(timer);
+  }, []);
+
+  const filters = useMemo(
+    () => ({
+      categoryIds,
+      search: search || undefined,
+      location: selectedLocation === 'all' ? undefined : selectedLocation,
+    }),
+    [categoryIds, search, selectedLocation],
+  );
+
+  // One page of open requirements, straight from the database.
   const loadRequirements = useCallback(async () => {
     setLoading(true);
-    try {
-      const catalogResult = queryLargeRequirementsCatalog({
-        page,
-        pageSize: PAGE_SIZE,
-        categoryId: selectedCat,
-        search,
-        location: selectedLocation,
-        statusFilter,
-      });
-
-      // Fetch real DB rows from Supabase database with strict deduplication
-      if (page === 1 && !search && selectedCat === 'all' && selectedLocation === 'all') {
-        try {
-          const dbData = await getRequirements({ status: 'active', limit: PAGE_SIZE });
-          if (dbData && dbData.length > 0) {
-            const seenIds = new Set<string>(dbData.map(d => d.id));
-            const seenReqNums = new Set<string>(dbData.map(d => d.req_number).filter(Boolean) as string[]);
-            const seenTitles = new Set<string>(dbData.map(d => (d.title || '').toLowerCase().trim()));
-
-            const filteredCatalog = catalogResult.data.filter(c => {
-              if (seenIds.has(c.id)) return false;
-              if (c.req_number && seenReqNums.has(c.req_number)) return false;
-              const normTitle = (c.title || '').toLowerCase().trim();
-              if (normTitle && seenTitles.has(normTitle)) return false;
-              seenIds.add(c.id);
-              if (c.req_number) seenReqNums.add(c.req_number);
-              if (normTitle) seenTitles.add(normTitle);
-              return true;
-            });
-
-            const combined = [...dbData, ...filteredCatalog].slice(0, PAGE_SIZE);
-            setRequirements(combined);
-            setTotalCount(catalogResult.totalCount);
-            setTotalPages(catalogResult.totalPages);
-            return;
-          }
-        } catch {
-          // fallback to catalog directly
-        }
-      }
-
-      // Deduplicate catalog results across page items
-      const seenPageIds = new Set<string>();
-      const seenPageTitles = new Set<string>();
-      const uniqueCatalog = catalogResult.data.filter(c => {
-        if (!c || !c.id || seenPageIds.has(c.id)) return false;
-        const normTitle = (c.title || '').toLowerCase().trim();
-        if (normTitle && seenPageTitles.has(normTitle)) return false;
-        seenPageIds.add(c.id);
-        if (normTitle) seenPageTitles.add(normTitle);
-        return true;
-      });
-
-      setRequirements(uniqueCatalog);
-      setTotalCount(catalogResult.totalCount);
-      setTotalPages(catalogResult.totalPages);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search, selectedCat, selectedLocation, statusFilter]);
+    const result = await getOpenRequirements({ ...filters, tab: statusFilter, sort: selectedSort, page, pageSize: PAGE_SIZE });
+    setRequirements(result.rows);
+    setTotalCount(result.total);
+    setLoadError(result.error);
+    setLoading(false);
+    // refreshTick is a dependency so the two-minute check reloads the page
+  }, [filters, statusFilter, selectedSort, page, refreshTick]);
 
   useEffect(() => {
     loadRequirements();
   }, [loadRequirements]);
 
+  // How many requirements each tab holds under the current filters.
+  useEffect(() => {
+    let alive = true;
+    countOpenRequirements(filters).then((counts) => {
+      if (alive) setTabCounts(counts);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [filters, refreshTick]);
+
+  // The whole board: open total, newest posts and the places buyers deliver to.
+  useEffect(() => {
+    let alive = true;
+    countOpenRequirements({}, ['all']).then((counts) => alive && setOpenTotal(counts.all));
+    getOpenRequirements({ page: 1, pageSize: 3, sort: 'latest' }).then((result) => alive && setLatest(result.rows));
+    getOpenRequirementPlaces().then((list) => alive && setPlaces(list));
+    return () => {
+      alive = false;
+    };
+  }, [refreshTick]);
+
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [search, selectedCat, selectedLocation, statusFilter]);
+  }, [search, selectedCat, selectedLocation, statusFilter, selectedSort]);
 
   // Load buyer's own requirements
   useEffect(() => {
@@ -310,45 +315,15 @@ export default function RequirementsPage() {
       setMyReqs((data as unknown as Requirement[]) ?? []);
       setMyReqsLoading(false);
     });
-  }, [activeTab, user]);
+  }, [activeTab, user, refreshTick]);
 
-  // Filtered and sorted requirements with strict deduplication
-  const displayedRequirements = useMemo(() => {
-    let list = [...requirements];
-
-    // Filter by status tab (urgent, new, expiring, live) if applied
-    if (statusFilter !== 'all') {
-      list = list.filter((r, idx) => {
-        const visual = getRequirementVisualInfo(r, idx);
-        return visual.tag.type === statusFilter;
-      });
-    }
-
-    // Strict frontend deduplication
-    const seenIds = new Set<string>();
-    const seenTitles = new Set<string>();
-    list = list.filter(r => {
-      if (!r || !r.id || seenIds.has(r.id)) return false;
-      const norm = (r.title || '').toLowerCase().trim();
-      if (norm && seenTitles.has(norm)) return false;
-      seenIds.add(r.id);
-      if (norm) seenTitles.add(norm);
-      return true;
-    });
-
-    // Sort options
-    if (selectedSort === 'quotes_high') {
-      list.sort((a, b) => (b.quote_count || 0) - (a.quote_count || 0));
-    } else if (selectedSort === 'qty_high' || selectedSort === 'quantity_desc') {
-      list.sort((a, b) => b.quantity - a.quantity);
-    } else if (selectedSort === 'expiring') {
-      list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    } else {
-      list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    }
-
-    return list;
-  }, [requirements, statusFilter, selectedSort]);
+  const resetFilters = () => {
+    setSelectedCat('all');
+    setSelectedLocation('all');
+    setStatusFilter('all');
+    setSearchInput('');
+    setSearch('');
+  };
 
   // Handlers
   const handleOpenPostDialog = () => {
@@ -356,19 +331,12 @@ export default function RequirementsPage() {
     setPostDialogOpen(true);
   };
 
-  const handleOpenRespond = async (req: Requirement) => {
-    if (!user || !profile) { setDialogReason('not_logged_in'); setDialogOpen(true); return; }
-    if (!company) { setDialogReason('not_registered_business'); setDialogOpen(true); return; }
-    const quota = await checkDirectMessageQuota(company.id, company);
-    if (quota !== 'ok') { setDialogReason(quota); setDialogOpen(true); return; }
-    setRespondDialogReq(req);
-  };
-
   const handleOpenDetail = (req: Requirement) => {
     navigate(`/requirement/${req.req_number || req.id}`);
   };
 
-  const handleViewAndQuote = (req: Requirement) => {
+  // Send Quote: only for a registered business with a paid plan, as on the requirement page.
+  const handleViewAndQuote = async (req: Requirement) => {
     if (!user || !profile) {
       setDialogReason('not_logged_in');
       setDialogOpen(true);
@@ -379,22 +347,20 @@ export default function RequirementsPage() {
       setDialogOpen(true);
       return;
     }
-    // Only paid subscription companies can send quotes and messages to buyers
-    checkDirectMessageQuota(company.id, company).then(quota => {
-      if (quota !== 'ok') {
-        setDialogReason(quota);
-        setDialogOpen(true);
-      } else {
-        setRespondDialogReq(req);
-      }
-    });
+    const check = await checkSupplierPaidSubscription(company.id, company);
+    if (!check.allowed) {
+      setDialogReason(check.reason === 'no_subscription' ? 'quotation_subscription' : check.reason);
+      setDialogOpen(true);
+      return;
+    }
+    setRespondDialogReq(req);
   };
 
   return (
     <MainLayout>
       <PageMeta
         title="Live Buying Requirements & Active B2B RFQs | BulkSkart"
-        description="Browse active buying requests from verified global buyers. Filter by category, delivery location, and order quantity. Submit direct factory quotations and secure high-value wholesale supply contracts."
+        description="Browse open bulk buying requirements posted by buyers on BulkSkart. Filter by category, delivery location and deadline, and send your quotation to the buyer directly."
         keywords="active buying requirements, live bulk RFQs, buyer purchase requirements, wholesale supply leads, B2B procurement requests, direct factory tender"
         canonical="/requirements"
         ogType="website"
@@ -406,7 +372,7 @@ export default function RequirementsPage() {
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
           name: 'Live B2B Buying Requirements & RFQs',
-          description: 'Marketplace feed of verified bulk purchase requirements from global buyers on BulkSkart.',
+          description: 'Open bulk purchase requirements posted by buyers on BulkSkart.',
           url: 'https://www.bulkskart.com/requirements',
         }}
       />
@@ -425,13 +391,15 @@ export default function RequirementsPage() {
             <div className="flex items-center bg-card border border-border rounded-2xl p-1 sm:p-1.5 shadow-sm focus-within:border-[#FF5A00]/60 transition-colors">
               <Search className="w-4 h-4 sm:w-5 sm:h-5 ml-2.5 sm:ml-3 text-muted-foreground shrink-0" />
               <Input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search requirements, products, suppliers..."
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') setSearch(searchInput.trim()); }}
+                aria-label="Search buying requirements"
+                placeholder="Search requirements by product or keyword..."
                 className="flex-1 bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus-visible:ring-0 text-xs sm:text-sm md:text-base h-10 sm:h-11 px-2 sm:px-3"
               />
               <Button
-                onClick={loadRequirements}
+                onClick={() => setSearch(searchInput.trim())}
                 className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-9 sm:h-11 px-4 sm:px-7 rounded-xl shadow-[0_2px_10px_rgba(255,90,0,0.35)] shrink-0 text-xs sm:text-sm"
               >
                 Search
@@ -441,7 +409,7 @@ export default function RequirementsPage() {
 
           {/* ── 2. Category Horizontal Selector Pills matching Image 2 ───── */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-2 mb-4 sm:mb-6 scrollbar-none overscroll-x-contain touch-pan-x">
-            {TOP_CATEGORIES.map(cat => {
+            {categoryChips.map(cat => {
               const Icon = cat.icon;
               const active = selectedCat === cat.id;
               return (
@@ -467,14 +435,14 @@ export default function RequirementsPage() {
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#FF5A00] animate-pulse" />
                 <span className="text-[11px] font-extrabold text-[#FF5A00] uppercase tracking-widest">
-                  LIVE REQUIREMENTS
+                  OPEN REQUIREMENTS
                 </span>
               </div>
               <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
                 Active Buying <span className="text-[#FF5A00]">Requirements</span>
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Real business inquiries from verified buyers
+                Bulk buying requirements posted by buyers on BulkSkart
               </p>
             </div>
 
@@ -487,9 +455,9 @@ export default function RequirementsPage() {
                 </span>
                 <div>
                   <div className="text-lg font-black text-foreground leading-none">
-                    <AnimatedCount target={totalCount} />
+                    {openTotal === null ? '–' : <AnimatedCount target={openTotal} />}
                   </div>
-                  <div className="text-[10px] text-muted-foreground font-medium">Active RFQs</div>
+                  <div className="text-[10px] text-muted-foreground font-medium">Open RFQs</div>
                 </div>
               </div>
 
@@ -509,33 +477,36 @@ export default function RequirementsPage() {
             </div>
           </div>
 
-          {/* ── Live Ticker Banner ────────────────────────────────────────── */}
-          <div className="mb-5 bg-card border border-border rounded-xl px-4 py-2 flex items-center justify-between gap-3 text-xs overflow-hidden">
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-[11px] uppercase tracking-wider">LIVE STREAM</span>
-              <span className="text-muted-foreground/40 hidden sm:inline">|</span>
+          {/* ── Latest posts: the three newest open requirements ─────────── */}
+          {latest.length > 0 && (
+            <div className="mb-5 bg-card border border-border rounded-xl px-4 py-2 flex items-center justify-between gap-3 text-xs overflow-hidden">
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-[11px] uppercase tracking-wider">LATEST</span>
+                <span className="text-muted-foreground/40 hidden sm:inline">|</span>
+              </div>
+              <div className="overflow-x-auto no-scrollbar whitespace-nowrap text-muted-foreground text-xs flex items-center gap-6 flex-1 px-2">
+                {latest.map((item, i) => {
+                  const place = placeLabel(item);
+                  return (
+                    <React.Fragment key={item.id}>
+                      {i > 0 && <span className="text-border">•</span>}
+                      <Link to={`/requirement/${item.req_number || item.id}`} className={`inline-flex items-center gap-1.5 hover:text-foreground ${i === 0 ? 'text-foreground' : ''}`}>
+                        <span className="text-[#FF5A00] font-bold">{timeAgo(item.created_at)}:</span>
+                        {quantityLabel(item)} {item.title}{place ? ` · ${place}` : ''}
+                      </Link>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+              <div className="text-[11px] text-muted-foreground/60 shrink-0 font-medium hidden md:block">
+                Checks for new posts every 2 minutes
+              </div>
             </div>
-            <div className="overflow-x-auto no-scrollbar whitespace-nowrap text-muted-foreground text-xs flex items-center gap-6 flex-1 px-2">
-              <span className="inline-flex items-center gap-1.5 text-foreground">
-                <span className="text-[#FF5A00] font-bold">⚡ Live:</span> 50,000 Pcs A4 Paper inquiry just verified in Nairobi, Kenya
-              </span>
-              <span className="text-border">•</span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">New:</span> 25 MT HDPE Granules from Ahmedabad, Gujarat
-              </span>
-              <span className="text-border">•</span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="text-sky-600 dark:text-sky-400 font-bold">Urgent:</span> 100 MT Parboiled Rice 5% Broken required in Cotonou
-              </span>
-            </div>
-            <div className="text-[11px] text-muted-foreground/60 shrink-0 font-medium hidden md:block">
-              Auto-sync enabled
-            </div>
-          </div>
+          )}
 
           {/* ── Tabs (Live Feed / My Requirements) ───────────────────────── */}
           <div className="flex items-center gap-2 mb-5">
@@ -572,7 +543,7 @@ export default function RequirementsPage() {
           {activeTab === 'mine' && (
             <div className="mb-10">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-white">Your Posted Requirements</h2>
+                <h2 className="text-lg font-bold text-foreground">Your Posted Requirements</h2>
                 <Button
                   onClick={handleOpenPostDialog}
                   size="sm"
@@ -585,14 +556,14 @@ export default function RequirementsPage() {
               {myReqsLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[1, 2, 3].map(n => (
-                    <div key={n} className="h-48 rounded-2xl bg-white/5 animate-pulse border border-white/5" />
+                    <div key={n} className="h-48 rounded-2xl bg-muted/40 animate-pulse border border-border" />
                   ))}
                 </div>
               ) : myReqs.length === 0 ? (
                 <div className="bg-card border border-border rounded-2xl p-10 text-center">
-                  <FileText className="w-12 h-12 text-white/30 mx-auto mb-3" />
-                  <p className="text-white font-semibold">No requirements posted yet</p>
-                  <p className="text-xs text-white/50 mt-1 mb-4">Post your first bulk requirement and receive quotes from verified global manufacturers</p>
+                  <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                  <p className="text-foreground font-semibold">No requirements posted yet</p>
+                  <p className="text-xs text-muted-foreground mt-1 mb-4">Post your first bulk requirement and receive quotes from suppliers</p>
                   <Button
                     onClick={handleOpenPostDialog}
                     className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold gap-1.5"
@@ -625,21 +596,16 @@ export default function RequirementsPage() {
                   <div className="bg-card border border-border rounded-xl px-3 py-1 flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-[#FF5A00] shrink-0" />
                     <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                      <SelectTrigger className="w-full bg-transparent border-0 text-foreground text-xs h-9 p-0 focus:ring-0">
-                        <SelectValue placeholder="All India" />
+                      <SelectTrigger aria-label="Delivery location" className="w-full bg-transparent border-0 text-foreground text-xs h-9 p-0 focus:ring-0">
+                        <SelectValue placeholder="All locations" />
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-border text-foreground">
-                        <SelectItem value="all">All India</SelectItem>
-                        <SelectItem value="surat">Surat, Gujarat</SelectItem>
-                        <SelectItem value="bangalore">Bangalore, Karnataka</SelectItem>
-                        <SelectItem value="mumbai">Mumbai, Maharashtra</SelectItem>
-                        <SelectItem value="delhi">Delhi NCR</SelectItem>
-                        <SelectItem value="tiruppur">Tiruppur, Tamil Nadu</SelectItem>
-                        <SelectItem value="coimbatore">Coimbatore, Tamil Nadu</SelectItem>
-                        <SelectItem value="chennai">Chennai, Tamil Nadu</SelectItem>
-                        <SelectItem value="kolkata">Kolkata, West Bengal</SelectItem>
-                        <SelectItem value="guntur">Guntur, Andhra Pradesh</SelectItem>
-                        <SelectItem value="cochin">Cochin, Kerala</SelectItem>
+                        <SelectItem value="all">All locations</SelectItem>
+                        {places.map(place => (
+                          <SelectItem key={place.value} value={place.value}>
+                            {place.label} ({place.count.toLocaleString()})
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -648,13 +614,13 @@ export default function RequirementsPage() {
                   <div className="bg-card border border-border rounded-xl px-3 py-1 flex items-center gap-2">
                     <Package className="w-4 h-4 text-[#FF5A00] shrink-0" />
                     <Select value={selectedCat} onValueChange={setSelectedCat}>
-                      <SelectTrigger className="w-full bg-transparent border-0 text-foreground text-xs h-9 p-0 focus:ring-0">
+                      <SelectTrigger aria-label="Category" className="w-full bg-transparent border-0 text-foreground text-xs h-9 p-0 focus:ring-0">
                         <SelectValue placeholder="All Categories" />
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-border text-foreground">
                         <SelectItem value="all">All Categories</SelectItem>
                         {categories.map(c => (
-                          <SelectItem key={c.id} value={c.slug}>{c.name}</SelectItem>
+                          <SelectItem key={c.id} value={c.id}>{c.parent_id ? `— ${c.name}` : c.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -663,49 +629,44 @@ export default function RequirementsPage() {
                   {/* Sort Dropdown */}
                   <div className="bg-card border border-border rounded-xl px-3 py-1 flex items-center gap-2">
                     <span className="text-[#FF5A00] text-sm font-bold">⇅</span>
-                    <Select value={selectedSort} onValueChange={setSelectedSort}>
-                      <SelectTrigger className="w-full bg-transparent border-0 text-foreground text-xs h-9 p-0 focus:ring-0">
+                    <Select value={selectedSort} onValueChange={(value) => setSelectedSort(value as OpenRequirementSort)}>
+                      <SelectTrigger aria-label="Sort" className="w-full bg-transparent border-0 text-foreground text-xs h-9 p-0 focus:ring-0">
                         <SelectValue placeholder="Latest First" />
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-border text-foreground">
                         <SelectItem value="latest">Latest First</SelectItem>
                         <SelectItem value="quotes_high">Most Quotes Received</SelectItem>
                         <SelectItem value="qty_high">Quantity: High to Low</SelectItem>
+                        <SelectItem value="deadline">Deadline: Soonest First</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                {/* Status Tabs with count chips reflecting 50,000+ Active Inquiries */}
+                {/* Status tabs with the real number of requirements in each */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                  {[
-                    { key: 'all', label: 'All', count: totalCount },
-                    { key: 'urgent', label: 'Urgent', count: Math.round(totalCount * 0.28), icon: Zap, iconClass: 'text-rose-500' },
-                    { key: 'new', label: 'New', count: Math.round(totalCount * 0.35), icon: Sparkles, iconClass: 'text-orange-500' },
-                    { key: 'expiring', label: 'Expiring', count: Math.round(totalCount * 0.15), icon: Clock, iconClass: 'text-amber-500' },
-                    { key: 'live', label: 'Live', count: Math.round(totalCount * 0.22), isLiveDot: true },
-                  ].map(tab => {
+                  {TAB_LABELS.map(tab => {
                     const active = statusFilter === tab.key;
                     const Icon = tab.icon;
 
                     return (
                       <button
                         key={tab.key}
-                        onClick={() => setStatusFilter(tab.key as typeof statusFilter)}
+                        onClick={() => setStatusFilter(tab.key)}
+                        aria-pressed={active}
                         className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold transition-all shrink-0 ${
                           active
                             ? 'bg-[#FF5A00] text-white shadow-[0_2px_10px_rgba(255,90,0,0.35)] font-bold'
                             : 'bg-card text-foreground/80 hover:text-foreground border border-border hover:border-[#FF5A00]/40'
                         }`}
                       >
-                        {tab.isLiveDot && (
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        )}
                         {Icon && <Icon className={`w-3 h-3 ${tab.iconClass}`} />}
                         <span>{tab.label}</span>
-                        <span className={`text-[11px] ${active ? 'text-white/90' : 'text-muted-foreground'}`}>
-                          ({tab.count.toLocaleString()})
-                        </span>
+                        {tabCounts[tab.key] !== null && (
+                          <span className={`text-[11px] ${active ? 'text-white/90' : 'text-muted-foreground'}`}>
+                            ({(tabCounts[tab.key] ?? 0).toLocaleString()})
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -720,45 +681,64 @@ export default function RequirementsPage() {
                       <div key={n} className="h-28 rounded-2xl bg-muted/40 animate-pulse border border-border" />
                     ))}
                   </div>
-                ) : displayedRequirements.length === 0 ? (
+                ) : loadError && requirements.length === 0 ? (
                   <div className="text-center py-16 bg-card rounded-2xl border border-border">
-                    <p className="text-muted-foreground text-sm">No buying requirements match your current filters.</p>
+                    <p className="text-foreground text-sm font-semibold">Requirements could not be loaded.</p>
+                    <p className="text-muted-foreground text-xs mt-1">Check your connection and try again.</p>
                     <Button
                       size="sm"
-                      onClick={() => {
-                        setSelectedCat('all');
-                        setSelectedLocation('all');
-                        setStatusFilter('all');
-                        setSearch('');
-                      }}
-                      className="mt-3 text-xs bg-muted hover:bg-muted/80 text-foreground border border-border"
+                      onClick={() => setRefreshTick(t => t + 1)}
+                      className="mt-3 text-xs bg-muted hover:bg-muted/80 text-foreground border border-border gap-1.5"
                     >
-                      Reset All Filters
+                      <RefreshCw className="w-3.5 h-3.5" /> Try again
                     </Button>
                   </div>
+                ) : requirements.length === 0 ? (
+                  <div className="text-center py-16 bg-card rounded-2xl border border-border">
+                    {search || selectedCat !== 'all' || selectedLocation !== 'all' || statusFilter !== 'all' ? (
+                      <>
+                        <p className="text-muted-foreground text-sm">No open requirements match your filters.</p>
+                        <Button
+                          size="sm"
+                          onClick={resetFilters}
+                          className="mt-3 text-xs bg-muted hover:bg-muted/80 text-foreground border border-border"
+                        >
+                          Reset All Filters
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-foreground text-sm font-semibold">No open requirements right now.</p>
+                        <p className="text-muted-foreground text-xs mt-1">Post what you need and suppliers can send you quotes.</p>
+                        <Button
+                          size="sm"
+                          onClick={handleOpenPostDialog}
+                          className="mt-3 text-xs bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold gap-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Post Requirement
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 ) : (
-                  displayedRequirements.map((req, index) => {
+                  requirements.map((req, index) => {
                     const visual = getRequirementVisualInfo(req, index);
+                    const isMine = Boolean(user && req.buyer_id === user.id);
 
                     return (
                       <div
                         key={req.id}
                         className="group bg-card hover:bg-muted/30 border border-border hover:border-[#FF5A00]/40 rounded-2xl p-4 md:p-5 transition-all duration-200 shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
                       >
-                        {/* Left: Square Thumbnail (Real Commercial Photography, No AI) */}
-                        <div
+                        {/* Left: the buyer's own photo, or a plain tile */}
+                        <button
+                          type="button"
                           onClick={() => handleOpenDetail(req)}
+                          aria-label={`Open ${visual.cleanTitle}`}
                           className="w-full md:w-28 h-28 rounded-xl overflow-hidden shrink-0 bg-muted border border-border cursor-pointer"
                         >
-                          <SafeImage
-                            src={visual.image}
-                            alt={visual.cleanTitle}
-                            category={req.categories?.name || req.category_id}
-                            fallbackType="rfq"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            sizes="(max-width: 768px) 100vw, 112px"
-                          />
-                        </div>
+                          <RequirementThumb src={visual.image} alt={visual.cleanTitle} slug={req.categories?.slug || req.categories?.name || ''} />
+                        </button>
 
                         {/* Center: Details */}
                         <div className="flex-1 min-w-0">
@@ -768,6 +748,9 @@ export default function RequirementsPage() {
                               {visual.tag.type === 'urgent' && <Zap className="w-2.5 h-2.5 fill-current" />}
                               {visual.tag.label}
                             </span>
+                            {req.req_number && (
+                              <span className="text-[10px] font-semibold text-muted-foreground tracking-wide">{req.req_number}</span>
+                            )}
                           </div>
 
                           {/* Title with Quantity */}
@@ -778,20 +761,24 @@ export default function RequirementsPage() {
                             {visual.cleanTitle} - {visual.quantityDisplay}
                           </h3>
 
-                          {/* Specification Description */}
-                          <p className="text-xs md:text-sm text-muted-foreground mt-0.5 line-clamp-1">
-                            {visual.subtitle}
-                          </p>
+                          {/* First line of the buyer's description */}
+                          {visual.subtitle && (
+                            <p className="text-xs md:text-sm text-muted-foreground mt-0.5 line-clamp-1">
+                              {visual.subtitle}
+                            </p>
+                          )}
 
                           {/* Category Badge with Icon */}
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-muted/60 border border-border text-foreground/80 mt-1.5">
-                            <Tag className="w-3 h-3 text-[#FF5A00]" />
-                            <span>{req.categories?.name || 'Textiles & Apparel'}</span>
-                          </div>
+                          {req.categories?.name && (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-muted/60 border border-border text-foreground/80 mt-1.5">
+                              <Tag className="w-3 h-3 text-[#FF5A00]" />
+                              <span>{req.categories.name}</span>
+                            </div>
+                          )}
 
-                          {/* Bottom Meta: Location & Urgent Procurement (No Posted Date) */}
+                          {/* Bottom Meta: Location & posted time */}
                           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2 flex-wrap">
-                            <span className="flex items-center gap-1">
+                            <span className={`flex items-center gap-1 ${visual.hasLocation ? '' : 'italic'}`}>
                               <MapPin className="w-3 h-3 text-[#FF5A00] shrink-0" />
                               {visual.locationDisplay}
                             </span>
@@ -799,35 +786,46 @@ export default function RequirementsPage() {
                               <Clock className="w-3 h-3 shrink-0" />
                               {timeAgo(req.created_at)}
                             </span>
-                            <span className="font-semibold text-foreground">{visual.quantityDisplay}</span>
                           </div>
                         </div>
 
-                        {/* Right Column: Badges & View & Quote Button */}
+                        {/* Right Column: Badges & Send Quote Button */}
                         <div className="w-full md:w-auto shrink-0 flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-border">
                           <div className="flex flex-col items-start md:items-end gap-1">
-                            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                              <span>{visual.verifiedStatus}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              {visual.attributeIcon === 'truck' ? (
-                                <Truck className="w-3.5 h-3.5 text-muted-foreground/60" />
-                              ) : visual.attributeIcon === 'ship' ? (
-                                <Ship className="w-3.5 h-3.5 text-muted-foreground/60" />
-                              ) : (
-                                <Building2 className="w-3.5 h-3.5 text-muted-foreground/60" />
-                              )}
-                              <span>{visual.orderAttribute}</span>
-                            </div>
+                            {visual.verifiedStatus && (
+                              <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                <span>{visual.verifiedStatus}</span>
+                              </div>
+                            )}
+                            {visual.orderAttribute && (
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                {visual.attributeIcon === 'calendar' ? (
+                                  <Calendar className="w-3.5 h-3.5 text-muted-foreground/60" />
+                                ) : (
+                                  <MessageSquare className="w-3.5 h-3.5 text-muted-foreground/60" />
+                                )}
+                                <span>{visual.orderAttribute}</span>
+                              </div>
+                            )}
                           </div>
 
-                          <Button
-                            onClick={() => handleViewAndQuote(req)}
-                            className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-[0_2px_10px_rgba(255,90,0,0.35)] shrink-0 gap-1.5"
-                          >
-                            Contact Buyer <ArrowRight className="w-4 h-4" />
-                          </Button>
+                          {isMine ? (
+                            <Button
+                              onClick={() => handleOpenDetail(req)}
+                              variant="outline"
+                              className="font-bold text-sm px-6 py-2.5 rounded-xl shrink-0 gap-1.5"
+                            >
+                              Your requirement <ArrowRight className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => handleViewAndQuote(req)}
+                              className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-[0_2px_10px_rgba(255,90,0,0.35)] shrink-0 gap-1.5"
+                            >
+                              Send Quote <ArrowRight className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     );
@@ -835,12 +833,12 @@ export default function RequirementsPage() {
                 )}
               </div>
 
-              {/* ── 5.1 Pagination Bar for 50,000+ Real Buyer Posts ─────────── */}
+              {/* ── 5.1 Pagination Bar ─────────────────────────────────────── */}
               {totalPages > 1 && (
                 <div className="bg-card border border-border rounded-2xl p-4 mb-16 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-xs text-muted-foreground">
                     Showing Page <strong className="text-foreground">{page}</strong> of{' '}
-                    <strong className="text-foreground">{totalPages.toLocaleString()}</strong> ({totalCount.toLocaleString()}+ Real Buyer Posts)
+                    <strong className="text-foreground">{totalPages.toLocaleString()}</strong> ({totalCount.toLocaleString()} open requirement{totalCount === 1 ? '' : 's'})
                   </div>
 
                   <div className="flex items-center gap-1.5">
@@ -914,11 +912,14 @@ export default function RequirementsPage() {
             </span>
             <div>
               <div className="text-xs md:text-sm font-black text-foreground leading-tight flex items-center gap-2">
-                <span><AnimatedCount target={totalCount} /> Active Real Requirements</span>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-1.5 py-0.2 rounded font-bold hidden sm:inline">100% Authentic Photos</span>
+                {openTotal === null ? (
+                  <span>Open requirements</span>
+                ) : (
+                  <span><AnimatedCount target={openTotal} /> open requirement{openTotal === 1 ? '' : 's'}</span>
+                )}
               </div>
               <div className="text-[10px] text-muted-foreground leading-tight">
-                50,000+ verified B2B procurement requests · Zero AI imagery
+                Post what you need and get quotes from suppliers
               </div>
             </div>
           </div>
@@ -957,7 +958,7 @@ export default function RequirementsPage() {
           supplierCompanyId={company.id}
           onResponded={() => {
             setRespondDialogReq(null);
-            loadRequirements();
+            setRefreshTick(t => t + 1);
           }}
         />
       )}
@@ -967,10 +968,7 @@ export default function RequirementsPage() {
         onClose={() => setPostDialogOpen(false)}
         categories={categories}
         buyerId={user?.id ?? ''}
-        onPosted={() => {
-          loadRequirements();
-          setTotalCount(c => c + 1);
-        }}
+        onPosted={() => setRefreshTick(t => t + 1)}
       />
 
       <SubscribeToContactDialog

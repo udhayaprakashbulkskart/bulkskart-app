@@ -759,25 +759,6 @@ export default function BusinessSetupWizardPage() {
       if (isBuyer) {
         navigate('/dashboard/buyer');
       } else {
-        // Auto-seed 5 sample buyer lead messages into manufacturer inbox
-        try {
-          const { data: co } = await supabase
-            .from('companies')
-            .select('id, company_name')
-            .eq('owner_id', user.id)
-            .maybeSingle();
-          if (co?.id) {
-            const { ensureManufacturerWelcomeLeads } = await import('@/lib/api');
-            const result = ensureManufacturerWelcomeLeads(co.id, co.company_name || business.legalName || 'Your Factory');
-            if (result.seeded) {
-              toast.success('5 sample buyer leads added to your Messages inbox', {
-                description: 'Open Messages to reply — this is a simulation for new manufacturers.',
-              });
-            }
-          }
-        } catch (seedErr) {
-          console.warn('Welcome lead seed skipped:', seedErr);
-        }
         navigate('/dashboard/supplier');
       }
     } catch (err: any) {
