@@ -1568,13 +1568,61 @@ export async function adminUpdateCompanyVerification(id: string, status: string)
   return { error: error?.message ?? null };
 }
 
-export async function adminGetReports(): Promise<any[]> {
-  const { data } = await supabase
+export type ReportStatus = 'open' | 'under_review' | 'resolved' | 'dismissed';
+
+export interface AdminReport {
+  id: string;
+  reporter_id: string;
+  reported_user_id: string | null;
+  reported_company_id: string | null;
+  reported_product_id: string | null;
+  reason: string;
+  description: string | null;
+  status: ReportStatus;
+  admin_notes: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  reporter?: { full_name: string | null; email: string | null } | null;
+}
+
+/** Reports for the admin screen, newest first (admins can read every report). */
+export async function adminGetReports(options?: { status?: ReportStatus | 'all'; limit?: number }): Promise<{ rows: AdminReport[]; error: string | null }> {
+  let query = supabase
     .from('reports')
-    .select('*')
+    .select('*, reporter:profiles!reporter_id(full_name,email)')
     .order('created_at', { ascending: false })
-    .limit(PAGE_SIZE);
-  return Array.isArray(data) ? data : [];
+    .limit(options?.limit ?? 100);
+  if (options?.status && options.status !== 'all') query = query.eq('status', options.status);
+  const { data, error } = await query;
+  if (error) return { rows: [], error: error.message };
+  return { rows: (Array.isArray(data) ? data : []) as AdminReport[], error: null };
+}
+
+/** How many reports are in each status. */
+export async function adminCountReports(): Promise<Record<ReportStatus, number | null>> {
+  const statuses: ReportStatus[] = ['open', 'under_review', 'resolved', 'dismissed'];
+  const result: Record<ReportStatus, number | null> = { open: null, under_review: null, resolved: null, dismissed: null };
+  await Promise.all(
+    statuses.map(async (status) => {
+      const { count, error } = await supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', status);
+      result[status] = error ? null : (count ?? 0);
+    }),
+  );
+  return result;
+}
+
+/** Change a report's status and the admin's notes; closing it stamps the time. */
+export async function adminUpdateReport(id: string, changes: { status: ReportStatus; admin_notes: string }): Promise<{ error: string | null }> {
+  const closed = changes.status === 'resolved' || changes.status === 'dismissed';
+  const { error } = await supabase
+    .from('reports')
+    .update({
+      status: changes.status,
+      admin_notes: changes.admin_notes.trim() || null,
+      resolved_at: closed ? new Date().toISOString() : null,
+    })
+    .eq('id', id);
+  return { error: error?.message ?? null };
 }
 
 export async function adminUpdateUserStatus(userId: string, status: string): Promise<{ error: string | null }> {

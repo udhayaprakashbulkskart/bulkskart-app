@@ -85,6 +85,7 @@ export const supplierNavItems: NavItem[] = [
 export const adminNavItems: NavItem[] = [
   { label: 'Control Panel', href: '/dashboard/admin', icon: LayoutDashboard },
   { label: 'AI Match Analytics', href: '/dashboard/admin/ai-match-analytics', icon: Zap },
+  { label: 'Reports', href: '/dashboard/admin/reports', icon: Flag },
 ];
 
 /**
