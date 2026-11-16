@@ -136,36 +136,13 @@ describe('Dashboard shell: the top bar', () => {
     expect(screen.getByRole('link', { name: 'BulkSkart home' })).toHaveAttribute('href', '/');
   });
 
-  it('shows the five main sections of a buyer as pills, and marks the one that is open', () => {
+  it('shows every section of a buyer as a pill, the calculators last, and marks the one that is open', () => {
     signIn('buyer');
     renderAt('/dashboard/buyer/orders');
-    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Overview', 'My Requirements', 'Received Quotes', 'Orders', 'Messages']);
-    expect(menu().getByRole('link', { name: 'Orders' })).toHaveAttribute('aria-current', 'page');
-    expect(menu().getByRole('link', { name: 'Overview' })).not.toHaveAttribute('aria-current');
-  });
-
-  it('shows the five main sections of a supplier, and marks only Overview on the overview page', () => {
-    signIn('supplier');
-    renderAt('/dashboard/supplier');
-    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Overview', 'My Products', 'RFQ Leads', 'Quotations', 'Orders']);
-    expect(menu().getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
-    expect(menu().getByRole('link', { name: 'My Products' })).not.toHaveAttribute('aria-current');
-  });
-
-  it('has two sections and no More menu for an admin', () => {
-    signIn('admin');
-    renderAt('/dashboard/admin');
-    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics']);
-    expect(menu().queryByRole('button', { name: /More/ })).not.toBeInTheDocument();
-  });
-
-  it('keeps every other section of a buyer under More, with the calculators under Tools', async () => {
-    const user = userEvent.setup();
-    signIn('buyer');
-    renderAt('/dashboard/buyer');
-    await user.click(menu().getByRole('button', { name: /More/ }));
-    // the bar's 4th and 5th sections are listed first: on a narrow bar they move in here
-    expect(labelsOf(screen.getAllByRole('menuitem'))).toEqual([
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual([
+      'Overview',
+      'My Requirements',
+      'Received Quotes',
       'Orders',
       'Messages',
       'Notifications',
@@ -176,22 +153,24 @@ describe('Dashboard shell: the top bar', () => {
       'Shipping Calculator',
       'Order Loan Calculator',
     ]);
-    expect(screen.getByRole('menuitem', { name: 'Shipping Calculator' })).toHaveAttribute('href', '/shipping-calculator');
-    expect(screen.getByRole('menuitem', { name: 'Order Loan Calculator' })).toHaveAttribute('href', '/loan-calculator');
-    expect(screen.getByText('Tools')).toBeInTheDocument();
+    expect(menu().getByRole('link', { name: 'Orders' })).toHaveAttribute('aria-current', 'page');
+    expect(menu().getByRole('link', { name: 'Overview' })).not.toHaveAttribute('aria-current');
+    expect(menu().getByRole('link', { name: 'Shipping Calculator' })).toHaveAttribute('href', '/shipping-calculator');
+    expect(menu().getByRole('link', { name: 'Order Loan Calculator' })).toHaveAttribute('href', '/loan-calculator');
   });
 
-  it('keeps every other section of a supplier under More and has no Tools list', async () => {
-    const user = userEvent.setup();
+  it('shows every section of a supplier as a pill, and marks only Overview on the overview page', () => {
     signIn('supplier');
     renderAt('/dashboard/supplier');
-    await user.click(menu().getByRole('button', { name: /More/ }));
-    expect(labelsOf(screen.getAllByRole('menuitem'))).toEqual([
-      'Quotations',
-      'Orders',
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual([
+      'Overview',
       'AI Sales Assistant',
       'Business Overview',
+      'My Products',
       'Inventory & Stock',
+      'RFQ Leads',
+      'Quotations',
+      'Orders',
       'Messages',
       'Notifications',
       'Verification',
@@ -200,27 +179,53 @@ describe('Dashboard shell: the top bar', () => {
       'Subscription',
       'Business Profile',
     ]);
-    expect(screen.queryByText('Tools')).not.toBeInTheDocument();
+    expect(menu().getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
+    expect(menu().getByRole('link', { name: 'My Products' })).not.toHaveAttribute('aria-current');
   });
 
-  it('lights More and marks the section that is open inside it', async () => {
-    const user = userEvent.setup();
+  it('has two sections for an admin', () => {
+    signIn('admin');
+    renderAt('/dashboard/admin');
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics']);
+  });
+
+  it('has no More button: nothing in the menu is hidden behind a button', () => {
+    for (const role of ['buyer', 'supplier', 'admin'] as const) {
+      signIn(role);
+      const view = renderAt(`/dashboard/${role}`);
+      expect(screen.queryByRole('button', { name: /More/ })).not.toBeInTheDocument();
+      view.unmount();
+    }
+  });
+
+  it('gives a long menu a row of its own and keeps the admin\'s short one beside the logo', () => {
     signIn('buyer');
-    renderAt('/dashboard/buyer/disputes');
-    const more = menu().getByRole('button', { name: /More/ });
-    expect(more).toHaveClass('is-active');
-    await user.click(more);
-    expect(screen.getByRole('menuitem', { name: 'Disputes' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('menuitem', { name: 'Profile' })).not.toHaveAttribute('aria-current');
+    const buyer = renderAt('/dashboard/buyer');
+    expect(document.querySelector('.dsh-bar')).toHaveClass('is-stacked');
+    expect(menu().getByRole('link', { name: 'Overview' }).closest('nav')).toHaveClass('is-stacked');
+    buyer.unmount();
+    signIn('supplier');
+    const supplier = renderAt('/dashboard/supplier');
+    expect(document.querySelector('.dsh-bar')).toHaveClass('is-stacked');
+    supplier.unmount();
+    signIn('admin');
+    renderAt('/dashboard/admin');
+    expect(document.querySelector('.dsh-bar')).not.toHaveClass('is-stacked');
   });
 
-  it('opens a section from the More menu', async () => {
+  it('opens a section from the menu', async () => {
     const user = userEvent.setup();
     signIn('buyer');
     renderAt('/dashboard/buyer');
-    await user.click(menu().getByRole('button', { name: /More/ }));
-    await user.click(screen.getByRole('menuitem', { name: 'Saved Manufacturers' }));
+    await user.click(menu().getByRole('link', { name: 'Saved Manufacturers' }));
     expect(where()).toBe('/dashboard/buyer/saved-manufacturers');
+  });
+
+  it('marks a section that used to be hidden, like Disputes, when it is open', () => {
+    signIn('buyer');
+    renderAt('/dashboard/buyer/disputes');
+    expect(menu().getByRole('link', { name: 'Disputes' })).toHaveAttribute('aria-current', 'page');
+    expect(menu().getByRole('link', { name: 'Profile' })).not.toHaveAttribute('aria-current');
   });
 });
 
@@ -461,7 +466,7 @@ describe('Dashboard shell: a manufacturer whose account is still loading', () =>
     expect(where()).toBe('/dashboard/supplier/inventory');
     expect(toastMock.message).not.toHaveBeenCalled();
     expect(screen.queryByText('Unpaid Manufacturer Account')).not.toBeInTheDocument();
-    expect(menu().getByRole('button', { name: /More/ }).querySelector('.dsh-dot')).toBeNull();
+    expect(menu().getByRole('link', { name: /Subscription/ })).not.toHaveTextContent('Unpaid');
   });
 
   it('stays on the page it asked for once the account has loaded and shows that it has paid', () => {
@@ -485,15 +490,11 @@ describe('Dashboard shell: a manufacturer whose account is still loading', () =>
     expect(screen.getByText('Unpaid Manufacturer Account')).toBeInTheDocument();
   });
 
-  it('can leave out the notice under the bar for a page that explains the unpaid state itself, and keeps the rest', async () => {
-    const user = userEvent.setup();
+  it('can leave out the notice under the bar for a page that explains the unpaid state itself, and keeps the rest', () => {
     signIn('supplier', { isPaidSubscriber: false });
     renderAt('/dashboard/supplier', { hideUnpaidNotice: true });
     expect(screen.queryByText('Unpaid Manufacturer Account')).not.toBeInTheDocument();
-    const more = menu().getByRole('button', { name: /More/ });
-    expect(more.querySelector('.dsh-dot')).not.toBeNull();
-    await user.click(more);
-    expect(screen.getByRole('menuitem', { name: /Subscription/ })).toHaveTextContent('Unpaid');
+    expect(menu().getByRole('link', { name: /Subscription/ })).toHaveTextContent('Unpaid');
   });
 });
 
@@ -511,10 +512,11 @@ describe('Dashboard shell: the manufacturer addresses', () => {
     expect(menu().getByRole('link', { name: 'Quotations' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('light the More menu for a section that lives in it', () => {
+  it('mark a section that used to sit out of sight, like Inventory & Stock, straight in the bar', () => {
     signIn('supplier');
     renderAt('/dashboard/manufacturer/inventory');
-    expect(menu().getByRole('button', { name: /More/ })).toHaveClass('is-active');
+    expect(menu().getByRole('link', { name: 'Inventory & Stock' })).toHaveAttribute('aria-current', 'page');
+    expect(menu().getByRole('link', { name: 'Overview' })).not.toHaveAttribute('aria-current');
   });
 
   it('keep an unpaid manufacturer to the pages it may open, like the supplier addresses', () => {
@@ -549,18 +551,18 @@ describe('Dashboard shell: the rules that were already there', () => {
     expect(where()).toBe('/dashboard/admin/ai-match-analytics');
   });
 
-  it('shows the unpaid banner and flags Subscription for a manufacturer who has not subscribed', async () => {
-    const user = userEvent.setup();
+  it('shows the unpaid banner and flags Subscription for a manufacturer who has not subscribed', () => {
     signIn('supplier', { isPaidSubscriber: false });
     renderAt('/dashboard/supplier/subscription');
     expect(screen.getByText('Unpaid Manufacturer Account')).toBeInTheDocument();
     expect(screen.getByText('Contacts Locked')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Subscribe Now' })).toHaveAttribute('href', '/dashboard/supplier/subscription');
     expect(screen.getByRole('link', { name: 'Compare Plans' })).toHaveAttribute('href', '/pricing');
-    const more = menu().getByRole('button', { name: /More/ });
-    expect(more.querySelector('.dsh-dot')).not.toBeNull();
-    await user.click(more);
-    expect(screen.getByRole('menuitem', { name: /Subscription/ })).toHaveTextContent('Unpaid');
+    const subscription = menu().getByRole('link', { name: /Subscription/ });
+    expect(subscription).toHaveTextContent('Unpaid');
+    expect(subscription).toHaveAttribute('aria-current', 'page');
+    // only Subscription carries the flag
+    expect(menu().getByRole('link', { name: 'Overview' })).not.toHaveTextContent('Unpaid');
   });
 
   it('keeps an unpaid manufacturer on the pages they may open', () => {
@@ -580,7 +582,7 @@ describe('Dashboard shell: the rules that were already there', () => {
     signIn('supplier');
     const paid = renderAt('/dashboard/supplier');
     expect(screen.queryByText('Unpaid Manufacturer Account')).not.toBeInTheDocument();
-    expect(menu().getByRole('button', { name: /More/ }).querySelector('.dsh-dot')).toBeNull();
+    expect(menu().getByRole('link', { name: /Subscription/ })).not.toHaveTextContent('Unpaid');
     paid.unmount();
     signIn('buyer');
     renderAt('/dashboard/buyer');
@@ -591,5 +593,81 @@ describe('Dashboard shell: the rules that were already there', () => {
     signIn('buyer');
     renderAt('/dashboard/buyer');
     expect(screen.getByText('the page')).toBeInTheDocument();
+  });
+});
+
+describe('Dashboard shell: how far down the page starts', () => {
+  type Watcher = { callback: () => void; watched: Element[]; disconnect: ReturnType<typeof vi.fn> };
+  const watchers: Watcher[] = [];
+  let top = 0;
+  let offsetTop: { mockRestore: () => void };
+
+  beforeEach(() => {
+    watchers.length = 0;
+    top = 137;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        watcher: Watcher;
+        constructor(callback: () => void) {
+          this.watcher = { callback, watched: [], disconnect: vi.fn() };
+          watchers.push(this.watcher);
+        }
+        observe(element: Element) {
+          this.watcher.watched.push(element);
+        }
+        unobserve() {}
+        disconnect() {
+          this.watcher.disconnect();
+        }
+      },
+    );
+    offsetTop = vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(() => top);
+  });
+  afterEach(() => {
+    offsetTop.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  const root = () => document.querySelector('.dsh') as HTMLElement;
+  const downBy = () => root().style.getPropertyValue('--dsh-top');
+
+  it('tells the page how far down it starts, and again when the bar changes height', () => {
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    expect(downBy()).toBe('137px');
+    top = 173; // the window got narrower and the menu wrapped onto a second row
+    act(() => watchers.forEach((watcher) => watcher.callback()));
+    expect(downBy()).toBe('173px');
+  });
+
+  it('watches the bar and a notice under it, and stops when the page is closed', () => {
+    signIn('supplier', { isPaidSubscriber: false });
+    const view = renderAt('/dashboard/supplier/products');
+    const watched = watchers.flatMap((watcher) => watcher.watched);
+    expect(watched).toContain(document.querySelector('.dsh-bar'));
+    expect(watched).toContain(document.querySelector('.dsh-notice'));
+    view.unmount();
+    expect(watchers.length).toBeGreaterThan(0);
+    for (const watcher of watchers) expect(watcher.disconnect).toHaveBeenCalled();
+  });
+
+  it('measures again when a notice appears under the bar', () => {
+    signIn('supplier', { loading: true, isPaidSubscriber: false });
+    const view = renderAt('/dashboard/supplier/products');
+    expect(document.querySelector('.dsh-notice')).toBeNull();
+    expect(downBy()).toBe('137px');
+    top = 205; // the notice pushes the page down
+    signIn('supplier', { loading: false, isPaidSubscriber: false });
+    view.rerender(treeAt('/dashboard/supplier/products'));
+    expect(document.querySelector('.dsh-notice')).not.toBeNull();
+    expect(downBy()).toBe('205px');
+  });
+
+  it('still measures once where there is no way to watch for changes', () => {
+    vi.stubGlobal('ResizeObserver', undefined);
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    expect(downBy()).toBe('137px');
   });
 });

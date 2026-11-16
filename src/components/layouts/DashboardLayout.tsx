@@ -13,7 +13,7 @@ import {
   Settings, LogOut, Menu, Globe, BarChart3, TrendingUp,
   Shield, Flag, CreditCard, Building2, UserCircle,
   Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
-  Search, ChevronDown, LifeBuoy, Plus, Sun, Moon,
+  Search, LifeBuoy, Plus, Sun, Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -45,18 +45,16 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
-  /** Listed under "Tools" in the More menu. */
+  /** A tool rather than a page of the dashboard: shown after a divider at the end of the menu. */
   tool?: boolean;
-  /** Its place in the bar, 1 first. Items without one are under "More". The 4th and 5th move into "More" on a narrow bar. */
-  pin?: number;
 }
 
 export const buyerNavItems: NavItem[] = [
-  { label: 'Overview', href: '/dashboard/buyer', icon: LayoutDashboard, pin: 1 },
-  { label: 'My Requirements', href: '/dashboard/buyer/requirements', icon: FileText, pin: 2 },
-  { label: 'Received Quotes', href: '/dashboard/buyer/quotes', icon: Package, pin: 3 },
-  { label: 'Orders', href: '/dashboard/buyer/orders', icon: Package, pin: 4 },
-  { label: 'Messages', href: '/dashboard/buyer/messages', icon: MessageSquare, pin: 5 },
+  { label: 'Overview', href: '/dashboard/buyer', icon: LayoutDashboard },
+  { label: 'My Requirements', href: '/dashboard/buyer/requirements', icon: FileText },
+  { label: 'Received Quotes', href: '/dashboard/buyer/quotes', icon: Package },
+  { label: 'Orders', href: '/dashboard/buyer/orders', icon: Package },
+  { label: 'Messages', href: '/dashboard/buyer/messages', icon: MessageSquare },
   { label: 'Notifications', href: '/dashboard/buyer/notifications', icon: Bell },
   { label: 'Saved Manufacturers', href: '/dashboard/buyer/saved-manufacturers', icon: Building2 },
   { label: 'KYC Verification', href: '/dashboard/buyer/verification', icon: Shield },
@@ -67,14 +65,14 @@ export const buyerNavItems: NavItem[] = [
 ];
 
 export const supplierNavItems: NavItem[] = [
-  { label: 'Overview', href: '/dashboard/supplier', icon: LayoutDashboard, pin: 1 },
+  { label: 'Overview', href: '/dashboard/supplier', icon: LayoutDashboard },
   { label: 'AI Sales Assistant', href: '/dashboard/supplier/ai-assistant', icon: Sparkles },
   { label: 'Business Overview', href: '/dashboard/supplier/overview', icon: BarChart3 },
-  { label: 'My Products', href: '/dashboard/supplier/products', icon: Package, pin: 2 },
+  { label: 'My Products', href: '/dashboard/supplier/products', icon: Package },
   { label: 'Inventory & Stock', href: '/dashboard/supplier/inventory', icon: Warehouse },
-  { label: 'RFQ Leads', href: '/dashboard/supplier/rfqs', icon: FileText, pin: 3 },
-  { label: 'Quotations', href: '/dashboard/supplier/quotations', icon: TrendingUp, pin: 4 },
-  { label: 'Orders', href: '/dashboard/supplier/orders', icon: Building2, pin: 5 },
+  { label: 'RFQ Leads', href: '/dashboard/supplier/rfqs', icon: FileText },
+  { label: 'Quotations', href: '/dashboard/supplier/quotations', icon: TrendingUp },
+  { label: 'Orders', href: '/dashboard/supplier/orders', icon: Building2 },
   { label: 'Messages', href: '/dashboard/supplier/messages', icon: MessageSquare },
   { label: 'Notifications', href: '/dashboard/supplier/notifications', icon: Bell },
   { label: 'Verification', href: '/dashboard/supplier/verification', icon: Shield },
@@ -85,8 +83,8 @@ export const supplierNavItems: NavItem[] = [
 ];
 
 export const adminNavItems: NavItem[] = [
-  { label: 'Control Panel', href: '/dashboard/admin', icon: LayoutDashboard, pin: 1 },
-  { label: 'AI Match Analytics', href: '/dashboard/admin/ai-match-analytics', icon: Zap, pin: 2 },
+  { label: 'Control Panel', href: '/dashboard/admin', icon: LayoutDashboard },
+  { label: 'AI Match Analytics', href: '/dashboard/admin/ai-match-analytics', icon: Zap },
 ];
 
 /**
@@ -119,88 +117,35 @@ function retainDashTheme(): () => void {
   };
 }
 
-interface MenuLinkProps {
-  item: NavItem;
-  active: boolean;
-  unpaid: boolean;
-  /** One of the bar's own items that only lives in the menu while the bar is narrow. */
-  extra?: boolean;
-}
-
-function MenuLink({ item, active, unpaid, extra = false }: MenuLinkProps) {
-  const Icon = item.icon;
-  return (
-    <DropdownMenuItem asChild className={cn('dsh-mi', extra && 'is-extra', active && 'is-active')}>
-      <Link to={item.href} aria-current={active ? 'page' : undefined}>
-        <Icon aria-hidden="true" />
-        <span>{item.label}</span>
-        {item.href === '/dashboard/supplier/subscription' && unpaid && <span className="dsh-flag">Unpaid</span>}
-      </Link>
-    </DropdownMenuItem>
-  );
-}
-
 interface NavBarProps {
   items: NavItem[];
   isActive: (href: string) => boolean;
   unpaid: boolean;
+  /** A long menu sits in a row of its own under the logo, wrapping if it must, instead of beside the logo. */
+  stacked: boolean;
 }
 
-/** The pill menu in the bar: the pinned sections, and a "More" menu for the others. */
-function NavBar({ items, isActive, unpaid }: NavBarProps) {
-  const pinned = items.filter((item) => item.pin).sort((a, b) => (a.pin ?? 0) - (b.pin ?? 0));
-  const rest = items.filter((item) => !item.pin && !item.tool);
+/** The pill menu in the bar: every section is shown, none is hidden behind a button. */
+function NavBar({ items, isActive, unpaid, stacked }: NavBarProps) {
+  const pages = items.filter((item) => !item.tool);
   const tools = items.filter((item) => item.tool);
-  const extras = pinned.filter((item) => (item.pin ?? 0) >= 4);
-  const hasMore = rest.length + tools.length + extras.length > 0;
-  const moreActive = [...rest, ...tools].some((item) => isActive(item.href));
-  const extraActive = extras.some((item) => isActive(item.href));
+  const pill = (item: NavItem) => {
+    const Icon = item.icon;
+    const active = isActive(item.href);
+    return (
+      <Link key={item.href} to={item.href} className={cn('dsh-tab', active && 'is-active')} aria-current={active ? 'page' : undefined}>
+        <Icon aria-hidden="true" />
+        <span>{item.label}</span>
+        {item.href === '/dashboard/supplier/subscription' && unpaid && <span className="dsh-flag">Unpaid</span>}
+      </Link>
+    );
+  };
 
   return (
-    <nav className="dsh-nav" aria-label="Dashboard sections">
-      {pinned.map((item) => {
-        const Icon = item.icon;
-        const active = isActive(item.href);
-        return (
-          <Link
-            key={item.href}
-            to={item.href}
-            className={cn('dsh-tab', active && 'is-active', (item.pin ?? 0) >= 4 && `is-r${item.pin}`)}
-            aria-current={active ? 'page' : undefined}
-          >
-            <Icon aria-hidden="true" />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-      {hasMore && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button type="button" className={cn('dsh-tab dsh-more', moreActive && 'is-active', extraActive && 'is-extra-active')}>
-              <span>More</span>
-              <ChevronDown className="dsh-caret" aria-hidden="true" />
-              {unpaid && <i className="dsh-dot" aria-hidden="true" />}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="center" sideOffset={12} className="dsh-menu">
-            {extras.map((item) => (
-              <MenuLink key={item.href} item={item} active={isActive(item.href)} unpaid={unpaid} extra />
-            ))}
-            {rest.map((item) => (
-              <MenuLink key={item.href} item={item} active={isActive(item.href)} unpaid={unpaid} />
-            ))}
-            {tools.length > 0 && (
-              <>
-                <DropdownMenuSeparator />
-                <div className="dsh-menu-label">Tools</div>
-                {tools.map((item) => (
-                  <MenuLink key={item.href} item={item} active={isActive(item.href)} unpaid={unpaid} />
-                ))}
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+    <nav className={cn('dsh-nav', stacked && 'is-stacked')} aria-label="Dashboard sections">
+      {pages.map(pill)}
+      {tools.length > 0 && <span className="dsh-sep" aria-hidden="true" />}
+      {tools.map(pill)}
     </nav>
   );
 }
@@ -282,6 +227,7 @@ export default function DashboardLayout({ children, hideUnpaidNotice = false }: 
   const [query, setQuery] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
   const searchWrapRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => retainDashTheme(), []);
 
@@ -289,6 +235,21 @@ export default function DashboardLayout({ children, hideUnpaidNotice = false }: 
   // Whether a manufacturer has paid is only known once the account has finished loading: the subscription is looked up
   // after the profile. Before that every manufacturer would look unpaid, and a paying one would be sent away from a page.
   const isUnpaidManufacturer = role === 'supplier' && !loading && !isPaidSubscriber;
+  const showNotice = isUnpaidManufacturer && !hideUnpaidNotice;
+
+  // A page that fills the window (the chat) has to know how far down it starts: the bar is one, two or three rows high
+  // depending on the window, and a notice can sit under it. The page reads it as --dsh-top.
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    const page = root?.querySelector<HTMLElement>('.dsh-content');
+    if (!root || !page) return undefined;
+    const measure = () => root.style.setProperty('--dsh-top', `${page.offsetTop}px`);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const watcher = new ResizeObserver(measure);
+    for (const above of root.querySelectorAll('.dsh-bar, .dsh-notice')) watcher.observe(above);
+    return () => watcher.disconnect();
+  }, [showNotice]);
 
   // Route users to the dashboard that matches their signup role
   useEffect(() => {
@@ -354,6 +315,9 @@ export default function DashboardLayout({ children, hideUnpaidNotice = false }: 
     ? supplierNavItems
     : buyerNavItems;
 
+  // buyers and manufacturers have a long menu, which needs a row of its own; the admin's two sections fit beside the logo
+  const stacked = navItems.length > 4;
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -399,14 +363,14 @@ export default function DashboardLayout({ children, hideUnpaidNotice = false }: 
   };
 
   return (
-    <div className="dsh">
+    <div className="dsh" ref={rootRef}>
       <PageMeta
         title="Dashboard — BulkSkart B2B Marketplace"
         description="BulkSkart secure account management and trade negotiation dashboard."
         robots="noindex, nofollow"
       />
 
-      <header className="dsh-bar">
+      <header className={cn('dsh-bar', stacked && 'is-stacked')}>
         <div className="dsh-bar-in">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
@@ -435,7 +399,7 @@ export default function DashboardLayout({ children, hideUnpaidNotice = false }: 
             <BrandLogo size="md" variant="auto" linkTo={null} />
           </Link>
 
-          <NavBar items={navItems} isActive={isActive} unpaid={isUnpaidManufacturer} />
+          <NavBar items={navItems} isActive={isActive} unpaid={isUnpaidManufacturer} stacked={stacked} />
 
           <div className="dsh-tools" ref={searchWrapRef}>
             <button
@@ -536,7 +500,7 @@ export default function DashboardLayout({ children, hideUnpaidNotice = false }: 
       </header>
 
       {/* ── UNPAID MANUFACTURER SUBSCRIPTION NOTIFICATION BANNER ── */}
-      {isUnpaidManufacturer && !hideUnpaidNotice && (
+      {showNotice && (
         <div className="dsh-notice">
           <div className="flex min-w-0 items-center gap-3">
             <span className="dsh-notice-ico">
