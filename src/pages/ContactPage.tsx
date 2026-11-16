@@ -116,7 +116,7 @@ export default function ContactPage() {
       />
 
       {/* Hero */}
-      <div className="bg-[#1a1a2e] text-white py-12 px-4">
+      <div className="bg-[#242424] text-white py-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-4">
             <MessageSquare className="w-3.5 h-3.5 text-[#FF5A00]" />
@@ -232,7 +232,7 @@ export default function ContactPage() {
                   href={WHATSAPP_MESSAGE_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-center gap-2 h-11 rounded-lg bg-[#25D366] hover:bg-[#1ebe5d] text-white text-sm font-bold transition-colors"
+                  className="flex items-center justify-center gap-2 h-11 rounded-lg bg-[#E55C13] hover:bg-[#cc5210] text-white text-sm font-bold transition-colors"
                 >
                   <MessageSquare className="w-4 h-4" />
                   Message BulkSkart on WhatsApp

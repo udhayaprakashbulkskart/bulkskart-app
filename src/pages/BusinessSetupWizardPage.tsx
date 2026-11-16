@@ -864,7 +864,7 @@ export default function BusinessSetupWizardPage() {
                     isActive
                       ? 'bg-primary text-white shadow-sm'
                       : isPast
-                      ? 'bg-emerald-500/20 text-emerald-500'
+                      ? 'bg-orange-500/20 text-orange-500'
                       : 'bg-muted text-muted-foreground'
                   }`}>
                     {isPast ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Icon className="w-3.5 h-3.5" />}
@@ -1428,7 +1428,7 @@ export default function BusinessSetupWizardPage() {
                   verificationStatus === 'verified'
                     ? 'bg-primary/10 border-primary/30 text-primary'
                     : verificationStatus === 'pending'
-                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                    ? 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400'
                     : verificationStatus === 'rejected'
                     ? 'bg-destructive/10 border-destructive/30 text-destructive'
                     : 'bg-muted/50 border-border text-muted-foreground'
@@ -1463,7 +1463,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">PDF or JPG/PNG image of Form REG-06</p>
                       </div>
                       {docs.gstDocUrl ? (
-                        <Badge className="bg-emerald-500 text-white text-[10px] gap-1">
+                        <Badge className="bg-orange-500 text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1497,7 +1497,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">Official Income Tax Department PAN</p>
                       </div>
                       {docs.panDocUrl ? (
-                        <Badge className="bg-emerald-500 text-white text-[10px] gap-1">
+                        <Badge className="bg-orange-500 text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1531,7 +1531,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">DGFT issued Certificate for foreign trade</p>
                       </div>
                       {docs.iecDocUrl ? (
-                        <Badge className="bg-emerald-500 text-white text-[10px] gap-1">
+                        <Badge className="bg-orange-500 text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1565,7 +1565,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">Ministry of MSME / MCA Incorporation</p>
                       </div>
                       {docs.regDocUrl ? (
-                        <Badge className="bg-emerald-500 text-white text-[10px] gap-1">
+                        <Badge className="bg-orange-500 text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1650,7 +1650,7 @@ export default function BusinessSetupWizardPage() {
                   type="button"
                   onClick={handleCompleteProfile}
                   disabled={completing || saving}
-                  className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-1.5 font-bold shadow-md"
+                  className="flex-1 sm:flex-initial bg-orange-600 hover:bg-orange-700 text-white text-xs gap-1.5 font-bold shadow-md"
                 >
                   {completing ? 'Completing Profile...' : 'Complete Profile & Launch'}
                   <CheckCircle2 className="w-4 h-4" />

@@ -43,7 +43,7 @@ export default function AboutPage() {
       <Header />
 
       {/* Hero */}
-      <section className="bg-[#1a1a2e] text-white py-14 px-4">
+      <section className="bg-[#242424] text-white py-14 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-5">
             <Globe className="w-3.5 h-3.5 text-primary" />

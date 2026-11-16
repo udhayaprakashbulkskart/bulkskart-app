@@ -423,8 +423,8 @@ export default function LiveChatModal({ open, onClose, product, supplier }: Prop
               <p className="text-[11px] text-muted-foreground">Live chat · Subscription required</p>
             </div>
             {chatState === 'ready' && (
-              <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> Live
+              <span className="flex items-center gap-1 text-[10px] font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block" /> Live
               </span>
             )}
           </div>

@@ -285,8 +285,8 @@ function HeroBanner() {
               className="w-full h-full object-cover object-center"
             />
           </picture>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0d1117]/93 via-[#0d1117]/72 to-[#0d1117]/25" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117]/55 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#121212]/93 via-[#121212]/72 to-[#121212]/25" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#121212]/55 via-transparent to-transparent" />
         </motion.div>
       </AnimatePresence>
 
@@ -316,7 +316,7 @@ function HeroBanner() {
                 className="w-full h-full object-cover object-left"
               />
             </picture>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0d1117]/98 via-[#0d1117]/80 to-[#0d1117]/40 md:to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#121212]/98 via-[#121212]/80 to-[#121212]/40 md:to-transparent" />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -504,7 +504,7 @@ function TopCategoriesSection() {
               <Link
                 key={cat.slug}
                 to={`/products?category=${cat.slug}`}
-                className="bg-card dark:bg-[#12151e] border border-border/60 hover:border-[#FF5A00]/50 rounded-2xl p-2.5 flex flex-col items-center justify-between text-center group cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 active:scale-98 h-full w-full min-w-0"
+                className="bg-card dark:bg-[#181818] border border-border/60 hover:border-[#FF5A00]/50 rounded-2xl p-2.5 flex flex-col items-center justify-between text-center group cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 active:scale-98 h-full w-full min-w-0"
               >
                 {/* Image Container with 4:3 Aspect Ratio */}
                 <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-muted relative mb-1.5 shrink-0">
@@ -533,7 +533,7 @@ function TopCategoriesSection() {
               <Link
                 key={cat.slug}
                 to={`/products?category=${cat.slug}`}
-                className="shrink-0 w-[115px] min-[360px]:w-[125px] snap-start bg-card dark:bg-[#12151e] border border-border/60 hover:border-[#FF5A00]/50 rounded-xl p-2 flex flex-col items-center justify-between text-center group cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 active:scale-98"
+                className="shrink-0 w-[115px] min-[360px]:w-[125px] snap-start bg-card dark:bg-[#181818] border border-border/60 hover:border-[#FF5A00]/50 rounded-xl p-2 flex flex-col items-center justify-between text-center group cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 active:scale-98"
               >
                 <div className="w-full aspect-[4/3] rounded-lg overflow-hidden bg-muted relative mb-1.5 shrink-0">
                   <SafeImage
@@ -805,7 +805,7 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════════════
           FINAL CTA BANNER
       ═══════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#1a1a2e] dark:bg-[#15181F]">
+      <section className="relative overflow-hidden bg-[#242424] dark:bg-[#1A1A1A]">
         <div className="absolute inset-0 z-0 opacity-20">
           <img
             src={SHIPPING_BANNER}

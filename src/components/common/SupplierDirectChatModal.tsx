@@ -257,11 +257,11 @@ export default function SupplierDirectChatModal({
         {/* Body: Live Conversation View or Initial Inquiry Form */}
         {conversationStarted ? (
           <div className="p-5 space-y-4">
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-2.5 text-xs text-emerald-400">
+            <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg flex items-center gap-2.5 text-xs text-orange-400">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <div>
                 <p className="font-semibold">Message delivered to supplier dashboard inbox</p>
-                <p className="text-emerald-400/80 text-[11px]">The sales desk of {company.company_name} has received your inquiry at {email}.</p>
+                <p className="text-orange-400/80 text-[11px]">The sales desk of {company.company_name} has received your inquiry at {email}.</p>
               </div>
             </div>
 

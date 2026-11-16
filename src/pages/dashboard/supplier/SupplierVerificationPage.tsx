@@ -120,7 +120,7 @@ export default function SupplierVerificationPage() {
 
   const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
     unverified: { label: 'Not Submitted', color: 'bg-muted text-muted-foreground', icon: <FileText className="w-4 h-4" /> },
-    pending: { label: 'Under Review', color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: <Clock className="w-4 h-4" /> },
+    pending: { label: 'Under Review', color: 'bg-orange-100 text-orange-700 border-orange-300', icon: <Clock className="w-4 h-4" /> },
     verified: { label: 'Verified', color: 'bg-primary/10 text-primary border-primary/30', icon: <CheckCircle2 className="w-4 h-4" /> },
     rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700 border-red-300', icon: <XCircle className="w-4 h-4" /> },
   };
@@ -179,7 +179,7 @@ export default function SupplierVerificationPage() {
                   {sc.icon} {sc.label}
                 </div>
                 {expiry && status === 'verified' && (
-                  <p className={`text-xs mt-1 ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-yellow-600' : 'text-muted-foreground'}`}>
+                  <p className={`text-xs mt-1 ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-orange-600' : 'text-muted-foreground'}`}>
                     Verification {isExpired ? 'expired' : `expires`}: {expiry.toLocaleDateString()}
                     {isExpiringSoon && !isExpired && ` (${daysToExpiry} days left)`}
                   </p>
@@ -192,10 +192,10 @@ export default function SupplierVerificationPage() {
               )}
             </div>
             {(isExpiringSoon || isExpired) && (
-              <div className={`mt-3 p-3 rounded-lg border ${isExpired ? 'bg-destructive/10 border-destructive/20' : 'bg-yellow-500/10 border-yellow-500/30'}`}>
+              <div className={`mt-3 p-3 rounded-lg border ${isExpired ? 'bg-destructive/10 border-destructive/20' : 'bg-orange-500/10 border-orange-500/30'}`}>
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className={`w-4 h-4 shrink-0 ${isExpired ? 'text-destructive' : 'text-yellow-500'}`} />
-                  <p className={`text-xs sm:text-sm font-medium ${isExpired ? 'text-destructive' : 'text-yellow-500'}`}>
+                  <AlertTriangle className={`w-4 h-4 shrink-0 ${isExpired ? 'text-destructive' : 'text-orange-500'}`} />
+                  <p className={`text-xs sm:text-sm font-medium ${isExpired ? 'text-destructive' : 'text-orange-500'}`}>
                     {isExpired ? 'Verification expired — re-verify to accept new orders' : `Verification expiring soon — re-verify before ${expiry?.toLocaleDateString()}`}
                   </p>
                 </div>
@@ -302,9 +302,9 @@ export default function SupplierVerificationPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-xs sm:text-sm font-medium truncate">{label}</p>
                         {docs[key] ? (
-                          <p className="text-[11px] sm:text-xs text-green-600 truncate font-medium">{docs[key]!.name}</p>
+                          <p className="text-[11px] sm:text-xs text-orange-600 truncate font-medium">{docs[key]!.name}</p>
                         ) : existing ? (
-                          <p className="text-[11px] sm:text-xs text-green-600 font-medium">Uploaded ✓</p>
+                          <p className="text-[11px] sm:text-xs text-orange-600 font-medium">Uploaded ✓</p>
                         ) : (
                           <p className="text-[11px] sm:text-xs text-muted-foreground">No file selected</p>
                         )}
@@ -339,7 +339,7 @@ export default function SupplierVerificationPage() {
         {status === 'pending' && !isExpiringSoon && !isExpired && (
           <Card>
             <CardContent className="text-center py-10">
-              <Clock className="w-10 h-10 text-yellow-500 mx-auto mb-3" />
+              <Clock className="w-10 h-10 text-orange-500 mx-auto mb-3" />
               <h3 className="font-semibold text-foreground">Documents under review</h3>
               <p className="text-sm text-muted-foreground mt-1">Admin typically reviews within 1–2 business days. You'll be notified.</p>
             </CardContent>

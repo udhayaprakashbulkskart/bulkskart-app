@@ -144,7 +144,7 @@ export default function SupplierRFQsPage() {
           {!loading && pendingAQs.length > 0 && (
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
-                <div className="flex items-center gap-1.5 bg-amber-100 text-amber-700 border border-amber-300 rounded-full px-3 py-1 text-xs font-bold">
+                <div className="flex items-center gap-1.5 bg-orange-100 text-orange-700 border border-orange-300 rounded-full px-3 py-1 text-xs font-bold">
                   <Clock className="w-3.5 h-3.5" />
                   {pendingAQs.length} Auto-Quote{pendingAQs.length > 1 ? 's' : ''} Pending Your Approval
                 </div>
@@ -154,14 +154,14 @@ export default function SupplierRFQsPage() {
                   const req = aq.requirements;
                   const fmt = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: aq.currency, maximumFractionDigits: 0 }).format(n);
                   return (
-                    <div key={aq.id} className="bg-card border border-amber-300/50 rounded-xl p-4">
+                    <div key={aq.id} className="bg-card border border-orange-300/50 rounded-xl p-4">
                       <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-1.5 py-0.5">
                               <Zap className="w-2.5 h-2.5" /> AUTO-GENERATED
                             </span>
-                            <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">Pending Approval</Badge>
+                            <Badge className="text-[10px] bg-orange-100 text-orange-700 border-orange-300">Pending Approval</Badge>
                           </div>
                           <p className="text-sm font-semibold text-foreground truncate">{aq.product_name}</p>
                           {req && (
@@ -220,7 +220,7 @@ export default function SupplierRFQsPage() {
                           size="sm"
                           onClick={() => handleApproveAQ(aq)}
                           disabled={approvingId === aq.id || !!dismissingId}
-                          className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white gap-1.5"
+                          className="h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
                         >
                           {approvingId === aq.id ? (
                             <>
@@ -277,7 +277,7 @@ export default function SupplierRFQsPage() {
                           <Link to={`/requirements/${lead.id}`} className="text-sm font-semibold text-foreground line-clamp-1 hover:text-primary">
                             {lead.title}
                           </Link>
-                          {lead.created_at && <span className="text-[10px] font-semibold text-emerald-500 shrink-0">{postedLabel(lead.created_at)}</span>}
+                          {lead.created_at && <span className="text-[10px] font-semibold text-orange-500 shrink-0">{postedLabel(lead.created_at)}</span>}
                         </div>
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -305,7 +305,7 @@ export default function SupplierRFQsPage() {
                       </div>
                       <div className="flex flex-col items-end gap-1.5 shrink-0">
                         {quoted ? (
-                          <Badge variant="outline" className="text-xs text-green-500 border-green-500/30">
+                          <Badge variant="outline" className="text-xs text-orange-500 border-orange-500/30">
                             Quote sent
                           </Badge>
                         ) : canQuote ? (

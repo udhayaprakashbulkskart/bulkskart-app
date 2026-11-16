@@ -136,8 +136,8 @@ export default function BuyerQuotesPage() {
   const selectedReq = requirements.find(r => r.id === selectedReqId);
 
   const statusColor: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-    accepted: 'bg-green-100 text-green-700 border-green-300',
+    pending: 'bg-orange-100 text-orange-700 border-orange-300',
+    accepted: 'bg-orange-100 text-orange-700 border-orange-300',
     rejected: 'bg-red-100 text-red-700 border-red-300',
     revised: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
   };
@@ -186,8 +186,8 @@ export default function BuyerQuotesPage() {
           {quotations.length > 0 && (
             <div className="flex gap-3 mb-4 flex-wrap text-xs">
               <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground">{quotations.length} total</span>
-              <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-700">{quotations.filter(q => q.status === 'pending').length} pending</span>
-              <span className="px-2 py-1 rounded-full bg-green-100 text-green-700">{quotations.filter(q => q.status === 'accepted').length} accepted</span>
+              <span className="px-2 py-1 rounded-full bg-orange-100 text-orange-700">{quotations.filter(q => q.status === 'pending').length} pending</span>
+              <span className="px-2 py-1 rounded-full bg-orange-100 text-orange-700">{quotations.filter(q => q.status === 'accepted').length} accepted</span>
               <span className="px-2 py-1 rounded-full bg-red-100 text-red-700">{quotations.filter(q => q.status === 'rejected').length} declined</span>
             </div>
           )}
@@ -203,7 +203,7 @@ export default function BuyerQuotesPage() {
           ) : (
             <div className="space-y-4">
               {quotations.map(q => (
-                <div key={q.id} className={`bg-card border rounded-xl p-5 transition-shadow hover:shadow-md ${q.status === 'accepted' ? 'border-green-400' : q.status === 'rejected' ? 'border-muted opacity-60' : q.status === 'revised' ? 'border-[#FF5A00]/30' : 'border-border'}`}>
+                <div key={q.id} className={`bg-card border rounded-xl p-5 transition-shadow hover:shadow-md ${q.status === 'accepted' ? 'border-orange-400' : q.status === 'rejected' ? 'border-muted opacity-60' : q.status === 'revised' ? 'border-[#FF5A00]/30' : 'border-border'}`}>
                   {/* Header */}
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex items-start gap-3">
@@ -270,7 +270,7 @@ export default function BuyerQuotesPage() {
                       <Button
                         onClick={() => handleAccept(q)}
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700 text-white gap-1 text-xs"
+                        className="bg-orange-600 hover:bg-orange-700 text-white gap-1 text-xs"
                         disabled={actionLoading === q.id}
                       >
                         {actionLoading === q.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
@@ -303,8 +303,8 @@ export default function BuyerQuotesPage() {
                   )}
                   {q.status === 'accepted' && (
                     <div className="flex items-center gap-2 mt-3">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-600 font-medium">You accepted this quote</span>
+                      <CheckCircle className="w-4 h-4 text-orange-500" />
+                      <span className="text-sm text-orange-600 font-medium">You accepted this quote</span>
                       <Link to="/dashboard/buyer/messages" className="ml-auto">
                         <Button size="sm" variant="outline" className="gap-1 text-xs">
                           <MessageSquare className="w-3.5 h-3.5" /> Continue Chat

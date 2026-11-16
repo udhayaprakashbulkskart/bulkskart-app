@@ -32,21 +32,21 @@ html.dash-active {
   --g-shine: inset 0 1px 0 hsl(var(--foreground) / 0.07);
   --g-shadow: 0 22px 44px -26px rgba(2, 6, 20, 0.75);
   --g-shadow-lift: 0 30px 50px -24px rgba(2, 6, 20, 0.85);
-  --g-green: #4ade80;
-  --g-green-bg: rgba(74, 222, 128, 0.14);
+  --g-green: #ef7939;
+  --g-green-bg: rgba(239, 121, 57, 0.14);
   --g-red: #f87171;
   --g-red-bg: rgba(248, 113, 113, 0.14);
-  --g-navy-a: hsl(222 47% 17%);
-  --g-navy-b: hsl(222 47% 8%);
+  --g-navy-a: hsl(0 0% 17%);
+  --g-navy-b: hsl(0 0% 8%);
 }
 html.dash-active.light {
   --g-glass-a: hsl(var(--card) / 0.94);
   --g-glass-b: hsl(var(--card) / 0.8);
   --g-shine: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --g-shadow: 0 22px 44px -28px rgba(15, 23, 42, 0.28);
-  --g-shadow-lift: 0 30px 50px -26px rgba(15, 23, 42, 0.38);
-  --g-green: #15803d;
-  --g-green-bg: rgba(21, 128, 61, 0.12);
+  --g-shadow: 0 22px 44px -28px rgba(28, 28, 28, 0.28);
+  --g-shadow-lift: 0 30px 50px -26px rgba(28, 28, 28, 0.38);
+  --g-green: #b3480f;
+  --g-green-bg: rgba(179, 72, 15, 0.12);
   --g-red: #b91c1c;
   --g-red-bg: rgba(185, 28, 28, 0.1);
 }
@@ -69,7 +69,7 @@ html.dash-active.light {
   pointer-events: none;
   background:
     radial-gradient(60% 50% at 0% 0%, hsl(var(--primary) / 0.1) 0%, transparent 70%),
-    radial-gradient(70% 60% at 100% 8%, hsl(217 80% 55% / 0.07) 0%, transparent 70%),
+    radial-gradient(70% 60% at 100% 8%, hsl(21 85% 55% / 0.07) 0%, transparent 70%),
     radial-gradient(95% 60% at 50% 118%, hsl(var(--primary) / 0.17) 0%, transparent 66%),
     hsl(var(--background));
 }
@@ -1540,7 +1540,7 @@ html.dash-active :is([role='dialog'], [role='menu'], [role='listbox']) {
 }
 
 /* a few cards are drawn dark whatever the theme (the AI sales card); in the light theme they keep the site's dark colours inside */
-html.dash-active.light [class*='from-[#16132A]'] {
+html.dash-active.light [class*='from-[#1E1E1E]'] {
   --background: 222 40% 7%;
   --foreground: 220 14% 90%;
   --card: 222 47% 11%;

@@ -5,7 +5,7 @@
  */
 
 .dh-header {
-  background: #0b0a18;
+  background: #111111;
   border-color: rgba(255, 255, 255, 0.09);
   box-shadow: none;
 }
@@ -24,13 +24,13 @@
   max-width: min(560px, 42vw);
   padding-left: 12px;
   border-radius: 12px;
-  border: 1.5px solid rgba(132, 102, 190, 0.8);
-  background: linear-gradient(180deg, #352a50, #2a2043);
-  box-shadow: 0 0 0 1px rgba(120, 90, 200, 0.16), 0 6px 18px rgba(70, 30, 140, 0.3);
+  border: 1.5px solid rgba(239, 118, 53, 0.8);
+  background: linear-gradient(180deg, #3d3d3d, #323232);
+  box-shadow: 0 0 0 1px rgba(238, 117, 52, 0.16), 0 6px 18px rgba(179, 72, 15, 0.3);
 }
 .dh-header .dh-search:focus-within {
-  border-color: #b48cff;
-  box-shadow: 0 0 0 3px rgba(160, 120, 255, 0.25);
+  border-color: #ff955c;
+  box-shadow: 0 0 0 3px rgba(255, 149, 92, 0.25);
 }
 .dh-header .dh-search svg {
   color: #fff;

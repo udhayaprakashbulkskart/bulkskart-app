@@ -22,10 +22,10 @@ import type { OrderPaymentFields } from '@/lib/orderPayments';
 // ---------- Status meta (badge colours) ----------
 const STATUS_META: Record<PipelineStatus, { label: string; cls: string }> = {
   pending:    { label: 'Pending',    cls: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30' },
-  confirmed:  { label: 'Confirmed',  cls: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
-  processing: { label: 'Processing', cls: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
-  shipped:    { label: 'Shipped',    cls: 'bg-purple-100 text-purple-700 border-purple-300' },
-  delivered:  { label: 'Delivered',  cls: 'bg-green-100 text-green-700 border-green-300' },
+  confirmed:  { label: 'Confirmed',  cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  processing: { label: 'Processing', cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  shipped:    { label: 'Shipped',    cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  delivered:  { label: 'Delivered',  cls: 'bg-orange-100 text-orange-700 border-orange-300' },
   cancelled:  { label: 'Cancelled',  cls: 'bg-red-100 text-red-700 border-red-300' },
 };
 

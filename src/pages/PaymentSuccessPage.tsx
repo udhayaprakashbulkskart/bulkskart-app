@@ -19,8 +19,8 @@ export default function PaymentSuccessPage() {
       <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-120px)] px-4 py-12">
         <div className="w-full max-w-md text-center">
           <div className="flex flex-col items-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-green-100 border-2 border-green-300 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="w-16 h-16 rounded-full bg-orange-100 border-2 border-orange-300 flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-orange-600" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-foreground">Payment Successful!</h2>
@@ -36,7 +36,7 @@ export default function PaymentSuccessPage() {
                 'RFQ lead quota reset — ready to use',
               ].map(item => (
                 <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                  <CheckCircle className="w-4 h-4 text-orange-500 shrink-0" />
                   {item}
                 </div>
               ))}

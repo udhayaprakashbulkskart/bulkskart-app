@@ -56,10 +56,10 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
   );
 
   const field = landing
-    ? 'h-10 bg-slate-900 border-slate-700 text-white placeholder:text-slate-500'
+    ? 'h-10 bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500'
     : 'h-10 bg-background';
-  const label = `text-xs font-semibold ${landing ? 'text-slate-300' : 'text-foreground'}`;
-  const hint = landing ? 'text-rose-300' : 'text-destructive';
+  const label = `text-xs font-semibold ${landing ? 'text-neutral-300' : 'text-foreground'}`;
+  const hint = landing ? 'text-orange-300' : 'text-destructive';
 
   const setField = (key: keyof LoanRequestDraft, value: string) => {
     if (key === 'loanAmount') editedAmount.current = true;
@@ -95,12 +95,12 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
 
   if (sentName) {
     return (
-      <div className={`mt-5 rounded-2xl border p-4 ${landing ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-emerald-500/30 bg-emerald-500/10'}`}>
+      <div className={`mt-5 rounded-2xl border p-4 ${landing ? 'border-orange-500/40 bg-orange-500/10' : 'border-orange-500/30 bg-orange-500/10'}`}>
         <div className="flex items-start gap-3">
-          <CheckCircle2 className={`mt-0.5 h-5 w-5 shrink-0 ${landing ? 'text-emerald-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+          <CheckCircle2 className={`mt-0.5 h-5 w-5 shrink-0 ${landing ? 'text-orange-400' : 'text-orange-600 dark:text-orange-400'}`} />
           <div>
             <p className={`text-sm font-bold ${landing ? 'text-white' : 'text-foreground'}`}>Loan request received</p>
-            <p className={`mt-1 text-xs leading-relaxed ${landing ? 'text-slate-300' : 'text-muted-foreground'}`}>
+            <p className={`mt-1 text-xs leading-relaxed ${landing ? 'text-neutral-300' : 'text-muted-foreground'}`}>
               Thanks {sentName}. We have your loan amount and contact details. The BulkSkart team will reach you on the phone or email you entered.
             </p>
           </div>
@@ -112,7 +112,7 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
   return (
     <form onSubmit={handleSubmit} className={`mt-5 rounded-2xl border p-4 ${landing ? 'border-white/10 bg-black/30' : 'fk-skin border-border bg-muted/30'}`} noValidate>
       <h3 className={`text-base font-black ${landing ? 'text-white' : 'text-foreground'}`}>How much loan do you need?</h3>
-      <p className={`mt-1 text-xs leading-relaxed ${landing ? 'text-slate-400' : 'text-muted-foreground'}`}>
+      <p className={`mt-1 text-xs leading-relaxed ${landing ? 'text-neutral-400' : 'text-muted-foreground'}`}>
         Submit the amount and your details. This is a request for the team to contact you, not an approval.
       </p>
 
@@ -147,7 +147,7 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
           <Textarea
             value={draft.goodsNeeded}
             onChange={(event) => setField('goodsNeeded', event.target.value)}
-            className={landing ? 'min-h-[72px] bg-slate-900 border-slate-700 text-white placeholder:text-slate-500' : 'min-h-[72px] bg-background'}
+            className={landing ? 'min-h-[72px] bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500' : 'min-h-[72px] bg-background'}
             placeholder="Product, quantity, or order you want to finance"
             aria-label="Goods to finance"
             maxLength={300}
@@ -164,7 +164,7 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
         aria-hidden="true"
       />
 
-      <p className={`mt-3 text-xs ${landing ? 'text-slate-300' : 'text-muted-foreground'}`}>
+      <p className={`mt-3 text-xs ${landing ? 'text-neutral-300' : 'text-muted-foreground'}`}>
         About <span className="font-bold text-[#FF5A00]">{Number.isFinite(requested) && requested > 0 ? money(previewEmi) : '—'}</span>
         {' '}per month for {quote.months} months. Delivery on the order stays free.
       </p>

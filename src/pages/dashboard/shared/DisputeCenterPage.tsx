@@ -27,9 +27,9 @@ const DISPUTE_POINTS: FormPoint[] = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  open: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+  open: 'bg-orange-100 text-orange-700 border-orange-300',
   under_review: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
-  resolved: 'bg-green-100 text-green-700 border-green-300',
+  resolved: 'bg-orange-100 text-orange-700 border-orange-300',
   closed: 'bg-muted text-muted-foreground',
 };
 

@@ -232,13 +232,13 @@ export default function SafeImage({
 
   if (hasError && !imgSrc) {
     return (
-      <div className={`bg-slate-900 border border-slate-800 flex flex-col items-center justify-center text-slate-400 p-2 text-center text-xs ${className}`}>
+      <div className={`bg-neutral-900 border border-neutral-800 flex flex-col items-center justify-center text-neutral-400 p-2 text-center text-xs ${className}`}>
         {effectiveFallbackType === 'company' ? (
           <Building2 className="w-6 h-6 mb-1 text-[#FF5A00]" />
         ) : (
           <ImageIcon className="w-6 h-6 mb-1 text-[#FF5A00]" />
         )}
-        <span className="text-[10px] font-semibold text-slate-300 line-clamp-1">{alt}</span>
+        <span className="text-[10px] font-semibold text-neutral-300 line-clamp-1">{alt}</span>
       </div>
     );
   }

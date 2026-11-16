@@ -92,7 +92,7 @@ function PriceRange({
         ) : null}
       </span>
       {low.currency === 'INR' && (
-        <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.2 rounded ml-1">
+        <span className="text-[10px] font-semibold text-orange-600 bg-orange-500/10 px-1.5 py-0.2 rounded ml-1">
           INR
         </span>
       )}
@@ -157,7 +157,7 @@ function ProductCard({
             </span>
           )}
           {(product as typeof product & { is_sponsored?: boolean }).is_sponsored && (
-            <span className="bg-amber-500/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+            <span className="bg-orange-500/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
               Sponsored
             </span>
           )}

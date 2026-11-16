@@ -498,7 +498,7 @@ export default function SupplierProductsPage() {
                 )}
               </div>
               {!isPaidSubscriber && (
-                <div className="mt-6 pt-4 border-t border-border flex items-center justify-center gap-2 text-xs text-amber-500 font-medium">
+                <div className="mt-6 pt-4 border-t border-border flex items-center justify-center gap-2 text-xs text-orange-500 font-medium">
                   <Lock className="w-3.5 h-3.5" />
                   <span>Active supplier subscription required to upload &amp; publish product listings</span>
                 </div>
@@ -532,8 +532,8 @@ export default function SupplierProductsPage() {
                           </span>
                         )}
                         {(p as Product & { is_sponsored?: boolean }).is_sponsored && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-amber-950 bg-amber-400 rounded-md px-2 py-0.5 shadow-sm">
-                            <Zap className="w-2.5 h-2.5 fill-amber-950" /> Sponsored
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-orange-950 bg-orange-400 rounded-md px-2 py-0.5 shadow-sm">
+                            <Zap className="w-2.5 h-2.5 fill-orange-950" /> Sponsored
                           </span>
                         )}
                       </div>

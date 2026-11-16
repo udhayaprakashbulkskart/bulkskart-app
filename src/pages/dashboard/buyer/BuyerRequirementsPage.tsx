@@ -120,7 +120,7 @@ export default function BuyerRequirementsPage() {
                           {req.deadline ? new Date(req.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'text-green-400 border-green-400/30' : 'text-muted-foreground'}`}>
+                          <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'text-orange-400 border-orange-400/30' : 'text-muted-foreground'}`}>
                             {req.status}
                           </Badge>
                         </td>

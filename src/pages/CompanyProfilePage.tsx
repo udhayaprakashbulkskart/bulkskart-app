@@ -30,7 +30,7 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
     <div className="flex items-center gap-1.5">
       <div className="flex items-center gap-0.5">
         {[1,2,3,4,5].map(i => (
-          <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'}`} />
+          <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-orange-400 fill-orange-400' : 'text-muted-foreground'}`} />
         ))}
       </div>
       <span className="text-xs text-muted-foreground">({count} {count === 1 ? 'review' : 'reviews'})</span>
@@ -290,7 +290,7 @@ export default function CompanyProfilePage() {
               />
             ) : (
               // No cover photo added: a plain brand backdrop instead of a stock picture
-              <div className="w-full h-full bg-gradient-to-br from-[#1a1f2e] via-[#232838] to-[#FF5A00]/40" aria-hidden="true" />
+              <div className="w-full h-full bg-gradient-to-br from-[#242424] via-[#2e2e2e] to-[#FF5A00]/40" aria-hidden="true" />
             )}
             {/* gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -668,7 +668,7 @@ export default function CompanyProfilePage() {
                   </a>
                 ) : null}
                 {whatsapp ? (
-                  <a href={waLink(whatsapp)} target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  <a href={waLink(whatsapp)} target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-2 rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 text-sm font-semibold text-orange-700 dark:text-orange-300">
                     <MessageSquare className="w-4 h-4 shrink-0" />
                     <span className="truncate">WhatsApp {whatsapp}</span>
                   </a>

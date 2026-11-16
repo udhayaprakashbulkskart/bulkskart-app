@@ -328,7 +328,7 @@ export default function BuyerPublicProfilePage() {
           Chat
         </button>
         {phone && <a href={telLink(phone)} className="inline-flex h-9 items-center rounded-lg border border-border px-3 text-xs font-bold">Call</a>}
-        {whatsapp && <a href={waLink(whatsapp)} className="inline-flex h-9 items-center rounded-lg border border-emerald-500/40 px-3 text-xs font-bold text-emerald-700 dark:text-emerald-300">WhatsApp</a>}
+        {whatsapp && <a href={waLink(whatsapp)} className="inline-flex h-9 items-center rounded-lg border border-orange-500/40 px-3 text-xs font-bold text-orange-700 dark:text-orange-300">WhatsApp</a>}
         {email && !phone && !whatsapp && <a href={`mailto:${email}`} className="inline-flex h-9 items-center rounded-lg border border-border px-3 text-xs font-bold">Email</a>}
       </div>
     </MainLayout>

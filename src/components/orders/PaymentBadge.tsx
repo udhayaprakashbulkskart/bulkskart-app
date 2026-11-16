@@ -1,9 +1,9 @@
 import { describePayment, type OrderPaymentFields, type PaymentTone, type PaymentViewer } from '@/lib/orderPayments';
 
 const TONE: Record<PaymentTone, string> = {
-  waiting: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30',
-  held: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30',
-  done: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+  waiting: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
+  held: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
+  done: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
   returned: 'bg-muted text-muted-foreground border-border',
 };
 

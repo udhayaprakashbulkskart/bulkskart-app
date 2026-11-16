@@ -26,9 +26,9 @@ import {
 } from '@/lib/orderPayments';
 
 const TONE: Record<PaymentTone, string> = {
-  waiting: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30',
-  held: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30',
-  done: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+  waiting: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
+  held: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
+  done: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
   returned: 'bg-muted text-muted-foreground border-border',
 };
 
@@ -171,7 +171,7 @@ export default function OrderPaymentPanel({ order, viewer, onChanged }: Props) {
                   Pay {money(order.total_amount, order.currency)} online
                 </Button>
               ) : (
-                <p className="text-xs text-amber-700 dark:text-amber-300">Online payment works for orders in rupees. Pay at the factory, or ask for a quote in INR.</p>
+                <p className="text-xs text-orange-700 dark:text-orange-300">Online payment works for orders in rupees. Pay at the factory, or ask for a quote in INR.</p>
               )}
             </div>
             <div className={`rounded-xl border p-4 space-y-2 ${order.payment_method === 'at_factory' ? 'border-primary/50 bg-primary/5' : 'border-border'}`}>
@@ -201,7 +201,7 @@ export default function OrderPaymentPanel({ order, viewer, onChanged }: Props) {
 
         {/* ── buyer: release a held payment ── */}
         {viewer === 'buyer' && status === 'escrow' && !cancelled && (
-          <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 p-4 space-y-2">
+          <div className="rounded-xl border border-orange-500/30 bg-orange-500/5 p-4 space-y-2">
             <p className="text-foreground">
               <b>{money(held, order.currency)}</b> is held for you. Release it only when you have the goods and they are right.
             </p>

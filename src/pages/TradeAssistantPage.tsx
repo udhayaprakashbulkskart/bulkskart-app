@@ -362,14 +362,14 @@ export default function TradeAssistantPage() {
                   <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-tight">
                     AI Import & Export <span className="text-[#FF5A00]">Assistant</span>
                   </h1>
-                  <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+                  <p className="text-sm sm:text-base text-neutral-300 leading-relaxed">
                     Automated landed cost calculations, HS Code tariff estimators, customs compliance documentation checklists, and end-to-end freight coordination for global wholesale procurement.
                   </p>
                 </div>
 
                 {/* Pre-fill from existing user RFQ dropdown */}
                 {user && userRFQs.length > 0 && (
-                  <div className="shrink-0 bg-slate-900/90 border border-slate-700/80 p-3.5 rounded-2xl max-w-sm w-full">
+                  <div className="shrink-0 bg-neutral-900/90 border border-neutral-700/80 p-3.5 rounded-2xl max-w-sm w-full">
                     <label className="text-[11px] font-bold text-[#FF8A3D] flex items-center gap-1.5 mb-1.5 uppercase tracking-wider">
                       <BookmarkCheck className="w-3.5 h-3.5" />
                       <span>Pre-fill from Your Active RFQ</span>
@@ -377,7 +377,7 @@ export default function TradeAssistantPage() {
                     <select
                       value={selectedRFQId}
                       onChange={(e) => handlePreFillRFQ(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-[#FF5A00]"
+                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-[#FF5A00]"
                     >
                       <option value="">Select an active RFQ...</option>
                       {userRFQs.map(rfq => (
@@ -394,31 +394,31 @@ export default function TradeAssistantPage() {
 
           {/* ── Main Tabbed Interface ──────────────────────────────── */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-            <TabsList className="bg-slate-900/90 border border-slate-800 p-1 rounded-2xl grid grid-cols-2 lg:grid-cols-4 h-auto gap-1">
+            <TabsList className="bg-neutral-900/90 border border-neutral-800 p-1 rounded-2xl grid grid-cols-2 lg:grid-cols-4 h-auto gap-1">
               <TabsTrigger
                 value="calculator"
-                className="data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white text-slate-300 font-bold text-xs sm:text-sm py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-2"
+                className="data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white text-neutral-300 font-bold text-xs sm:text-sm py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-2"
               >
                 <Calculator className="w-4 h-4" />
                 <span>Landed Cost & Duty</span>
               </TabsTrigger>
               <TabsTrigger
                 value="sourcing"
-                className="data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white text-slate-300 font-bold text-xs sm:text-sm py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-2"
+                className="data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white text-neutral-300 font-bold text-xs sm:text-sm py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-2"
               >
                 <Box className="w-4 h-4" />
                 <span>AI Sourcing Match</span>
               </TabsTrigger>
               <TabsTrigger
                 value="documents"
-                className="data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white text-slate-300 font-bold text-xs sm:text-sm py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-2"
+                className="data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white text-neutral-300 font-bold text-xs sm:text-sm py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-2"
               >
                 <FileCheck2 className="w-4 h-4" />
                 <span>Compliance & Docs</span>
               </TabsTrigger>
               <TabsTrigger
                 value="coordination"
-                className="data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white text-slate-300 font-bold text-xs sm:text-sm py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-2"
+                className="data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white text-neutral-300 font-bold text-xs sm:text-sm py-2.5 sm:py-3 rounded-xl flex items-center justify-center gap-2"
               >
                 <Truck className="w-4 h-4" />
                 <span>Shipment Coordination</span>
@@ -431,25 +431,25 @@ export default function TradeAssistantPage() {
             <TabsContent value="calculator" className="space-y-6">
 
               {/* ── Real-Time Live Forex Ticker Bar ───────────────────── */}
-              <div className="rounded-2xl bg-gradient-to-r from-slate-900/90 via-[#0B132B]/80 to-slate-900/90 border border-slate-800 p-4 shadow-lg backdrop-blur-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+              <div className="rounded-2xl bg-gradient-to-r from-neutral-900/90 via-[#1B1B1B]/80 to-neutral-900/90 border border-neutral-800 p-4 shadow-lg backdrop-blur-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-800/80">
                   <div className="flex items-center gap-2.5">
                     <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
                     </span>
                     <span className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
-                      <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                      <TrendingUp className="w-3.5 h-3.5 text-orange-400" />
                       <span>Real-Time Live FX Rates</span>
                     </span>
-                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10 text-[10px] font-semibold py-0.5">
+                    <Badge variant="outline" className="border-orange-500/30 text-orange-400 bg-orange-500/10 text-[10px] font-semibold py-0.5">
                       {fxSource === 'live_gateway' ? 'Live Interbank Gateway' : 'Daily Market Synced'}
                     </Badge>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="text-[11px] text-slate-400">
-                      Updated: <strong className="text-slate-300 font-medium">{fxLastUpdated}</strong>
+                    <span className="text-[11px] text-neutral-400">
+                      Updated: <strong className="text-neutral-300 font-medium">{fxLastUpdated}</strong>
                     </span>
                     <Button
                       onClick={() => loadRates(true)}
@@ -490,11 +490,11 @@ export default function TradeAssistantPage() {
                         className={`shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs transition-all ${
                           isSelectedTarget
                             ? 'bg-[#FF5A00]/15 border-[#FF5A00] text-white shadow-sm ring-1 ring-[#FF5A00]/40'
-                            : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                            : 'bg-neutral-950/70 border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white'
                         }`}
                       >
-                        <span className="font-semibold text-[11px] text-slate-400">{p.pair}:</span>
-                        <span className="font-mono font-bold text-emerald-400">{conv.rate.toFixed(conv.rate > 20 ? 2 : 4)}</span>
+                        <span className="font-semibold text-[11px] text-neutral-400">{p.pair}:</span>
+                        <span className="font-mono font-bold text-orange-400">{conv.rate.toFixed(conv.rate > 20 ? 2 : 4)}</span>
                         {isSelectedTarget && (
                           <span className="w-1.5 h-1.5 rounded-full bg-[#FF5A00]" />
                         )}
@@ -507,18 +507,18 @@ export default function TradeAssistantPage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
                 {/* Left Column: Input Form (7 cols) */}
-                <div className="lg:col-span-7 rounded-2xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 space-y-5 shadow-lg">
-                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
+                <div className="lg:col-span-7 rounded-2xl bg-neutral-900/90 border border-neutral-800 p-5 sm:p-6 space-y-5 shadow-lg">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-neutral-800">
                     <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                       <Calculator className="w-5 h-5 text-[#FF5A00]" />
                       <span>Shipment & Tariff Parameters</span>
                     </h2>
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-slate-400">Target Currency:</span>
+                      <span className="text-[11px] text-neutral-400">Target Currency:</span>
                       <select
                         value={targetCurrency}
                         onChange={(e) => setTargetCurrency(e.target.value)}
-                        className="bg-slate-950 border border-[#FF5A00]/60 rounded-lg px-2 py-1 text-white text-xs font-bold focus:outline-none focus:border-[#FF5A00]"
+                        className="bg-neutral-950 border border-[#FF5A00]/60 rounded-lg px-2 py-1 text-white text-xs font-bold focus:outline-none focus:border-[#FF5A00]"
                       >
                         {Object.values(SUPPORTED_TRADE_CURRENCIES).map(curr => (
                           <option key={curr.code} value={curr.code}>
@@ -532,7 +532,7 @@ export default function TradeAssistantPage() {
                   {/* Trade Lane (Origin & Destination) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                      <Label className="text-xs text-slate-300 font-medium">Origin Country & Port</Label>
+                      <Label className="text-xs text-neutral-300 font-medium">Origin Country & Port</Label>
                       <select
                         value={originCountry}
                         onChange={(e) => {
@@ -544,7 +544,7 @@ export default function TradeAssistantPage() {
                           else if (e.target.value === 'United Arab Emirates') setOriginPort('Jebel Ali Port');
                           else setOriginPort('Main International Port');
                         }}
-                        className="w-full mt-1.5 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:border-[#FF5A00] focus:outline-none transition-colors"
+                        className="w-full mt-1.5 bg-neutral-950 border border-neutral-700/80 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:border-[#FF5A00] focus:outline-none transition-colors"
                       >
                         <option value="India">India (Nhava Sheva JNPT)</option>
                         <option value="China">China (Shanghai / Ningbo)</option>
@@ -554,14 +554,14 @@ export default function TradeAssistantPage() {
                         <option value="Vietnam">Vietnam (Hai Phong)</option>
                         <option value="Italy">Italy (Genoa)</option>
                       </select>
-                      <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-1">
+                      <div className="flex items-center gap-1.5 text-[11px] text-neutral-400 mt-1">
                         <span className="text-[#FF5A00] font-semibold">Origin Gateway:</span>
                         <span>{originPort}</span>
                       </div>
                     </div>
 
                     <div>
-                      <Label className="text-xs text-slate-300 font-medium">Destination Country & Port</Label>
+                      <Label className="text-xs text-neutral-300 font-medium">Destination Country & Port</Label>
                       <select
                         value={destCountry}
                         onChange={(e) => {
@@ -573,7 +573,7 @@ export default function TradeAssistantPage() {
                           else if (e.target.value === 'United Kingdom') setDestPort('Port of Felixstowe');
                           else setDestPort('Major Destination Port');
                         }}
-                        className="w-full mt-1.5 bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:border-[#FF5A00] focus:outline-none transition-colors"
+                        className="w-full mt-1.5 bg-neutral-950 border border-neutral-700/80 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:border-[#FF5A00] focus:outline-none transition-colors"
                       >
                         <option value="United States">United States (New York / NJ)</option>
                         <option value="India">India (Chennai / Mumbai)</option>
@@ -583,8 +583,8 @@ export default function TradeAssistantPage() {
                         <option value="Canada">Canada (Vancouver / Montreal)</option>
                         <option value="Australia">Australia (Sydney / Melbourne)</option>
                       </select>
-                      <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-1">
-                        <span className="text-sky-400 font-semibold">Destination Port:</span>
+                      <div className="flex items-center gap-1.5 text-[11px] text-neutral-400 mt-1">
+                        <span className="text-orange-400 font-semibold">Destination Port:</span>
                         <span>{destPort}</span>
                       </div>
                     </div>
@@ -593,13 +593,13 @@ export default function TradeAssistantPage() {
                   {/* Commodity & HS Code */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs text-slate-300 font-medium">Commodity Category</Label>
-                      <span className="text-[11px] text-amber-400 font-mono font-medium">Auto-Tariff Mapped</span>
+                      <Label className="text-xs text-neutral-300 font-medium">Commodity Category</Label>
+                      <span className="text-[11px] text-orange-400 font-mono font-medium">Auto-Tariff Mapped</span>
                     </div>
                     <select
                       value={selectedCommodityKey}
                       onChange={(e) => setSelectedCommodityKey(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:border-[#FF5A00] focus:outline-none transition-colors"
+                      className="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:border-[#FF5A00] focus:outline-none transition-colors"
                     >
                       <option value="machinery">Machinery & Material Handling Equipment</option>
                       <option value="steel">Structural Steel Coils & Galvanized Plates</option>
@@ -611,21 +611,21 @@ export default function TradeAssistantPage() {
 
                     {/* Telemetry Chips Row: HS Code, Duty %, Tax %, Cess */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                      <div className="bg-slate-950/80 border border-slate-800 rounded-lg p-2 flex flex-col justify-between">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold">HS Code</span>
-                        <span className="font-mono text-amber-400 font-bold text-xs mt-0.5 truncate">{commodity.code}</span>
+                      <div className="bg-neutral-950/80 border border-neutral-800 rounded-lg p-2 flex flex-col justify-between">
+                        <span className="text-[10px] text-neutral-400 uppercase font-bold">HS Code</span>
+                        <span className="font-mono text-orange-400 font-bold text-xs mt-0.5 truncate">{commodity.code}</span>
                       </div>
-                      <div className="bg-slate-950/80 border border-slate-800 rounded-lg p-2 flex flex-col justify-between">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold">Basic Duty (BCD)</span>
-                        <span className="text-emerald-400 font-bold text-xs mt-0.5">{(commodity.dutyRate * 100).toFixed(1)}%</span>
+                      <div className="bg-neutral-950/80 border border-neutral-800 rounded-lg p-2 flex flex-col justify-between">
+                        <span className="text-[10px] text-neutral-400 uppercase font-bold">Basic Duty (BCD)</span>
+                        <span className="text-orange-400 font-bold text-xs mt-0.5">{(commodity.dutyRate * 100).toFixed(1)}%</span>
                       </div>
-                      <div className="bg-slate-950/80 border border-slate-800 rounded-lg p-2 flex flex-col justify-between">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold">Import Tax (IGST)</span>
-                        <span className="text-sky-400 font-bold text-xs mt-0.5">{(commodity.igstRate * 100).toFixed(0)}%</span>
+                      <div className="bg-neutral-950/80 border border-neutral-800 rounded-lg p-2 flex flex-col justify-between">
+                        <span className="text-[10px] text-neutral-400 uppercase font-bold">Import Tax (IGST)</span>
+                        <span className="text-orange-400 font-bold text-xs mt-0.5">{(commodity.igstRate * 100).toFixed(0)}%</span>
                       </div>
-                      <div className="bg-slate-950/80 border border-slate-800 rounded-lg p-2 flex flex-col justify-between">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold">SWS Surcharge</span>
-                        <span className="text-purple-400 font-bold text-xs mt-0.5">10% of BCD</span>
+                      <div className="bg-neutral-950/80 border border-neutral-800 rounded-lg p-2 flex flex-col justify-between">
+                        <span className="text-[10px] text-neutral-400 uppercase font-bold">SWS Surcharge</span>
+                        <span className="text-orange-400 font-bold text-xs mt-0.5">10% of BCD</span>
                       </div>
                     </div>
                   </div>
@@ -634,11 +634,11 @@ export default function TradeAssistantPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="space-y-1 col-span-2 sm:col-span-1">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs text-slate-300 font-medium">Cargo Value</Label>
+                        <Label className="text-xs text-neutral-300 font-medium">Cargo Value</Label>
                         <select
                           value={baseCurrency}
                           onChange={(e) => setBaseCurrency(e.target.value)}
-                          className="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-[11px] text-[#FF8A3D] font-bold focus:outline-none"
+                          className="bg-neutral-950 border border-neutral-700 rounded px-1.5 py-0.5 text-[11px] text-[#FF8A3D] font-bold focus:outline-none"
                         >
                           {Object.keys(SUPPORTED_TRADE_CURRENCIES).map(curr => (
                             <option key={curr} value={curr}>{curr}</option>
@@ -650,62 +650,62 @@ export default function TradeAssistantPage() {
                           type="number"
                           value={fobValue}
                           onChange={(e) => setFobValue(e.target.value)}
-                          className="bg-slate-950 border-slate-700/80 text-white text-xs font-semibold h-9.5 pr-12"
+                          className="bg-neutral-950 border-neutral-700/80 text-white text-xs font-semibold h-9.5 pr-12"
                           placeholder="e.g. 45000"
                         />
-                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-400">
                           {baseCurrency}
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-400 block truncate">
+                      <span className="text-[10px] text-neutral-400 block truncate">
                         ≈ {formatCurrencyValue(cargoValInTarget, targetCurrency)} ({targetCurrency})
                       </span>
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-xs text-slate-300 font-medium">Quantity ({unit})</Label>
+                      <Label className="text-xs text-neutral-300 font-medium">Quantity ({unit})</Label>
                       <Input
                         type="number"
                         value={quantity}
                         onChange={(e) => setQuantity(e.target.value)}
-                        className="bg-slate-950 border-slate-700/80 text-white text-xs font-semibold h-9.5"
+                        className="bg-neutral-950 border-neutral-700/80 text-white text-xs font-semibold h-9.5"
                         placeholder="e.g. 10"
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-slate-300 font-medium">Weight (kg)</Label>
+                      <Label className="text-xs text-neutral-300 font-medium">Weight (kg)</Label>
                       <Input
                         type="number"
                         value={weightKg}
                         onChange={(e) => setWeightKg(e.target.value)}
-                        className="bg-slate-950 border-slate-700/80 text-white text-xs font-semibold h-9.5"
+                        className="bg-neutral-950 border-neutral-700/80 text-white text-xs font-semibold h-9.5"
                         placeholder="e.g. 3500"
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-slate-300 font-medium">Volume (CBM)</Label>
+                      <Label className="text-xs text-neutral-300 font-medium">Volume (CBM)</Label>
                       <Input
                         type="number"
                         value={volumeCbm}
                         onChange={(e) => setVolumeCbm(e.target.value)}
-                        className="bg-slate-950 border-slate-700/80 text-white text-xs font-semibold h-9.5"
+                        className="bg-neutral-950 border-neutral-700/80 text-white text-xs font-semibold h-9.5"
                         placeholder="e.g. 12"
                       />
                     </div>
                   </div>
 
                   {/* Live Conversion Banner */}
-                  <div className="rounded-xl bg-slate-950/80 border border-slate-800 p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="rounded-xl bg-neutral-950/80 border border-neutral-800 p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-2">
                       <ArrowLeftRight className="w-3.5 h-3.5 text-[#FF5A00]" />
-                      <span className="text-slate-400">Live Rate Conversion:</span>
+                      <span className="text-neutral-400">Live Rate Conversion:</span>
                       <span className="font-mono font-bold text-white">
                         1 {baseCurrency} = {directExchangeRate.toFixed(directExchangeRate > 20 ? 2 : 4)} {targetCurrency}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-[11px]">
-                      <span className="text-slate-400">Reverse:</span>
-                      <span className="font-mono text-slate-300">
+                      <span className="text-neutral-400">Reverse:</span>
+                      <span className="font-mono text-neutral-300">
                         1 {targetCurrency} = {directReverseRate.toFixed(directReverseRate > 20 ? 2 : 4)} {baseCurrency}
                       </span>
                     </div>
@@ -714,7 +714,7 @@ export default function TradeAssistantPage() {
                   {/* Shipping Mode & Incoterm */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
                     <div>
-                      <Label className="text-xs text-slate-300 mb-1.5 block font-medium">Freight Mode</Label>
+                      <Label className="text-xs text-neutral-300 mb-1.5 block font-medium">Freight Mode</Label>
                       <div className="grid grid-cols-3 gap-1.5">
                         <button
                           type="button"
@@ -722,7 +722,7 @@ export default function TradeAssistantPage() {
                           className={`p-2 rounded-xl border text-center transition-all ${
                             shippingMode === 'sea_fcl'
                               ? 'bg-[#FF5A00] border-[#FF5A00] text-white font-bold shadow-md'
-                              : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                              : 'bg-neutral-950 border-neutral-800 text-neutral-300 hover:border-neutral-700'
                           }`}
                         >
                           <Ship className="w-4 h-4 mx-auto mb-1" />
@@ -734,7 +734,7 @@ export default function TradeAssistantPage() {
                           className={`p-2 rounded-xl border text-center transition-all ${
                             shippingMode === 'sea_lcl'
                               ? 'bg-[#FF5A00] border-[#FF5A00] text-white font-bold shadow-md'
-                              : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                              : 'bg-neutral-950 border-neutral-800 text-neutral-300 hover:border-neutral-700'
                           }`}
                         >
                           <Layers className="w-4 h-4 mx-auto mb-1" />
@@ -746,7 +746,7 @@ export default function TradeAssistantPage() {
                           className={`p-2 rounded-xl border text-center transition-all ${
                             shippingMode === 'air'
                               ? 'bg-[#FF5A00] border-[#FF5A00] text-white font-bold shadow-md'
-                              : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                              : 'bg-neutral-950 border-neutral-800 text-neutral-300 hover:border-neutral-700'
                           }`}
                         >
                           <Plane className="w-4 h-4 mx-auto mb-1" />
@@ -756,11 +756,11 @@ export default function TradeAssistantPage() {
                     </div>
 
                     <div>
-                      <Label className="text-xs text-slate-300 mb-1.5 block font-medium">Declared Incoterm</Label>
+                      <Label className="text-xs text-neutral-300 mb-1.5 block font-medium">Declared Incoterm</Label>
                       <select
                         value={incoterm}
                         onChange={(e) => setIncoterm(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:border-[#FF5A00] focus:outline-none transition-colors"
+                        className="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:border-[#FF5A00] focus:outline-none transition-colors"
                       >
                         <option value="FOB">FOB — Free On Board (Buyer arranges freight & duties)</option>
                         <option value="CIF">CIF — Cost, Insurance & Freight (Seller covers ocean freight)</option>
@@ -768,20 +768,20 @@ export default function TradeAssistantPage() {
                         <option value="DDP">DDP — Delivered Duty Paid (Seller pays all import duties)</option>
                         <option value="DAP">DAP — Delivered At Place (Buyer clears destination duties)</option>
                       </select>
-                      <span className="text-[10px] text-slate-400 mt-1 block">Incoterm defines logistics cost and risk allocation.</span>
+                      <span className="text-[10px] text-neutral-400 mt-1 block">Incoterm defines logistics cost and risk allocation.</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Right Column: Itemized Landed Cost Breakdown Card (5 cols) */}
-                <div className="lg:col-span-5 rounded-2xl bg-[#090E1A] border border-slate-800 p-5 sm:p-6 space-y-4 shadow-xl">
-                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
+                <div className="lg:col-span-5 rounded-2xl bg-[#121212] border border-neutral-800 p-5 sm:p-6 space-y-4 shadow-xl">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-neutral-800">
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-emerald-400" />
+                      <FileText className="w-4 h-4 text-orange-400" />
                       <span>Itemized Cost Breakdown</span>
                     </h3>
                     <div className="flex items-center gap-1">
-                      <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10 text-xs">
+                      <Badge variant="outline" className="border-orange-500/30 text-orange-400 bg-orange-500/10 text-xs">
                         In {targetCurrency}
                       </Badge>
                     </div>
@@ -789,7 +789,7 @@ export default function TradeAssistantPage() {
 
                   {/* Quick Target Currency Tabs */}
                   <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                    <span className="text-[11px] text-slate-400 shrink-0 font-medium mr-1">Switch Currency:</span>
+                    <span className="text-[11px] text-neutral-400 shrink-0 font-medium mr-1">Switch Currency:</span>
                     {['INR', 'USD', 'AED', 'EUR', 'GBP', 'CNY', 'SGD'].map(curr => (
                       <button
                         key={curr}
@@ -798,7 +798,7 @@ export default function TradeAssistantPage() {
                         className={`text-[11px] font-bold px-2 py-0.5 rounded-lg border transition-all ${
                           targetCurrency === curr
                             ? 'bg-[#FF5A00] border-[#FF5A00] text-white shadow'
-                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                            : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-white'
                         }`}
                       >
                         {curr}
@@ -808,67 +808,67 @@ export default function TradeAssistantPage() {
 
                   {/* Dual-Currency Itemized Table */}
                   <div className="space-y-2.5 text-xs">
-                    <div className="flex justify-between py-1 border-b border-slate-800/80">
-                      <span className="text-slate-400">1. Commercial Cargo Value:</span>
+                    <div className="flex justify-between py-1 border-b border-neutral-800/80">
+                      <span className="text-neutral-400">1. Commercial Cargo Value:</span>
                       <div className="text-right">
                         <span className="font-semibold text-white">{formatCurrencyValue(cargoValInTarget, targetCurrency)}</span>
                         {baseCurrency !== targetCurrency && (
-                          <span className="text-[10px] text-slate-400 block">({formatCurrencyValue(rawCargoVal, baseCurrency)})</span>
+                          <span className="text-[10px] text-neutral-400 block">({formatCurrencyValue(rawCargoVal, baseCurrency)})</span>
                         )}
                       </div>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-slate-800/80">
-                      <span className="text-slate-400">2. Est. Freight ({shippingMode.toUpperCase()}):</span>
+                    <div className="flex justify-between py-1 border-b border-neutral-800/80">
+                      <span className="text-neutral-400">2. Est. Freight ({shippingMode.toUpperCase()}):</span>
                       <div className="text-right">
-                        <span className="font-semibold text-sky-400">+{formatCurrencyValue(freightInTarget, targetCurrency)}</span>
+                        <span className="font-semibold text-orange-400">+{formatCurrencyValue(freightInTarget, targetCurrency)}</span>
                         {targetCurrency !== 'USD' && (
-                          <span className="text-[10px] text-slate-400 block">(+${estimatedFreightInUsd.toLocaleString()} USD)</span>
+                          <span className="text-[10px] text-neutral-400 block">(+${estimatedFreightInUsd.toLocaleString()} USD)</span>
                         )}
                       </div>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-slate-800/80">
-                      <span className="text-slate-400">3. Marine Cargo Insurance (0.35%):</span>
+                    <div className="flex justify-between py-1 border-b border-neutral-800/80">
+                      <span className="text-neutral-400">3. Marine Cargo Insurance (0.35%):</span>
                       <div className="text-right">
-                        <span className="font-semibold text-slate-300">+{formatCurrencyValue(insuranceInTarget, targetCurrency)}</span>
+                        <span className="font-semibold text-neutral-300">+{formatCurrencyValue(insuranceInTarget, targetCurrency)}</span>
                       </div>
                     </div>
-                    <div className="flex justify-between py-1.5 bg-slate-900/80 px-2 rounded-lg border border-slate-800">
-                      <span className="text-slate-300 font-medium">CIF Assessable Value:</span>
+                    <div className="flex justify-between py-1.5 bg-neutral-900/80 px-2 rounded-lg border border-neutral-800">
+                      <span className="text-neutral-300 font-medium">CIF Assessable Value:</span>
                       <div className="text-right">
                         <span className="font-bold text-white">{formatCurrencyValue(cargoValInTarget + freightInTarget + insuranceInTarget, targetCurrency)}</span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between py-1 border-b border-slate-800/80">
-                      <span className="text-slate-400">4. Basic Customs Duty ({(commodity.dutyRate * 100).toFixed(1)}%):</span>
+                    <div className="flex justify-between py-1 border-b border-neutral-800/80">
+                      <span className="text-neutral-400">4. Basic Customs Duty ({(commodity.dutyRate * 100).toFixed(1)}%):</span>
                       <div className="text-right">
-                        <span className="font-semibold text-amber-400">+{formatCurrencyValue(bcdInTarget, targetCurrency)}</span>
+                        <span className="font-semibold text-orange-400">+{formatCurrencyValue(bcdInTarget, targetCurrency)}</span>
                       </div>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-slate-800/80">
-                      <span className="text-slate-400">5. Social Welfare Surcharge (10% BCD):</span>
+                    <div className="flex justify-between py-1 border-b border-neutral-800/80">
+                      <span className="text-neutral-400">5. Social Welfare Surcharge (10% BCD):</span>
                       <div className="text-right">
-                        <span className="font-semibold text-amber-400">+{formatCurrencyValue(swsInTarget, targetCurrency)}</span>
+                        <span className="font-semibold text-orange-400">+{formatCurrencyValue(swsInTarget, targetCurrency)}</span>
                       </div>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-slate-800/80">
-                      <span className="text-slate-400">6. Import Tax / IGST ({(commodity.igstRate * 100).toFixed(0)}%):</span>
+                    <div className="flex justify-between py-1 border-b border-neutral-800/80">
+                      <span className="text-neutral-400">6. Import Tax / IGST ({(commodity.igstRate * 100).toFixed(0)}%):</span>
                       <div className="text-right">
-                        <span className="font-semibold text-amber-400">+{formatCurrencyValue(vatInTarget, targetCurrency)}</span>
+                        <span className="font-semibold text-orange-400">+{formatCurrencyValue(vatInTarget, targetCurrency)}</span>
                       </div>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-slate-800/80">
-                      <span className="text-slate-400">7. Terminal Handling & Port Dues:</span>
+                    <div className="flex justify-between py-1 border-b border-neutral-800/80">
+                      <span className="text-neutral-400">7. Terminal Handling & Port Dues:</span>
                       <div className="text-right">
-                        <span className="font-semibold text-slate-300">+{formatCurrencyValue(portInTarget, targetCurrency)}</span>
+                        <span className="font-semibold text-neutral-300">+{formatCurrencyValue(portInTarget, targetCurrency)}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Total Landed Cost Highlight */}
-                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 shadow-inner">
+                  <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 space-y-1.5 shadow-inner">
                     <div className="flex items-center justify-between">
-                      <div className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">
+                      <div className="text-[11px] text-neutral-400 uppercase font-bold tracking-wider">
                         Total Estimated Landed Cost
                       </div>
                       <Badge variant="outline" className="border-[#FF5A00]/40 text-[#FF8A3D] text-[10px] font-bold">
@@ -881,12 +881,12 @@ export default function TradeAssistantPage() {
                     </div>
 
                     {baseCurrency !== targetCurrency && (
-                      <div className="text-xs text-slate-400 font-medium">
-                        Equivalent: <span className="text-slate-200 font-bold">{formatCurrencyValue(totalLandedInBase, baseCurrency)}</span>
+                      <div className="text-xs text-neutral-400 font-medium">
+                        Equivalent: <span className="text-neutral-200 font-bold">{formatCurrencyValue(totalLandedInBase, baseCurrency)}</span>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between text-xs text-slate-300 pt-1.5 border-t border-slate-800/80">
+                    <div className="flex items-center justify-between text-xs text-neutral-300 pt-1.5 border-t border-neutral-800/80">
                       <span>Per Unit Landed ({unitsCount} {unit}):</span>
                       <span className="font-bold text-white">
                         {formatCurrencyValue(unitLandedInTarget, targetCurrency)} / {unit}
@@ -895,36 +895,36 @@ export default function TradeAssistantPage() {
                   </div>
 
                   {/* Commercial Forex Spread Buffer Indicator */}
-                  <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1.5">
+                  <div className="p-3 rounded-xl bg-neutral-950/70 border border-neutral-800/80 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <button
                         type="button"
                         onClick={() => setShowSpreadInfo(!showSpreadInfo)}
-                        className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1 font-semibold"
+                        className="text-[11px] text-neutral-400 hover:text-neutral-200 flex items-center gap-1 font-semibold"
                       >
                         <Info className="w-3.5 h-3.5 text-[#FF5A00]" />
                         <span>Commercial Bank Spread (+1.0%):</span>
                       </button>
-                      <span className="font-mono text-xs font-bold text-slate-300">
+                      <span className="font-mono text-xs font-bold text-neutral-300">
                         +{formatCurrencyValue(commercialSpreadAmount, targetCurrency)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/50">
-                      <span className="text-slate-400">Total with Bank Remittance Buffer:</span>
-                      <span className="font-bold text-emerald-400">
+                    <div className="flex items-center justify-between text-[11px] pt-1 border-t border-neutral-800/50">
+                      <span className="text-neutral-400">Total with Bank Remittance Buffer:</span>
+                      <span className="font-bold text-orange-400">
                         {formatCurrencyValue(totalWithCommercialSpread, targetCurrency)}
                       </span>
                     </div>
                     {showSpreadInfo && (
-                      <p className="text-[10px] text-slate-400 leading-normal pt-1 border-t border-slate-800/60">
+                      <p className="text-[10px] text-neutral-400 leading-normal pt-1 border-t border-neutral-800/60">
                         Commercial international wire transfers typically incur a 0.5%–1.5% forex spread above the interbank mid-market spot rate. We include this advisory buffer to ensure your treasury budgeting reflects actual bank clearance rates.
                       </p>
                     )}
                   </div>
 
                   {/* Certified Partner Disclaimer */}
-                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-start gap-2.5 text-[11px] text-slate-400">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/80 flex items-start gap-2.5 text-[11px] text-neutral-400">
+                    <ShieldCheck className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold text-white">External Partner Clearance: </span>
                       Official customs clearance, final tariff determination, and Bill of Entry endorsement are executed by licensed customs brokers and verified carrier partners.
@@ -951,7 +951,7 @@ export default function TradeAssistantPage() {
                         } catch {}
                       }}
                       variant="secondary"
-                      className="border border-slate-700 bg-slate-800 hover:bg-slate-700 font-bold text-xs h-10 rounded-xl"
+                      className="border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 font-bold text-xs h-10 rounded-xl"
                     >
                       <Download className="w-3.5 h-3.5 mr-1" />
                       <span>Copy Report</span>
@@ -966,14 +966,14 @@ export default function TradeAssistantPage() {
                 TAB 2: AI SOURCING & SUPPLIER MATCHING
             ═════════════════════════════════════════════════════════ */}
             <TabsContent value="sourcing" className="space-y-6">
-              <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 space-y-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+              <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-5 sm:p-6 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-800">
                   <div>
                     <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                       <Box className="w-5 h-5 text-[#FF5A00]" />
                       <span>AI Product Sourcing & Verified Factory Matching</span>
                     </h2>
-                    <p className="text-xs text-slate-300 mt-1">
+                    <p className="text-xs text-neutral-300 mt-1">
                       Our trade intelligence engine analyzes your technical specs, required volume, and compliance mandates to match top global manufacturers.
                     </p>
                   </div>
@@ -989,20 +989,20 @@ export default function TradeAssistantPage() {
                 {/* Sourcing Input Bar */}
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                   <div className="sm:col-span-6">
-                    <Label className="text-xs text-slate-300">Product / Technical Specification Description</Label>
+                    <Label className="text-xs text-neutral-300">Product / Technical Specification Description</Label>
                     <Input
                       value={sourcingQuery}
                       onChange={(e) => setSourcingQuery(e.target.value)}
                       placeholder="e.g. CNC horizontal milling machine with 5-axis controller..."
-                      className="mt-1 bg-slate-950 border-slate-700 text-white text-xs"
+                      className="mt-1 bg-neutral-950 border-neutral-700 text-white text-xs"
                     />
                   </div>
                   <div className="sm:col-span-3">
-                    <Label className="text-xs text-slate-300">Category</Label>
+                    <Label className="text-xs text-neutral-300">Category</Label>
                     <select
                       value={sourcingCategory}
                       onChange={(e) => setSourcingCategory(e.target.value)}
-                      className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:border-[#FF5A00]"
+                      className="w-full mt-1 bg-neutral-950 border border-neutral-700 rounded-xl px-3 py-2 text-white text-xs focus:border-[#FF5A00]"
                     >
                       <option value="Machinery">Machinery & Industrial</option>
                       <option value="Steel">Steel & Metals</option>
@@ -1026,7 +1026,7 @@ export default function TradeAssistantPage() {
 
                 {/* Recommended Verified Suppliers Cards */}
                 <div className="space-y-3 pt-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
                     Recommended Verified Manufacturers ({sourcingResults.length} Matches Found)
                   </h3>
 
@@ -1034,7 +1034,7 @@ export default function TradeAssistantPage() {
                     {sourcingResults.map((sup, idx) => (
                       <div
                         key={idx}
-                        className="rounded-xl bg-slate-950 border border-slate-800 p-4 space-y-3 hover:border-[#FF5A00]/60 transition-all flex flex-col justify-between"
+                        className="rounded-xl bg-neutral-950 border border-neutral-800 p-4 space-y-3 hover:border-[#FF5A00]/60 transition-all flex flex-col justify-between"
                       >
                         <div>
                           <div className="flex items-start justify-between gap-2">
@@ -1051,18 +1051,18 @@ export default function TradeAssistantPage() {
                           <h4 className="text-sm font-bold text-white mt-2 leading-snug">
                             {sup.name}
                           </h4>
-                          <p className="text-xs text-slate-400 mt-0.5">
+                          <p className="text-xs text-neutral-400 mt-0.5">
                             📍 {sup.city}, {sup.country}
                           </p>
 
-                          <div className="flex items-center gap-3 text-xs text-slate-300 mt-2">
+                          <div className="flex items-center gap-3 text-xs text-neutral-300 mt-2">
                             <span>⭐ {sup.rating} / 5.0</span>
                             <span>•</span>
                             <span>MOQ: {sup.moq}</span>
                           </div>
                         </div>
 
-                        <div className="pt-2 border-t border-slate-800 flex gap-2">
+                        <div className="pt-2 border-t border-neutral-800 flex gap-2">
                           <Button
                             onClick={() => navigate('/manufacturers')}
                             size="sm"
@@ -1074,7 +1074,7 @@ export default function TradeAssistantPage() {
                             onClick={() => navigate('/post-requirement')}
                             size="sm"
                             variant="secondary"
-                            className="border border-slate-700 text-xs h-8"
+                            className="border border-neutral-700 text-xs h-8"
                           >
                             <span>Invite</span>
                           </Button>
@@ -1090,14 +1090,14 @@ export default function TradeAssistantPage() {
                 TAB 3: TRADE DOCUMENTATION & COMPLIANCE GUIDE
             ═════════════════════════════════════════════════════════ */}
             <TabsContent value="documents" className="space-y-6">
-              <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 space-y-5">
-                <div className="pb-3 border-b border-slate-800">
+              <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-5 sm:p-6 space-y-5">
+                <div className="pb-3 border-b border-neutral-800">
                   <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                     <FileCheck2 className="w-5 h-5 text-[#FF5A00]" />
                     <span>International Trade Documentation Checklist</span>
                   </h2>
-                  <p className="text-xs text-slate-300 mt-1">
-                    Customs clearance compliance requirements for trade between <span className="text-[#FF5A00] font-bold">{originCountry}</span> and <span className="text-sky-400 font-bold">{destCountry}</span>.
+                  <p className="text-xs text-neutral-300 mt-1">
+                    Customs clearance compliance requirements for trade between <span className="text-[#FF5A00] font-bold">{originCountry}</span> and <span className="text-orange-400 font-bold">{destCountry}</span>.
                   </p>
                 </div>
 
@@ -1105,36 +1105,36 @@ export default function TradeAssistantPage() {
                   {CORRIDOR_DOCUMENTS.map((doc, idx) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-xl bg-slate-950 border border-slate-800/90 hover:border-slate-700 transition-all space-y-2"
+                      className="p-4 rounded-xl bg-neutral-950 border border-neutral-800/90 hover:border-neutral-700 transition-all space-y-2"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
                           <h4 className="text-xs sm:text-sm font-bold text-white">{doc.name}</h4>
                         </div>
                         <Badge
                           variant="outline"
-                          className={doc.mandatory ? 'border-amber-500/40 text-amber-400 text-[10px]' : 'border-slate-700 text-slate-400 text-[10px]'}
+                          className={doc.mandatory ? 'border-orange-500/40 text-orange-400 text-[10px]' : 'border-neutral-700 text-neutral-400 text-[10px]'}
                         >
                           {doc.mandatory ? 'Mandatory' : 'Conditional'}
                         </Badge>
                       </div>
 
-                      <p className="text-xs text-slate-300 leading-relaxed">
+                      <p className="text-xs text-neutral-300 leading-relaxed">
                         {doc.purpose}
                       </p>
 
-                      <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-900 flex justify-between">
-                        <span>Authority: <strong className="text-slate-300">{doc.authority}</strong></span>
-                        <span className="text-emerald-400 font-medium">Standard Validated</span>
+                      <div className="text-[11px] text-neutral-400 pt-1 border-t border-neutral-900 flex justify-between">
+                        <span>Authority: <strong className="text-neutral-300">{doc.authority}</strong></span>
+                        <span className="text-orange-400 font-medium">Standard Validated</span>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 {/* Country-Specific Notice */}
-                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-xs text-amber-200">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="p-3.5 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-start gap-3 text-xs text-orange-200">
+                  <AlertTriangle className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold text-white">Destination Regulatory Requirement: </span>
                     Shipments entering {destCountry} must comply with local product safety certifications (e.g. BIS CRS for India, CE mark for EU, FDA prior notice for USA). Bulkskart's partner customs brokers provide pre-clearance file audits before vessel departure.
@@ -1147,30 +1147,30 @@ export default function TradeAssistantPage() {
                 TAB 4: SHIPMENT COORDINATION REQUEST FORM
             ═════════════════════════════════════════════════════════ */}
             <TabsContent value="coordination" className="space-y-6">
-              <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 space-y-5">
-                <div className="pb-3 border-b border-slate-800">
+              <div className="rounded-2xl bg-neutral-900/90 border border-neutral-800 p-5 sm:p-6 space-y-5">
+                <div className="pb-3 border-b border-neutral-800">
                   <div className="flex items-center justify-between">
                     <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                       <Truck className="w-5 h-5 text-[#FF5A00]" />
                       <span>Formal Shipment Coordination Request</span>
                     </h2>
-                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10 text-xs">
+                    <Badge variant="outline" className="border-orange-500/30 text-orange-400 bg-orange-500/10 text-xs">
                       Partner Dispatched
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-300 mt-1">
+                  <p className="text-xs text-neutral-300 mt-1">
                     Connect directly with verified freight forwarders and customs house agents for container bookings, multi-modal freight, and port clearance.
                   </p>
                 </div>
 
                 {coordSubmitted ? (
-                  <div className="p-6 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                  <div className="p-6 rounded-2xl bg-orange-950/20 border border-orange-500/30 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center mx-auto">
                       <CheckCircle2 className="w-6 h-6" />
                     </div>
                     <h3 className="text-lg font-bold text-white">Shipment Request Dispatched!</h3>
-                    <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                      Your coordination dossier has been assigned reference ID <strong className="text-emerald-400 font-mono">{trackingNumber}</strong>. A dedicated logistics officer from our verified partner network will contact you within 4 business hours.
+                    <p className="text-xs text-neutral-300 max-w-md mx-auto leading-relaxed">
+                      Your coordination dossier has been assigned reference ID <strong className="text-orange-400 font-mono">{trackingNumber}</strong>. A dedicated logistics officer from our verified partner network will contact you within 4 business hours.
                     </p>
                     <div className="pt-2">
                       <Button
@@ -1185,22 +1185,22 @@ export default function TradeAssistantPage() {
                   <form onSubmit={handleSubmitCoordination} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <div>
-                        <Label className="text-xs text-slate-300">Pickup Origin Address / Factory Location</Label>
+                        <Label className="text-xs text-neutral-300">Pickup Origin Address / Factory Location</Label>
                         <Input
                           value={coordOrigin}
                           onChange={(e) => setCoordOrigin(e.target.value)}
                           placeholder="e.g. Pune Industrial Area, Maharashtra, India"
-                          className="mt-1 bg-slate-950 border-slate-700 text-white text-xs"
+                          className="mt-1 bg-neutral-950 border-neutral-700 text-white text-xs"
                           required
                         />
                       </div>
                       <div>
-                        <Label className="text-xs text-slate-300">Destination Delivery Address / Port</Label>
+                        <Label className="text-xs text-neutral-300">Destination Delivery Address / Port</Label>
                         <Input
                           value={coordDest}
                           onChange={(e) => setCoordDest(e.target.value)}
                           placeholder="e.g. Port of Los Angeles, California, USA"
-                          className="mt-1 bg-slate-950 border-slate-700 text-white text-xs"
+                          className="mt-1 bg-neutral-950 border-neutral-700 text-white text-xs"
                           required
                         />
                       </div>
@@ -1208,21 +1208,21 @@ export default function TradeAssistantPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                       <div>
-                        <Label className="text-xs text-slate-300">Cargo Description</Label>
+                        <Label className="text-xs text-neutral-300">Cargo Description</Label>
                         <Input
                           value={coordCargoDesc}
                           onChange={(e) => setCoordCargoDesc(e.target.value)}
                           placeholder="e.g. 10 Units Heavy Forklifts"
-                          className="mt-1 bg-slate-950 border-slate-700 text-white text-xs"
+                          className="mt-1 bg-neutral-950 border-neutral-700 text-white text-xs"
                           required
                         />
                       </div>
                       <div>
-                        <Label className="text-xs text-slate-300">Container / Shipment Type</Label>
+                        <Label className="text-xs text-neutral-300">Container / Shipment Type</Label>
                         <select
                           value={coordContainerType}
                           onChange={(e) => setCoordContainerType(e.target.value)}
-                          className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:border-[#FF5A00]"
+                          className="w-full mt-1 bg-neutral-950 border border-neutral-700 rounded-xl px-3 py-2 text-white text-xs focus:border-[#FF5A00]"
                         >
                           <option value="20ft Standard Container">20ft Standard Ocean Container (FCL)</option>
                           <option value="40ft High Cube Container">40ft High Cube Ocean Container (FCL)</option>
@@ -1232,31 +1232,31 @@ export default function TradeAssistantPage() {
                         </select>
                       </div>
                       <div>
-                        <Label className="text-xs text-slate-300">Cargo Ready Date</Label>
+                        <Label className="text-xs text-neutral-300">Cargo Ready Date</Label>
                         <Input
                           type="date"
                           value={coordReadyDate}
                           onChange={(e) => setCoordReadyDate(e.target.value)}
-                          className="mt-1 bg-slate-950 border-slate-700 text-white text-xs"
+                          className="mt-1 bg-neutral-950 border-neutral-700 text-white text-xs"
                           required
                         />
                       </div>
                     </div>
 
                     <div>
-                      <Label className="text-xs text-slate-300">Specific Logistics Requirements & Notes</Label>
+                      <Label className="text-xs text-neutral-300">Specific Logistics Requirements & Notes</Label>
                       <textarea
                         value={coordNotes}
                         onChange={(e) => setCoordNotes(e.target.value)}
                         rows={3}
                         placeholder="Detail any special handling, fumigation, insurance requirements, or port pickup requests..."
-                        className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-xs focus:border-[#FF5A00] focus:outline-none"
+                        className="w-full mt-1 bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white text-xs focus:border-[#FF5A00] focus:outline-none"
                       />
                     </div>
 
                     {/* Certified External Partner Box */}
-                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-start gap-3 text-xs text-slate-300">
-                      <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                    <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 flex items-start gap-3 text-xs text-neutral-300">
+                      <ShieldCheck className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />
                       <div>
                         <span className="font-bold text-white">Partner Logistics Execution: </span>
                         Physical shipping lines (Maersk, CMA CGM, Hapag-Lloyd) and licensed Customs Brokers handle physical freight carriage, customs clearance, and terminal delivery under official contract of carriage.

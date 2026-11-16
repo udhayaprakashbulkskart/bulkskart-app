@@ -63,7 +63,7 @@ export default function PostRequirementsHomeSection() {
   };
 
   return (
-    <section className="relative z-20 pt-10 pb-4 md:pt-14 md:pb-6 bg-[#0B0F19] border-t border-border/80">
+    <section className="relative z-20 pt-10 pb-4 md:pt-14 md:pb-6 bg-[#121212] border-t border-border/80">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-5 md:px-6">
         
         {/* Section Header */}

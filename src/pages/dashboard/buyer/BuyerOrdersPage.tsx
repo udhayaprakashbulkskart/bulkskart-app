@@ -17,10 +17,10 @@ import OrderStatusTimeline from '@/components/common/OrderStatusTimeline';
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   pending:    { label: 'Pending',    cls: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30' },
-  confirmed:  { label: 'Confirmed',  cls: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
-  processing: { label: 'Processing', cls: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
-  shipped:    { label: 'Shipped',    cls: 'bg-purple-100 text-purple-700 border-purple-300' },
-  delivered:  { label: 'Delivered',  cls: 'bg-green-100 text-green-700 border-green-300' },
+  confirmed:  { label: 'Confirmed',  cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  processing: { label: 'Processing', cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  shipped:    { label: 'Shipped',    cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  delivered:  { label: 'Delivered',  cls: 'bg-orange-100 text-orange-700 border-orange-300' },
   cancelled:  { label: 'Cancelled',  cls: 'bg-red-100 text-red-700 border-red-300' },
 };
 
@@ -79,7 +79,7 @@ export default function BuyerOrdersPage() {
             if (!held.length) return null;
             const total = held.reduce((sum, o) => sum + Number(o.paid_amount ?? o.total_amount), 0);
             return (
-              <div className="mb-5 rounded-xl border border-sky-500/30 bg-sky-500/5 p-4 text-sm">
+              <div className="mb-5 rounded-xl border border-orange-500/30 bg-orange-500/5 p-4 text-sm">
                 <p className="font-semibold text-foreground">Held by BulkSkart for you: {money(total)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Across {held.length} order{held.length === 1 ? '' : 's'}. The manufacturer is paid only when you open the order and release it after the goods arrive.

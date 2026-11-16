@@ -199,10 +199,10 @@ export default function AuctionLiveChat({
               <h3 className="text-xs sm:text-sm font-bold text-foreground truncate">
                 {isFullPage ? '60-Minute Live Room Chat (Full Page)' : 'Live Auction Chat'}
               </h3>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shrink-0" />
             </div>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground truncate">
-              <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="flex items-center gap-1 font-semibold text-orange-600 dark:text-orange-400">
                 <Users className="w-3 h-3" /> {activeParticipants} Bidders Active
               </span>
               <span>•</span>
@@ -275,7 +275,7 @@ export default function AuctionLiveChat({
                     {!isMe && (
                       <div
                         className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[9px] shrink-0 text-white ${
-                          isManufacturer ? 'bg-[#FF5A1F]' : 'bg-slate-700'
+                          isManufacturer ? 'bg-[#FF5A1F]' : 'bg-neutral-700'
                         }`}
                       >
                         {msg.sender_name.charAt(0)}

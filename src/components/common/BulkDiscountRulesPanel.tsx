@@ -108,7 +108,7 @@ export default function BulkDiscountRulesPanel({ productId, companyId, moqUnit =
                   </p>
                   {r.label && <p className="text-[10px] text-muted-foreground truncate">{r.label}</p>}
                 </div>
-                <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0" />
+                <CheckCircle2 className="w-3 h-3 text-orange-500 shrink-0" />
                 <Button
                   size="sm"
                   variant="ghost"

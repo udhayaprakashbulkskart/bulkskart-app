@@ -105,7 +105,7 @@ export default function PixabayImagePickerModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-3xl max-h-[90dvh] flex flex-col p-5 bg-[#0a0f1d] border-slate-800 text-foreground">
+      <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-3xl max-h-[90dvh] flex flex-col p-5 bg-[#141414] border-neutral-800 text-foreground">
         <DialogHeader className="shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -116,7 +116,7 @@ export default function PixabayImagePickerModal({
                 Search Representative Images (Pixabay API)
               </DialogTitle>
             </div>
-            <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 text-[10px]">
+            <Badge variant="outline" className="border-orange-500/40 text-orange-400 text-[10px]">
               API Key Active
             </Badge>
           </div>
@@ -133,7 +133,7 @@ export default function PixabayImagePickerModal({
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="e.g. Copper wire, CNC milling, solar panel, polyester yarn..."
-              className="pl-9 bg-[#111827] border-slate-700 text-white text-xs h-9"
+              className="pl-9 bg-[#1c1c1c] border-neutral-700 text-white text-xs h-9"
             />
           </div>
           <Button
@@ -155,7 +155,7 @@ export default function PixabayImagePickerModal({
               className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all border ${
                 selectedCategory === c.cat
                   ? 'bg-[#FF5A1F] text-white border-[#FF5A1F]'
-                  : 'bg-slate-900/80 text-muted-foreground border-slate-800 hover:text-white'
+                  : 'bg-neutral-900/80 text-muted-foreground border-neutral-800 hover:text-white'
               }`}
             >
               {c.label}
@@ -171,7 +171,7 @@ export default function PixabayImagePickerModal({
               <p className="text-xs">Querying Pixabay API...</p>
             </div>
           ) : images.length === 0 ? (
-            <div className="text-center py-16 border border-dashed border-slate-800 rounded-xl p-6">
+            <div className="text-center py-16 border border-dashed border-neutral-800 rounded-xl p-6">
               <ImageIcon className="w-10 h-10 text-muted-foreground mx-auto mb-2 opacity-50" />
               <p className="text-xs font-semibold text-white">No images found on Pixabay</p>
               <p className="text-[11px] text-muted-foreground mt-1">Try broadening your search term or selecting another category.</p>
@@ -184,10 +184,10 @@ export default function PixabayImagePickerModal({
                   <div
                     key={img.id}
                     onClick={() => setSelectedId(img.id)}
-                    className={`group relative rounded-xl overflow-hidden border cursor-pointer aspect-[4/3] bg-slate-900 transition-all ${
+                    className={`group relative rounded-xl overflow-hidden border cursor-pointer aspect-[4/3] bg-neutral-900 transition-all ${
                       isSelected
                         ? 'border-[#FF5A1F] ring-2 ring-[#FF5A1F]/50 scale-[1.02]'
-                        : 'border-slate-800 hover:border-slate-600'
+                        : 'border-neutral-800 hover:border-neutral-600'
                     }`}
                   >
                     <img
@@ -213,11 +213,11 @@ export default function PixabayImagePickerModal({
         </div>
 
         {/* Footer */}
-        <DialogFooter className="shrink-0 pt-3 border-t border-slate-800 flex items-center justify-between sm:justify-between w-full">
+        <DialogFooter className="shrink-0 pt-3 border-t border-neutral-800 flex items-center justify-between sm:justify-between w-full">
           <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
             <span>Powered by Pixabay API</span>
             <span>•</span>
-            <span className="text-emerald-400">Free for commercial use</span>
+            <span className="text-orange-400">Free for commercial use</span>
           </div>
           <div className="flex items-center gap-2">
             <Button

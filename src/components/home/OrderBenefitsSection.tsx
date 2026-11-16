@@ -7,16 +7,16 @@ const LoanCalculator = lazyRetry(() => import('@/components/home/LoanCalculator'
 
 function CalculatorSkeleton() {
   return (
-    <div className="h-full min-h-[520px] rounded-3xl border border-slate-700/80 bg-slate-950/70 p-6" aria-hidden>
-      <div className="h-6 w-40 rounded-full bg-slate-800" />
-      <div className="mt-4 h-8 w-56 rounded-lg bg-slate-800" />
-      <div className="mt-6 h-2 w-full rounded-full bg-slate-800" />
+    <div className="h-full min-h-[520px] rounded-3xl border border-neutral-700/80 bg-neutral-950/70 p-6" aria-hidden>
+      <div className="h-6 w-40 rounded-full bg-neutral-800" />
+      <div className="mt-4 h-8 w-56 rounded-lg bg-neutral-800" />
+      <div className="mt-6 h-2 w-full rounded-full bg-neutral-800" />
       <div className="mt-6 grid grid-cols-3 gap-3">
-        <div className="h-10 rounded-md bg-slate-800" />
-        <div className="h-10 rounded-md bg-slate-800" />
-        <div className="h-10 rounded-md bg-slate-800" />
+        <div className="h-10 rounded-md bg-neutral-800" />
+        <div className="h-10 rounded-md bg-neutral-800" />
+        <div className="h-10 rounded-md bg-neutral-800" />
       </div>
-      <div className="mt-6 h-36 rounded-2xl bg-slate-800/80" />
+      <div className="mt-6 h-36 rounded-2xl bg-neutral-800/80" />
     </div>
   );
 }
@@ -48,9 +48,9 @@ export default function OrderBenefitsSection() {
   return (
     <section
       id="order-benefits"
-      className="relative scroll-mt-24 border-y border-white/10 bg-[#0B0F17] py-8 sm:py-12"
+      className="relative scroll-mt-24 border-y border-white/10 bg-[#111111] py-8 sm:py-12"
     >
-      <div className="pointer-events-none absolute -left-10 top-0 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -left-10 top-0 h-56 w-56 rounded-full bg-orange-500/10 blur-3xl" />
       <div className="pointer-events-none absolute right-0 bottom-0 h-56 w-56 rounded-full bg-[#FF5A00]/10 blur-3xl" />
 
       <div className="relative z-10 mx-auto w-full max-w-[1400px] px-4 sm:px-5 md:px-6">

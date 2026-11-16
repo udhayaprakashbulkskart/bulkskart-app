@@ -51,7 +51,7 @@ function UrgencyChip({ req }: { req: MatchRow['requirements'] }) {
       </span>
     );
     if (days <= 30) return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 border border-orange-200">
         <Zap className="w-2.5 h-2.5" /> NEW
       </span>
     );
@@ -70,8 +70,8 @@ const STATUS_LABEL: Record<string, string> = {
   expired: 'Expired',
 };
 const STATUS_COLOR: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  quoted: 'bg-green-100 text-green-700 border-green-200',
+  pending: 'bg-orange-100 text-orange-700 border-orange-200',
+  quoted: 'bg-orange-100 text-orange-700 border-orange-200',
   dismissed: 'bg-muted text-muted-foreground border-border',
   expired: 'bg-red-100 text-red-700 border-red-200',
 };

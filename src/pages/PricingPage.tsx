@@ -438,9 +438,9 @@ export default function PricingPage() {
       {/* ── Highlight: Buyers are 100% Free Forever ── */}
       <section className="pb-8">
         <div className="max-w-[1400px] mx-auto px-4 md:px-6">
-          <div className="bg-gradient-to-r from-green-500/10 via-primary/5 to-green-500/10 border-2 border-green-500/30 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+          <div className="bg-gradient-to-r from-orange-500/10 via-primary/5 to-orange-500/10 border-2 border-orange-500/30 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
             <div className="space-y-2 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 text-green-600 dark:text-green-400 font-bold text-xs">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 text-orange-600 dark:text-orange-400 font-bold text-xs">
                 <CheckCircle className="w-4 h-4" /> 100% Free Forever for Buyers
               </div>
               <h2 className="text-xl md:text-2xl font-black text-foreground">
@@ -450,10 +450,10 @@ export default function PricingPage() {
                 Post unlimited bulk requirements (RFQs), browse verified factory catalogs, directly negotiate factory prices, and track orders from verified manufacturers globally without paying any subscription fees or hidden trade margins.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs font-semibold text-foreground">
-                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Unlimited RFQs</div>
-                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Zero Commission</div>
-                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Direct Factory Chat</div>
-                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> KYC Verification</div>
+                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-orange-500" /> Unlimited RFQs</div>
+                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-orange-500" /> Zero Commission</div>
+                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-orange-500" /> Direct Factory Chat</div>
+                <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-orange-500" /> KYC Verification</div>
               </div>
             </div>
             <div className="shrink-0 flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -652,21 +652,21 @@ export default function PricingPage() {
             </div>
 
             {/* 24 Hours Sell Products */}
-            <div className="bg-card border-2 border-amber-500/50 rounded-2xl p-5 flex flex-col relative shadow-lg shadow-amber-500/5">
+            <div className="bg-card border-2 border-orange-500/50 rounded-2xl p-5 flex flex-col relative shadow-lg shadow-orange-500/5">
               <div className="absolute -top-3.5 left-6">
-                <Badge className="bg-amber-500 text-white text-xs px-3 py-1 font-bold">
+                <Badge className="bg-orange-500 text-white text-xs px-3 py-1 font-bold">
                   🔥 Flash Liquidation
                 </Badge>
               </div>
 
               <div className="mb-4 pt-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-500">
                     <Zap className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-lg font-black text-foreground">24 Hours Sell Products</h3>
-                    <p className="text-[11px] text-amber-500 font-bold">High-Priority Marketplace Spotlight</p>
+                    <p className="text-[11px] text-orange-500 font-bold">High-Priority Marketplace Spotlight</p>
                   </div>
                 </div>
 
@@ -674,7 +674,7 @@ export default function PricingPage() {
                   <span className="text-3xl font-black text-foreground">₹5,000</span>
                   <span className="text-xs text-muted-foreground">/24 Hours (Base)</span>
                 </div>
-                <div className="text-[11px] font-semibold text-amber-500 mb-2">
+                <div className="text-[11px] font-semibold text-orange-500 mb-2">
                   Total Payable: ₹6,018 (incl. 18% GST & Gateway fee)
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -691,7 +691,7 @@ export default function PricingPage() {
                   'Zero Platform Commission on All Bulk Transactions',
                 ].map((feat, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-foreground/90">
-                    <CheckCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                    <CheckCircle className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
                     <span>{feat}</span>
                   </li>
                 ))}
@@ -700,7 +700,7 @@ export default function PricingPage() {
               <Button
                 disabled={checkoutLoading}
                 onClick={() => handleAddonCheckout('flash_sell_24h')}
-                className="w-full text-sm font-bold gap-2 bg-gradient-to-r from-amber-500 to-[#FF5A00] hover:opacity-90 text-white shadow-md h-11 rounded-xl"
+                className="w-full text-sm font-bold gap-2 bg-gradient-to-r from-orange-500 to-[#FF5A00] hover:opacity-90 text-white shadow-md h-11 rounded-xl"
               >
                 {checkoutLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>

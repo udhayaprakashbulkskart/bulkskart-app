@@ -290,7 +290,7 @@ export default function BuyerProfilePage() {
             <Link to="/dashboard/buyer/verification">
               <Badge className={`text-xs px-3 py-1 gap-1 cursor-pointer hover:opacity-90 transition-opacity ${
                 kycStatus === 'verified' ? 'bg-primary text-primary-foreground' :
-                kycStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/40' :
+                kycStatus === 'pending' ? 'bg-orange-500/20 text-orange-500 border border-orange-500/40' :
                 'bg-muted text-muted-foreground border border-border'
               }`}>
                 <ShieldCheck className="w-3.5 h-3.5" />

@@ -218,8 +218,8 @@ export default function SupplierSubscriptionPage() {
   const tierColor: Record<string, string> = {
     starter:    'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
     business:   'bg-primary/10 text-primary border-primary/20',
-    growth:     'bg-purple-50 text-purple-700 border-purple-200',
-    enterprise: 'bg-amber-50 text-amber-700 border-amber-200',
+    growth:     'bg-orange-50 text-orange-700 border-orange-200',
+    enterprise: 'bg-orange-50 text-orange-700 border-orange-200',
   };
 
   return (
@@ -245,24 +245,24 @@ export default function SupplierSubscriptionPage() {
 
           {/* Active subscription status */}
           {!loadingSub && activeSub && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3.5 mb-6 text-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3.5 mb-6 text-sm">
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                <CheckCircle className="w-5 h-5 text-orange-500 shrink-0" />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-green-500 capitalize">{activeSub.tier} Plan</span>
-                    <Badge className="bg-green-500/20 text-green-600 border border-green-500/30 text-[10px] font-bold">Active</Badge>
+                    <span className="font-bold text-orange-500 capitalize">{activeSub.tier} Plan</span>
+                    <Badge className="bg-orange-500/20 text-orange-600 border border-orange-500/30 text-[10px] font-bold">Active</Badge>
                     {activeSub.has_ai_access && (
                       <Badge className="bg-[#FF5A00]/20 text-[#FF5A00] border border-[#FF5A00]/30 text-[10px] font-bold">AI Enabled</Badge>
                     )}
                   </div>
-                  <p className="text-xs text-green-500/80 mt-0.5">
+                  <p className="text-xs text-orange-500/80 mt-0.5">
                     Quotation Quota: <strong>{activeSub.used_rfq_leads ?? 0} / {activeSub.max_rfq_leads >= 999999 ? '∞ Unlimited' : activeSub.max_rfq_leads}</strong> responses used this billing cycle
                     {activeSub.ends_at && ` · Renews ${new Date(activeSub.ends_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`}
                   </p>
                 </div>
               </div>
-              <div className="text-xs font-semibold text-green-600 bg-green-500/15 px-2.5 py-1 rounded-md">
+              <div className="text-xs font-semibold text-orange-600 bg-orange-500/15 px-2.5 py-1 rounded-md">
                 {activeSub.tier === 'starter' && '5 Total Responses Allowed'}
                 {activeSub.tier === 'business' && '50 Total Responses + AI Included'}
                 {activeSub.tier === 'growth' && 'Unlimited Responses Allowed'}
@@ -363,12 +363,12 @@ export default function SupplierSubscriptionPage() {
                     <div
                       key={plan.tier}
                       className={`relative flex flex-col rounded-xl border-2 bg-card transition-shadow ${
-                        current ? 'border-green-500 shadow-md' : plan.popular ? 'border-primary shadow-md' : 'border-border'
+                        current ? 'border-orange-500 shadow-md' : plan.popular ? 'border-primary shadow-md' : 'border-border'
                       }`}
                     >
                       {current && (
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                          <Badge className="bg-green-500 text-white text-[11px] px-2.5 py-0.5 whitespace-nowrap">Current Plan</Badge>
+                          <Badge className="bg-orange-500 text-white text-[11px] px-2.5 py-0.5 whitespace-nowrap">Current Plan</Badge>
                         </div>
                       )}
                       {!current && plan.popular && (
@@ -378,7 +378,7 @@ export default function SupplierSubscriptionPage() {
                       )}
                       <div className={`px-5 pt-6 pb-4 rounded-t-xl ${plan.popular && !current ? 'bg-primary/5' : ''}`}>
                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${
-                          current ? 'bg-green-100 text-green-600' : plan.popular ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                          current ? 'bg-orange-100 text-orange-600' : plan.popular ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
                         }`}>
                           {TIER_ICONS[plan.tier]}
                         </div>
@@ -432,7 +432,7 @@ export default function SupplierSubscriptionPage() {
                           disabled={current || downgrade || loading}
                           className={`w-full text-xs h-9 font-semibold ${
                             current
-                              ? 'bg-green-100 text-green-700 border border-green-300 cursor-default'
+                              ? 'bg-orange-100 text-orange-700 border border-orange-300 cursor-default'
                               : plan.enterprise
                               ? 'bg-muted text-foreground border border-border hover:bg-muted/80'
                               : plan.popular
@@ -526,10 +526,10 @@ export default function SupplierSubscriptionPage() {
                   </div>
 
                   {/* 24 Hours Sell Products Add-on */}
-                  <div className="rounded-xl border-2 border-amber-500/40 bg-card p-5 relative shadow-sm flex flex-col justify-between">
+                  <div className="rounded-xl border-2 border-orange-500/40 bg-card p-5 relative shadow-sm flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <Badge className="bg-amber-500 text-white text-[10px] font-bold">
+                        <Badge className="bg-orange-500 text-white text-[10px] font-bold">
                           🔥 Flash Spotlight
                         </Badge>
                         <span className="text-xl font-black text-foreground">₹5,000 <span className="text-xs font-normal text-muted-foreground">/24 Hours (excl. GST)</span></span>
@@ -540,19 +540,19 @@ export default function SupplierSubscriptionPage() {
                       </p>
                       <ul className="space-y-2 mb-5 text-xs text-muted-foreground border-t border-border pt-3">
                         <li className="flex items-center gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <CheckCircle className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                           <span>Top Homepage & Marketplace 24H Spotlight Placement</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <CheckCircle className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                           <span>Direct Factory WhatsApp & Call Lead Routing</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <CheckCircle className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                           <span>High Urgency 24-Hour Deal Banner & Countdown</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <CheckCircle className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                           <span>Zero Platform Commission on All Bulk Orders</span>
                         </li>
                       </ul>
@@ -560,7 +560,7 @@ export default function SupplierSubscriptionPage() {
                     <Button
                       disabled={checkoutLoading}
                       onClick={() => handleSubscribeAddon('flash_sell_24h')}
-                      className="w-full text-xs h-10 font-bold bg-gradient-to-r from-amber-500 to-[#FF5A00] hover:opacity-90 text-white shadow-sm"
+                      className="w-full text-xs h-10 font-bold bg-gradient-to-r from-orange-500 to-[#FF5A00] hover:opacity-90 text-white shadow-sm"
                     >
                       {checkoutLoading ? (
                         <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…</span>
@@ -773,7 +773,7 @@ export default function SupplierSubscriptionPage() {
                               </td>
                               <td className="py-3 pr-4">
                                 <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
-                                  inv.status === 'issued' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                                  inv.status === 'issued' ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-red-50 text-red-700 border-red-200'
                                 }`}>
                                   {inv.status === 'issued' ? '✓ Paid' : 'Cancelled'}
                                 </span>

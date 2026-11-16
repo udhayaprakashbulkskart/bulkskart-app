@@ -74,18 +74,18 @@ function LoanCalculator({ tone = 'page' }: LoanCalculatorProps) {
   const principalShare = Math.min(100, Math.max(0, (quote.principal / repaid) * 100));
 
   const card = landing
-    ? 'rounded-3xl border border-slate-700/80 bg-slate-950/80 p-5 sm:p-7 text-white shadow-xl shadow-black/20'
+    ? 'rounded-3xl border border-neutral-700/80 bg-neutral-950/80 p-5 sm:p-7 text-white shadow-xl shadow-black/20'
     : 'rounded-3xl border border-border bg-card p-5 sm:p-7 text-foreground';
-  const muted = landing ? 'text-slate-400' : 'text-muted-foreground';
+  const muted = landing ? 'text-neutral-400' : 'text-muted-foreground';
   const field = landing
-    ? 'h-10 bg-slate-900 border-slate-700 text-white'
+    ? 'h-10 bg-neutral-900 border-neutral-700 text-white'
     : 'h-10 bg-background';
   const chip = (active: boolean) =>
     `h-8 rounded-lg px-2.5 text-xs font-semibold transition-colors ${
       active
         ? 'bg-[#FF5A00] text-white'
         : landing
-          ? 'bg-slate-900 text-slate-300 border border-slate-700 hover:border-[#FF5A00]/60'
+          ? 'bg-neutral-900 text-neutral-300 border border-neutral-700 hover:border-[#FF5A00]/60'
           : 'bg-muted text-foreground border border-border hover:border-[#FF5A00]/60'
     }`;
 
@@ -108,7 +108,7 @@ function LoanCalculator({ tone = 'page' }: LoanCalculatorProps) {
 
       <div className="mt-5 space-y-4">
         <label className="block">
-          <span className={`flex items-center justify-between text-xs font-semibold ${landing ? 'text-slate-300' : 'text-foreground'}`}>
+          <span className={`flex items-center justify-between text-xs font-semibold ${landing ? 'text-neutral-300' : 'text-foreground'}`}>
             Order value
             <span className="text-sm font-black text-[#FF5A00]">{money(amount)}</span>
           </span>
@@ -214,14 +214,14 @@ function LoanCalculator({ tone = 'page' }: LoanCalculatorProps) {
           <Row label="Total you repay" value={money(quote.totalPayable)} muted={muted} strong={landing ? 'text-white' : 'text-foreground'} />
           <div className={`flex items-center justify-between gap-3 border-t pt-2 ${landing ? 'border-white/10' : 'border-border'}`}>
             <dt className={muted}>Delivery fee</dt>
-            <dd className={`font-black ${landing ? 'text-emerald-400' : 'text-emerald-700 dark:text-emerald-400'}`}>Free</dd>
+            <dd className={`font-black ${landing ? 'text-orange-400' : 'text-orange-700 dark:text-orange-400'}`}>Free</dd>
           </div>
         </dl>
 
         <div className="mt-4">
-          <div className={`h-2 overflow-hidden rounded-full flex ${landing ? 'bg-slate-800' : 'bg-muted'}`}>
+          <div className={`h-2 overflow-hidden rounded-full flex ${landing ? 'bg-neutral-800' : 'bg-muted'}`}>
             <div className="h-full bg-[#FF5A00]" style={{ width: `${principalShare}%` }} />
-            <div className="h-full bg-amber-400" style={{ width: `${100 - principalShare}%` }} />
+            <div className="h-full bg-orange-400" style={{ width: `${100 - principalShare}%` }} />
           </div>
           <div className={`mt-1.5 flex justify-between text-[10px] font-semibold ${muted}`}>
             <span>Financed</span>
@@ -248,7 +248,7 @@ function LoanCalculator({ tone = 'page' }: LoanCalculatorProps) {
           to="/post-requirement"
           className={`inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-bold transition-transform active:scale-95 ${
             landing
-              ? 'border border-slate-600 bg-slate-900 text-white hover:bg-slate-800'
+              ? 'border border-neutral-600 bg-neutral-900 text-white hover:bg-neutral-800'
               : 'border border-border bg-background text-foreground hover:bg-muted'
           }`}
         >

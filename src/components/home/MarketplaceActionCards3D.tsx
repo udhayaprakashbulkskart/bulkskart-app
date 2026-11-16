@@ -70,7 +70,7 @@ export default function MarketplaceActionCards3D() {
             <div
               key={card.id}
               onClick={() => navigate(card.path)}
-              className="group relative min-h-[160px] sm:min-h-[175px] h-auto rounded-2xl overflow-hidden border border-slate-800/90 bg-slate-900/95 shadow-md hover:shadow-xl hover:border-[#FF5A00]/70 cursor-pointer transition-all duration-300 flex flex-col justify-between p-3 sm:p-3.5 active:scale-[0.98] w-full"
+              className="group relative min-h-[160px] sm:min-h-[175px] h-auto rounded-2xl overflow-hidden border border-neutral-800/90 bg-neutral-900/95 shadow-md hover:shadow-xl hover:border-[#FF5A00]/70 cursor-pointer transition-all duration-300 flex flex-col justify-between p-3 sm:p-3.5 active:scale-[0.98] w-full"
             >
               {/* Background Industrial Image with Dark Gradient Overlays */}
               <div className="absolute inset-0 z-0">
@@ -79,7 +79,7 @@ export default function MarketplaceActionCards3D() {
                   alt={card.title}
                   className="w-full h-full object-cover opacity-35 group-hover:opacity-45 group-hover:scale-105 transition-all duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F17] via-[#0B0F17]/85 to-[#0B0F17]/50" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/85 to-[#111111]/50" />
               </div>
 
               {/* Top Row: Feature Icon in Orange Rounded Square */}
@@ -95,7 +95,7 @@ export default function MarketplaceActionCards3D() {
                   <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#FF5A00] transition-colors leading-tight line-clamp-2 break-words">
                     {card.title}
                   </h3>
-                  <p className="text-[10px] sm:text-[11px] text-slate-300 font-normal line-clamp-2 mt-0.5 leading-snug break-words">
+                  <p className="text-[10px] sm:text-[11px] text-neutral-300 font-normal line-clamp-2 mt-0.5 leading-snug break-words">
                     {card.description}
                   </p>
                 </div>

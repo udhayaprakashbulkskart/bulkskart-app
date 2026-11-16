@@ -147,7 +147,7 @@ function AuthLeftPanel({ tab }: { tab: string }) {
   const activity = latest.length ? latest[activityIdx % latest.length] : null;
 
   return (
-    <div className="hidden md:flex md:w-[52%] relative flex-col justify-between overflow-hidden bg-[#0d1117]">
+    <div className="hidden md:flex md:w-[52%] relative flex-col justify-between overflow-hidden bg-[#121212]">
       {/* ── Cycling background image ── */}
       <div
         className="absolute inset-0 z-0 transition-opacity duration-500"
@@ -155,8 +155,8 @@ function AuthLeftPanel({ tab }: { tab: string }) {
       >
         <img src={slide.img} alt="" className="w-full h-full object-cover" />
         {/* deep dark overlay — darker at top/bottom for legibility */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1117]/85 via-[#0d1117]/55 to-[#0d1117]/90" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0d1117]/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/85 via-[#121212]/55 to-[#121212]/90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#121212]/60 via-transparent to-transparent" />
       </div>
 
       {/* ── Slide label chip and dots, out of the way of the text ── */}

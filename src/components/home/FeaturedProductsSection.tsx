@@ -109,7 +109,7 @@ interface ProductCard extends ShowcaseProduct {
 
 /** The look of the drop-downs next to the search box. */
 const SELECT_TRIGGER =
-  'h-[38px] rounded-full border-[1.5px] border-[#3d4354] bg-[#121624] px-3.5 text-[13px] font-medium text-white hover:border-[#6b7384] focus:ring-0 focus:ring-offset-0 focus:border-[#ff8a1f] data-[placeholder]:text-white/60 [&>svg]:text-white/60';
+  'h-[38px] rounded-full border-[1.5px] border-[#b3480f] bg-[#1b1b1b] px-3.5 text-[13px] font-medium text-white hover:border-[#6b7384] focus:ring-0 focus:ring-offset-0 focus:border-[#ff8a1f] data-[placeholder]:text-white/60 [&>svg]:text-white/60';
 
 
 

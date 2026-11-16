@@ -30,7 +30,7 @@ function daysUntil(date: string | null): number | null {
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    active: 'text-green-400 border-green-400/30 bg-green-400/10',
+    active: 'text-orange-400 border-orange-400/30 bg-orange-400/10',
     closed: 'text-muted-foreground border-border bg-muted',
     expired: 'text-destructive border-destructive/30 bg-destructive/10',
   };
@@ -179,7 +179,7 @@ export default function BuyerRequirementsOverviewPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Total Posted', value: stats.total, icon: FileText, color: 'text-primary', bg: 'bg-primary/10' },
-              { label: 'Active', value: stats.active, icon: TrendingUp, color: 'text-green-400', bg: 'bg-green-400/10' },
+              { label: 'Active', value: stats.active, icon: TrendingUp, color: 'text-orange-400', bg: 'bg-orange-400/10' },
               { label: 'Total Quotes Received', value: stats.totalQuotes, icon: Package, color: 'text-[#FF5A00]', bg: 'bg-orange-500/10' },
               { label: 'Closed / Expired', value: stats.closed, icon: XCircle, color: 'text-muted-foreground', bg: 'bg-muted' },
             ].map(s => {
@@ -280,7 +280,7 @@ export default function BuyerRequirementsOverviewPage() {
                         </Button>
                         <Link to={`/dashboard/buyer/rfq/${req.id}`} onClick={e => e.stopPropagation()}>
                           <Button size="sm" variant="ghost"
-                            className="text-xs text-amber-600 border border-amber-500/30 hover:bg-amber-500/10 h-7 gap-1">
+                            className="text-xs text-orange-600 border border-orange-500/30 hover:bg-orange-500/10 h-7 gap-1">
                             <Zap className="w-3 h-3" /> Matches
                           </Button>
                         </Link>
@@ -381,7 +381,7 @@ export default function BuyerRequirementsOverviewPage() {
                               <p className="text-xs text-muted-foreground">{q.companies?.city}, {q.companies?.country}</p>
                             </div>
                             <Badge variant="outline" className={`text-xs capitalize shrink-0 ${
-                              q.status === 'accepted' ? 'text-green-400 border-green-400/30'
+                              q.status === 'accepted' ? 'text-orange-400 border-orange-400/30'
                               : q.status === 'rejected' ? 'text-destructive border-destructive/30'
                               : 'text-muted-foreground border-border'
                             }`}>
@@ -409,7 +409,7 @@ export default function BuyerRequirementsOverviewPage() {
                           {q.status === 'pending' && (
                             <div className="flex gap-2 flex-wrap">
                               <Button size="sm" onClick={() => handleAcceptQuote(q.id)}
-                                className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs h-7 gap-1">
+                                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-xs h-7 gap-1">
                                 <CheckCircle className="w-3 h-3" /> Accept
                               </Button>
                               <Button size="sm" variant="ghost" onClick={() => handleRejectQuote(q.id)}

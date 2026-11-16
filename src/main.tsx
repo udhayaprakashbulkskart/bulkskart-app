@@ -91,13 +91,13 @@ try {
   if (rootElement) {
     const errorMsg = initializationError instanceof Error ? initializationError.message : String(initializationError);
     rootElement.innerHTML = `
-      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; padding: 24px;">
-        <div style="max-width: 420px; width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 32px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
-          <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); color: #60a5fa; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px;">!</div>
+      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #1c1c1c; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; padding: 24px;">
+        <div style="max-width: 420px; width: 100%; background: #2c2c2c; border: 1px solid #b3480f; border-radius: 12px; padding: 32px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(246, 124, 59, 0.15); color: #fa9660; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px;">!</div>
           <h1 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">BulkSkart Loading Alert</h1>
-          <p style="font-size: 14px; color: #94a3b8; margin-bottom: 16px;">We encountered an unexpected issue while loading the application. Please refresh to continue.</p>
-          <pre style="font-size: 11px; color: #ef4444; background: #0f172a; padding: 10px; border-radius: 6px; text-align: left; overflow-x: auto; margin-bottom: 20px;">${errorMsg}</pre>
-          <button onclick="window.location.reload()" style="background: #2563eb; color: #ffffff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Refresh Page</button>
+          <p style="font-size: 14px; color: #f28f5a; margin-bottom: 16px;">We encountered an unexpected issue while loading the application. Please refresh to continue.</p>
+          <pre style="font-size: 11px; color: #ef4444; background: #1c1c1c; padding: 10px; border-radius: 6px; text-align: left; overflow-x: auto; margin-bottom: 20px;">${errorMsg}</pre>
+          <button onclick="window.location.reload()" style="background: #ed6a23; color: #ffffff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Refresh Page</button>
         </div>
       </div>
     `;

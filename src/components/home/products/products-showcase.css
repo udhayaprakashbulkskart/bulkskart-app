@@ -87,7 +87,7 @@
 .pv-free {
   display: inline-flex;
   align-items: center;
-  color: #4af06c;
+  color: #f0844a;
   font-weight: 700;
 }
 .pv-free svg {
@@ -148,7 +148,7 @@
 .pv-stats li.is-green b,
 .pv-stats li.is-green li > span > span,
 .pv-stats li.is-green > span > span {
-  color: #3df06a;
+  color: #f07c3d;
 }
 .pv-stats li.is-green > span > span {
   font-weight: 700;
@@ -169,8 +169,8 @@
   align-items: center;
   justify-content: center;
   border-style: solid;
-  border-color: #3d4354;
-  background: #121624;
+  border-color: #b3480f;
+  background: #1b1b1b;
   color: #fff;
   font-weight: 500;
   white-space: nowrap;
@@ -211,8 +211,8 @@
   display: block;
   width: 100%;
   border-style: solid;
-  border-color: #3d4354;
-  background: #0e111c;
+  border-color: #b3480f;
+  background: #151515;
   color: #fff;
   outline: none;
   font: inherit;
@@ -241,8 +241,8 @@
   align-items: center;
   justify-content: center;
   border-style: solid;
-  border-color: #3d4354;
-  background: #121624;
+  border-color: #b3480f;
+  background: #1b1b1b;
   color: #fff;
   font-weight: 500;
   white-space: nowrap;
@@ -277,8 +277,8 @@
 .pv-live i {
   flex: none;
   border-radius: 50%;
-  background: #00d898;
-  box-shadow: 0 0 8px rgba(0, 216, 152, 0.65);
+  background: #d84c00;
+  box-shadow: 0 0 8px rgba(216, 76, 0, 0.65);
 }
 .pv-quick {
   display: none;
@@ -304,7 +304,7 @@
   padding: 10px 14px;
   border: 1px solid rgba(244, 63, 94, 0.4);
   border-radius: 14px;
-  background: rgba(76, 5, 25, 0.4);
+  background: rgba(40, 40, 40, 0.4);
   color: #fecdd3;
   font-size: 13px;
 }
@@ -330,9 +330,9 @@
   gap: 10px;
   margin: 18px 0 0;
   padding: 36px 16px;
-  border: 1.5px solid #3d4354;
+  border: 1.5px solid #b3480f;
   border-radius: 20px;
-  background: #0e111c;
+  background: #151515;
   text-align: center;
 }
 .pv-empty svg {
@@ -375,7 +375,7 @@
   min-width: 0;
   border-style: solid;
   border-color: #e66a04;
-  background: linear-gradient(180deg, #0d1019, #080a12 70%);
+  background: linear-gradient(180deg, #131313, #080a12 70%);
   overflow: hidden;
   box-shadow: 0 0 30px rgba(255, 106, 0, 0.3), inset 0 0 18px rgba(255, 106, 0, 0.1);
   animation: pv-in 0.35s ease both;
@@ -395,7 +395,7 @@
   position: relative;
   flex: none;
   overflow: hidden;
-  background: linear-gradient(135deg, #0b1020, #151a2a);
+  background: linear-gradient(135deg, #161616, #202020);
 }
 .pv-media .pv-photo {
   position: absolute;
@@ -499,21 +499,21 @@
   width: fit-content;
   max-width: 100%;
   border-style: solid;
-  border-color: #d1a421;
+  border-color: #e05a12;
   background: rgba(255, 190, 40, 0.05);
   color: #fff;
   white-space: nowrap;
 }
 .pv-moq svg {
   flex: none;
-  color: #f5c518;
+  color: #f56518;
 }
 .pv-moq span {
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .pv-moq b {
-  color: #f6d21c;
+  color: #f6681c;
   font-weight: 700;
 }
 .pv-deliver {
@@ -521,8 +521,8 @@
   align-items: center;
   width: fit-content;
   border-style: solid;
-  border-color: #28d65f;
-  background: linear-gradient(180deg, #0a5a2a, #02340f);
+  border-color: #eb5f13;
+  background: linear-gradient(180deg, #323232, #1b1b1b);
   color: #fff;
   font-weight: 700;
   white-space: nowrap;
@@ -670,7 +670,7 @@
 }
 .pv-end svg {
   flex: none;
-  color: #12c88a;
+  color: #ca5110;
 }
 .pv-all {
   display: flex;
@@ -1381,7 +1381,7 @@
   .pv-end {
     gap: 7px;
     padding: 8px 16px;
-    border: 1px solid #3d4354;
+    border: 1px solid #b3480f;
     border-radius: 999px;
     font-size: 12.5px;
   }

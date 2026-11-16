@@ -20,10 +20,10 @@ export default function SupplierQuotesPage() {
   }, [user]);
 
   const statusColor = (s: string) => {
-    if (s === 'accepted') return 'text-green-400 border-green-400/30';
+    if (s === 'accepted') return 'text-orange-400 border-orange-400/30';
     if (s === 'rejected') return 'text-destructive border-destructive/30';
     if (s === 'revised') return 'text-[#FF5A00] border-[#FF5A00]/30/30';
-    return 'text-yellow-400 border-yellow-400/30';
+    return 'text-orange-400 border-orange-400/30';
   };
 
   const pending = quotations.filter(q => q.status === 'pending').length;
@@ -47,8 +47,8 @@ export default function SupplierQuotesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
             {[
               { label: 'Total Sent', value: quotations.length, icon: Package, color: 'text-primary' },
-              { label: 'Pending Response', value: pending, icon: TrendingUp, color: 'text-yellow-400' },
-              { label: 'Accepted', value: accepted, icon: MessageSquare, color: 'text-green-400' },
+              { label: 'Pending Response', value: pending, icon: TrendingUp, color: 'text-orange-400' },
+              { label: 'Accepted', value: accepted, icon: MessageSquare, color: 'text-orange-400' },
             ].map(s => {              const Icon = s.icon;
               return (
                 <div key={s.label} className="bg-card border border-border rounded-xl p-4">

@@ -123,7 +123,7 @@ export default function ProtectedContact({
                 href={`https://wa.me/${cleanDigits}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded hover:bg-emerald-500/20 transition-colors"
+                className="text-[10px] font-semibold text-orange-600 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded hover:bg-orange-500/20 transition-colors"
               >
                 WhatsApp
               </a>
@@ -140,7 +140,7 @@ export default function ProtectedContact({
             <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
               <Phone className="w-3.5 h-3.5 text-primary" /> {contactLabel}
             </span>
-            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold text-orange-600 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full">
               Unlocked
             </span>
           </div>
@@ -158,7 +158,7 @@ export default function ProtectedContact({
                   href={`https://wa.me/${cleanDigits}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold flex items-center gap-1 transition-colors"
                 >
                   <MessageSquare className="w-3 h-3" /> WhatsApp
                 </a>
@@ -184,7 +184,7 @@ export default function ProtectedContact({
             href={`https://wa.me/${cleanDigits}`}
             target="_blank"
             rel="noreferrer"
-            className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded hover:bg-emerald-500/20 transition-colors ml-1"
+            className="text-[10px] font-semibold text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded hover:bg-orange-500/20 transition-colors ml-1"
           >
             WhatsApp
           </a>
@@ -261,7 +261,7 @@ export default function ProtectedContact({
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md p-6 rounded-3xl border border-border">
           <DialogHeader className="space-y-2 text-left">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF5A1F]/20 to-amber-500/10 border border-[#FF5A1F]/30 flex items-center justify-center text-[#FF5A1F] mb-1">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF5A1F]/20 to-orange-500/10 border border-[#FF5A1F]/30 flex items-center justify-center text-[#FF5A1F] mb-1">
               <Lock className="w-6 h-6" />
             </div>
             <DialogTitle className="text-lg font-bold text-foreground">

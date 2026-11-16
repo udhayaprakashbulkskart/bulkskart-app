@@ -396,13 +396,13 @@ export default function MessagesPage() {
                         isSelected ? 'bg-sidebar-accent border-primary' : 'border-transparent'
                       )}
                     >
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                      <div className="w-8 h-8 rounded-full bg-orange-500/20 text-orange-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
                         {inq.sender_name[0]?.toUpperCase() || 'B'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
                           <p className="text-xs font-semibold text-sidebar-foreground truncate">{inq.sender_name}</p>
-                          <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-500/10 px-1 rounded shrink-0">
+                          <span className="text-[9px] font-semibold text-orange-600 bg-orange-500/10 px-1 rounded shrink-0">
                             Profile Chat
                           </span>
                         </div>
@@ -417,12 +417,12 @@ export default function MessagesPage() {
                           {inq.status === 'replied' ? (
                             <span className="text-[#FF5A00] font-medium">Replied ({inq.replies?.length || 1})</span>
                           ) : (
-                            <span className="text-emerald-500 font-semibold">New Inquiry</span>
+                            <span className="text-orange-500 font-semibold">New Inquiry</span>
                           )}
                         </div>
                       </div>
                       {isNew && (
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 mt-1.5" title="New unread inquiry" />
+                        <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0 mt-1.5" title="New unread inquiry" />
                       )}
                     </button>
                   );
@@ -500,7 +500,7 @@ export default function MessagesPage() {
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center text-sm font-bold shrink-0">
+                <div className="w-9 h-9 rounded-full bg-orange-500/20 text-orange-600 flex items-center justify-center text-sm font-bold shrink-0">
                   {selectedInquiry.sender_name[0]?.toUpperCase() || 'B'}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -509,7 +509,7 @@ export default function MessagesPage() {
                     {selectedInquiry.sender_company && (
                       <span className="text-xs text-muted-foreground truncate">({selectedInquiry.sender_company})</span>
                     )}
-                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-semibold text-orange-600 bg-orange-500/10 px-2 py-0.5 rounded-full">
                       Direct Supplier Inquiry
                     </span>
                   </div>
@@ -521,7 +521,7 @@ export default function MessagesPage() {
                     )}
                     {selectedInquiry.sender_phone && (
                       <a href={`tel:${selectedInquiry.sender_phone}`} className="flex items-center gap-1 hover:text-primary hover:underline">
-                        <Phone className="w-3 h-3 text-emerald-500" /> {selectedInquiry.sender_phone}
+                        <Phone className="w-3 h-3 text-orange-500" /> {selectedInquiry.sender_phone}
                       </a>
                     )}
                   </div>
@@ -647,10 +647,10 @@ export default function MessagesPage() {
 
               {/* Reply Form — subscription gate for unpaid manufacturers */}
               {!canReplyAsSupplier ? (
-                <div className="px-4 py-4 border-t border-border shrink-0 bg-amber-500/5">
+                <div className="px-4 py-4 border-t border-border shrink-0 bg-orange-500/5">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
                     <div className="flex items-start gap-2.5 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-lg bg-orange-500/15 text-orange-500 flex items-center justify-center shrink-0">
                         <Lock className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
@@ -774,8 +774,8 @@ export default function MessagesPage() {
                     })}
                     <div ref={bottomRef} />
                   </div>
-                  <div className="px-4 py-5 border-t border-border bg-amber-500/5 text-center space-y-3 shrink-0">
-                    <div className="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center mx-auto">
+                  <div className="px-4 py-5 border-t border-border bg-orange-500/5 text-center space-y-3 shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-orange-500/15 text-orange-500 flex items-center justify-center mx-auto">
                       <Lock className="w-6 h-6" />
                     </div>
                     <div>
@@ -895,7 +895,7 @@ export default function MessagesPage() {
                                       if (requirePaidReply()) return;
                                       setInput(reply.text);
                                     }}
-                                    className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20 px-2 py-0.5 rounded transition-colors"
+                                    className="text-[10px] font-bold text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 px-2 py-0.5 rounded transition-colors"
                                   >
                                     Edit
                                   </button>

@@ -81,15 +81,15 @@
   align-items: center;
   flex: none;
   border-style: solid;
-  border-color: #03c175;
+  border-color: #c14503;
   background: #001712;
   white-space: nowrap;
 }
 .vs-live-dot {
   flex: none;
   border-radius: 50%;
-  background: #00d898;
-  box-shadow: 0 0 10px rgba(0, 216, 152, 0.65);
+  background: #d84c00;
+  box-shadow: 0 0 10px rgba(216, 76, 0, 0.65);
 }
 .vs-live > span:nth-child(2) {
   font-weight: 500;
@@ -102,7 +102,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: #12c88a;
+  color: #ca5110;
 }
 .vs-refresh.is-spinning svg {
   animation: vs-spin 0.7s linear;
@@ -180,7 +180,7 @@
   justify-content: center;
   border-style: solid;
   border-color: #444a55;
-  background: #11161e;
+  background: #181818;
   color: #fff;
   font-weight: 500;
   white-space: nowrap;
@@ -216,7 +216,7 @@
   padding: 10px 14px;
   border: 1px solid rgba(244, 63, 94, 0.4);
   border-radius: 14px;
-  background: rgba(76, 5, 25, 0.4);
+  background: rgba(40, 40, 40, 0.4);
   color: #fecdd3;
   font-size: 13px;
 }
@@ -244,7 +244,7 @@
   padding: 36px 16px;
   border: 1.5px solid #444a55;
   border-radius: 20px;
-  background: #10141e;
+  background: #171717;
   text-align: center;
 }
 .vs-empty svg {
@@ -291,7 +291,7 @@
   scroll-snap-align: start;
   border-style: solid;
   border-color: #8b94a6;
-  background: #10141e;
+  background: #171717;
   overflow: hidden;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
@@ -303,13 +303,13 @@
   position: relative;
   flex: none;
   overflow: hidden;
-  background: linear-gradient(135deg, #0b1020, #151a2a);
+  background: linear-gradient(135deg, #161616, #202020);
 }
 .vs-media::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0, transparent 30%, transparent 70%, rgba(16, 20, 30, 0.7) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0, transparent 30%, transparent 70%, rgba(23, 23, 23, 0.7) 100%);
   pointer-events: none;
 }
 .vs-media img {
@@ -335,7 +335,7 @@
 .vs-media-wait {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #0d1424, #1a2136, #0d1424);
+  background: linear-gradient(135deg, #181818, #282828, #181818);
   animation: vs-pulse 1.4s ease-in-out infinite;
 }
 @keyframes vs-pulse {
@@ -428,7 +428,7 @@
   justify-content: center;
   border-style: solid;
   border-color: #faf9fb;
-  background: #0e131e;
+  background: #161616;
   color: #fff;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -465,7 +465,7 @@
 .vs-country {
   display: flex;
   align-items: center;
-  color: #e6e8ee;
+  color: #f7e6dd;
 }
 .vs-country span:last-child {
   overflow: hidden;
@@ -482,7 +482,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #f1f3f7;
+  color: #fbf2ed;
 }
 .vs-tags li + li {
   border-left-style: solid;
@@ -493,7 +493,7 @@
 }
 .vs-tags svg {
   flex: none;
-  color: #e9ecf2;
+  color: #f8eae3;
 }
 .vs-tags span {
   overflow: hidden;
@@ -565,8 +565,8 @@
 }
 .vs-btn-ghost {
   border-style: solid;
-  border-color: #d6dae3;
-  background: #0b1018;
+  border-color: #f1d6c8;
+  background: #121212;
   color: #fff;
 }
 .vs-btn-ghost:hover {
@@ -622,7 +622,7 @@
   padding: 6px;
   border: 1.5px solid #444a55;
   border-radius: 14px;
-  background: #11161e;
+  background: #181818;
   color: #fff;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
 }
@@ -1089,7 +1089,7 @@
     padding: 0;
     border: 1.5px solid #444a55;
     border-radius: 50%;
-    background: rgba(12, 15, 22, 0.9);
+    background: rgba(17, 17, 17, 0.9);
     color: #fff;
     opacity: 0;
     transition: opacity 0.2s ease, background 0.15s ease, border-color 0.15s ease;

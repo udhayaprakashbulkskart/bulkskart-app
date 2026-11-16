@@ -19,9 +19,9 @@ import {
 } from '@/lib/orderPayments';
 
 const STATUS_STYLE: Record<VisitStatus, string> = {
-  requested: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30',
-  confirmed: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
-  completed: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30',
+  requested: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
+  confirmed: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
+  completed: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
   declined: 'bg-muted text-muted-foreground border-border',
   cancelled: 'bg-muted text-muted-foreground border-border',
 };

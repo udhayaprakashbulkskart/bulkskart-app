@@ -205,10 +205,10 @@ export default function SupplierPayoutsPage() {
                   <span
                     className={`text-[11px] font-semibold border rounded-full px-2 py-0.5 ${
                       r.status === 'approved'
-                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                        ? 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30'
                         : r.status === 'rejected'
                           ? 'bg-muted text-muted-foreground border-border'
-                          : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                          : 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30'
                     }`}
                   >
                     {r.status === 'approved' ? 'Sent to bank' : r.status === 'rejected' ? 'Not sent' : 'Waiting'}

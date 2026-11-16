@@ -202,7 +202,7 @@ export default function LiveRequirementsFeed() {
           <button
             type="button"
             onClick={handleFreshRFQs}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 px-2 min-[360px]:px-3 py-1.5 rounded-lg bg-card hover:bg-muted border border-purple-500/40 text-purple-700 dark:text-purple-300 text-[11px] min-[360px]:text-xs font-bold shadow-sm transition-all active:scale-95 h-9 shrink-0"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 px-2 min-[360px]:px-3 py-1.5 rounded-lg bg-card hover:bg-muted border border-orange-500/40 text-orange-700 dark:text-orange-300 text-[11px] min-[360px]:text-xs font-bold shadow-sm transition-all active:scale-95 h-9 shrink-0"
             title="Check for new requirements"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#FF5A00] shrink-0 transition-transform duration-500 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -211,8 +211,8 @@ export default function LiveRequirementsFeed() {
 
           <div className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 bg-card border border-border rounded-lg px-2 min-[360px]:px-3 py-1 shadow-sm h-9">
             <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
             </span>
             <div className="text-left leading-tight truncate">
               <div className="text-xs sm:text-sm font-black text-foreground leading-tight">
@@ -259,10 +259,10 @@ export default function LiveRequirementsFeed() {
         {/* ── FEED BAR: what is shown, and paging ───────────────────────── */}
         <div className="bg-card border border-border rounded-2xl p-2.5 sm:p-3 mb-3.5 flex items-center justify-between gap-2.5 shadow-sm">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <span className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[11px] shadow-sm shrink-0">
+            <span className="flex items-center gap-1.5 font-bold text-orange-700 dark:text-orange-400 bg-orange-500/10 border border-orange-500/30 px-2.5 py-1 rounded-full text-[11px] shadow-sm shrink-0">
               <span className="relative flex h-2 w-2 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
               </span>
               NEWEST FIRST
             </span>
@@ -346,16 +346,16 @@ export default function LiveRequirementsFeed() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1 flex-wrap">
                           {visual.tag.type === 'urgent' ? (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase flex items-center gap-0.5 bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
-                              <Zap className="w-2.5 h-2.5 fill-current text-rose-500" />
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase flex items-center gap-0.5 bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30">
+                              <Zap className="w-2.5 h-2.5 fill-current text-orange-500" />
                               URGENT
                             </span>
                           ) : visual.tag.type === 'new' ? (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-emerald-600 text-white">
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-orange-600 text-white">
                               New
                             </span>
                           ) : visual.tag.type === 'expiring' ? (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30">
                               Closing soon
                             </span>
                           ) : null}

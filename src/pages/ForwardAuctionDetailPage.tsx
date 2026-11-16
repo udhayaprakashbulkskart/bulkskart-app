@@ -661,7 +661,7 @@ export default function ForwardAuctionDetailPage() {
 
                 {/* Leading Bid */}
                 <div className="px-3.5 py-1.5 rounded-2xl bg-muted/50 border border-border flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  <TrendingUp className="w-4 h-4 text-orange-600" />
                   <div>
                     <div className="text-[9px] font-semibold text-muted-foreground uppercase">Leading Bid</div>
                     <div className="text-xs sm:text-sm font-black text-foreground">
@@ -732,7 +732,7 @@ export default function ForwardAuctionDetailPage() {
                     {auction.auction_number}
                   </span>
                   {isSoldConcluded ? (
-                    <Badge className="bg-emerald-600 text-white font-bold text-[10px]">
+                    <Badge className="bg-orange-600 text-white font-bold text-[10px]">
                       SOLD / CONCLUDED
                     </Badge>
                   ) : (
@@ -779,25 +779,25 @@ export default function ForwardAuctionDetailPage() {
 
           {/* ── 60-Minute Auction Sold / Concluded Banner (When Timer Expires) ── */}
           {isSoldConcluded && (
-            <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-emerald-900/30 to-zinc-900 border-2 border-emerald-500/50 shadow-lg text-white">
+            <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-orange-950/40 via-orange-900/30 to-neutral-900 border-2 border-orange-500/50 shadow-lg text-white">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
                 <div className="flex items-start gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                  <div className="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center shrink-0 shadow-md">
                     <CheckCircle2 className="w-7 h-7" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                      <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">
                         60-Minute Auction Concluded
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-emerald-500 text-white text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded bg-orange-500 text-white text-[10px] font-bold">
                         LOT SOLD OUT
                       </span>
                     </div>
                     <h2 className="text-lg sm:text-xl font-bold text-white mt-0.5">
                       Bulk Lot Awarded to {auction.highest_bidder_name}
                     </h2>
-                    <p className="text-xs text-zinc-300 mt-1">
+                    <p className="text-xs text-neutral-300 mt-1">
                       Final Winning Bid: <strong>₹{Number(auction.current_highest_bid).toLocaleString('en-IN')}/{auction.quantity_unit}</strong> • Total Value: <strong>₹{(Number(auction.current_highest_bid) * Number(auction.total_quantity)).toLocaleString('en-IN')}</strong> ({Number(auction.total_bids)} Total Bids Placed)
                     </p>
                   </div>
@@ -810,7 +810,7 @@ export default function ForwardAuctionDetailPage() {
                         description: `Order for ${auction.total_quantity} ${auction.quantity_unit} awarded to ${auction.highest_bidder_name}. Ready for Escrow settlement.`
                       });
                     }}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-10 px-4 rounded-xl flex items-center gap-1.5 shadow-md"
+                    className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-10 px-4 rounded-xl flex items-center gap-1.5 shadow-md"
                   >
                     <ShoppingCart className="w-4 h-4" /> View Purchase Order
                   </Button>
@@ -920,7 +920,7 @@ export default function ForwardAuctionDetailPage() {
                   </div>
                   <div className="p-2.5 rounded-xl bg-muted/20 border border-border/40">
                     <span className="text-muted-foreground block font-medium">Escrow Protection</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+                    <span className="font-bold text-orange-600 dark:text-orange-400 mt-0.5 flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                       100% Escrow Protected
                     </span>
@@ -955,7 +955,7 @@ export default function ForwardAuctionDetailPage() {
                   >
                     <Receipt className="w-4 h-4" />
                     Supplier Quotations ({quotations.length})
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
                   </button>
 
                   <button
@@ -969,7 +969,7 @@ export default function ForwardAuctionDetailPage() {
                   >
                     <MessageSquare className="w-4 h-4" />
                     Live Auction Room Chat
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
                   </button>
                 </div>
 
@@ -982,8 +982,8 @@ export default function ForwardAuctionDetailPage() {
                         <span>•</span>
                         <span>Click on any bidder to inspect profile</span>
                       </div>
-                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live Stream
+                      <span className="text-xs font-semibold text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" /> Live Stream
                       </span>
                     </div>
 
@@ -1019,7 +1019,7 @@ export default function ForwardAuctionDetailPage() {
                                     {bid.bidder_name}
                                   </button>
                                   {bid.status === 'winning' && (
-                                    <Badge className="bg-emerald-600 text-white text-[9px] h-4 px-1.5">
+                                    <Badge className="bg-orange-600 text-white text-[9px] h-4 px-1.5">
                                       Leading Bid
                                     </Badge>
                                   )}
@@ -1066,7 +1066,7 @@ export default function ForwardAuctionDetailPage() {
                           Compare commercial bids, freight terms, lead time, and award purchase orders
                         </p>
                       </div>
-                      <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 text-xs w-fit">
+                      <Badge className="bg-orange-500/10 text-orange-500 border border-orange-500/30 text-xs w-fit">
                         Competitive Sourcing
                       </Badge>
                     </div>
@@ -1134,7 +1134,7 @@ export default function ForwardAuctionDetailPage() {
                               </div>
                               <div className="bg-background/80 p-2 rounded-xl border border-border/50">
                                 <span className="text-muted-foreground block text-[10px]">Freight:</span>
-                                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                <span className="font-bold text-orange-600 dark:text-orange-400">
                                   {quote.freight_included ? 'Included (Door)' : 'Extra at actuals'}
                                 </span>
                               </div>
@@ -1208,7 +1208,7 @@ export default function ForwardAuctionDetailPage() {
                     </h2>
                   </div>
                   {isSoldConcluded ? (
-                    <Badge className="bg-emerald-600 text-white font-bold text-xs">
+                    <Badge className="bg-orange-600 text-white font-bold text-xs">
                       SOLD
                     </Badge>
                   ) : (
@@ -1260,18 +1260,18 @@ export default function ForwardAuctionDetailPage() {
                 {/* Countdown Timer Display */}
                 <div className={`p-3.5 rounded-2xl border mb-5 flex items-center justify-between text-xs ${
                   isSoldConcluded
-                    ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-500/40'
+                    ? 'bg-orange-50 dark:bg-orange-950/30 border-orange-500/40'
                     : 'bg-muted/40 border-border/60'
                 }`}>
                   <div className="flex items-center gap-2">
-                    <Clock className={`w-4 h-4 ${isSoldConcluded ? 'text-emerald-500' : 'text-[#FF5A1F]'}`} />
+                    <Clock className={`w-4 h-4 ${isSoldConcluded ? 'text-orange-500' : 'text-[#FF5A1F]'}`} />
                     <span className="font-semibold text-foreground">
                       {isSoldConcluded ? 'Auction Status:' : 'Closing In (60-Min Window):'}
                     </span>
                   </div>
                   <span className="font-mono font-bold text-sm text-foreground">
                     {isSoldConcluded ? (
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">SOLD OUT</span>
+                      <span className="text-orange-600 dark:text-orange-400 font-bold">SOLD OUT</span>
                     ) : (
                       `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
                     )}
@@ -1360,8 +1360,8 @@ export default function ForwardAuctionDetailPage() {
                     </Button>
                   ) : !user ? (
                     <div className="space-y-2.5">
-                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-500 dark:text-amber-400">
-                        <Lock className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+                      <div className="p-3.5 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-start gap-2.5 text-xs text-orange-500 dark:text-orange-400">
+                        <Lock className="w-4 h-4 shrink-0 mt-0.5 text-orange-500" />
                         <div>
                           <p className="font-bold text-foreground">Verified Buyer Login Required</p>
                           <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">

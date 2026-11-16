@@ -27,7 +27,7 @@ interface SubData {
 
 function ProgressBar({ used, max, label }: { used: number; max: number; label: string }) {
   const pct = max > 0 ? Math.min(100, Math.round((used / max) * 100)) : 0;
-  const color = pct >= 90 ? 'bg-destructive' : pct >= 70 ? 'bg-yellow-500' : 'bg-primary';
+  const color = pct >= 90 ? 'bg-destructive' : pct >= 70 ? 'bg-orange-500' : 'bg-primary';
   return (
     <div>
       <div className="flex justify-between items-center mb-1">
@@ -79,8 +79,8 @@ export default function SupplierOverviewPage() {
     : null;
 
   const tierLabel = subscription?.tier ?? 'Free';
-  const tierColor = tierLabel === 'enterprise' ? 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10'
-    : tierLabel === 'growth' ? 'text-green-400 border-green-400/30 bg-green-400/10'
+  const tierColor = tierLabel === 'enterprise' ? 'text-orange-400 border-orange-400/30 bg-orange-400/10'
+    : tierLabel === 'growth' ? 'text-orange-400 border-orange-400/30 bg-orange-400/10'
     : tierLabel === 'business' ? 'text-primary border-primary/30 bg-primary/10'
     : 'text-muted-foreground border-border bg-muted';
 
@@ -97,11 +97,11 @@ export default function SupplierOverviewPage() {
     {
       label: 'Quotes Sent', value: quotesSent,
       sub: `${acceptanceRate}% acceptance rate`,
-      icon: FileText, color: 'text-green-400', bg: 'bg-green-400/10',
+      icon: FileText, color: 'text-orange-400', bg: 'bg-orange-400/10',
     },
     {
       label: 'Conversations', value: activeConversations,
-      sub: 'Active chats', icon: MessageSquare, color: 'text-yellow-400', bg: 'bg-yellow-400/10',
+      sub: 'Active chats', icon: MessageSquare, color: 'text-orange-400', bg: 'bg-orange-400/10',
     },
   ];
 
@@ -215,13 +215,13 @@ export default function SupplierOverviewPage() {
               </h3>
               <div className={`flex items-center gap-3 rounded-lg p-3 ${
                 company?.is_verified ? 'bg-primary/10 border border-primary/25'
-                : company?.verification_status === 'pending' ? 'bg-yellow-500/10 border border-yellow-500/25'
+                : company?.verification_status === 'pending' ? 'bg-orange-500/10 border border-orange-500/25'
                 : 'bg-muted border border-border'
               }`}>
                 {company?.is_verified
                   ? <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
                   : company?.verification_status === 'pending'
-                  ? <Clock className="w-5 h-5 text-yellow-400 shrink-0" />
+                  ? <Clock className="w-5 h-5 text-orange-400 shrink-0" />
                   : <AlertCircle className="w-5 h-5 text-muted-foreground shrink-0" />
                 }
                 <div>
@@ -243,7 +243,7 @@ export default function SupplierOverviewPage() {
                 ].map(item => (
                   <div key={item.label} className="flex items-center gap-2 text-xs">
                     {item.done
-                      ? <CheckCircle className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                      ? <CheckCircle className="w-3.5 h-3.5 text-orange-400 shrink-0" />
                       : <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40 shrink-0" />
                     }
                     <span className={item.done ? 'text-foreground' : 'text-muted-foreground'}>{item.label}</span>
@@ -319,7 +319,7 @@ export default function SupplierOverviewPage() {
                         <p className="text-xs text-muted-foreground">{q.currency} {q.unit_price.toLocaleString()}</p>
                       </div>
                       <Badge variant="outline" className={`text-xs capitalize shrink-0 ${
-                        q.status === 'accepted' ? 'text-green-400 border-green-400/30'
+                        q.status === 'accepted' ? 'text-orange-400 border-orange-400/30'
                         : q.status === 'rejected' ? 'text-destructive border-destructive/30'
                         : 'text-muted-foreground border-border'
                       }`}>
@@ -337,11 +337,11 @@ export default function SupplierOverviewPage() {
             <h3 className="text-sm font-semibold text-foreground mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
-                { label: 'Buyer Inquiries & Chat', icon: MessageSquare, href: '/dashboard/supplier/messages', color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
+                { label: 'Buyer Inquiries & Chat', icon: MessageSquare, href: '/dashboard/supplier/messages', color: 'text-orange-400 bg-orange-400/10 border-orange-400/20' },
                 { label: 'Add Product', icon: Plus, href: '/dashboard/supplier/products', color: 'text-primary bg-primary/10 border-primary/20' },
-                { label: 'Browse RFQ Leads', icon: TrendingUp, href: '/dashboard/supplier/rfqs', color: 'text-green-400 bg-green-400/10 border-green-400/20' },
+                { label: 'Browse RFQ Leads', icon: TrendingUp, href: '/dashboard/supplier/rfqs', color: 'text-orange-400 bg-orange-400/10 border-orange-400/20' },
                 { label: 'Edit Business Profile', icon: UserCircle, href: '/dashboard/supplier/profile', color: 'text-[#FF5A00] bg-orange-500/10 border-[#FF5A00]/30/20' },
-                { label: 'View Subscription', icon: CreditCard, href: '/dashboard/supplier/subscription', color: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
+                { label: 'View Subscription', icon: CreditCard, href: '/dashboard/supplier/subscription', color: 'text-orange-400 bg-orange-400/10 border-orange-400/20' },
               ].map(action => {
                 const Icon = action.icon;
                 return (

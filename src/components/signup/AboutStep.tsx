@@ -63,7 +63,7 @@ function GstinStatus({ value }: { value: string }) {
   const { info } = progress;
   return (
     <div id="gstin-status" className="mt-1.5 space-y-1 text-xs">
-      <p className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+      <p className="flex items-center gap-1.5 text-orange-600 dark:text-orange-400">
         <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
         <span>
           Registered in <strong>{info.state ?? 'another jurisdiction'}</strong>
@@ -71,7 +71,7 @@ function GstinStatus({ value }: { value: string }) {
         </span>
       </p>
       {!info.checkOk && (
-        <p role="alert" className="flex items-start gap-1.5 text-amber-600 dark:text-amber-400">
+        <p role="alert" className="flex items-start gap-1.5 text-orange-600 dark:text-orange-400">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           The last character does not match the rest. Please check the number once more.
         </p>

@@ -24,11 +24,11 @@ const OPENINGS = [
 
 const DEPT_COLORS: Record<string, string> = {
   Engineering: 'bg-orange-500/10 text-[#FF5A00] dark:text-[#FF5A00] border-[#FF5A00]/30 dark:border-[#FF5A00]/30',
-  Product:     'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-  Marketing:   'bg-green-500/10 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800',
+  Product:     'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+  Marketing:   'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
   Sales:       'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-  Design:      'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-800',
-  Analytics:   'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800',
+  Design:      'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+  Analytics:   'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
 };
 
 export default function CareersPage() {
@@ -42,7 +42,7 @@ export default function CareersPage() {
       <Header />
 
       {/* Hero */}
-      <section className="bg-[#1a1a2e] text-white py-14 px-4 text-center">
+      <section className="bg-[#242424] text-white py-14 px-4 text-center">
         <div className="max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-5">
             <Briefcase className="w-3.5 h-3.5 text-primary" />

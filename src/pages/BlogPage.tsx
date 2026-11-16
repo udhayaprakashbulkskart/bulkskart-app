@@ -65,10 +65,10 @@ const POSTS = [
 ];
 
 const TAG_COLORS: Record<string, string> = {
-  Trending: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+  Trending: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
   Essential: 'bg-[#FF5A00]/10 text-[#FF5A00] border-[#FF5A00]/25',
-  Popular: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  Guide: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  Popular: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+  Guide: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
 };
 
 export default function BlogPage() {

@@ -57,7 +57,7 @@ export default function SectionHeader({
           <p
             className={cn(
               'mt-2 text-sm leading-relaxed text-pretty md:text-base',
-              dark ? 'text-slate-300' : 'text-muted-foreground',
+              dark ? 'text-neutral-300' : 'text-muted-foreground',
             )}
           >
             {subtitle}

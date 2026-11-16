@@ -208,7 +208,7 @@ export default function AIChatAssistant() {
           <>
             <div className="relative flex items-center justify-center">
               <Bot className="w-5 h-5 md:w-4 md:h-4" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#FF5A00]" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-orange-400 rounded-full border-2 border-[#FF5A00]" />
             </div>
             <span className="hidden md:inline text-xs font-bold tracking-tight md:ml-1.5">AI Trade Help</span>
           </>
@@ -229,7 +229,7 @@ export default function AIChatAssistant() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold truncate">BulkSkart AI Trade Support</p>
               <p className="text-[10px] text-white/85 flex items-center gap-1.5 truncate">
-                <span className="w-1.5 h-1.5 bg-emerald-300 rounded-full shrink-0" />
+                <span className="w-1.5 h-1.5 bg-orange-300 rounded-full shrink-0" />
                 Live B2B Assistant · Isolated Session
               </p>
             </div>
@@ -256,7 +256,7 @@ export default function AIChatAssistant() {
             href={WHATSAPP_MESSAGE_URL}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center justify-between gap-2 px-4 py-2 bg-[#25D366]/10 border-b border-border text-[11px] font-semibold text-[#128C7E] hover:bg-[#25D366]/15"
+            className="flex items-center justify-between gap-2 px-4 py-2 bg-[#E55C13]/10 border-b border-border text-[11px] font-semibold text-[#B3480F] hover:bg-[#E55C13]/15"
           >
             <span>Message BulkSkart on WhatsApp</span>
             <span className="font-mono">{WHATSAPP_DISPLAY}</span>

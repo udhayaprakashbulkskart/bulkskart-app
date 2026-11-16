@@ -120,7 +120,7 @@ export default function SavedManufacturersPage() {
                           {c.city && <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" />{c.city}, {c.country}</span>}
                           {c.business_type && <span>{c.business_type}</span>}
                           {c.review_count > 0 && (
-                            <span className="flex items-center gap-0.5"><Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />{Number(c.rating_avg).toFixed(1)} ({c.review_count})</span>
+                            <span className="flex items-center gap-0.5"><Star className="w-3 h-3 fill-orange-400 text-orange-400" />{Number(c.rating_avg).toFixed(1)} ({c.review_count})</span>
                           )}
                         </div>
                         {c.key_products?.length ? (

@@ -404,7 +404,7 @@ export default function BlogDetailPage() {
         )}
 
         {/* Call to Action Banner */}
-        <div className="mt-12 p-6 rounded-2xl bg-gradient-to-r from-[#0d1322] to-card border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-12 p-6 rounded-2xl bg-gradient-to-r from-[#181818] to-card border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <h3 className="text-base font-bold text-foreground">Ready to source in bulk with zero intermediaries?</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Post an RFQ now and receive competing factory quotations within 24 hours.</p>

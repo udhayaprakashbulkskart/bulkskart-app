@@ -83,7 +83,7 @@ function QuoteCard({ q, isBuyer, onAccept, onReject, onChat }: {
   onReject: (q: Quotation) => void;
   onChat: (q: Quotation) => void;
 }) {
-  const statusColor = q.status === 'accepted' ? 'bg-green-500/10 border-green-500/30 text-green-500'
+  const statusColor = q.status === 'accepted' ? 'bg-orange-500/10 border-orange-500/30 text-orange-500'
     : q.status === 'rejected' ? 'bg-destructive/10 border-destructive/30 text-destructive'
     : 'bg-primary/10 border-primary/30 text-primary';
 
@@ -158,7 +158,7 @@ function QuoteCard({ q, isBuyer, onAccept, onReject, onChat }: {
         {isBuyer && q.status === 'pending' && (
           <>
             <Button size="sm" onClick={() => onAccept(q)}
-              className="bg-green-600 hover:bg-green-700 text-white text-[11px] h-8 px-3 gap-1">
+              className="bg-orange-600 hover:bg-orange-700 text-white text-[11px] h-8 px-3 gap-1">
               <CheckCircle className="w-3 h-3" /> Accept
             </Button>
             <Button size="sm" onClick={() => onReject(q)} variant="ghost"
@@ -478,8 +478,8 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                   </div>
                 )}
                 <div>
-                  <p className="text-rose-400 text-[10px] mb-0.5 flex items-center gap-1 font-bold"><Zap className="w-3 h-3 fill-current" /> Priority</p>
-                  <p className="font-extrabold text-rose-500 uppercase tracking-wider text-xs">Urgent RFQ</p>
+                  <p className="text-orange-400 text-[10px] mb-0.5 flex items-center gap-1 font-bold"><Zap className="w-3 h-3 fill-current" /> Priority</p>
+                  <p className="font-extrabold text-orange-500 uppercase tracking-wider text-xs">Urgent RFQ</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-[10px] mb-0.5 flex items-center gap-1"><Package className="w-3 h-3" /> Quotes</p>
@@ -514,8 +514,8 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
               {/* Paid Subscription Companies Only Notice & Direct Message / Quote CTA */}
               {!isBuyer && (
                 <div className="pt-2 border-t border-border flex flex-col gap-2">
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-2.5">
-                    <Lock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 flex items-start gap-2.5">
+                    <Lock className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs font-bold text-foreground">Paid Subscription Companies Only</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">

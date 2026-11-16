@@ -36,7 +36,7 @@ export function CheckBadge() {
   return (
     <svg viewBox="0 0 27 27" aria-hidden="true">
       <circle cx="13.5" cy="13.5" r="13" fill="#3a3a3f" />
-      <path d="M7 14l4.4 4.4L20 9" fill="none" stroke="#8be028" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7 14l4.4 4.4L20 9" fill="none" stroke="#ed651b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -47,8 +47,8 @@ export function MoreIcon() {
     <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
       <rect x="8" y="8" width="9" height="9" rx="3" stroke="#fff" strokeWidth="2.4" />
       <rect x="23" y="8" width="9" height="9" rx="3" stroke="#fff" strokeWidth="2.4" />
-      <rect x="8" y="23" width="9" height="9" rx="3" fill="#8b5cf6" />
-      <rect x="23" y="23" width="9" height="9" rx="3" fill="#8b5cf6" />
+      <rect x="8" y="23" width="9" height="9" rx="3" fill="#f6925c" />
+      <rect x="23" y="23" width="9" height="9" rx="3" fill="#f6925c" />
     </svg>
   );
 }

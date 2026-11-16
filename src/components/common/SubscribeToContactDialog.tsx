@@ -81,7 +81,7 @@ export default function SubscribeToContactDialog({ open, onClose, reason = 'no_s
         <DialogHeader>
           <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${
             isNotRegistered
-              ? 'bg-amber-500/15 border border-amber-500/30 text-amber-500'
+              ? 'bg-orange-500/15 border border-orange-500/30 text-orange-500'
               : isAiMatching
               ? 'bg-[#FF5A00]/20 border border-[#FF5A00]/40 text-[#FF5A00]'
               : 'bg-[#FF5A00]/15 border border-[#FF5A00]/30 text-[#FF5A00]'
@@ -125,8 +125,8 @@ export default function SubscribeToContactDialog({ open, onClose, reason = 'no_s
           <div className="space-y-2 mt-2">
             {REGISTRATION_STEPS.map((step, i) => (
               <div key={i} className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3.5 py-2.5">
-                <div className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0">
-                  <step.icon className="w-3.5 h-3.5 text-amber-500" />
+                <div className="w-7 h-7 rounded-full bg-orange-500/20 border border-orange-500/30 flex items-center justify-center shrink-0">
+                  <step.icon className="w-3.5 h-3.5 text-orange-500" />
                 </div>
                 <span className="text-xs text-foreground font-medium">{step.label}</span>
               </div>
@@ -192,7 +192,7 @@ export default function SubscribeToContactDialog({ open, onClose, reason = 'no_s
           ) : isNotRegistered ? (
             <>
               <Link to="/dashboard/supplier/profile" onClick={onClose} className="w-full">
-                <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold h-11 rounded-xl text-xs gap-2">
+                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold h-11 rounded-xl text-xs gap-2">
                   Complete Business Registration <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>

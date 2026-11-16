@@ -180,7 +180,7 @@ export default function SupplierInventoryPage() {
             <Card>
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <CheckCircle2 className="w-4 h-4 text-orange-500" />
                   <span className="text-xs text-muted-foreground">Available</span>
                 </div>
                 <p className="text-2xl font-bold text-foreground">{totalAvailable.toLocaleString()}</p>
@@ -189,23 +189,23 @@ export default function SupplierInventoryPage() {
             <Card>
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  <AlertTriangle className="w-4 h-4 text-orange-500" />
                   <span className="text-xs text-muted-foreground">Low Stock</span>
                 </div>
-                <p className="text-2xl font-bold text-amber-500">{lowStockItems.length}</p>
+                <p className="text-2xl font-bold text-orange-500">{lowStockItems.length}</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Low stock alert */}
           {lowStockItems.length > 0 && (
-            <div className="mb-4 flex items-start gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-300/50 rounded-xl p-3 text-sm">
-              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <div className="mb-4 flex items-start gap-3 bg-orange-50 dark:bg-orange-950/20 border border-orange-300/50 rounded-xl p-3 text-sm">
+              <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-amber-700 dark:text-amber-400">
+                <p className="font-semibold text-orange-700 dark:text-orange-400">
                   {lowStockItems.length} product{lowStockItems.length > 1 ? 's' : ''} running low on stock
                 </p>
-                <p className="text-xs text-amber-600 dark:text-amber-500 truncate">
+                <p className="text-xs text-orange-600 dark:text-orange-500 truncate">
                   {lowStockItems.map(p => p.name).join(', ')}
                 </p>
               </div>
@@ -242,7 +242,7 @@ export default function SupplierInventoryPage() {
                 const isLow = inv && inv.available_qty <= inv.low_stock_threshold;
                 const stockPct = inv ? Math.min((inv.available_qty / Math.max(inv.stock_qty, 1)) * 100, 100) : 0;
                 return (
-                  <Card key={p.id} className={isLow ? 'border-amber-300/50' : ''}>
+                  <Card key={p.id} className={isLow ? 'border-orange-300/50' : ''}>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-muted shrink-0 overflow-hidden">
@@ -262,18 +262,18 @@ export default function SupplierInventoryPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
                             {inv?.sku && <span className="text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">{inv.sku}</span>}
-                            {isLow && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-300">Low Stock</Badge>}
+                            {isLow && <Badge className="text-[10px] bg-orange-100 text-orange-700 border-orange-300">Low Stock</Badge>}
                           </div>
                           <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
                             <span>Stock: <span className="text-foreground font-medium">{inv?.stock_qty ?? '—'}</span></span>
-                            <span>Available: <span className="text-green-600 font-medium">{inv?.available_qty ?? '—'}</span></span>
+                            <span>Available: <span className="text-orange-600 font-medium">{inv?.available_qty ?? '—'}</span></span>
                             <span>Reserved: <span className="text-foreground">{inv?.reserved_qty ?? 0}</span></span>
                             {inv?.warehouse_location && <span className="flex items-center gap-0.5"><Warehouse className="w-3 h-3" /> {inv.warehouse_location}</span>}
                           </div>
                           {inv && (
                             <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all ${stockPct > 50 ? 'bg-green-500' : stockPct > 20 ? 'bg-amber-500' : 'bg-destructive'}`}
+                                className={`h-full rounded-full transition-all ${stockPct > 50 ? 'bg-orange-500' : stockPct > 20 ? 'bg-orange-500' : 'bg-destructive'}`}
                                 style={{ width: `${stockPct}%` }}
                               />
                             </div>

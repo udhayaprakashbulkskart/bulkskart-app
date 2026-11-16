@@ -199,7 +199,7 @@ export default function AdminPaymentsPage() {
                         </span>
                       )}
                       {p.notes && <span>“{p.notes}”</span>}
-                      {p.status === 'approved' && <span className="text-emerald-600">Sent {date(p.processed_at)}, ref {p.payout_reference}</span>}
+                      {p.status === 'approved' && <span className="text-orange-600">Sent {date(p.processed_at)}, ref {p.payout_reference}</span>}
                       {p.status === 'rejected' && <span>Rejected{p.admin_note ? `: ${p.admin_note}` : ''}</span>}
                     </p>
                   </div>

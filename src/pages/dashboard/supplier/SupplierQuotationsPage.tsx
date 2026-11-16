@@ -47,8 +47,8 @@ const QUOTE_POINTS: FormPoint[] = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-  accepted: 'bg-green-100 text-green-700 border-green-300',
+  pending: 'bg-orange-100 text-orange-700 border-orange-300',
+  accepted: 'bg-orange-100 text-orange-700 border-orange-300',
   rejected: 'bg-red-100 text-red-700 border-red-300',
   revised: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
 };

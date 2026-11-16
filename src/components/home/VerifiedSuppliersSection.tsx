@@ -783,7 +783,7 @@ function SupplierBrandLogo({ supplier }: { supplier: DisplaySupplier }) {
             <rect width="40" height="40" rx="8" fill="#F8FAFC" />
             <path
               d="M12 28L20 12L28 28H23.5L20 20.5L16.5 28H12Z"
-              fill="#0F172A"
+              fill="#1C1C1C"
             />
             <path
               d="M20 22L17.5 27H22.5L20 22Z"
@@ -795,7 +795,7 @@ function SupplierBrandLogo({ supplier }: { supplier: DisplaySupplier }) {
               textAnchor="middle"
               fontSize="7.5"
               fontWeight="900"
-              fill="#0F172A"
+              fill="#1C1C1C"
               letterSpacing="0.5"
             >
               AUBC
@@ -860,11 +860,11 @@ function SupplierBrandLogo({ supplier }: { supplier: DisplaySupplier }) {
             <rect width="40" height="40" rx="8" fill="#F0FDF4" />
             <path
               d="M20 8C20 8 30 14 30 24C30 29.5 25.5 34 20 34C14.5 34 10 29.5 10 24C10 14 20 8 20 8Z"
-              fill="#16A34A"
+              fill="#B3480F"
             />
             <path
               d="M20 12V32M20 18L26 14M20 24L14 20M20 28L25 25"
-              stroke="#BBF7D0"
+              stroke="#F7D0BB"
               strokeWidth="2"
               strokeLinecap="round"
             />
@@ -877,10 +877,10 @@ function SupplierBrandLogo({ supplier }: { supplier: DisplaySupplier }) {
       return (
         <div className="w-full h-full flex items-center justify-center select-none">
           <svg viewBox="0 0 40 40" className="w-full h-full" fill="none">
-            <rect width="40" height="40" rx="8" fill="#ECFDF5" />
+            <rect width="40" height="40" rx="8" fill="#FDF2EC" />
             <path
               d="M20 7L27 15H24L29 22H25L30 29H10L15 22H11L16 15H13L20 7Z"
-              fill="#065F46"
+              fill="#333333"
             />
             <rect x="18" y="29" width="4" height="6" rx="1" fill="#78350F" />
           </svg>
@@ -915,7 +915,7 @@ function SupplierBrandLogo({ supplier }: { supplier: DisplaySupplier }) {
             />
             <path
               d="M20 16C20 16 24 21 24 25C24 27.5 22 30 20 30C18 30 16 27.5 16 25C16 21 20 16 20 16Z"
-              fill="#FDE68A"
+              fill="#FC965F"
             />
           </svg>
         </div>

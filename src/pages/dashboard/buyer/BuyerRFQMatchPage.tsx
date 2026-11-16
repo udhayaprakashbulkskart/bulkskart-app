@@ -74,16 +74,16 @@ interface MatchRow {
 // ─── Score helpers ────────────────────────────────────────────────────────────
 
 function scoreGrade(score: number): { label: string; color: string; bg: string; bar: string } {
-  if (score >= 90) return { label: 'Excellent', color: 'text-green-600', bg: 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800', bar: 'bg-green-500' };
+  if (score >= 90) return { label: 'Excellent', color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800', bar: 'bg-orange-500' };
   if (score >= 75) return { label: 'Good',      color: 'text-[#FF5A00]',  bg: 'bg-orange-500/10 border-[#FF5A00]/30 dark:bg-orange-950/30 dark:border-[#FF5A00]/30', bar: 'bg-[#FF5A00]' };
-  if (score >= 60) return { label: 'Moderate',  color: 'text-yellow-600',bg: 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800', bar: 'bg-yellow-500' };
+  if (score >= 60) return { label: 'Moderate',  color: 'text-orange-600',bg: 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800', bar: 'bg-orange-500' };
   return                   { label: 'Low',       color: 'text-red-500',   bg: 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800', bar: 'bg-red-400' };
 }
 
 function pctColor(pct: number) {
-  if (pct >= 90) return 'bg-green-500';
+  if (pct >= 90) return 'bg-orange-500';
   if (pct >= 70) return 'bg-[#FF5A00]';
-  if (pct >= 50) return 'bg-yellow-500';
+  if (pct >= 50) return 'bg-orange-500';
   return 'bg-red-400';
 }
 
@@ -110,7 +110,7 @@ function ScoreRing({ score }: { score: number }) {
           strokeDasharray={circ} strokeDashoffset={offset}
           strokeLinecap="round"
           className={`transition-all duration-700 ${
-            score >= 90 ? 'stroke-green-500' : score >= 75 ? 'stroke-blue-500' : score >= 60 ? 'stroke-yellow-500' : 'stroke-red-400'
+            score >= 90 ? 'stroke-orange-500' : score >= 75 ? 'stroke-orange-500' : score >= 60 ? 'stroke-orange-500' : 'stroke-red-400'
           }`}
         />
       </svg>
@@ -298,7 +298,7 @@ export default function BuyerRFQMatchPage() {
                   <div className="flex items-center gap-2 flex-wrap mb-1.5">
                     <h1 className="text-lg font-bold text-foreground">{requirement.title}</h1>
                     <Badge variant="outline" className={`text-xs capitalize shrink-0 ${
-                      requirement.status === 'active' ? 'text-green-500 border-green-500/30 bg-green-500/10'
+                      requirement.status === 'active' ? 'text-orange-500 border-orange-500/30 bg-orange-500/10'
                         : 'text-muted-foreground border-border'
                     }`}>
                       {requirement.status}
@@ -361,9 +361,9 @@ export default function BuyerRFQMatchPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: 'Matched Suppliers', value: stats.total, icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-                { label: 'Top Match Score', value: stats.top, icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10', suffix: '/100' },
+                { label: 'Top Match Score', value: stats.top, icon: TrendingUp, color: 'text-orange-500', bg: 'bg-orange-500/10', suffix: '/100' },
                 { label: 'Average Score', value: stats.avg, icon: BarChart3, color: 'text-[#FF5A00]', bg: 'bg-orange-500/10', suffix: '/100' },
-                { label: 'Quoted Suppliers', value: stats.quoted, icon: CheckCircle, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                { label: 'Quoted Suppliers', value: stats.quoted, icon: CheckCircle, color: 'text-orange-500', bg: 'bg-orange-500/10' },
               ].map(s => {
                 const Icon = s.icon;
                 return (
@@ -492,7 +492,7 @@ export default function BuyerRFQMatchPage() {
                               <span className="text-sm font-semibold text-foreground truncate">{c?.company_name}</span>
                               {c?.is_verified && <Shield className="w-3.5 h-3.5 text-primary shrink-0" />}
                               {m.response_status === 'quoted' && (
-                                <Badge className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-300 shrink-0">Quoted</Badge>
+                                <Badge className="text-[10px] px-1.5 py-0 bg-orange-100 text-orange-700 border-orange-300 shrink-0">Quoted</Badge>
                               )}
                               <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-semibold shrink-0 border ${grade.bg} ${grade.color}`}>
                                 {grade.label}
@@ -506,7 +506,7 @@ export default function BuyerRFQMatchPage() {
                               )}
                               {(c?.rating_avg ?? 0) > 0 && (
                                 <span className="flex items-center gap-1">
-                                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 shrink-0" />
+                                  <Star className="w-3 h-3 fill-orange-400 text-orange-400 shrink-0" />
                                   {c?.rating_avg.toFixed(1)}
                                 </span>
                               )}
@@ -602,7 +602,7 @@ export default function BuyerRFQMatchPage() {
                                   {SUB_SCORES.map((s, i) => {
                                     const score = m[s.key as keyof MatchRow] as number;
                                     const widthPct = (score / 100) * 100;
-                                    const colors = ['bg-[#FF5A00]', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-primary'];
+                                    const colors = ['bg-[#FF5A00]', 'bg-orange-500', 'bg-orange-500', 'bg-orange-500', 'bg-primary'];
                                     return (
                                       <TooltipProvider key={s.key} delayDuration={100}>
                                         <Tooltip>
@@ -764,7 +764,7 @@ export default function BuyerRFQMatchPage() {
                               </td>
                               <td className="py-3 pr-4">
                                 <Badge variant="outline" className={`text-[10px] capitalize whitespace-nowrap ${
-                                  q.status === 'accepted' ? 'text-green-500 border-green-500/30 bg-green-500/10'
+                                  q.status === 'accepted' ? 'text-orange-500 border-orange-500/30 bg-orange-500/10'
                                     : q.status === 'rejected' ? 'text-destructive border-destructive/30 bg-destructive/10'
                                     : 'text-muted-foreground border-border'
                                 }`}>
@@ -775,7 +775,7 @@ export default function BuyerRFQMatchPage() {
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   {q.status === 'pending' && (
                                     <>
-                                      <Button size="sm" className="h-6 text-[10px] px-2 bg-green-600 hover:bg-green-700 text-white gap-1" onClick={async () => {
+                                      <Button size="sm" className="h-6 text-[10px] px-2 bg-orange-600 hover:bg-orange-700 text-white gap-1" onClick={async () => {
                                         const { updateQuotationStatus } = await import('@/lib/api');
                                         await updateQuotationStatus(q.id, 'accepted');
                                         const updated = await getQuotationsForRequirement(id!);
@@ -813,10 +813,10 @@ export default function BuyerRFQMatchPage() {
                     const best = sorted[0];
                     const savings = sorted[sorted.length - 1].unit_price - best.unit_price;
                     return (
-                      <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3 flex items-start gap-2.5 text-sm">
-                        <TrendingUp className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                      <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3 flex items-start gap-2.5 text-sm">
+                        <TrendingUp className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
                         <div>
-                          <span className="font-semibold text-green-600">Lowest Quote: </span>
+                          <span className="font-semibold text-orange-600">Lowest Quote: </span>
                           <span className="text-foreground">
                             {best.companies?.company_name} · {best.currency} {best.unit_price.toLocaleString()}/unit
                           </span>

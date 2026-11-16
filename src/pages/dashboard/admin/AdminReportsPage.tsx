@@ -19,8 +19,8 @@ const STATUS_LABEL: Record<ReportStatus, string> = {
 
 const STATUS_STYLE: Record<ReportStatus, string> = {
   open: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30',
-  under_review: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
-  resolved: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+  under_review: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30',
+  resolved: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30',
   dismissed: 'bg-muted text-muted-foreground border-border',
 };
 

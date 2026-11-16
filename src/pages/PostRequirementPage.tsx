@@ -228,7 +228,7 @@ export default function PostRequirementPage() {
       <MainLayout>
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
           <div className="p-8 rounded-3xl bg-card border border-border shadow-md space-y-5">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-600">
+            <div className="w-16 h-16 rounded-2xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center mx-auto text-orange-600">
               <CheckCircle2 className="w-9 h-9" />
             </div>
 

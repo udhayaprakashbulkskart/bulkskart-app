@@ -121,14 +121,14 @@ export default function AISalesAssistantPage() {
     }
     if (urgency === 'medium') {
       return (
-        <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-          <TrendingUp className="w-3 h-3 text-yellow-400" /> Recommended
+        <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+          <TrendingUp className="w-3 h-3 text-orange-400" /> Recommended
         </span>
       );
     }
     return (
-      <span className="text-[10px] font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-        <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Best Practice
+      <span className="text-[10px] font-medium text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+        <CheckCircle2 className="w-3 h-3 text-orange-400" /> Best Practice
       </span>
     );
   };
@@ -143,13 +143,13 @@ export default function AISalesAssistantPage() {
     }
     if (priority === 'medium') {
       return (
-        <Badge className="bg-yellow-500/15 text-yellow-400 border-yellow-500/30 text-xs font-bold gap-1">
-          <TrendingUp className="w-3 h-3 text-yellow-400" /> Medium Priority
+        <Badge className="bg-orange-500/15 text-orange-400 border-orange-500/30 text-xs font-bold gap-1">
+          <TrendingUp className="w-3 h-3 text-orange-400" /> Medium Priority
         </Badge>
       );
     }
     return (
-      <Badge className="bg-slate-700/50 text-slate-300 border-white/10 text-xs font-medium">
+      <Badge className="bg-neutral-700/50 text-neutral-300 border-white/10 text-xs font-medium">
         Standard Fit
       </Badge>
     );
@@ -207,7 +207,7 @@ export default function AISalesAssistantPage() {
         <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-xl space-y-3.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="p-1.5 rounded-lg bg-indigo-500/15 text-indigo-400">
+              <span className="p-1.5 rounded-lg bg-orange-500/15 text-orange-400">
                 <Sparkles className="w-4 h-4" />
               </span>
               <div>
@@ -321,8 +321,8 @@ export default function AISalesAssistantPage() {
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {getPriorityBadge(opp.priority)}
-                          <span className="text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-indigo-400" />
+                          <span className="text-xs font-mono font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-orange-400" />
                             {opp.topMatchScore}% Match
                           </span>
                           <span className="text-[11px] text-white/50 flex items-center gap-1">
@@ -357,7 +357,7 @@ export default function AISalesAssistantPage() {
                           <span>•</span>
                           <span>
                             Est. Business:{' '}
-                            <strong className="text-emerald-400">
+                            <strong className="text-orange-400">
                               {formatPotentialBusinessINR(opp.estimatedBusinessValueINR)}
                             </strong>
                           </span>
@@ -417,7 +417,7 @@ export default function AISalesAssistantPage() {
                                   <span className="text-xs font-bold text-foreground truncate block">
                                     {p.name}
                                   </span>
-                                  <span className="text-[10px] font-mono font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.2 rounded shrink-0">
+                                  <span className="text-[10px] font-mono font-bold text-orange-500 bg-orange-500/10 px-1.5 py-0.2 rounded shrink-0">
                                     {p.matchScore}%
                                   </span>
                                 </div>

@@ -74,7 +74,7 @@ export default function ReviewsHomeSection() {
   };
 
   return (
-    <section className="relative z-20 py-10 md:py-14 bg-[#0B0F19] border-t border-border/80">
+    <section className="relative z-20 py-10 md:py-14 bg-[#121212] border-t border-border/80">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-5 md:px-6">
 
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-8">
@@ -94,7 +94,7 @@ export default function ReviewsHomeSection() {
           <div className="flex items-center gap-4 shrink-0">
             {summary && (
               <div className="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl bg-card border border-border/80">
-                <div className="flex items-center gap-0.5 text-amber-400">
+                <div className="flex items-center gap-0.5 text-orange-400">
                   {[0, 1, 2, 3, 4].map((i) => (
                     <Star key={i} className={`w-4 h-4 ${i < Math.round(summary.average) ? 'fill-current' : ''}`} />
                   ))}
@@ -152,7 +152,7 @@ export default function ReviewsHomeSection() {
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-1 text-amber-400" aria-label={`${review.rating} out of 5`}>
+                    <div className="flex items-center gap-1 text-orange-400" aria-label={`${review.rating} out of 5`}>
                       {[0, 1, 2, 3, 4].map((i) => (
                         <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'fill-current' : ''}`} />
                       ))}

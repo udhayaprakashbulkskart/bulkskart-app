@@ -411,7 +411,7 @@ export default function RequirementDetailsPage() {
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span
                 className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${
-                  isOpen ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30' : 'text-muted-foreground bg-muted border-border'
+                  isOpen ? 'text-orange-600 dark:text-orange-400 bg-orange-500/10 border-orange-500/30' : 'text-muted-foreground bg-muted border-border'
                 }`}
               >
                 {isOpen ? 'Open for quotes' : deadlinePassed ? 'Deadline passed' : 'Closed'}
@@ -632,8 +632,8 @@ export default function RequirementDetailsPage() {
                 ) : myQuotes.length > 0 ? (
                   <div className="space-y-2">
                     {myQuotes.map((q) => (
-                      <div key={q.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
-                        <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                      <div key={q.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-500/30 bg-orange-500/5 p-3">
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-orange-700 dark:text-orange-400">
                           <CheckCircle className="w-4 h-4" aria-hidden="true" /> Your quotation, {dateLabel(q.created_at)}
                         </span>
                         <span className="text-sm font-bold text-foreground">

@@ -295,13 +295,13 @@ export default function SupplierProfilePage() {
                 <Zap className="w-4 h-4 text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">Profile Completeness</h3>
               </div>
-              <span className={`text-sm font-bold ${completionPct >= 80 ? 'text-green-500' : completionPct >= 50 ? 'text-yellow-500' : 'text-destructive'}`}>
+              <span className={`text-sm font-bold ${completionPct >= 80 ? 'text-orange-500' : completionPct >= 50 ? 'text-orange-500' : 'text-destructive'}`}>
                 {completionPct}%
               </span>
             </div>
             <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden mb-3">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${completionPct >= 80 ? 'bg-green-500' : completionPct >= 50 ? 'bg-yellow-500' : 'bg-primary'}`}
+                className={`h-full rounded-full transition-all duration-500 ${completionPct >= 80 ? 'bg-orange-500' : completionPct >= 50 ? 'bg-orange-500' : 'bg-primary'}`}
                 style={{ width: `${completionPct}%` }}
               />
             </div>
@@ -316,7 +316,7 @@ export default function SupplierProfilePage() {
                 { label: 'Certifications', done: certs.length >= 1 },
                 { label: 'GST Number', done: !!company?.gst_number },
               ].map(item => (
-                <span key={item.label} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${item.done ? 'bg-green-50 border-green-300 text-green-700' : 'bg-muted border-border text-muted-foreground'}`}>
+                <span key={item.label} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${item.done ? 'bg-orange-50 border-orange-300 text-orange-700' : 'bg-muted border-border text-muted-foreground'}`}>
                   {item.done ? <CheckCircle className="w-3 h-3" /> : <Info className="w-3 h-3" />}
                   {item.label}
                 </span>
@@ -335,8 +335,8 @@ export default function SupplierProfilePage() {
               {[
                 { label: 'Response Rate', value: company?.response_rate ? `${company.response_rate}%` : '—', icon: TrendingUp, color: 'text-primary' },
                 { label: 'Avg Response', value: company?.avg_response_hours ? `${company.avg_response_hours}h` : '—', icon: Clock, color: 'text-[#FF5A00]' },
-                { label: 'Rating', value: company?.rating_avg ? `${Number(company.rating_avg).toFixed(1)} ★` : '—', icon: Star, color: 'text-yellow-500' },
-                { label: 'Reviews', value: company?.review_count ?? 0, icon: Users, color: 'text-purple-500' },
+                { label: 'Rating', value: company?.rating_avg ? `${Number(company.rating_avg).toFixed(1)} ★` : '—', icon: Star, color: 'text-orange-500' },
+                { label: 'Reviews', value: company?.review_count ?? 0, icon: Users, color: 'text-orange-500' },
               ].map(m => (
                 <div key={m.label} className="bg-muted/50 rounded-xl p-3 text-center">
                   <m.icon className={`w-5 h-5 mx-auto mb-1 ${m.color}`} />
@@ -353,13 +353,13 @@ export default function SupplierProfilePage() {
               company.is_verified
                 ? 'bg-primary/10 border-primary/30'
                 : company.verification_status === 'pending'
-                ? 'bg-yellow-500/10 border-yellow-500/30'
+                ? 'bg-orange-500/10 border-orange-500/30'
                 : 'bg-muted border-border'
             }`}>
               {company.is_verified ? (
                 <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
               ) : company.verification_status === 'pending' ? (
-                <Clock className="w-5 h-5 text-yellow-400 shrink-0" />
+                <Clock className="w-5 h-5 text-orange-400 shrink-0" />
               ) : (
                 <ShieldCheck className="w-5 h-5 text-muted-foreground shrink-0" />
               )}
@@ -568,12 +568,12 @@ export default function SupplierProfilePage() {
                 return (
                   <div key={badge.label} className={`rounded-lg border p-3 flex items-center gap-3 ${
                     isVerified ? 'bg-primary/10 border-primary/30' :
-                    isPending ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-muted border-border'
+                    isPending ? 'bg-orange-500/10 border-orange-500/30' : 'bg-muted border-border'
                   }`}>
                     {isVerified
                       ? <CheckCircle className="w-4 h-4 text-primary shrink-0" />
                       : isPending
-                      ? <Clock className="w-4 h-4 text-yellow-400 shrink-0" />
+                      ? <Clock className="w-4 h-4 text-orange-400 shrink-0" />
                       : <ShieldCheck className="w-4 h-4 text-muted-foreground shrink-0" />
                     }
                     <div>
@@ -618,7 +618,7 @@ export default function SupplierProfilePage() {
                 </div>
                 <div className="flex items-center gap-2 pt-5 shrink-0">
                   {cert.is_verified && <Badge className="bg-primary/15 text-primary border-primary/30 text-xs">Verified</Badge>}
-                  {cert.pending_review && !cert.is_verified && <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">Pending</Badge>}
+                  {cert.pending_review && !cert.is_verified && <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs">Pending</Badge>}
                   <button type="button" onClick={() => removeCert(cert.id)}
                     className="text-muted-foreground hover:text-destructive transition-colors">
                     <Trash2 className="w-4 h-4" />

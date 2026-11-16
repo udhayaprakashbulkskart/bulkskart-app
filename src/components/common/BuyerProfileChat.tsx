@@ -209,8 +209,8 @@ export default function BuyerProfileChat({ buyerUserId, buyerName, returnPath }:
           <p className="text-[11px] text-muted-foreground">Messages go to this buyer’s BulkSkart inbox</p>
         </div>
         {gate === 'ready' && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Live
+          <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-bold text-orange-600 dark:text-orange-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-orange-500" /> Live
           </span>
         )}
       </div>

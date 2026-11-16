@@ -35,15 +35,15 @@ interface MatchRow {
 }
 
 function scoreColor(score: number) {
-  if (score >= 90) return 'bg-green-500';
-  if (score >= 70) return 'bg-yellow-500';
+  if (score >= 90) return 'bg-orange-500';
+  if (score >= 70) return 'bg-orange-500';
   if (score >= 50) return 'bg-orange-500';
   return 'bg-red-500';
 }
 
 function scoreBadgeVariant(score: number): string {
-  if (score >= 90) return 'border-green-500 text-green-600 bg-green-50 dark:bg-green-950/30';
-  if (score >= 70) return 'border-yellow-500 text-yellow-600 bg-yellow-50 dark:bg-yellow-950/30';
+  if (score >= 90) return 'border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950/30';
+  if (score >= 70) return 'border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950/30';
   return 'border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950/30';
 }
 
@@ -168,7 +168,7 @@ export default function RFQMatchResultsPanel({ rfqId, rfqTitle }: Props) {
                       {m.match_score}/100
                     </Badge>
                     {m.response_status === 'quoted' && (
-                      <Badge className="text-[10px] bg-green-100 text-green-700 border-green-300 shrink-0">Quoted</Badge>
+                      <Badge className="text-[10px] bg-orange-100 text-orange-700 border-orange-300 shrink-0">Quoted</Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
@@ -180,7 +180,7 @@ export default function RFQMatchResultsPanel({ rfqId, rfqTitle }: Props) {
                     )}
                     {c?.rating_avg > 0 && (
                       <span className="flex items-center gap-1">
-                        <Star className="w-3 h-3 shrink-0 fill-yellow-400 text-yellow-400" />
+                        <Star className="w-3 h-3 shrink-0 fill-orange-400 text-orange-400" />
                         {c.rating_avg.toFixed(1)}
                       </span>
                     )}

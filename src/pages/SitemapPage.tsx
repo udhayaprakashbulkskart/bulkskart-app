@@ -111,7 +111,7 @@ export default function SitemapPage() {
       />
       <Header />
 
-      <section className="bg-[#1a1a2e] text-white py-10 px-4">
+      <section className="bg-[#242424] text-white py-10 px-4">
         <div className="max-w-5xl mx-auto">
           <Breadcrumbs
             items={[{ name: 'Platform Sitemap' }]}
@@ -174,7 +174,7 @@ export default function SitemapPage() {
                 <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50 text-[11px]">
                   <code className="text-primary font-mono">{sm.path}</code>
                   <span className="text-muted-foreground font-medium flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Active
+                    <CheckCircle2 className="w-3 h-3 text-orange-500" /> Active
                   </span>
                 </div>
               </a>
@@ -183,7 +183,7 @@ export default function SitemapPage() {
 
           <div className="bg-card border border-border rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div className="flex items-start gap-2.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+              <ShieldCheck className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-foreground">Robots.txt Directives</p>
                 <p className="text-muted-foreground text-[11px] mt-0.5">

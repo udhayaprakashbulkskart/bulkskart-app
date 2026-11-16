@@ -126,7 +126,7 @@ export default function MaskedPhone({
         <Dialog open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen}>
           <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md p-6 rounded-2xl border border-border">
             <DialogHeader className="space-y-2 text-left">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF5A1F]/20 to-amber-500/10 border border-[#FF5A1F]/30 flex items-center justify-center text-[#FF5A1F] mb-1">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF5A1F]/20 to-orange-500/10 border border-[#FF5A1F]/30 flex items-center justify-center text-[#FF5A1F] mb-1">
                 <Lock className="w-6 h-6" />
               </div>
               <DialogTitle className="text-lg font-bold text-foreground">

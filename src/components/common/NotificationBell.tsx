@@ -423,12 +423,12 @@ export default function NotificationBell({ className, variant = 'default' }: Not
   const getNotifIcon = (type: string) => {
     switch (type) {
       case 'message':
-        return <MessageSquare className="w-4 h-4 text-purple-400" />;
+        return <MessageSquare className="w-4 h-4 text-orange-400" />;
       case 'quote_received':
       case 'quotation':
         return <Package className="w-4 h-4 text-[#FF5A00]" />;
       case 'subscription':
-        return <CreditCard className="w-4 h-4 text-amber-400" />;
+        return <CreditCard className="w-4 h-4 text-orange-400" />;
       case 'rfq_matched':
       case 'rfq_match':
         return <Flame className="w-4 h-4 text-orange-400" />;
@@ -550,7 +550,7 @@ export default function NotificationBell({ className, variant = 'default' }: Not
                   </span>
                 </div>
                 <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded uppercase shrink-0 ${
-                  n.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
+                  n.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-orange-500/20 text-orange-400'
                 }`}>
                   {n.priority} Priority
                 </span>
@@ -580,7 +580,7 @@ export default function NotificationBell({ className, variant = 'default' }: Not
                 </div>
                 <div>
                   <span className="text-muted-foreground">Match:</span>{' '}
-                  <strong className="text-emerald-400 font-mono font-bold">{n.matchPercentage}%</strong>
+                  <strong className="text-orange-400 font-mono font-bold">{n.matchPercentage}%</strong>
                 </div>
               </div>
 

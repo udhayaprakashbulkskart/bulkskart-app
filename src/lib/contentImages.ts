@@ -515,18 +515,19 @@ export function generateIsolatedProductFallback(title?: string, category?: strin
     hash = (hash << 5) - hash + cleanTitle.charCodeAt(i);
     hash |= 0;
   }
-  const hues = [25, 210, 160, 280, 45, 190];
+  // Brand orange only; the site uses white, black and orange
+  const hues = [21, 21, 21, 21, 21, 21];
   const hue = hues[Math.abs(hash) % hues.length];
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
     <defs>
       <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#0E111A"/>
-        <stop offset="100%" stop-color="#181D2D"/>
+        <stop offset="0%" stop-color="#141414"/>
+        <stop offset="100%" stop-color="#232323"/>
       </linearGradient>
       <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%" stop-color="hsl(${hue}, 90%, 55%)"/>
-        <stop offset="100%" stop-color="hsl(${hue + 20}, 90%, 65%)"/>
+        <stop offset="100%" stop-color="hsl(${hue + 8}, 95%, 62%)"/>
       </linearGradient>
     </defs>
     <rect width="600" height="400" fill="url(#bg)"/>
@@ -538,7 +539,7 @@ export function generateIsolatedProductFallback(title?: string, category?: strin
     <text x="300" y="280" fill="#F8FAFC" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" text-anchor="middle">
       ${cleanTitle.length > 36 ? cleanTitle.slice(0, 36) + '...' : cleanTitle}
     </text>
-    <text x="300" y="325" fill="#64748B" font-family="system-ui, -apple-system, sans-serif" font-size="12" text-anchor="middle">
+    <text x="300" y="325" fill="#DD5912" font-family="system-ui, -apple-system, sans-serif" font-size="12" text-anchor="middle">
       Photo not added yet
     </text>
   </svg>`;
@@ -699,12 +700,12 @@ export function generateCompanyLogo(companyName: string, idSeed = ''): string {
 
   // Consistent color palette derived from name hash
   const palettes = [
-    { bg: '#0F2B48', border: '#2563EB', text: '#FFFFFF', accent: '#38BDF8' },
-    { bg: '#2D1B4E', border: '#7C3AED', text: '#FFFFFF', accent: '#A78BFA' },
-    { bg: '#064E3B', border: '#059669', text: '#FFFFFF', accent: '#34D399' },
-    { bg: '#78350F', border: '#D97706', text: '#FFFFFF', accent: '#FBBF24' },
-    { bg: '#831843', border: '#DB2777', text: '#FFFFFF', accent: '#F472B6' },
-    { bg: '#1E293B', border: '#FF5A00', text: '#FFFFFF', accent: '#FF7A29' },
+    { bg: '#2C2C2C', border: '#ED6A23', text: '#FFFFFF', accent: '#F87B38' },
+    { bg: '#353535', border: '#EF7838', text: '#FFFFFF', accent: '#F89763' },
+    { bg: '#2A2A2A', border: '#bc4606', text: '#FFFFFF', accent: '#EC641B' },
+    { bg: '#78350F', border: '#D97706', text: '#FFFFFF', accent: '#FB6F24' },
+    { bg: '#b3480f', border: '#EC6116', text: '#FFFFFF', accent: '#F39868' },
+    { bg: '#2C2C2C', border: '#FF5A00', text: '#FFFFFF', accent: '#FF7A29' },
   ];
 
   let hash = 0;

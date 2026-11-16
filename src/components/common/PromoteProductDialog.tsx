@@ -50,21 +50,21 @@ const PROMOTION_TYPES: {
   },
   {
     type: 'boost',
-    icon: <Zap className="w-5 h-5 text-amber-500" />,
+    icon: <Zap className="w-5 h-5 text-orange-500" />,
     label: 'Boost Product',
     tagline: 'Sponsored Badge',
     desc: 'Your product carries a "Sponsored" badge on product listings, so buyers browsing the category notice it.',
     badge: 'Sponsored',
-    badgeColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    badgeColor: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
   },
   {
     type: 'campaign',
-    icon: <BarChart2 className="w-5 h-5 text-indigo-400" />,
+    icon: <BarChart2 className="w-5 h-5 text-orange-400" />,
     label: 'Promotion Campaign',
     tagline: 'Featured + Sponsored',
     desc: 'Both together: Featured Products placement and the "Sponsored" badge. The country and category you aim at are saved with the campaign.',
     badge: 'Campaign',
-    badgeColor: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
+    badgeColor: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
   },
 ];
 
@@ -180,7 +180,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
                     isActive
                       ? 'bg-[#FF5A00] text-white shadow-md'
                       : isDone
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                        ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
                         : 'bg-muted text-muted-foreground'
                   }`}
                 >
@@ -394,7 +394,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
           <div className="space-y-4">
             {paidSuccess ? (
               <div className="flex flex-col items-center justify-center py-8 text-center space-y-3">
-                <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                <div className="w-14 h-14 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center border border-orange-500/30">
                   <CheckCircle className="w-7 h-7" />
                 </div>
                 <h3 className="text-base font-bold text-foreground">Promotion Activated!</h3>
@@ -466,7 +466,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
 
                 {/* Gateway Assurance */}
                 <div className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/20 flex items-center justify-center shrink-0">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">

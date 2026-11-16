@@ -306,7 +306,7 @@ export default function MyQuotationsPage() {
                                 </span>
                               </>
                             ) : q.status === 'awarded' ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-orange-600 text-white">
                                 AWARDED
                               </span>
                             ) : (
@@ -336,7 +336,7 @@ export default function MyQuotationsPage() {
 
                       {/* Card Action Controls */}
                       <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-border/40">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-lg">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 px-2 py-1 rounded-lg">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           {q.status === 'awarded' ? 'Contract Awarded' : q.status === 'closed' ? 'Concluded' : 'Active'}
                         </span>

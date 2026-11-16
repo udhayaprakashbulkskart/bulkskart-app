@@ -119,7 +119,7 @@ export default function BuyerVerificationPage() {
 
   const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
     unverified: { label: 'Not Submitted', color: 'bg-muted text-muted-foreground', icon: <FileText className="w-4 h-4" /> },
-    pending: { label: 'Under Review', color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: <Clock className="w-4 h-4" /> },
+    pending: { label: 'Under Review', color: 'bg-orange-100 text-orange-700 border-orange-300', icon: <Clock className="w-4 h-4" /> },
     verified: { label: 'Verified', color: 'bg-primary/10 text-primary border-primary/30', icon: <CheckCircle2 className="w-4 h-4" /> },
     rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700 border-red-300', icon: <XCircle className="w-4 h-4" /> },
   };
@@ -252,9 +252,9 @@ export default function BuyerVerificationPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-xs sm:text-sm font-medium truncate">{label}</p>
                         {docs[key] ? (
-                          <p className="text-xs text-green-500 font-medium truncate">{docs[key]!.name}</p>
+                          <p className="text-xs text-orange-500 font-medium truncate">{docs[key]!.name}</p>
                         ) : existing ? (
-                          <p className="text-xs text-green-500">Document uploaded ✓</p>
+                          <p className="text-xs text-orange-500">Document uploaded ✓</p>
                         ) : (
                           <p className="text-xs text-muted-foreground">No file selected</p>
                         )}
@@ -289,7 +289,7 @@ export default function BuyerVerificationPage() {
         {status === 'pending' && (
           <Card>
             <CardContent className="pt-5 text-center py-8">
-              <Clock className="w-10 h-10 text-yellow-500 mx-auto mb-3" />
+              <Clock className="w-10 h-10 text-orange-500 mx-auto mb-3" />
               <h3 className="font-semibold text-foreground">Your documents are under review</h3>
               <p className="text-sm text-muted-foreground mt-1">Admin typically reviews within 1–2 business days. You'll be notified of the result.</p>
             </CardContent>

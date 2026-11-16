@@ -30,7 +30,7 @@
 
 /* ───────────── header ───────────── */
 .mh-header {
-  background: #0b0a18;
+  background: #111111;
   padding-top: calc(22 * var(--mh-u));
   max-width: 480px;
   margin: 0 auto;
@@ -167,9 +167,9 @@
   margin: calc(25 * var(--mh-u)) calc(26 * var(--mh-u)) 0;
   padding-left: calc(22 * var(--mh-u));
   border-radius: calc(26 * var(--mh-u));
-  border: calc(2 * var(--mh-u)) solid rgba(132, 102, 190, 0.8);
-  background: linear-gradient(180deg, #352a50, #2a2043);
-  box-shadow: 0 0 0 calc(1 * var(--mh-u)) rgba(120, 90, 200, 0.16), 0 calc(8 * var(--mh-u)) calc(22 * var(--mh-u)) rgba(70, 30, 140, 0.3);
+  border: calc(2 * var(--mh-u)) solid rgba(239, 118, 53, 0.8);
+  background: linear-gradient(180deg, #3d3d3d, #323232);
+  box-shadow: 0 0 0 calc(1 * var(--mh-u)) rgba(238, 117, 52, 0.16), 0 calc(8 * var(--mh-u)) calc(22 * var(--mh-u)) rgba(179, 72, 15, 0.3);
 }
 .mh-search > svg {
   flex-shrink: 0;
@@ -226,8 +226,8 @@
   height: calc(104 * var(--mh-u));
   padding-top: calc(13 * var(--mh-u));
   border-radius: calc(24 * var(--mh-u));
-  border: calc(2 * var(--mh-u)) solid rgba(118, 92, 188, 0.38);
-  background: linear-gradient(180deg, #251e3a, #1b152b);
+  border: calc(2 * var(--mh-u)) solid rgba(238, 111, 42, 0.38);
+  background: linear-gradient(180deg, #2c2c2c, #202020);
   color: #fff;
   text-decoration: none;
   font-size: max(7px, calc(16.3 * var(--mh-u)));
@@ -254,7 +254,7 @@
 
 /* keeps the whole screen dark down to the end of the promo banner, in light mode too */
 .mh-dark {
-  background: #0d0b1a;
+  background: #121212;
   padding-bottom: calc(30 * var(--mh-u));
 }
 
@@ -268,9 +268,9 @@
   margin-right: auto;
   overflow: hidden;
   background:
-    radial-gradient(60% 55% at 78% 30%, rgba(52, 60, 160, 0.5), transparent 70%),
+    radial-gradient(60% 55% at 78% 30%, rgba(196, 79, 16, 0.5), transparent 70%),
     radial-gradient(45% 34% at 62% 60%, rgba(255, 120, 30, 0.26), transparent 72%),
-    linear-gradient(180deg, #110b1b, #17101f);
+    linear-gradient(180deg, #131313, #181818);
 }
 .mh-hero-art {
   position: absolute;
@@ -311,7 +311,7 @@
   font-size: max(7px, calc(23.2 * var(--mh-u)));
   font-style: italic;
   font-weight: 600;
-  background: linear-gradient(180deg, #fff0c2, #ffb236);
+  background: linear-gradient(180deg, #ffd7c2, #ffb236);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -336,7 +336,7 @@
   padding-bottom: calc(14 * var(--mh-u));
   margin-bottom: calc(-14 * var(--mh-u));
   font-size: calc(61.6 * var(--mh-u));
-  background: linear-gradient(180deg, #ffffff 15%, #cfcbe6);
+  background: linear-gradient(180deg, #ffffff 15%, #f39968);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -439,7 +439,7 @@
 .mh-cta-2 {
   left: calc(449 * var(--mh-u));
   width: calc(355 * var(--mh-u));
-  background: linear-gradient(180deg, #17121f, #100c1a);
+  background: linear-gradient(180deg, #181818, #131313);
   border: calc(2 * var(--mh-u)) solid #e08a22;
   box-shadow: 0 0 calc(14 * var(--mh-u)) rgba(255, 150, 30, 0.25);
 }
@@ -474,8 +474,8 @@
   margin: 0 auto;
   padding: 0 calc(36 * var(--mh-u)) 0;
   border-radius: calc(62 * var(--mh-u)) calc(62 * var(--mh-u)) 0 0;
-  border-top: calc(2 * var(--mh-u)) solid rgba(150, 110, 225, 0.35);
-  background: linear-gradient(180deg, #382059 0, #2a1946 calc(90 * var(--mh-u)), #1a1230 calc(230 * var(--mh-u)), #0f0c1f calc(380 * var(--mh-u)), #0d0b1a 100%);
+  border-top: calc(2 * var(--mh-u)) solid rgba(242, 145, 93, 0.35);
+  background: linear-gradient(180deg, #3c3c3c 0, #303030 calc(90 * var(--mh-u)), #212121 calc(230 * var(--mh-u)), #161616 calc(380 * var(--mh-u)), #121212 100%);
 }
 .mh-panel-title {
   margin: 0;
@@ -486,8 +486,8 @@
   color: #fff;
 }
 .mh-panel-title span {
-  color: #ecdfff;
-  text-shadow: 0 0 calc(14 * var(--mh-u)) rgba(190, 150, 255, 0.55);
+  color: #ffeadf;
+  text-shadow: 0 0 calc(14 * var(--mh-u)) rgba(255, 149, 92, 0.55);
 }
 .mh-panel-sub {
   margin: calc(5 * var(--mh-u)) 0 0 calc(6 * var(--mh-u));
@@ -502,15 +502,15 @@
   height: calc(68 * var(--mh-u));
   margin-top: calc(22 * var(--mh-u));
   border-radius: calc(18 * var(--mh-u));
-  border: calc(1.5 * var(--mh-u)) solid rgba(140, 100, 215, 0.7);
-  background: #1b162b;
+  border: calc(1.5 * var(--mh-u)) solid rgba(240, 133, 75, 0.7);
+  background: #202020;
   overflow: hidden;
 }
 .mh-find-select {
   position: relative;
   flex: 0 0 calc(226 * var(--mh-u));
-  border-right: calc(1.5 * var(--mh-u)) solid rgba(140, 100, 215, 0.55);
-  background: #131020;
+  border-right: calc(1.5 * var(--mh-u)) solid rgba(240, 133, 75, 0.55);
+  background: #181818;
 }
 .mh-find-select select {
   appearance: none;
@@ -545,7 +545,7 @@
   padding: 0 calc(14 * var(--mh-u)) 0 calc(26 * var(--mh-u));
   border: 0;
   outline: 0;
-  background: #1c172c;
+  background: #222222;
   color: #fff;
   font: inherit;
   font-size: max(7px, calc(21.3 * var(--mh-u)));
@@ -576,7 +576,7 @@
   padding: calc(9 * var(--mh-u)) 0 0 calc(6 * var(--mh-u));
   font-size: max(7px, calc(19.9 * var(--mh-u)));
   font-weight: 700;
-  color: #c9a8ff;
+  color: #ff955c;
   white-space: nowrap;
 }
 .mh-popular-list {
@@ -662,11 +662,11 @@
   white-space: nowrap;
 }
 .mh-stat-purple {
-  --c-border: #4e3472;
-  --c-from: #2a1b47;
-  --c-to: #1c1330;
-  --c-tile-from: #9a35b4;
-  --c-tile-to: #62207f;
+  --c-border: #b3480f;
+  --c-from: #313131;
+  --c-to: #222222;
+  --c-tile-from: #d85711;
+  --c-tile-to: #b3480f;
 }
 .mh-stat-brown {
   --c-border: #55301f;
@@ -676,18 +676,18 @@
   --c-tile-to: #a94a09;
 }
 .mh-stat-blue {
-  --c-border: #32467e;
-  --c-from: #1c2548;
-  --c-to: #131931;
-  --c-tile-from: #4a6bd2;
-  --c-tile-to: #2c4592;
+  --c-border: #b3480f;
+  --c-from: #323232;
+  --c-to: #222222;
+  --c-tile-from: #ee712e;
+  --c-tile-to: #b3480f;
 }
 .mh-stat-green {
-  --c-border: #17503b;
-  --c-from: #11322a;
-  --c-to: #0e1c1d;
-  --c-tile-from: #35a672;
-  --c-tile-to: #1f6e4c;
+  --c-border: #343434;
+  --c-from: #222222;
+  --c-to: #161616;
+  --c-tile-from: #cb5210;
+  --c-tile-to: #b3480f;
 }
 
 /* ───────────── promo banner ───────────── */
@@ -699,8 +699,8 @@
   margin: calc(28 * var(--mh-u)) auto 0;
   width: calc(100% - calc(48 * var(--mh-u)));
   border-radius: calc(30 * var(--mh-u));
-  border: calc(2 * var(--mh-u)) solid rgba(140, 100, 210, 0.4);
-  background: linear-gradient(90deg, #3a1b52 0%, #2c1d4b 38%, #1d1535 75%);
+  border: calc(2 * var(--mh-u)) solid rgba(240, 130, 70, 0.4);
+  background: linear-gradient(90deg, #373737 0%, #343434 38%, #252525 75%);
   overflow: hidden;
   color: #fff;
   text-decoration: none;
@@ -769,8 +769,8 @@
   height: calc(calc(121 * var(--mh-u)) + env(safe-area-inset-bottom, 0px));
   padding-top: calc(15 * var(--mh-u));
   border-radius: calc(38 * var(--mh-u)) calc(38 * var(--mh-u)) 0 0;
-  border-top: calc(2 * var(--mh-u)) solid rgba(150, 110, 225, 0.3);
-  background: linear-gradient(180deg, #1c162b, #130f1f);
+  border-top: calc(2 * var(--mh-u)) solid rgba(242, 145, 93, 0.3);
+  background: linear-gradient(180deg, #202020, #171717);
   box-shadow: 0 calc(-10 * var(--mh-u)) calc(30 * var(--mh-u)) rgba(0, 0, 0, 0.5);
 }
 .mh-nav a {

@@ -74,7 +74,7 @@ export function requirementTag(
   if (req.is_urgent) return { label: 'URGENT', type: 'urgent', bgClass: 'bg-[#ff3b30]', textClass: 'text-white' };
   const end = deadlineEnd(req.deadline);
   if (end !== null && end >= now && end - now <= CLOSING_SOON_DAYS * DAY) {
-    return { label: 'CLOSING SOON', type: 'expiring', bgClass: 'bg-[#e5a800]', textClass: 'text-white' };
+    return { label: 'CLOSING SOON', type: 'expiring', bgClass: 'bg-[#e55000]', textClass: 'text-white' };
   }
   const posted = new Date(req.created_at).getTime();
   if (Number.isFinite(posted) && now - posted <= NEW_REQUIREMENT_HOURS * HOUR) {

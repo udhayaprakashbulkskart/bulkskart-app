@@ -439,7 +439,7 @@ export default function ProductDetailPage() {
                     className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Star
-                      className={`w-3.5 h-3.5 ${Number(product.companies?.rating_avg) > 0 ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}`}
+                      className={`w-3.5 h-3.5 ${Number(product.companies?.rating_avg) > 0 ? 'text-orange-500 fill-orange-500' : 'text-muted-foreground'}`}
                       aria-hidden="true"
                     />
                     {Number(product.companies?.rating_avg) > 0 && Number(product.companies?.review_count) > 0 ? (
@@ -479,7 +479,7 @@ export default function ProductDetailPage() {
                       <button
                         type="button"
                         onClick={() => setShowCountryTaxesModal(true)}
-                        className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-sky-700 dark:text-[#00D2FF] hover:underline"
+                        className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-orange-700 dark:text-[#FF5900] hover:underline"
                       >
                         <Calculator className="w-3 h-3" /> Country Taxes &amp; Fees
                       </button>
@@ -950,7 +950,7 @@ export default function ProductDetailPage() {
                       className="flex items-center gap-1 text-xs hover:opacity-80 transition-opacity cursor-pointer"
                     >
                       <Star
-                        className={`w-3.5 h-3.5 ${Number(product.companies?.rating_avg) > 0 ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}`}
+                        className={`w-3.5 h-3.5 ${Number(product.companies?.rating_avg) > 0 ? 'text-orange-500 fill-orange-500' : 'text-muted-foreground'}`}
                         aria-hidden="true"
                       />
                       <span className="text-muted-foreground">
@@ -986,7 +986,7 @@ export default function ProductDetailPage() {
                         <button
                           type="button"
                           onClick={() => setShowCountryTaxesModal(true)}
-                          className="flex items-center gap-1 text-[11px] font-semibold text-sky-700 dark:text-[#00D2FF] hover:underline"
+                          className="flex items-center gap-1 text-[11px] font-semibold text-orange-700 dark:text-[#FF5900] hover:underline"
                         >
                           <Calculator className="w-3.5 h-3.5" />
                           Country Taxes, GST &amp; Fees

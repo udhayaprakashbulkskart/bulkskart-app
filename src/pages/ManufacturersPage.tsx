@@ -138,7 +138,7 @@ function StarRating({ value }: { value: number }) {
       {[1, 2, 3, 4, 5].map(n => (
         <Star
           key={n}
-          className={`w-3 h-3 ${n <= Math.round(value) ? 'fill-yellow-400 text-yellow-400' : 'text-border'}`}
+          className={`w-3 h-3 ${n <= Math.round(value) ? 'fill-orange-400 text-orange-400' : 'text-border'}`}
         />
       ))}
     </div>
@@ -198,7 +198,7 @@ function SupplierCard({
         </button>
 
         {co.is_featured && (
-          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 text-[10px] font-bold text-white bg-[#1a1a2e]/90 rounded-full px-2.5 py-0.5 shadow z-10 border border-white/10">
+          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 text-[10px] font-bold text-white bg-[#242424]/90 rounded-full px-2.5 py-0.5 shadow z-10 border border-white/10">
             ⭐ Featured
           </span>
         )}
@@ -496,7 +496,7 @@ export default function ManufacturersPage() {
         }}
       />
       {/* ── Trust bar */}
-      <div className="w-full bg-[#1a1a2e] text-white text-[11px] py-1.5 px-4">
+      <div className="w-full bg-[#242424] text-white text-[11px] py-1.5 px-4">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between">
           <span className="font-medium">Trusted by 500K+ Businesses Worldwide</span>
           <div className="hidden md:flex items-center gap-4 text-white/60">
@@ -510,7 +510,7 @@ export default function ManufacturersPage() {
       </div>
 
       {/* ── Hero banner */}
-      <div className="bg-[#1a1a2e] text-white">
+      <div className="bg-[#242424] text-white">
         <div className="max-w-[1400px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-7">
           <Breadcrumbs
             items={[{ name: 'Verified Manufacturers & Exporters' }]}
@@ -605,7 +605,7 @@ export default function ManufacturersPage() {
               {/* Min rating */}
               <Select value={minRating} onValueChange={setMinRating}>
                 <SelectTrigger className="w-full md:w-36 bg-muted border-border text-[13px] h-10">
-                  <Star className="w-3.5 h-3.5 mr-1.5 text-yellow-400" />
+                  <Star className="w-3.5 h-3.5 mr-1.5 text-orange-400" />
                   <SelectValue placeholder="Rating" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border-border">
@@ -823,7 +823,7 @@ export default function ManufacturersPage() {
 
           {/* Bottom CTA */}
           {!user && !loading && (
-            <div className="mt-5 md:mt-10 bg-[#1a1a2e] rounded-2xl p-4 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
+            <div className="mt-5 md:mt-10 bg-[#242424] rounded-2xl p-4 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
               <div>
                 <h3 className="text-[20px] font-black text-white mb-1">Are you a supplier or manufacturer?</h3>
                 <p className="text-white/60 text-[13px]">Join Bulkskart and reach thousands of verified global buyers.</p>

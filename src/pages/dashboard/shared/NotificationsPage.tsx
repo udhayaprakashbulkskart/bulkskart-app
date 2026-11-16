@@ -21,14 +21,14 @@ const TYPE_COLORS: Record<string, string> = {
   rfq_matched: 'bg-orange-100 text-orange-700 border-orange-200',
   rfq_match:   'bg-orange-100 text-orange-700 border-orange-200',
   quote_received: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
-  quote_accepted: 'bg-green-100 text-green-700 border-green-200',
+  quote_accepted: 'bg-orange-100 text-orange-700 border-orange-200',
   quote_rejected: 'bg-red-100 text-red-700 border-red-200',
-  order_status: 'bg-purple-100 text-purple-700 border-purple-200',
+  order_status: 'bg-orange-100 text-orange-700 border-orange-200',
   verification: 'bg-primary/10 text-primary border-primary/30',
-  subscription: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  product_update: 'bg-pink-100 text-pink-700 border-pink-200',
+  subscription: 'bg-orange-100 text-orange-700 border-orange-200',
+  product_update: 'bg-orange-100 text-orange-700 border-orange-200',
   dispute: 'bg-red-100 text-red-800 border-red-200',
-  deal_status: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+  deal_status: 'bg-orange-100 text-orange-700 border-orange-200',
   quotation: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
   info: 'bg-muted text-muted-foreground border-border',
 };
@@ -41,7 +41,7 @@ function UrgencyBadge({ label }: { label: string | null }) {
     </span>
   );
   if (label === 'new') return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 shrink-0">
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 border border-orange-200 shrink-0">
       <Zap className="w-2.5 h-2.5" /> NEW
     </span>
   );
@@ -298,7 +298,7 @@ export default function NotificationsPage() {
                           )}
                           {isRfqMatch(n.type) && !isUrgent && <UrgencyBadge label={n.urgency_label} />}
                           {n.type === 'subscription' && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 border border-orange-200">
                               ⚡ ACTION REQUIRED
                             </span>
                           )}
@@ -338,7 +338,7 @@ export default function NotificationsPage() {
                         to="/pricing"
                         onClick={e => { e.stopPropagation(); if (!n.is_read) markRead(n.id); }}
                       >
-                        <Button size="sm" className="h-7 text-xs px-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold gap-1 shadow-sm">
+                        <Button size="sm" className="h-7 text-xs px-3 bg-gradient-to-r from-orange-500 to-orange-500 hover:from-orange-600 hover:to-orange-600 text-white font-bold gap-1 shadow-sm">
                           Upgrade Now <ArrowRight className="w-3 h-3" />
                         </Button>
                       </Link>

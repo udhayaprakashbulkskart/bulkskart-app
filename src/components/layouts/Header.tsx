@@ -317,7 +317,7 @@ export default function Header() {
   // Home page on a phone: the new header. Everything else keeps the header below.
   if (mobileHome) {
     return (
-      <header className="relative z-30 w-full bg-[#0b0a18]">
+      <header className="relative z-30 w-full bg-[#111111]">
         <MobileHomeHeader dashboardHref={getDashboardLink()} onMenu={() => setMobileOpen(true)} />
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           {drawer}

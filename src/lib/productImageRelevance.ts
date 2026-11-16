@@ -372,7 +372,7 @@ export function cleanProductTitle(rawTitle: string): string {
   if (!rawTitle) return '';
 
   return rawTitle
-    // 1. Remove SKU, Lot, Batch, Ref, Model codes e.g. SKU155, Batch164, Lot302, Ref314, #119, Mk117, P166, FL-30
+    // 1. Remove SKU, Lot, Batch, Ref, Model codes e.g. SKU155, Batch164, Lot302, Ref314, #b3480f, Mk117, P166, FL-30
     .replace(/\b(batch|lot|ref|sku|code|art|model|pno|cat|part)\s*#?[a-z0-9_-]+/gi, ' ')
     .replace(/\b(p|mk|fl)\s*#?\d+[a-z0-9_-]*/gi, ' ')
     .replace(/#\s*\d+/gi, ' ')

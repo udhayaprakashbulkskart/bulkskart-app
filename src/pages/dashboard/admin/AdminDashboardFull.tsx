@@ -59,18 +59,18 @@ type AdminStats = {
 
 const SEVERITY_COLORS: Record<string, string> = {
   high: 'bg-red-100 text-red-700 border-red-300',
-  medium: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+  medium: 'bg-orange-100 text-orange-700 border-orange-300',
   low: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
 };
 
 const STATUS_COLORS: Record<string, string> = {
   verified: 'bg-primary/10 text-primary',
-  pending: 'bg-yellow-100 text-yellow-700',
+  pending: 'bg-orange-100 text-orange-700',
   unverified: 'bg-muted text-muted-foreground',
   rejected: 'bg-red-100 text-red-700',
-  open: 'bg-yellow-100 text-yellow-700',
+  open: 'bg-orange-100 text-orange-700',
   under_review: 'bg-orange-500/10 text-[#FF5A00]',
-  resolved: 'bg-green-100 text-green-700',
+  resolved: 'bg-orange-100 text-orange-700',
   closed: 'bg-muted text-muted-foreground',
 };
 
@@ -304,7 +304,7 @@ export default function AdminDashboardFull() {
                 <TabsTrigger value="verifications">
                   Verifications
                   {stats.pendingVerifications > 0 && (
-                    <span className="ml-1.5 bg-yellow-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingVerifications}</span>
+                    <span className="ml-1.5 bg-orange-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingVerifications}</span>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="disputes">
@@ -317,7 +317,7 @@ export default function AdminDashboardFull() {
                 <TabsTrigger value="withdrawals">
                   Withdrawals
                   {stats.pendingWithdrawals > 0 && (
-                    <span className="ml-1.5 bg-teal-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingWithdrawals}</span>
+                    <span className="ml-1.5 bg-orange-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingWithdrawals}</span>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="companies">All Companies</TabsTrigger>
@@ -336,7 +336,7 @@ export default function AdminDashboardFull() {
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-yellow-500" /> Pending Verifications
+                      <Shield className="w-4 h-4 text-orange-500" /> Pending Verifications
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -462,11 +462,11 @@ export default function AdminDashboardFull() {
                         <td className="px-3 py-3 text-xs">{c.gst_number || '—'}</td>
                         <td className="px-3 py-3">
                           <div className="flex gap-1 flex-wrap">
-                            {c.gst_doc_url && <a href={c.gst_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded">GST</a>}
+                            {c.gst_doc_url && <a href={c.gst_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">GST</a>}
                             {c.pan_doc_url && <a href={c.pan_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-500/10 text-[#FF5A00] rounded">PAN</a>}
-                            {c.reg_doc_url && <a href={c.reg_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded">REG</a>}
+                            {c.reg_doc_url && <a href={c.reg_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">REG</a>}
                             {c.factory_doc_url && <a href={c.factory_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">Factory</a>}
-                            {c.bank_doc_url && <a href={c.bank_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-teal-100 text-teal-700 rounded">Bank</a>}
+                            {c.bank_doc_url && <a href={c.bank_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">Bank</a>}
                             {!c.gst_doc_url && !c.pan_doc_url && <span className="text-xs text-muted-foreground">None uploaded</span>}
                           </div>
                           {c.bank_account_name && <p className="text-xs text-muted-foreground mt-0.5">{c.bank_account_name} · {c.bank_ifsc}</p>}
@@ -544,7 +544,7 @@ export default function AdminDashboardFull() {
                           </div>
                         )}
                         {d.status === 'under_review' && (
-                          <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white shrink-0" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
+                          <Button size="sm" className="h-7 text-xs bg-orange-600 hover:bg-orange-700 text-white shrink-0" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
                             Mark Resolved
                           </Button>
                         )}
@@ -573,7 +573,7 @@ export default function AdminDashboardFull() {
                             <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${SEVERITY_COLORS[f.severity]}`}>
                               {f.severity.toUpperCase()}
                             </span>
-                            {f.is_resolved && <span className="text-xs text-green-600">✓ Resolved</span>}
+                            {f.is_resolved && <span className="text-xs text-orange-600">✓ Resolved</span>}
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">{f.description}</p>
                           <p className="text-xs text-muted-foreground mt-1">{f.profiles?.full_name} · {f.profiles?.email}</p>

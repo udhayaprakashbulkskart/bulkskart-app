@@ -92,7 +92,7 @@ export default function AuctionsHubPage() {
       <div className="bg-background min-h-screen pb-20">
         
         {/* ── Hero Banner ── */}
-        <div className="bg-gradient-to-r from-slate-900 via-zinc-900 to-black text-white py-8 sm:py-10 border-b border-border">
+        <div className="bg-gradient-to-r from-neutral-900 via-neutral-900 to-black text-white py-8 sm:py-10 border-b border-border">
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
@@ -103,7 +103,7 @@ export default function AuctionsHubPage() {
                 <h1 className="text-2xl sm:text-4xl font-bold tracking-tight">
                   60-Minute Live Reverse Auctions: Sell Your Bulk Product
                 </h1>
-                <p className="text-sm sm:text-base text-zinc-400 mt-2 max-w-2xl">
+                <p className="text-sm sm:text-base text-neutral-400 mt-2 max-w-2xl">
                   A live reverse auction is when a manufacturer has a bulk product they want to sell within 60 minutes through real-time bidding.
                 </p>
               </div>
@@ -199,7 +199,7 @@ export default function AuctionsHubPage() {
                   type="button"
                   onClick={() => setStatusFilter('sold')}
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                    statusFilter === 'sold' ? 'bg-card text-emerald-600 shadow-sm' : 'text-muted-foreground'
+                    statusFilter === 'sold' ? 'bg-card text-orange-600 shadow-sm' : 'text-muted-foreground'
                   }`}
                 >
                   History & Concluded
@@ -299,12 +299,12 @@ export default function AuctionsHubPage() {
                           LIVE
                         </span>
                       ) : phase.key === 'sold' ? (
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white flex items-center gap-1 shadow-md">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-orange-600 text-white flex items-center gap-1 shadow-md">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           SOLD
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-700 text-white shadow-md uppercase">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-neutral-700 text-white shadow-md uppercase">
                           {phase.label}
                         </span>
                       )}
@@ -316,7 +316,7 @@ export default function AuctionsHubPage() {
                     {/* Countdown to the auction's own end time */}
                     <div className={`absolute bottom-3 right-3 px-3 py-1 rounded-xl text-xs font-bold font-mono shadow-md backdrop-blur-md flex items-center gap-1.5 ${
                       phase.ended
-                        ? 'bg-emerald-950/80 text-emerald-400'
+                        ? 'bg-orange-950/80 text-orange-400'
                         : phase.key === 'live' && seconds <= 300
                         ? 'bg-red-600/90 text-white animate-pulse'
                         : 'bg-black/80 text-white'
@@ -424,7 +424,7 @@ export default function AuctionsHubPage() {
                             size="sm"
                             className={`font-bold text-xs h-9 px-3.5 rounded-xl flex items-center gap-1 shadow-sm ${
                               phase.ended
-                                ? 'bg-zinc-800 hover:bg-zinc-700 text-white'
+                                ? 'bg-neutral-800 hover:bg-neutral-700 text-white'
                                 : 'bg-[#FF5A1F] hover:bg-[#e04e17] text-white'
                             }`}
                           >

@@ -53,14 +53,14 @@ export default function BidderProfileModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg p-0 overflow-hidden rounded-3xl border border-border">
-        <div className="bg-gradient-to-r from-zinc-900 via-slate-900 to-black text-white p-5 sm:p-6">
+        <div className="bg-gradient-to-r from-neutral-900 via-neutral-900 to-black text-white p-5 sm:p-6">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground font-bold text-lg flex items-center justify-center shadow-lg shrink-0">
               {name.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
               <DialogTitle className="text-base sm:text-lg font-bold text-white truncate">{name}</DialogTitle>
-              <DialogDescription className="text-xs text-zinc-400 mt-0.5">
+              <DialogDescription className="text-xs text-neutral-400 mt-0.5">
                 {leading ? 'Holds the leading bid in this auction' : 'Bidder in this auction'}
               </DialogDescription>
             </div>

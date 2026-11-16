@@ -335,7 +335,7 @@ export default function BuyerDashboard() {
                         {req.deadline ? new Date(req.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—'}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'border-green-600/40 text-green-700' : 'text-muted-foreground'}`}>
+                        <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'border-orange-600/40 text-orange-700' : 'text-muted-foreground'}`}>
                           {req.status}
                         </Badge>
                       </td>

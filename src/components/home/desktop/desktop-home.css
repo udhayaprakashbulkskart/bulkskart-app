@@ -6,7 +6,7 @@
 
 .dh-dark {
   position: relative;
-  background: #0d0b1a;
+  background: #121212;
   color: #fff;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -33,7 +33,7 @@
 /* ───────────── the six category squares ───────────── */
 .dh-cats {
   padding-top: 14px;
-  background: linear-gradient(180deg, #0b0a18, #0d0b1a);
+  background: linear-gradient(180deg, #111111, #121212);
 }
 .dh-cats ul {
   display: grid;
@@ -53,8 +53,8 @@
   height: 54px;
   padding: 0 12px;
   border-radius: 16px;
-  border: 1.5px solid rgba(118, 92, 188, 0.38);
-  background: linear-gradient(180deg, #251e3a, #1b152b);
+  border: 1.5px solid rgba(238, 111, 42, 0.38);
+  background: linear-gradient(180deg, #2c2c2c, #202020);
   color: #fff;
   text-decoration: none;
   font-size: 14.5px;
@@ -64,8 +64,8 @@
 }
 .dh-cat:hover {
   transform: translateY(-2px);
-  border-color: rgba(168, 138, 240, 0.75);
-  box-shadow: 0 8px 22px rgba(70, 30, 140, 0.38);
+  border-color: rgba(243, 153, 104, 0.75);
+  box-shadow: 0 8px 22px rgba(179, 72, 15, 0.38);
 }
 .dh-cat-icon {
   display: flex;
@@ -95,9 +95,9 @@
   padding-bottom: 46px;
   overflow: hidden;
   background:
-    radial-gradient(52% 78% at 78% 36%, rgba(52, 60, 160, 0.5), transparent 70%),
+    radial-gradient(52% 78% at 78% 36%, rgba(196, 79, 16, 0.5), transparent 70%),
     radial-gradient(34% 52% at 62% 72%, rgba(255, 120, 30, 0.22), transparent 72%),
-    linear-gradient(180deg, #110b1b, #17101f);
+    linear-gradient(180deg, #131313, #181818);
 }
 .dh-hero-grid {
   display: grid;
@@ -147,7 +147,7 @@
   font-size: 17px;
   font-style: italic;
   font-weight: 600;
-  background: linear-gradient(180deg, #fff0c2, #ffb236);
+  background: linear-gradient(180deg, #ffd7c2, #ffb236);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -168,7 +168,7 @@
   margin-bottom: -0.18em;
 }
 .dh-h1-1 {
-  background: linear-gradient(180deg, #ffffff 15%, #cfcbe6);
+  background: linear-gradient(180deg, #ffffff 15%, #f39968);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -267,7 +267,7 @@
   box-shadow: 0 6px 20px rgba(255, 106, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.32);
 }
 .dh-cta-2 {
-  background: linear-gradient(180deg, #17121f, #100c1a);
+  background: linear-gradient(180deg, #181818, #131313);
   border: 1.5px solid #e08a22;
   box-shadow: 0 0 14px rgba(255, 150, 30, 0.25);
 }
@@ -301,8 +301,8 @@
   z-index: 2;
   margin-top: -38px;
   border-radius: 38px 38px 0 0;
-  border-top: 2px solid rgba(150, 110, 225, 0.35);
-  background: linear-gradient(180deg, #382059 0, #2a1946 90px, #1a1230 200px, #0f0c1f 330px, #0d0b1a 100%);
+  border-top: 2px solid rgba(242, 145, 93, 0.35);
+  background: linear-gradient(180deg, #3c3c3c 0, #303030 90px, #212121 200px, #161616 330px, #121212 100%);
 }
 .dh-panel-grid {
   display: grid;
@@ -320,8 +320,8 @@
   color: #fff;
 }
 .dh-panel-title span {
-  color: #ecdfff;
-  text-shadow: 0 0 14px rgba(190, 150, 255, 0.55);
+  color: #ffeadf;
+  text-shadow: 0 0 14px rgba(255, 149, 92, 0.55);
 }
 .dh-panel-sub {
   margin: 4px 0 0;
@@ -335,20 +335,20 @@
   height: 48px;
   margin-top: 16px;
   border-radius: 13px;
-  border: 1.5px solid rgba(140, 100, 215, 0.7);
-  background: #1b162b;
+  border: 1.5px solid rgba(240, 133, 75, 0.7);
+  background: #202020;
   overflow: hidden;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .dh-find:focus-within {
-  border-color: #b48cff;
-  box-shadow: 0 0 0 3px rgba(160, 120, 255, 0.25);
+  border-color: #ff955c;
+  box-shadow: 0 0 0 3px rgba(255, 149, 92, 0.25);
 }
 .dh-find-select {
   position: relative;
   flex: 0 0 160px;
-  border-right: 1.5px solid rgba(140, 100, 215, 0.55);
-  background: #131020;
+  border-right: 1.5px solid rgba(240, 133, 75, 0.55);
+  background: #181818;
 }
 .dh-find-select select {
   appearance: none;
@@ -384,7 +384,7 @@
   padding: 0 14px 0 18px;
   border: 0;
   outline: 0;
-  background: #1c172c;
+  background: #222222;
   color: #fff;
   font: inherit;
   font-size: 14.5px;
@@ -419,7 +419,7 @@
   padding-top: 6px;
   font-size: 13.5px;
   font-weight: 700;
-  color: #c9a8ff;
+  color: #ff955c;
   white-space: nowrap;
 }
 .dh-popular-list {
@@ -442,8 +442,8 @@
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 .dh-pop:hover {
-  border-color: #c9a8ff;
-  background: rgba(201, 168, 255, 0.16);
+  border-color: #ff955c;
+  background: rgba(255, 149, 92, 0.16);
 }
 .dh-stats {
   display: grid;
@@ -495,11 +495,11 @@
   color: rgba(255, 255, 255, 0.9);
 }
 .dh-stat-purple {
-  --c-border: #4e3472;
-  --c-from: #2a1b47;
-  --c-to: #1c1330;
-  --c-tile-from: #9a35b4;
-  --c-tile-to: #62207f;
+  --c-border: #b3480f;
+  --c-from: #313131;
+  --c-to: #222222;
+  --c-tile-from: #d85711;
+  --c-tile-to: #b3480f;
 }
 .dh-stat-brown {
   --c-border: #55301f;
@@ -509,18 +509,18 @@
   --c-tile-to: #a94a09;
 }
 .dh-stat-blue {
-  --c-border: #32467e;
-  --c-from: #1c2548;
-  --c-to: #131931;
-  --c-tile-from: #4a6bd2;
-  --c-tile-to: #2c4592;
+  --c-border: #b3480f;
+  --c-from: #323232;
+  --c-to: #222222;
+  --c-tile-from: #ee712e;
+  --c-tile-to: #b3480f;
 }
 .dh-stat-green {
-  --c-border: #17503b;
-  --c-from: #11322a;
-  --c-to: #0e1c1d;
-  --c-tile-from: #35a672;
-  --c-tile-to: #1f6e4c;
+  --c-border: #343434;
+  --c-from: #222222;
+  --c-to: #161616;
+  --c-tile-from: #cb5210;
+  --c-tile-to: #b3480f;
 }
 
 /* ───────────── promo banner ───────────── */
@@ -529,15 +529,15 @@
   padding-bottom: 36px;
 }
 html.dark .dh-promo-band {
-  background: linear-gradient(180deg, #0d0b1a, hsl(var(--background)));
+  background: linear-gradient(180deg, #121212, hsl(var(--background)));
 }
 .dh-promo {
   position: relative;
   display: block;
   min-height: 160px;
   border-radius: 22px;
-  border: 1.5px solid rgba(140, 100, 210, 0.4);
-  background: linear-gradient(90deg, #3a1b52 0%, #2c1d4b 38%, #1d1535 75%);
+  border: 1.5px solid rgba(240, 130, 70, 0.4);
+  background: linear-gradient(90deg, #373737 0%, #343434 38%, #252525 75%);
   overflow: hidden;
   color: #fff;
   text-decoration: none;
@@ -545,8 +545,8 @@ html.dark .dh-promo-band {
 }
 .dh-promo:hover {
   transform: translateY(-2px);
-  border-color: rgba(168, 138, 240, 0.7);
-  box-shadow: 0 12px 30px rgba(70, 30, 140, 0.4);
+  border-color: rgba(243, 153, 104, 0.7);
+  box-shadow: 0 12px 30px rgba(179, 72, 15, 0.4);
 }
 .dh-promo-art {
   position: absolute;

@@ -18,16 +18,16 @@ export default function FreeDeliveryCard({ tone = 'page' }: FreeDeliveryCardProp
   const { formatLocalPrice } = useCurrency();
 
   // The landing variant sits on a dark panel; the plain one follows the light/dark theme
-  const green = landing ? 'text-emerald-400' : 'text-emerald-700 dark:text-emerald-400';
+  const green = landing ? 'text-orange-400' : 'text-orange-700 dark:text-orange-400';
   return (
     <article
       className={
         landing
-          ? 'h-full rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/80 via-slate-950 to-slate-950 p-5 sm:p-7 text-white shadow-xl shadow-black/20'
-          : 'h-full rounded-3xl border border-emerald-500/30 bg-card p-5 sm:p-7 text-foreground'
+          ? 'h-full rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-950/80 via-neutral-950 to-neutral-950 p-5 sm:p-7 text-white shadow-xl shadow-black/20'
+          : 'h-full rounded-3xl border border-orange-500/30 bg-card p-5 sm:p-7 text-foreground'
       }
     >
-      <div className={`inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${green}`}>
+      <div className={`inline-flex items-center gap-1.5 rounded-full bg-orange-500/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${green}`}>
         <Truck className="h-3.5 w-3.5" />
         Platform benefit
       </div>
@@ -35,7 +35,7 @@ export default function FreeDeliveryCard({ tone = 'page' }: FreeDeliveryCardProp
       <h2 className={`mt-4 text-2xl sm:text-3xl font-black tracking-tight ${landing ? 'text-white' : 'text-foreground'}`}>
         Free delivery on every order
       </h2>
-      <p className={`mt-2 text-sm leading-relaxed max-w-xl ${landing ? 'text-slate-300' : 'text-muted-foreground'}`}>
+      <p className={`mt-2 text-sm leading-relaxed max-w-xl ${landing ? 'text-neutral-300' : 'text-muted-foreground'}`}>
         Place any order on BulkSkart and delivery is free. The offer covers every order value and every category sold on this platform, so freight is not added on top of the product price.
       </p>
 
@@ -44,10 +44,10 @@ export default function FreeDeliveryCard({ tone = 'page' }: FreeDeliveryCardProp
           const Icon = point.icon;
           return (
             <li key={point.text} className="flex items-start gap-2.5 text-sm">
-              <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 ${green}`}>
+              <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-orange-500/15 ${green}`}>
                 <Icon className="h-3.5 w-3.5" />
               </span>
-              <span className={landing ? 'text-slate-200' : 'text-foreground'}>{point.text}</span>
+              <span className={landing ? 'text-neutral-200' : 'text-foreground'}>{point.text}</span>
             </li>
           );
         })}
@@ -57,7 +57,7 @@ export default function FreeDeliveryCard({ tone = 'page' }: FreeDeliveryCardProp
         <p className={`text-[11px] font-semibold uppercase tracking-wider ${green}`}>Your delivery fee</p>
         <p className={`text-3xl font-black tracking-tight ${landing ? 'text-white' : 'text-foreground'}`}>
           {formatLocalPrice(0)}
-          <span className={`ml-2 text-sm font-semibold ${landing ? 'text-slate-400' : 'text-muted-foreground'}`}>on all orders</span>
+          <span className={`ml-2 text-sm font-semibold ${landing ? 'text-neutral-400' : 'text-muted-foreground'}`}>on all orders</span>
         </p>
       </div>
 
@@ -73,7 +73,7 @@ export default function FreeDeliveryCard({ tone = 'page' }: FreeDeliveryCardProp
           to="/post-requirement"
           className={`inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-bold transition-transform active:scale-95 ${
             landing
-              ? 'border border-slate-600 bg-slate-900 text-white hover:bg-slate-800'
+              ? 'border border-neutral-600 bg-neutral-900 text-white hover:bg-neutral-800'
               : 'border border-border bg-background text-foreground hover:bg-muted'
           }`}
         >

@@ -132,7 +132,7 @@ export default function CategoriesPage() {
         canonical="https://www.bulkskart.com/categories"
       />
 
-      <div className="bg-[#0B0F19] min-h-screen text-slate-100 py-8 sm:py-12 px-3.5 sm:px-6 lg:px-8">
+      <div className="bg-[#121212] min-h-screen text-neutral-100 py-8 sm:py-12 px-3.5 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           
           {/* Header Banner */}
@@ -144,19 +144,19 @@ export default function CategoriesPage() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
               All Industrial Categories
             </h1>
-            <p className="text-slate-400 text-sm sm:text-base mt-2 max-w-2xl mx-auto">
+            <p className="text-neutral-400 text-sm sm:text-base mt-2 max-w-2xl mx-auto">
               Source bulk commodities, machinery, structural metals, and chemical polymers directly from verified global manufacturing plants.
             </p>
 
             {/* Search Input */}
             <div className="relative max-w-xl mx-auto mt-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
               <Input
                 type="text"
                 placeholder="Search categories, raw materials, or products..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-12 pr-4 py-3 bg-[#111726] border-slate-700 text-white placeholder:text-slate-500 rounded-xl focus:border-[#FF5A00] focus:ring-[#FF5A00]"
+                className="pl-12 pr-4 py-3 bg-[#1c1c1c] border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl focus:border-[#FF5A00] focus:ring-[#FF5A00]"
               />
             </div>
           </div>
@@ -168,30 +168,30 @@ export default function CategoriesPage() {
               return (
                 <div
                   key={cat.id}
-                  className="rounded-3xl bg-[#0F172A]/90 border border-slate-800 hover:border-[#FF5A00]/60 transition-all duration-300 overflow-hidden shadow-xl hover:-translate-y-1 group flex flex-col justify-between"
+                  className="rounded-3xl bg-[#1C1C1C]/90 border border-neutral-800 hover:border-[#FF5A00]/60 transition-all duration-300 overflow-hidden shadow-xl hover:-translate-y-1 group flex flex-col justify-between"
                 >
                   {/* Category Image */}
-                  <div className="relative h-44 w-full overflow-hidden bg-slate-900">
+                  <div className="relative h-44 w-full overflow-hidden bg-neutral-900">
                     <img
                       src={cat.heroImage}
                       alt={cat.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1C] via-[#1C1C1C]/40 to-transparent" />
                     
                     {/* Floating Badge */}
                     <div className="absolute top-3 left-3 flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-xl bg-slate-900/90 border border-slate-700/80 flex items-center justify-center text-[#FF5A00]">
+                      <div className="w-9 h-9 rounded-xl bg-neutral-900/90 border border-neutral-700/80 flex items-center justify-center text-[#FF5A00]">
                         <Icon className="w-5 h-5" />
                       </div>
                     </div>
 
                     <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs">
-                      <span className="font-bold text-[#FF5A00] bg-slate-950/80 px-2.5 py-1 rounded-full border border-[#FF5A00]/30">
+                      <span className="font-bold text-[#FF5A00] bg-neutral-950/80 px-2.5 py-1 rounded-full border border-[#FF5A00]/30">
                         {cat.productCount}
                       </span>
-                      <span className="text-slate-300 bg-slate-950/80 px-2.5 py-1 rounded-full border border-slate-800">
+                      <span className="text-neutral-300 bg-neutral-950/80 px-2.5 py-1 rounded-full border border-neutral-800">
                         {cat.manufacturerCount}
                       </span>
                     </div>
@@ -203,7 +203,7 @@ export default function CategoriesPage() {
                       <h2 className="text-lg font-bold text-white group-hover:text-[#FF5A00] transition-colors">
                         {cat.name}
                       </h2>
-                      <p className="text-xs text-slate-400 mt-1.5 leading-relaxed line-clamp-2">
+                      <p className="text-xs text-neutral-400 mt-1.5 leading-relaxed line-clamp-2">
                         {cat.description}
                       </p>
 
@@ -213,7 +213,7 @@ export default function CategoriesPage() {
                           <Link
                             key={sub}
                             to={`/products?q=${encodeURIComponent(sub)}`}
-                            className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-[#FF5A00]/20 text-slate-300 hover:text-[#FF5A00] border border-slate-700/60 transition-colors"
+                            className="text-[11px] px-2.5 py-1 rounded-lg bg-neutral-800/80 hover:bg-[#FF5A00]/20 text-neutral-300 hover:text-[#FF5A00] border border-neutral-700/60 transition-colors"
                           >
                             {sub}
                           </Link>
@@ -222,12 +222,12 @@ export default function CategoriesPage() {
                     </div>
 
                     {/* Action Links */}
-                    <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between gap-3">
+                    <div className="mt-6 pt-4 border-t border-neutral-800/80 flex items-center justify-between gap-3">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => navigate(`/manufacturers?industry=${encodeURIComponent(cat.name)}`)}
-                        className="text-xs border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-white"
+                        className="text-xs border-neutral-700 text-neutral-200 hover:bg-neutral-800 hover:text-white"
                       >
                         <Building2 className="w-3.5 h-3.5 mr-1 text-[#FF5A00]" />
                         Manufacturers

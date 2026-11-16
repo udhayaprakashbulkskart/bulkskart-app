@@ -61,10 +61,10 @@ export default function IndustrialPort3D({ className = '', onSceneReady }: Indus
       container.appendChild(renderer.domElement);
 
       // 2. Lighting Setup
-      const ambientLight = new THREE.AmbientLight(0x162032, 1.4);
+      const ambientLight = new THREE.AmbientLight(0x242424, 1.4);
       scene.add(ambientLight);
 
-      const moonLight = new THREE.DirectionalLight(0x5a7ca8, 2.0);
+      const moonLight = new THREE.DirectionalLight(0xec6116, 2.0);
       moonLight.position.set(30, 45, 20);
       scene.add(moonLight);
 
@@ -77,7 +77,7 @@ export default function IndustrialPort3D({ className = '', onSceneReady }: Indus
       dockWarmLight.position.set(-18, 12, 10);
       scene.add(dockWarmLight);
 
-      const shipCyanLight = new THREE.PointLight(0x00d2ff, 2.2, 60, 1.2);
+      const shipCyanLight = new THREE.PointLight(0xff5900, 2.2, 60, 1.2);
       shipCyanLight.position.set(28, 10, -10);
       scene.add(shipCyanLight);
 
@@ -97,7 +97,7 @@ export default function IndustrialPort3D({ className = '', onSceneReady }: Indus
       // 4. Harbor Concrete Pier / Wharf
       const pierGeo = new THREE.BoxGeometry(90, 3, 50);
       const pierMat = new THREE.MeshStandardMaterial({
-        color: 0x111622,
+        color: 0x1a1a1a,
         roughness: 0.8,
         metalness: 0.2
       });
@@ -135,7 +135,7 @@ export default function IndustrialPort3D({ className = '', onSceneReady }: Indus
         ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
 
         // Corner castings
-        ctx.fillStyle = '#1e293b';
+        ctx.fillStyle = '#2c2c2c';
         ctx.fillRect(0, 0, 60, 60);
         ctx.fillRect(canvas.width - 60, 0, 60, 60);
         ctx.fillRect(0, canvas.height - 60, 60, 60);
@@ -231,7 +231,7 @@ export default function IndustrialPort3D({ className = '', onSceneReady }: Indus
       suspendedContainerGroup.add(spreader);
 
       // Steel Hoist Cables from Crane Trolley
-      const cableMat = new THREE.LineBasicMaterial({ color: 0x8899aa });
+      const cableMat = new THREE.LineBasicMaterial({ color: 0xf07f42 });
       const cablePositions = [
         [-7.8, 3.8, -3],
         [7.8, 3.8, -3],
@@ -255,7 +255,7 @@ export default function IndustrialPort3D({ className = '', onSceneReady }: Indus
       scene.add(craneGroup);
 
       const steelMat = new THREE.MeshStandardMaterial({
-        color: 0x1e293b,
+        color: 0x2c2c2c,
         metalness: 0.8,
         roughness: 0.3
       });
@@ -306,7 +306,7 @@ export default function IndustrialPort3D({ className = '', onSceneReady }: Indus
       const stackGroup = new THREE.Group();
       scene.add(stackGroup);
 
-      const containerColors = [0x005599, 0x008855, 0x882222, 0x222d3d, 0xcc5500, 0x334466];
+      const containerColors = [0xc24400, 0xc24400, 0x882222, 0x303030, 0xcc5500, 0xb3480f];
       const standardContainerGeo = new THREE.BoxGeometry(12, 5, 5);
 
       const stackPositions = [
@@ -342,7 +342,7 @@ export default function IndustrialPort3D({ className = '', onSceneReady }: Indus
 
       // Hull
       const hullGeo = new THREE.BoxGeometry(75, 9, 18);
-      const hullMat = new THREE.MeshStandardMaterial({ color: 0x0d131d, roughness: 0.6, metalness: 0.5 });
+      const hullMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.6, metalness: 0.5 });
       const hull = new THREE.Mesh(hullGeo, hullMat);
       hull.position.y = 3;
       shipGroup.add(hull);
@@ -399,7 +399,7 @@ export default function IndustrialPort3D({ className = '', onSceneReady }: Indus
       ];
 
       const arcMat = new THREE.LineBasicMaterial({
-        color: 0x38bdf8,
+        color: 0xf87b38,
         transparent: true,
         opacity: 0.45,
         blending: THREE.AdditiveBlending
@@ -549,13 +549,13 @@ export default function IndustrialPort3D({ className = '', onSceneReady }: Indus
               backgroundImage: 'url("/brand/port-banner.png")'
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F17] via-[#0B0F17]/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/60 to-transparent" />
         </div>
       )}
 
       {/* Atmospheric Depth Gradients */}
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#0B0F17] via-transparent to-[#0B0F17]/70" />
-      <div className="absolute inset-0 pointer-events-none bg-radial-at-c from-transparent via-[#0B0F17]/30 to-[#0B0F17]/85" />
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#111111] via-transparent to-[#111111]/70" />
+      <div className="absolute inset-0 pointer-events-none bg-radial-at-c from-transparent via-[#111111]/30 to-[#111111]/85" />
     </div>
   );
 }

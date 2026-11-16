@@ -65,9 +65,9 @@ function AnimatedCount({ target }: { target: number }) {
 
 const TAB_LABELS: { key: OpenRequirementTab; label: string; icon?: React.ComponentType<{ className?: string }>; iconClass?: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'urgent', label: 'Urgent', icon: Zap, iconClass: 'text-rose-500' },
+  { key: 'urgent', label: 'Urgent', icon: Zap, iconClass: 'text-orange-500' },
   { key: 'new', label: 'New', icon: Sparkles, iconClass: 'text-orange-500' },
-  { key: 'expiring', label: 'Closing soon', icon: Clock, iconClass: 'text-amber-500' },
+  { key: 'expiring', label: 'Closing soon', icon: Clock, iconClass: 'text-orange-500' },
 ];
 
 // Deal status pipeline config for My Requirements tab
@@ -85,9 +85,9 @@ const DEAL_STAGES: { key: DealStatus; label: string; short: string }[] = [
 const STATUS_COLOR: Record<DealStatus, string> = {
   active:             'bg-[#FF5A00]/10 text-[#FF5A00] border-[#FF5A00]/30',
   responses_received: 'bg-primary/10 text-primary border-primary/30',
-  negotiation:        'bg-yellow-500/10 text-yellow-500 border-yellow-500/30',
-  deal_finalized:     'bg-green-500/10 text-green-500 border-green-500/30',
-  fulfilled:          'bg-emerald-500/10 text-emerald-500 border-emerald-500/30',
+  negotiation:        'bg-orange-500/10 text-orange-500 border-orange-500/30',
+  deal_finalized:     'bg-orange-500/10 text-orange-500 border-orange-500/30',
+  fulfilled:          'bg-orange-500/10 text-orange-500 border-orange-500/30',
   closed:             'bg-muted text-muted-foreground border-border',
 };
 
@@ -105,7 +105,7 @@ function StatusPipeline({ current }: { current: DealStatus }) {
               active
                 ? 'bg-[#FF5A00] text-white shadow-sm'
                 : done
-                  ? 'bg-emerald-500/20 text-emerald-400'
+                  ? 'bg-orange-500/20 text-orange-400'
                   : 'bg-muted text-muted-foreground'
             }`}>
               {done && <CheckCircle2 className="w-2.5 h-2.5" />}
@@ -450,8 +450,8 @@ export default function RequirementsPage() {
               {/* Active RFQs Stat Badge */}
               <div className="flex items-center gap-2.5 bg-card border border-border rounded-xl px-4 py-2">
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500" />
                 </span>
                 <div>
                   <div className="text-lg font-black text-foreground leading-none">
@@ -482,10 +482,10 @@ export default function RequirementsPage() {
             <div className="mb-5 bg-card border border-border rounded-xl px-4 py-2 flex items-center justify-between gap-3 text-xs overflow-hidden">
               <div className="flex items-center gap-2 shrink-0">
                 <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
                 </span>
-                <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-[11px] uppercase tracking-wider">LATEST</span>
+                <span className="font-extrabold text-orange-600 dark:text-orange-400 text-[11px] uppercase tracking-wider">LATEST</span>
                 <span className="text-muted-foreground/40 hidden sm:inline">|</span>
               </div>
               <div className="overflow-x-auto no-scrollbar whitespace-nowrap text-muted-foreground text-xs flex items-center gap-6 flex-1 px-2">
@@ -907,8 +907,8 @@ export default function RequirementsPage() {
         <div className="max-w-[1240px] mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500" />
             </span>
             <div>
               <div className="text-xs md:text-sm font-black text-foreground leading-tight flex items-center gap-2">

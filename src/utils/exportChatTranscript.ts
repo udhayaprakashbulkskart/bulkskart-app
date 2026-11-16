@@ -76,9 +76,9 @@ export function exportChatTranscript(options: TranscriptOptions) {
       <head>
         <title>BulkSkart Negotiation Transcript - ${conversationId.slice(0, 8)}</title>
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #111827; padding: 40px; max-width: 800px; margin: 0 auto; line-height: 1.6; }
-          .header { border-bottom: 2px solid #7C3AED; padding-bottom: 20px; margin-bottom: 24px; }
-          .title { font-size: 22px; font-weight: 800; color: #111827; margin: 0; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1c1c1c; padding: 40px; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+          .header { border-bottom: 2px solid #EF7838; padding-bottom: 20px; margin-bottom: 24px; }
+          .title { font-size: 22px; font-weight: 800; color: #1c1c1c; margin: 0; }
           .subtitle { font-size: 13px; color: #6B7280; margin-top: 4px; }
           .meta-box { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; margin-bottom: 24px; font-size: 13px; }
           .meta-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
@@ -86,10 +86,10 @@ export function exportChatTranscript(options: TranscriptOptions) {
           .messages { display: flex; flex-direction: column; gap: 12px; }
           .msg { border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px 16px; }
           .msg-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
-          .msg-sender { font-weight: 700; color: #7C3AED; }
+          .msg-sender { font-weight: 700; color: #EF7838; }
           .msg-time { color: #9CA3AF; }
           .msg-body { font-size: 14px; white-space: pre-wrap; word-break: break-word; }
-          .attachment { margin-top: 8px; font-size: 12px; color: #2563EB; font-weight: 500; }
+          .attachment { margin-top: 8px; font-size: 12px; color: #ED6A23; font-weight: 500; }
           .footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid #E5E7EB; font-size: 11px; color: #9CA3AF; text-align: center; }
           @media print {
             body { padding: 20px; }
@@ -101,7 +101,7 @@ export function exportChatTranscript(options: TranscriptOptions) {
         <div class="header">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <h1 class="title">BulkSkart Trade Negotiation Transcript</h1>
-            <button onclick="window.print()" style="background:#7C3AED; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;">Print / Save as PDF</button>
+            <button onclick="window.print()" style="background:#EF7838; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;">Print / Save as PDF</button>
           </div>
           <div class="subtitle">Official B2B audit & contractual record • Reference ID: ${conversationId}</div>
         </div>
