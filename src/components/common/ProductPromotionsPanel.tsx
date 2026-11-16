@@ -2,9 +2,11 @@
  * ProductPromotionsPanel
  *
  * Shows a supplier's promotion campaigns with:
- *  - Summary stats (Active campaigns, Total Spent, Impressions, Leads)
+ *  - Summary stats (active, paid in total, awaiting payment, finished)
  *  - Tabbed list: Active / Pending / Completed / All
- *  - Per-campaign performance row
+ *  - Per-campaign row with dates, payment and days left
+ *
+ * Views, clicks and leads are not measured yet, so none are shown: no estimate stands in for a result.
  *
  * Additive only — rendered below the product grid in SupplierProductsPage.
  */
@@ -14,8 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  BarChart2, Eye, MousePointerClick, Users, DollarSign,
-  Star, Zap, TrendingUp, Calendar, RefreshCw, Pause, X, Play, ChevronDown, ChevronUp,
+  BarChart2, DollarSign, Clock, Info, CheckCircle2,
+  Star, Zap, TrendingUp, Calendar, RefreshCw, Pause, X, Play,
   Edit2, Globe, Tag,
 } from 'lucide-react';
 import {
@@ -27,7 +29,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const COUNTRIES = ['India','United States','United Arab Emirates','United Kingdom','Germany','Australia','Canada','Saudi Arabia','Singapore','Malaysia','Bangladesh','Sri Lanka'];
 import { toast } from 'sonner';
-import CampaignTrendChart from '@/components/common/CampaignTrendChart';
 
 interface Campaign {
   id: string;
@@ -37,15 +38,7 @@ interface Campaign {
   target_country: string | null;
   duration_days: number;
   status: string;
-  est_impressions: number;
-  est_views: number;
-  est_clicks: number;
-  est_leads: number;
-  actual_impressions: number;
-  actual_views: number;
-  actual_clicks: number;
-  actual_leads: number;
-  total_spent: number;
+  payment_status?: string | null;
   payment_amount: number;
   payment_currency: string;
   starts_at: string | null;
@@ -80,7 +73,6 @@ export default function ProductPromotionsPanel({ companyId }: Props) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading]     = useState(true);
   const [tab, setTab]             = useState('active');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Edit-before-resume state
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
@@ -204,10 +196,10 @@ export default function ProductPromotionsPanel({ companyId }: Props) {
 
   // Summary stats
   const active     = campaigns.filter(c => c.status === 'active');
-  const totalSpent = campaigns.reduce((s, c) => s + (c.total_spent || c.payment_amount || 0), 0);
-  const totalImpr  = campaigns.reduce((s, c) => s + (c.actual_impressions || c.est_impressions || 0), 0);
-  const totalLeads = campaigns.reduce((s, c) => s + (c.actual_leads || 0), 0);
-  const totalClicks= campaigns.reduce((s, c) => s + (c.actual_clicks || 0), 0);
+  // Only payments that went through count as paid
+  const totalPaid  = campaigns.filter(c => c.payment_status === 'paid').reduce((s, c) => s + (Number(c.payment_amount) || 0), 0);
+  const awaiting   = campaigns.filter(c => ['draft', 'pending_payment'].includes(c.status)).length;
+  const finished   = campaigns.filter(c => ['completed', 'cancelled'].includes(c.status)).length;
 
   const filtered = tab === 'all' ? campaigns :
     tab === 'active'    ? campaigns.filter(c => c.status === 'active') :
@@ -243,9 +235,9 @@ export default function ProductPromotionsPanel({ companyId }: Props) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         {[
           { icon: <BarChart2 className="w-4 h-4" />, label: 'Active Campaigns', val: active.length.toString(),              color: 'text-green-600' },
-          { icon: <DollarSign className="w-4 h-4" />, label: 'Total Spent',     val: fmt(totalSpent),                       color: 'text-primary' },
-          { icon: <Eye className="w-4 h-4" />,        label: 'Impressions',     val: totalImpr.toLocaleString('en-IN'),      color: 'text-[#FF5A00]' },
-          { icon: <Users className="w-4 h-4" />,      label: 'Leads',           val: totalLeads.toLocaleString('en-IN'),     color: 'text-violet-600' },
+          { icon: <DollarSign className="w-4 h-4" />, label: 'Total Paid',       val: fmt(totalPaid),                         color: 'text-primary' },
+          { icon: <Clock className="w-4 h-4" />,      label: 'Awaiting Payment', val: awaiting.toString(),                    color: 'text-amber-600' },
+          { icon: <CheckCircle2 className="w-4 h-4" />, label: 'Finished',       val: finished.toString(),                    color: 'text-violet-600' },
         ].map(m => (
           <div key={m.label} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
             <div className={`w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 ${m.color}`}>
@@ -297,17 +289,13 @@ export default function ProductPromotionsPanel({ companyId }: Props) {
                     const sc = STATUS_CONFIG[c.status] ?? STATUS_CONFIG.draft;
                     const startDate = c.starts_at ? new Date(c.starts_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
                     const endDate   = c.ends_at   ? new Date(c.ends_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
-                    const impressions = c.actual_impressions || c.est_impressions || 0;
-                    const views       = c.actual_views       || c.est_views       || 0;
-                    const clicks      = c.actual_clicks      || c.est_clicks      || 0;
-                    const leads       = c.actual_leads       || c.est_leads       || 0;
+                    const daysLeft = c.status === 'active' && c.ends_at
+                      ? Math.max(0, Math.ceil((new Date(c.ends_at).getTime() - Date.now()) / 86_400_000))
+                      : null;
 
                     return (
                       <div key={c.id} className="p-4 hover:bg-muted/20 transition-colors">
-                        <div
-                          className="flex items-start gap-3 flex-wrap cursor-pointer"
-                          onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
-                        >
+                        <div className="flex items-start gap-3 flex-wrap">
                           {/* Product thumbnail */}
                           <div className="w-10 h-10 rounded-lg bg-muted shrink-0 overflow-hidden flex items-center justify-center">
                             {c.products?.images?.[0]
@@ -373,39 +361,17 @@ export default function ProductPromotionsPanel({ companyId }: Props) {
                           </div>
                         </div>
 
-                        {/* Performance metrics */}
-                        <div className="grid grid-cols-4 gap-2 mt-3">
-                          {[
-                            { icon: <Eye className="w-3 h-3" />,              label: 'Impressions', val: impressions.toLocaleString('en-IN') },
-                            { icon: <Eye className="w-3 h-3" />,              label: 'Views',       val: views.toLocaleString('en-IN') },
-                            { icon: <MousePointerClick className="w-3 h-3" />,label: 'Clicks',      val: clicks.toLocaleString('en-IN') },
-                            { icon: <Users className="w-3 h-3" />,            label: 'Leads',       val: leads.toString() },
-                          ].map(m => (
-                            <div key={m.label} className="bg-muted/30 rounded-lg p-2 text-center border border-border">
-                              <div className="flex items-center justify-center gap-1 text-muted-foreground mb-0.5">
-                                {m.icon}
-                                <span className="text-[10px]">{m.label}</span>
-                              </div>
-                              <p className="text-xs font-bold text-foreground">{m.val}</p>
-                              {c.status !== 'active' && <p className="text-[9px] text-muted-foreground">est.</p>}
-                            </div>
-                          ))}
+                        {/* What is known about the campaign; reach is not measured */}
+                        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                          {daysLeft !== null && (
+                            <span className="flex items-center gap-1 font-semibold text-foreground">
+                              <Clock className="w-3 h-3 text-primary" /> {daysLeft === 0 ? 'Ends today' : `${daysLeft} day${daysLeft === 1 ? '' : 's'} left`}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <Info className="w-3 h-3" /> Views, clicks and leads are not measured yet.
+                          </span>
                         </div>
-
-                        {/* Trend chart toggle */}
-                        <button
-                          onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
-                          className="mt-3 w-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded-lg py-1.5 transition-colors hover:bg-muted/30"
-                        >
-                          {expandedId === c.id
-                            ? <><ChevronUp className="w-3.5 h-3.5" /> Hide trend chart</>
-                            : <><ChevronDown className="w-3.5 h-3.5" /> View daily trend chart</>}
-                        </button>
-
-                        {/* Trend chart */}
-                        {expandedId === c.id && (
-                          <CampaignTrendChart campaign={c} />
-                        )}
                       </div>
                     );
                   })}
