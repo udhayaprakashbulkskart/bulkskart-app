@@ -17,9 +17,9 @@ import {
 import PageMeta from '@/components/common/PageMeta';
 import AdminLoanRequests from '@/components/dashboard/AdminLoanRequests';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarsChart, Gauge, Mini, Panel } from '@/components/dashboard/parts';
+import { BarsChart, Gauge, Kpi, Mini, PageHeader, Panel, Segmented } from '@/components/dashboard/parts';
 import type { KpiTone } from '@/components/dashboard/parts';
-import { bucketByMonth, fetchMonthly, lastMonths, percentChange } from '@/components/dashboard/series';
+import { bucketByMonth, fetchMonthly, lastMonths, percentChange, sum } from '@/components/dashboard/series';
 
 // ─── Types ───────────────────────────────────────────────────
 type CompanyRow = {
@@ -96,6 +96,7 @@ export default function AdminDashboardFull() {
   const slots = useMemo(() => lastMonths(12), []);
   const [companiesByMonth, setCompaniesByMonth] = useState<number[]>(() => slots.map(() => 0));
   const [usersByMonth, setUsersByMonth] = useState<number[]>(() => slots.map(() => 0));
+  const [series, setSeries] = useState<'companies' | 'users'>('companies');
   const [search, setSearch] = useState('');
   const [verFilter, setVerFilter] = useState('all');
   const [saving, setSaving] = useState<string | null>(null);
@@ -231,76 +232,78 @@ export default function AdminDashboardFull() {
     { label: 'Total Orders', value: stats.totalOrders, icon: Package, tone: 'blue' },
     { label: 'Open Disputes', value: stats.openDisputes, icon: AlertTriangle, tone: 'rose', tab: 'disputes' },
     { label: 'Pending Withdrawals', value: stats.pendingWithdrawals, icon: Wallet, tone: 'teal', tab: 'withdrawals' },
+    { label: 'Verified Companies', value: verifiedCompanies, icon: ShieldCheck, tone: 'green', tab: 'companies' },
   ];
+  const shown = series === 'companies' ? companiesByMonth : usersByMonth;
 
   return (
     <DashboardLayout>
       <div className="dpage">
         <div className="min-w-0 space-y-3.5">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Admin Control Panel</h1>
-              <p className="text-sm text-muted-foreground">Platform management — verifications, disputes, analytics</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={fetchAll} className="gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh
-            </Button>
-          </div>
+          <PageHeader
+            title="Admin Control Panel"
+            subtitle="Platform management — verifications, disputes, analytics"
+            actions={
+              <button type="button" onClick={fetchAll} className="dbtn is-ghost">
+                <RefreshCw aria-hidden="true" /> Refresh
+              </button>
+            }
+          />
 
           {/* Stats row */}
           <div className="dgrid-kpi">
-            {statCards.map(card => {
-              const inside = (
-                <>
-                  <div className="dk-top">
-                    <span className="dk-title">{card.label}</span>
-                    <span className={`dk-chip is-${card.tone}`} aria-hidden="true">
-                      <card.icon />
-                    </span>
-                  </div>
-                  <div className="dk-value">{loading ? '—' : card.value}</div>
-                  {card.tab && <span className="dk-more">Open ↗</span>}
-                </>
-              );
-              return card.tab ? (
-                <button key={card.label} type="button" className="dk" onClick={() => setTab(card.tab as string)}>
-                  {inside}
-                </button>
-              ) : (
-                <div key={card.label} className="dk">
-                  {inside}
-                </div>
-              );
-            })}
+            {statCards.map((card) => (
+              <Kpi
+                key={card.label}
+                title={card.label}
+                value={card.value}
+                loading={loading}
+                icon={card.icon}
+                tone={card.tone}
+                onClick={card.tab ? () => setTab(card.tab as string) : undefined}
+                hint={card.tab ? 'Open the list' : undefined}
+              />
+            ))}
           </div>
 
-          {/* Growth chart and verification gauge */}
+          {/* Growth chart and verification ring */}
           <div className="dgrid-main">
             <Panel
               title="Platform growth"
-              subtitle="Companies that joined and people who signed up, by month"
-              legend={[
-                { label: 'New companies', color: '#f2802d' },
-                { label: 'New sign-ups', color: '#34d399' },
-              ]}
-              right={<span className="dp-pill">Last 12 months</span>}
+              subtitle="By month, for the last 12 months"
+              right={
+                <Segmented
+                  label="Chart shows"
+                  value={series}
+                  onChange={setSeries}
+                  options={[
+                    { value: 'companies', label: 'New companies' },
+                    { value: 'users', label: 'New sign-ups' },
+                  ]}
+                />
+              }
             >
               <BarsChart
-                months={slots.map(slot => slot.label)}
-                bars={companiesByMonth}
-                barLabel="companies"
-                line={usersByMonth}
-                lineLabel="sign-ups"
-                emptyText="No new companies or sign-ups in the last 12 months."
-                ariaLabel="New companies and new sign-ups in each of the last 12 months"
+                months={slots.map((slot) => slot.label)}
+                bars={shown}
+                barLabel={series === 'companies' ? 'companies' : 'sign-ups'}
+                emptyText={series === 'companies' ? 'No new companies in the last 12 months.' : 'No new sign-ups in the last 12 months.'}
+                ariaLabel={series === 'companies' ? 'New companies in each of the last 12 months' : 'New sign-ups in each of the last 12 months'}
               />
-            </Panel>
-            <Panel title="Verification rate" subtitle="Companies that are verified">
-              <Gauge value={loading ? null : verifiedRate} label="Verified companies" emptyText="No companies yet" />
               <div className="dminis">
                 <Mini label="New companies this month" value={companiesByMonth[last]} pct={companiesDelta} />
                 <Mini label="New sign-ups this month" value={usersByMonth[last]} pct={usersDelta} />
+                <Mini dark label="Last 12 months" value={sum(shown)} />
               </div>
+            </Panel>
+            <Panel title="Verification rate" subtitle="Companies that are verified">
+              <Gauge
+                variant="ring"
+                value={loading ? null : verifiedRate}
+                label="Verified companies"
+                emptyText="No companies yet"
+                footer={companies.length > 0 ? `${verifiedCompanies} of ${companies.length} companies are verified` : undefined}
+              />
             </Panel>
           </div>
 

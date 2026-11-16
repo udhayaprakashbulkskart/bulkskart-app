@@ -313,7 +313,7 @@ export default function MessagesPage() {
         description="BulkSkart dashboard — manage your account, orders and trade activity."
         robots="noindex, nofollow"
       />
-      <div className="flex-1 min-w-0 flex overflow-hidden" style={{ height: 'calc(100vh - 3.5rem)' }}>
+      <div className="dsh-chat flex-1 min-w-0 flex overflow-hidden" style={{ height: 'calc(100vh - 3.5rem)' }}>
 
         {/* ── Conversations & Inquiries sidebar ─────────────────────────────────── */}
         <div className={cn("w-full md:w-80 shrink-0 border-r border-border bg-sidebar flex-col", mobileView === 'chat' ? 'hidden md:flex' : 'flex')}>

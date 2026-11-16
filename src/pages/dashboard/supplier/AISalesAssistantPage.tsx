@@ -211,8 +211,8 @@ export default function AISalesAssistantPage() {
                 <Sparkles className="w-4 h-4" />
               </span>
               <div>
-                <h3 className="text-sm sm:text-base font-bold text-white">AI Sales Recommendations & Insights</h3>
-                <p className="text-[11px] text-white/50">Weekly demand analysis and conversion optimizations for your factory</p>
+                <h3 className="text-sm sm:text-base font-bold text-foreground">AI Sales Recommendations & Insights</h3>
+                <p className="text-[11px] text-muted-foreground">Weekly demand analysis and conversion optimizations for your factory</p>
               </div>
             </div>
             <span className="text-[11px] text-[#FF5A00] font-semibold bg-[#FF5A00]/10 px-2.5 py-1 rounded-full border border-[#FF5A00]/20 hidden sm:inline-block">
@@ -295,8 +295,8 @@ export default function AISalesAssistantPage() {
           {filteredOpportunities.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-3">
               <Package className="w-10 h-10 text-white/30 mx-auto" />
-              <h4 className="text-sm font-bold text-white">No opportunities found in this filter</h4>
-              <p className="text-xs text-white/50 max-w-md mx-auto">
+              <h4 className="text-sm font-bold text-foreground">No opportunities found in this filter</h4>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto">
                 Try switching the priority tab or add more products with detailed specifications to increase match triggers.
               </p>
               <Button

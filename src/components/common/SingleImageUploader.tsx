@@ -122,7 +122,8 @@ export default function SingleImageUploader({
     <div className={`space-y-2 ${className}`}>
       {label && <label className="text-xs sm:text-sm font-medium text-foreground block">{label}</label>}
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      {/* a wide banner takes the whole row, so its notes go under it instead of being squeezed beside it */}
+      <div className={`flex flex-col items-start gap-4 ${shape === 'banner' ? '' : 'sm:flex-row sm:items-center'}`}>
         {/* Visual Box */}
         <div
           onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}

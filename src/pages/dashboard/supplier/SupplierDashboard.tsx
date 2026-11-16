@@ -1,16 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProducts, getRequirements, getMyQuotations, ensureManufacturerWelcomeLeads } from '@/lib/api';
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
-import { Package, FileText, TrendingUp, Plus, CreditCard, AlertCircle, BarChart3, Bell, ShieldCheck, CheckCircle2, Clock, Wallet, AlertTriangle, Sparkles, Building2, Banknote } from 'lucide-react';
+import { Package, FileText, TrendingUp, Plus, CreditCard, AlertCircle, BarChart3, Bell, ShieldCheck, CheckCircle2, Clock, Wallet, AlertTriangle, Sparkles, Building2, Banknote, Send, CalendarClock } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
-import { BarsChart, Gauge, Kpi, Mini, Panel, QuickLink } from '@/components/dashboard/parts';
-import { fetchMonthly, lastMonths, percentChange } from '@/components/dashboard/series';
+import { AccountCard, ActionsCard, BarsChart, Gauge, Kpi, Mini, Notice, PageHeader, Panel, QuickLink, Segmented } from '@/components/dashboard/parts';
+import { fetchMonthly, lastMonths, percentChange, sum } from '@/components/dashboard/series';
 import MatchedRequirementsPanel from '@/components/common/MatchedRequirementsPanel';
 import AIOpportunityCard from '@/components/common/AIOpportunityCard';
 import {
@@ -27,7 +26,7 @@ type MfrStats = {
 };
 
 export default function SupplierDashboard() {
-  const { user, profile, company } = useAuth();
+  const { user, profile, company, displayName } = useAuth();
   const [stats, setStats] = useState<MfrStats>({
     totalProducts: 0, rfqLeads: 0, quotesSent: 0, leadsLeft: 0, maxLeads: 10,
     activeOrders: 0, completedOrders: 0, responseRate: 0, avgResponseHours: 0,
@@ -52,6 +51,7 @@ export default function SupplierDashboard() {
   const slots = useMemo(() => lastMonths(12), []);
   const [quotesByMonth, setQuotesByMonth] = useState<number[]>(() => slots.map(() => 0));
   const [ordersByMonth, setOrdersByMonth] = useState<number[]>(() => slots.map(() => 0));
+  const [series, setSeries] = useState<'quotes' | 'orders'>('quotes');
 
   useEffect(() => {
     if (!user || !company) { setLoading(false); return; }
@@ -135,7 +135,12 @@ export default function SupplierDashboard() {
   const last = slots.length - 1;
   const quotesDelta = percentChange(quotesByMonth[last], quotesByMonth[last - 1]);
   const ordersDelta = percentChange(ordersByMonth[last], ordersByMonth[last - 1]);
-  const dash = (value: number | string) => (loading ? '—' : value);
+  const shown = series === 'quotes' ? quotesByMonth : ordersByMonth;
+  const firstName = (displayName || '').trim().split(/\s+/)[0] || 'there';
+  const initialsOf = (text: string) => text.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('') || 'U';
+  const completion = Number((company as { profile_completion?: number } | null)?.profile_completion);
+  const verificationLabel = company?.verification_status === 'verified' ? 'Verified' : company?.verification_status === 'pending' ? 'In review' : 'Not verified';
+  const planLabel = subscription ? `${subscription.tier.charAt(0).toUpperCase()}${subscription.tier.slice(1)}` : 'No plan';
 
   return (
     <DashboardLayout>
@@ -145,181 +150,201 @@ export default function SupplierDashboard() {
         robots="noindex, nofollow"
       />
       <div className="dpage">
-        {/* Company name and quick action */}
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <h1 className="text-base md:text-lg font-bold text-foreground truncate max-w-[280px] sm:max-w-md">{company?.company_name ?? 'Your Dashboard'}</h1>
-            {company?.is_verified && (
-              <Badge className="bg-green-100 text-green-700 border-green-300 text-[10px] px-1.5 py-0 gap-0.5 shrink-0">
-                <ShieldCheck className="w-2.5 h-2.5" /> Verified
-              </Badge>
-            )}
-          </div>
-          <Link to="/dashboard/supplier/products" className="hidden md:block">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 text-sm">
-              <Plus className="w-4 h-4" /> Add Product
-            </Button>
-          </Link>
-        </div>
+        <PageHeader
+          title={`Hi, ${firstName}!`}
+          subtitle={
+            <span className="inline-flex flex-wrap items-center gap-2">
+              <span>{company?.company_name ?? 'Your Dashboard'}</span>
+              {company?.is_verified && (
+                <Badge className="shrink-0 gap-0.5 border-green-300 bg-green-100 px-1.5 py-0 text-[10px] text-green-700">
+                  <ShieldCheck className="h-2.5 w-2.5" /> Verified
+                </Badge>
+              )}
+            </span>
+          }
+          actions={
+            <>
+              <Link to="/dashboard/supplier/rfqs" className="dbtn is-ghost">
+                RFQ leads
+              </Link>
+              <Link to="/dashboard/supplier/products" className="dbtn is-dark">
+                <Plus aria-hidden="true" /> Add Product
+              </Link>
+            </>
+          }
+        />
 
         {/* Mandatory Business Details Onboarding Banner */}
-        {(!company || !(company as any)?.onboarding_completed) && (
-          <div className="bg-gradient-to-r from-primary/10 via-orange-500/10 to-amber-500/5 border-2 border-primary/40 rounded-2xl p-4 sm:p-5 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5">
-                  <Building2 className="w-5 h-5" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold text-foreground text-sm sm:text-base">
-                      {!company ? 'Setup Your Business Profile (Mandatory)' : `Complete Business Profile (${(company as any)?.profile_completion || 35}% Complete)`}
-                    </p>
-                    <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
-                      Step {(company as any)?.onboarding_step || 1} of 5
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    {!company
-                      ? 'To unlock supplier features, publish products, and receive matched buyer RFQs, complete the official 5-step business profile setup.'
-                      : 'Complete your business profile, operations capacity, and document verification to unlock direct buyer contact details.'}
-                  </p>
-                </div>
-              </div>
-              <Link to="/business-setup" className="shrink-0 w-full sm:w-auto">
-                <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90 font-bold text-xs h-9 px-4 rounded-xl shadow-md gap-1.5">
-                  <Building2 className="w-3.5 h-3.5" />
-                  {!company ? 'Start Setup Wizard' : 'Resume Profile Setup'}
-                </Button>
+        {(!company || !(company as { onboarding_completed?: boolean } | null)?.onboarding_completed) && (
+          <Notice
+            icon={Building2}
+            tone="warn"
+            title={!company ? 'Setup Your Business Profile (Mandatory)' : `Complete Business Profile (${completion || 35}% Complete)`}
+            tag={`Step ${(company as { onboarding_step?: number } | null)?.onboarding_step || 1} of 5`}
+            action={
+              <Link to="/business-setup" className="dbtn is-dark">
+                <Building2 aria-hidden="true" />
+                {!company ? 'Start Setup Wizard' : 'Resume Profile Setup'}
               </Link>
-            </div>
-          </div>
+            }
+          >
+            {!company
+              ? 'To unlock supplier features, publish products, and receive matched buyer RFQs, complete the official 5-step business profile setup.'
+              : 'Complete your business profile, operations capacity, and document verification to unlock direct buyer contact details.'}
+          </Notice>
         )}
 
         {/* Verification banners */}
         {company?.verification_status === 'pending' && (
-          <div className="flex items-start gap-3 bg-yellow-50 border border-yellow-200 rounded-2xl p-3 md:p-4 text-sm">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-yellow-600" />
-            <div>
-              <p className="font-semibold text-yellow-800">Verification in progress</p>
-              <p className="text-xs mt-0.5 text-yellow-700">Your documents are under review. You'll be notified when approved.</p>
-            </div>
-          </div>
+          <Notice icon={AlertCircle} tone="warn" title="Verification in progress">
+            Your documents are under review. You'll be notified when approved.
+          </Notice>
         )}
         {company?.verification_status === 'unverified' && (
-          <div className="flex items-start gap-3 bg-muted border border-border rounded-2xl p-3 md:p-4 text-sm text-muted-foreground">
-            <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5 text-primary" />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground">Get Verified Manufacturer Badge</p>
-              <p className="text-xs mt-0.5">Upload GST, PAN, and bank documents to get verified and accept more orders.</p>
-            </div>
-            <Link to="/dashboard/supplier/verification" className="shrink-0">
-              <Button size="sm" className="bg-primary text-primary-foreground text-xs">Verify Now</Button>
-            </Link>
-          </div>
+          <Notice
+            icon={ShieldCheck}
+            title="Get Verified Manufacturer Badge"
+            action={
+              <Link to="/dashboard/supplier/verification" className="dbtn is-dark">
+                Verify Now
+              </Link>
+            }
+          >
+            Upload GST, PAN, and bank documents to get verified and accept more orders.
+          </Notice>
         )}
 
         {/* Open disputes */}
         {stats.openDisputes > 0 && (
-          <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-3 text-sm">
-            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-            <span className="text-red-700">{stats.openDisputes} open dispute{stats.openDisputes > 1 ? 's' : ''}</span>
-            <Link to="/dashboard/supplier/disputes" className="ml-auto shrink-0">
-              <Button variant="outline" size="sm" className="text-xs border-red-300 text-red-600 hover:bg-red-50">View</Button>
-            </Link>
-          </div>
+          <Notice
+            icon={AlertTriangle}
+            tone="bad"
+            title={`${stats.openDisputes} open dispute${stats.openDisputes > 1 ? 's' : ''}`}
+            action={
+              <Link to="/dashboard/supplier/disputes" className="dbtn is-ghost">
+                View
+              </Link>
+            }
+          />
         )}
 
         {/* Subscription banner */}
         {!subscription && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border-2 border-amber-500/30 rounded-2xl p-4 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 mt-0.5">
-                <CreditCard className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-black text-foreground text-sm">Action Required: Unpaid Manufacturer Account</p>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30 uppercase">
-                    Contacts Locked
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Buyer contact phone numbers, bidding participant contact numbers, direct WhatsApp dialers, and official quotation submissions are strictly reserved for paid manufacturers. Upgrade your plan now to unlock all buyer contacts and active trade negotiation.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-              <Link to="/dashboard/supplier/subscription" className="w-full sm:w-auto">
-                <Button size="sm" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> Pay Subscription Now
-                </Button>
+          <Notice
+            icon={CreditCard}
+            tone="warn"
+            title="Action Required: Unpaid Manufacturer Account"
+            tag="Contacts Locked"
+            action={
+              <Link to="/dashboard/supplier/subscription" className="dbtn is-dark">
+                <Sparkles aria-hidden="true" /> Pay Subscription Now
               </Link>
-            </div>
-          </div>
+            }
+          >
+            Buyer contact phone numbers, bidding participant contact numbers, direct WhatsApp dialers, and official quotation submissions are strictly reserved for paid manufacturers. Upgrade your plan now to unlock all buyer contacts and active trade negotiation.
+          </Notice>
         )}
 
         {/* Wallet summary */}
         {stats.walletBalance > 0 && (
-          <div className="flex items-center gap-4 bg-teal-50 border border-teal-200 rounded-2xl p-3 md:p-4 text-sm flex-wrap">
-            <Wallet className="w-5 h-5 text-teal-600 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <span className="font-semibold text-teal-800">Wallet: ₹{Number(stats.walletBalance).toLocaleString()}</span>
-              <span className="text-teal-600 ml-3">Withdrawable: ₹{Number(stats.withdrawableBalance).toLocaleString()}</span>
-            </div>
-            {stats.withdrawableBalance > 0 && (
-              <Link to="/dashboard/supplier/wallet" className="shrink-0">
-                <Button size="sm" variant="outline" className="text-xs border-teal-300 text-teal-700">Withdraw</Button>
-              </Link>
-            )}
-          </div>
+          <Notice
+            icon={Wallet}
+            tone="good"
+            title={`Wallet: ₹${Number(stats.walletBalance).toLocaleString()}`}
+            action={
+              stats.withdrawableBalance > 0 ? (
+                <Link to="/dashboard/supplier/wallet" className="dbtn is-ghost">
+                  Withdraw
+                </Link>
+              ) : undefined
+            }
+          >
+            {`Withdrawable: ₹${Number(stats.withdrawableBalance).toLocaleString()}`}
+          </Notice>
         )}
 
         {/* The four main figures */}
         <div className="dgrid-kpi">
-          <Kpi title="Listed Products" value={dash(stats.totalProducts)} icon={Package} tone="orange" to="/dashboard/supplier/products" />
-          <Kpi title="Quotes Sent" value={dash(stats.quotesSent)} icon={FileText} tone="purple" to="/dashboard/supplier/quotations" delta={{ pct: quotesDelta, label: 'vs last month' }} />
-          <Kpi title="Active Orders" value={dash(stats.activeOrders)} icon={TrendingUp} tone="green" to="/dashboard/supplier/orders" delta={{ pct: ordersDelta, label: 'new orders vs last month' }} />
-          <Kpi title="Completed Orders" value={dash(stats.completedOrders)} icon={CheckCircle2} tone="blue" to="/dashboard/supplier/orders" />
+          <Kpi title="Listed Products" value={stats.totalProducts} loading={loading} icon={Package} tone="orange" to="/dashboard/supplier/products" hint="Live in the marketplace" />
+          <Kpi title="Quotes Sent" value={stats.quotesSent} loading={loading} icon={FileText} tone="purple" to="/dashboard/supplier/quotations" delta={{ pct: quotesDelta, label: 'vs last month' }} />
+          <Kpi title="Active Orders" value={stats.activeOrders} loading={loading} icon={TrendingUp} tone="green" to="/dashboard/supplier/orders" delta={{ pct: ordersDelta, label: 'new orders vs last month' }} />
+          <Kpi title="Completed Orders" value={stats.completedOrders} loading={loading} icon={CheckCircle2} tone="blue" to="/dashboard/supplier/orders" hint="Delivered and closed" />
         </div>
 
-        {/* Chart and gauge */}
-        <div className="dgrid-main">
-          <Panel
-            title="Performance"
-            subtitle="Quotes you sent and orders you received, by month"
-            legend={[
-              { label: 'Quotes sent', color: '#f2802d' },
-              { label: 'Orders received', color: '#34d399' },
+        <div className="dgrid-trio">
+          <AccountCard
+            initials={initialsOf(company?.company_name || displayName || 'U')}
+            name={company?.company_name || displayName || 'Your company'}
+            role="Supplier"
+            to="/dashboard/supplier/profile"
+            rows={[
+              { icon: ShieldCheck, label: 'Verification', value: verificationLabel },
+              { icon: CreditCard, label: 'Plan', value: planLabel },
+              { icon: Package, label: 'Products listed', value: stats.totalProducts },
+              { icon: CalendarClock, label: 'RFQ leads left', value: `${stats.leadsLeft} / ${stats.maxLeads}` },
+              { icon: FileText, label: 'Quotes sent', value: stats.quotesSent },
+              { icon: TrendingUp, label: 'Orders in progress', value: stats.activeOrders },
             ]}
-            right={<span className="dp-pill">Last 12 months</span>}
+            progress={Number.isFinite(completion) && completion > 0 ? { label: 'Profile completion', value: completion } : undefined}
+          />
+
+          <div className="dstack">
+            <Panel title="Response rate" subtitle="How often you reply to buyers" to="/dashboard/supplier/analytics">
+              <Gauge
+                value={loading ? null : stats.responseRate}
+                label="Replying to buyers"
+                emptyText="Loading…"
+                footer={!loading && stats.avgResponseHours > 0 ? `Average reply time: ${stats.avgResponseHours}h` : undefined}
+              />
+            </Panel>
+            <ActionsCard
+              title="Jump back in"
+              subtitle="Where suppliers usually go next"
+              items={[
+                { to: '/dashboard/supplier/products', icon: Plus, label: 'Add a product', hint: `${stats.totalProducts} listed` },
+                { to: '/dashboard/supplier/rfqs', icon: FileText, label: 'Answer RFQ leads', hint: `${stats.leadsLeft} leads left` },
+                { to: '/dashboard/supplier/quotations', icon: Send, label: 'Send quotations', hint: `${stats.quotesSent} sent so far` },
+              ]}
+            />
+          </div>
+
+          <Panel
+            className="dgrid-wide"
+            title="Performance"
+            subtitle="By month, for the last 12 months"
+            right={
+              <Segmented
+                label="Chart shows"
+                value={series}
+                onChange={setSeries}
+                options={[
+                  { value: 'quotes', label: 'Quotes sent' },
+                  { value: 'orders', label: 'Orders received' },
+                ]}
+              />
+            }
           >
             <BarsChart
               months={slots.map((slot) => slot.label)}
-              bars={quotesByMonth}
-              barLabel="quotes"
-              line={ordersByMonth}
-              lineLabel="orders"
-              emptyText="No quotes or orders in the last 12 months yet."
-              ariaLabel="Quotes sent and orders received in each of the last 12 months"
+              bars={shown}
+              barLabel={series === 'quotes' ? 'quotes' : 'orders'}
+              emptyText={series === 'quotes' ? 'No quotes sent in the last 12 months yet.' : 'No orders received in the last 12 months yet.'}
+              ariaLabel={series === 'quotes' ? 'Quotes sent in each of the last 12 months' : 'Orders received in each of the last 12 months'}
             />
-          </Panel>
-
-          <Panel title="Response rate" subtitle="How often you reply to buyers" to="/dashboard/supplier/analytics">
-            <Gauge value={loading ? null : stats.responseRate} label="Replying to buyers" emptyText="Loading…" />
             <div className="dminis">
               <Mini label="Quotes this month" value={quotesByMonth[last]} pct={quotesDelta} />
               <Mini label="Orders this month" value={ordersByMonth[last]} pct={ordersDelta} />
+              <Mini dark label="Last 12 months" value={sum(shown)} />
             </div>
           </Panel>
         </div>
 
         {/* The other figures */}
         <div className="dgrid-kpi">
-          <Kpi title="Wallet Balance" value={dash(`₹${Number(stats.walletBalance).toLocaleString()}`)} icon={Wallet} tone="teal" to="/dashboard/supplier/wallet" />
-          <Kpi title="Total Revenue" value={dash(`₹${Number(stats.totalRevenue).toLocaleString()}`)} icon={Banknote} tone="yellow" to="/dashboard/supplier/analytics" />
-          <Kpi title="Avg Response Time" value={dash(stats.avgResponseHours > 0 ? `${stats.avgResponseHours}h` : '—')} icon={Clock} tone="rose" to="/dashboard/supplier/analytics" />
-          <Kpi title="RFQ Leads Left" value={dash(stats.leadsLeft)} suffix={`/ ${stats.maxLeads}`} icon={BarChart3} tone="blue" to="/dashboard/supplier/rfqs" />
+          <Kpi title="Wallet Balance" value={`₹${Number(stats.walletBalance).toLocaleString()}`} loading={loading} icon={Wallet} tone="teal" to="/dashboard/supplier/wallet" />
+          <Kpi title="Total Revenue" value={`₹${Number(stats.totalRevenue).toLocaleString()}`} loading={loading} icon={Banknote} tone="yellow" to="/dashboard/supplier/analytics" />
+          <Kpi title="Avg Response Time" value={stats.avgResponseHours > 0 ? `${stats.avgResponseHours}h` : '—'} loading={loading} icon={Clock} tone="rose" to="/dashboard/supplier/analytics" />
+          <Kpi title="RFQ Leads Left" value={stats.leadsLeft} suffix={`/ ${stats.maxLeads}`} loading={loading} icon={BarChart3} tone="blue" to="/dashboard/supplier/rfqs" />
         </div>
 
         {/* AI Opportunity Card */}
@@ -328,8 +353,8 @@ export default function SupplierDashboard() {
         {/* Matched Buyer Requirements — live AI matches */}
         <MatchedRequirementsPanel />
 
-        {/* Quick actions */}
-        <div className="dgrid-q">
+        {/* Small figures that lead to the pages behind them */}
+        <div className="dstrip">
           <QuickLink to="/dashboard/supplier/products" icon={Package} label="Manage Products" />
           <QuickLink to="/dashboard/supplier/rfqs" icon={FileText} label="View RFQ Leads" />
           <QuickLink to="/dashboard/supplier/quotations" icon={TrendingUp} label="My Quotations" />

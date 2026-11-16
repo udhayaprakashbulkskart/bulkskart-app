@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -117,92 +118,256 @@ describe('Dashboard shell: the look', () => {
   });
 });
 
+const labelsOf = (items: HTMLElement[]) => items.map((item) => item.textContent);
+
 describe('Dashboard shell: the top bar', () => {
-  it('greets the person by first name and says what the role is for', () => {
-    signIn('supplier');
-    renderAt('/dashboard/supplier');
-    expect(screen.getByText('Hi, Priya! Welcome back.')).toBeInTheDocument();
-    // the greeting is not a page title, so the page keeps its own single h1
-    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
-    expect(screen.getByText('Manage products, leads and quotations')).toBeInTheDocument();
+  it('has the logo, which leads to the home page', () => {
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    expect(screen.getByRole('link', { name: 'BulkSkart home' })).toHaveAttribute('href', '/');
   });
 
-  it('has a different line for a buyer and for an admin', () => {
+  it('shows the five main sections of a buyer as pills, and marks the one that is open', () => {
     signIn('buyer');
-    const buyer = renderAt('/dashboard/buyer');
-    expect(screen.getByText('Manage your bulk requirements and received quotes')).toBeInTheDocument();
-    buyer.unmount();
+    renderAt('/dashboard/buyer/orders');
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Overview', 'My Requirements', 'Received Quotes', 'Orders', 'Messages']);
+    expect(menu().getByRole('link', { name: 'Orders' })).toHaveAttribute('aria-current', 'page');
+    expect(menu().getByRole('link', { name: 'Overview' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('shows the five main sections of a supplier, and marks only Overview on the overview page', () => {
+    signIn('supplier');
+    renderAt('/dashboard/supplier');
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Overview', 'My Products', 'RFQ Leads', 'Quotations', 'Orders']);
+    expect(menu().getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
+    expect(menu().getByRole('link', { name: 'My Products' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('has two sections and no More menu for an admin', () => {
     signIn('admin');
     renderAt('/dashboard/admin');
-    expect(screen.getByText('Monitor users, verifications and disputes')).toBeInTheDocument();
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics']);
+    expect(menu().queryByRole('button', { name: /More/ })).not.toBeInTheDocument();
   });
 
-  it('shows the person\'s name, initials and role in the corner, leading to their profile', () => {
+  it('keeps every other section of a buyer under More, with the calculators under Tools', async () => {
+    const user = userEvent.setup();
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    await user.click(menu().getByRole('button', { name: /More/ }));
+    // the bar's 4th and 5th sections are listed first: on a narrow bar they move in here
+    expect(labelsOf(screen.getAllByRole('menuitem'))).toEqual([
+      'Orders',
+      'Messages',
+      'Notifications',
+      'Saved Manufacturers',
+      'KYC Verification',
+      'Disputes',
+      'Profile',
+      'Shipping Calculator',
+      'Order Loan Calculator',
+    ]);
+    expect(screen.getByRole('menuitem', { name: 'Shipping Calculator' })).toHaveAttribute('href', '/shipping-calculator');
+    expect(screen.getByRole('menuitem', { name: 'Order Loan Calculator' })).toHaveAttribute('href', '/loan-calculator');
+    expect(screen.getByText('Tools')).toBeInTheDocument();
+  });
+
+  it('keeps every other section of a supplier under More and has no Tools list', async () => {
+    const user = userEvent.setup();
     signIn('supplier');
     renderAt('/dashboard/supplier');
-    const chip = screen.getByRole('link', { name: 'Priya Nair profile' });
-    expect(chip).toHaveAttribute('href', '/dashboard/supplier/profile');
-    expect(chip).toHaveTextContent('PN');
-    expect(chip).toHaveTextContent('Supplier');
+    await user.click(menu().getByRole('button', { name: /More/ }));
+    expect(labelsOf(screen.getAllByRole('menuitem'))).toEqual([
+      'Quotations',
+      'Orders',
+      'AI Sales Assistant',
+      'Business Overview',
+      'Inventory & Stock',
+      'Messages',
+      'Notifications',
+      'Verification',
+      'Disputes',
+      'Analytics',
+      'Subscription',
+      'Business Profile',
+    ]);
+    expect(screen.queryByText('Tools')).not.toBeInTheDocument();
   });
 
-  it('does not greet by name while the account is still loading', () => {
-    signIn('buyer', { loading: true, displayName: '' });
-    renderAt('/dashboard/buyer');
-    expect(screen.getByText('Welcome back')).toBeInTheDocument();
+  it('lights More and marks the section that is open inside it', async () => {
+    const user = userEvent.setup();
+    signIn('buyer');
+    renderAt('/dashboard/buyer/disputes');
+    const more = menu().getByRole('button', { name: /More/ });
+    expect(more).toHaveClass('is-active');
+    await user.click(more);
+    expect(screen.getByRole('menuitem', { name: 'Disputes' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('menuitem', { name: 'Profile' })).not.toHaveAttribute('aria-current');
   });
 
-  it('searches the marketplace from the search box', () => {
+  it('opens a section from the More menu', async () => {
+    const user = userEvent.setup();
     signIn('buyer');
     renderAt('/dashboard/buyer');
-    const box = screen.getByRole('searchbox', { name: 'Search the marketplace for products' });
-    fireEvent.change(box, { target: { value: 'HDPE pipe' } });
-    fireEvent.submit(box.closest('form') as HTMLFormElement);
-    expect(where()).toBe('/products?q=HDPE%20pipe');
+    await user.click(menu().getByRole('button', { name: /More/ }));
+    await user.click(screen.getByRole('menuitem', { name: 'Saved Manufacturers' }));
+    expect(where()).toBe('/dashboard/buyer/saved-manufacturers');
+  });
+});
+
+describe('Dashboard shell: the round buttons', () => {
+  it('has a plus that posts a requirement for a buyer and adds a product for a supplier, and none for an admin', () => {
+    signIn('buyer');
+    const buyer = renderAt('/dashboard/buyer');
+    expect(screen.getByRole('link', { name: 'Post a requirement' })).toHaveAttribute('href', '/post-requirement');
+    buyer.unmount();
+    signIn('supplier');
+    const supplier = renderAt('/dashboard/supplier');
+    expect(screen.getByRole('link', { name: 'Add a product' })).toHaveAttribute('href', '/dashboard/supplier/products');
+    supplier.unmount();
+    signIn('admin');
+    renderAt('/dashboard/admin');
+    expect(screen.queryByRole('link', { name: /Post a requirement|Add a product/ })).not.toBeInTheDocument();
   });
 
-  it('does nothing when the search box is empty', () => {
+  it('opens the AI trade help chat', () => {
     signIn('buyer');
     renderAt('/dashboard/buyer');
-    const box = screen.getByRole('searchbox', { name: 'Search the marketplace for products' });
-    fireEvent.submit(box.closest('form') as HTMLFormElement);
-    expect(where()).toBe('/dashboard/buyer');
+    const opened = vi.fn();
+    window.addEventListener('open-ai-chat', opened);
+    fireEvent.click(screen.getByRole('button', { name: 'Ask AI trade help' }));
+    window.removeEventListener('open-ai-chat', opened);
+    expect(opened).toHaveBeenCalledTimes(1);
   });
 
-  it('jumps to the search box on "/", unless the person is already typing somewhere', () => {
+  it('has the bell', () => {
     signIn('buyer');
     renderAt('/dashboard/buyer');
+    expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
+  });
+
+  it('opens the search from its button, takes focus, and searches the marketplace', async () => {
+    const user = userEvent.setup();
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Search the marketplace' }));
     const box = screen.getByRole('searchbox', { name: 'Search the marketplace for products' });
-    // jsdom has no layout, so every element looks hidden to the "is it visible" check; make this one count as visible
-    Object.defineProperty(box, 'offsetParent', { get: () => document.body });
-    fireEvent.keyDown(window, { key: '/' });
     expect(box).toHaveFocus();
-    box.blur();
+    await user.type(box, 'HDPE pipe{Enter}');
+    expect(where()).toBe('/products?q=HDPE%20pipe');
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+  });
+
+  it('does nothing when the search box is empty', async () => {
+    const user = userEvent.setup();
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    await user.click(screen.getByRole('button', { name: 'Search the marketplace' }));
+    await user.type(screen.getByRole('searchbox'), '   {Enter}');
+    expect(where()).toBe('/dashboard/buyer');
+    expect(screen.getByRole('searchbox')).toBeInTheDocument();
+  });
+
+  it('closes the search on Escape', async () => {
+    const user = userEvent.setup();
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    await user.click(screen.getByRole('button', { name: 'Search the marketplace' }));
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+  });
+
+  it('opens the search on "/", unless the person is already typing somewhere', () => {
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
     const other = document.createElement('input');
     document.body.appendChild(other);
     other.focus();
     fireEvent.keyDown(other, { key: '/' });
-    expect(box).not.toHaveFocus();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
     other.remove();
-  });
-
-  it('has the bell, the help desk and the marketplace in the corner', () => {
-    signIn('buyer');
-    renderAt('/dashboard/buyer');
-    expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Help desk' })).toHaveAttribute('href', '/contact');
-    expect(screen.getByRole('link', { name: 'Open the marketplace' })).toHaveAttribute('href', '/');
+    fireEvent.keyDown(window, { key: '/' });
+    expect(screen.getByRole('searchbox', { name: 'Search the marketplace for products' })).toHaveFocus();
   });
 });
 
-describe('Dashboard shell: the sidebar', () => {
-  it('lists every section of a buyer\'s dashboard, and marks the one that is open', () => {
+describe('Dashboard shell: the account menu', () => {
+  it('shows the initials on the account button and the name and role in its menu', async () => {
+    const user = userEvent.setup();
+    signIn('supplier');
+    renderAt('/dashboard/supplier');
+    const avatar = screen.getByRole('button', { name: 'Priya Nair account menu' });
+    expect(avatar).toHaveTextContent('PN');
+    await user.click(avatar);
+    expect(screen.getByText('Priya Nair')).toBeInTheDocument();
+    expect(screen.getByText('Supplier')).toBeInTheDocument();
+  });
+
+  it('leads to the profile, the help desk and the marketplace', async () => {
+    const user = userEvent.setup();
+    signIn('supplier');
+    renderAt('/dashboard/supplier');
+    await user.click(screen.getByRole('button', { name: 'Priya Nair account menu' }));
+    expect(screen.getByRole('menuitem', { name: 'Profile' })).toHaveAttribute('href', '/dashboard/supplier/profile');
+    expect(screen.getByRole('menuitem', { name: 'Help desk' })).toHaveAttribute('href', '/contact');
+    expect(screen.getByRole('menuitem', { name: 'Open the marketplace' })).toHaveAttribute('href', '/');
+  });
+
+  it('offers the public link to a buyer and a supplier but not to an admin', async () => {
+    const user = userEvent.setup();
     signIn('buyer');
-    renderAt('/dashboard/buyer/orders');
-    const labels = menu()
-      .getAllByRole('link')
-      .map((link) => link.textContent);
-    expect(labels.slice(0, 10)).toEqual([
+    const buyer = renderAt('/dashboard/buyer');
+    await user.click(screen.getByRole('button', { name: 'Suresh Kumar account menu' }));
+    expect(screen.getByRole('button', { name: 'Copy public link' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    buyer.unmount();
+    signIn('admin');
+    renderAt('/dashboard/admin');
+    await user.click(screen.getByRole('button', { name: 'Mira Kapoor account menu' }));
+    expect(screen.queryByRole('button', { name: 'Copy public link' })).not.toBeInTheDocument();
+  });
+
+  it('signs out and goes to the home page', async () => {
+    const user = userEvent.setup();
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    await user.click(screen.getByRole('button', { name: 'Suresh Kumar account menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+    expect(auth.value.signOut).toHaveBeenCalledTimes(1);
+    // signing out takes a moment (it is asked of the server first), so the rest is waited for
+    await waitFor(() => expect(where()).toBe('/'));
+    expect(toastMock.success).toHaveBeenCalledWith('Signed out successfully');
+  });
+
+  it('says so when signing out fails', async () => {
+    const user = userEvent.setup();
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    signIn('buyer', { signOut: vi.fn(async () => Promise.reject(new Error('offline'))) });
+    renderAt('/dashboard/buyer');
+    await user.click(screen.getByRole('button', { name: 'Suresh Kumar account menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+    await waitFor(() => expect(toastMock.error).toHaveBeenCalledWith('Failed to sign out. Please try again.'));
+    expect(where()).toBe('/dashboard/buyer');
+    quiet.mockRestore();
+  });
+
+  it('does not show a name while the account is still loading', () => {
+    signIn('buyer', { loading: true, displayName: '' });
+    renderAt('/dashboard/buyer');
+    expect(screen.getByRole('button', { name: 'Your account menu' })).toHaveTextContent('…');
+  });
+});
+
+describe('Dashboard shell: the menu on a phone', () => {
+  it('opens every section as a list, with the calculators, help desk and sign out', async () => {
+    const user = userEvent.setup();
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    await user.click(screen.getByRole('button', { name: 'Open sidebar menu' }));
+    const sheet = within(screen.getByRole('dialog'));
+    const list = within(sheet.getByRole('navigation', { name: 'Dashboard sections' }));
+    expect(labelsOf(list.getAllByRole('link'))).toEqual([
       'Overview',
       'My Requirements',
       'Received Quotes',
@@ -213,142 +378,44 @@ describe('Dashboard shell: the sidebar', () => {
       'KYC Verification',
       'Disputes',
       'Profile',
+      'Shipping Calculator',
+      'Order Loan Calculator',
     ]);
-    expect(menu().getByRole('link', { name: 'Orders' })).toHaveAttribute('aria-current', 'page');
-    expect(menu().getByRole('link', { name: 'Overview' })).not.toHaveAttribute('aria-current');
+    expect(list.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
+    expect(sheet.getByText('Buyer hub')).toBeInTheDocument();
+    expect(sheet.getByRole('link', { name: 'Help Desk' })).toHaveAttribute('href', '/contact');
+    expect(sheet.getByRole('link', { name: 'Market' })).toHaveAttribute('href', '/');
+    expect(sheet.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
   });
 
-  it('keeps the buyer\'s calculators in a Tools list that opens and closes', () => {
+  it('names the hub for a supplier and flags Subscription when unpaid', async () => {
+    const user = userEvent.setup();
+    signIn('supplier', { isPaidSubscriber: false });
+    renderAt('/dashboard/supplier/subscription');
+    await user.click(screen.getByRole('button', { name: 'Open sidebar menu' }));
+    const sheet = within(screen.getByRole('dialog'));
+    expect(sheet.getByText('Supplier hub')).toBeInTheDocument();
+    expect(sheet.getByRole('link', { name: /Subscription/ })).toHaveTextContent('Unpaid');
+  });
+
+  it('closes after a section is chosen', async () => {
+    const user = userEvent.setup();
     signIn('buyer');
     renderAt('/dashboard/buyer');
-    const toggle = menu().getByRole('button', { name: 'Tools' });
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(menu().getByRole('link', { name: 'Shipping Calculator' })).toHaveAttribute('href', '/shipping-calculator');
-    expect(menu().getByRole('link', { name: 'Order Loan Calculator' })).toHaveAttribute('href', '/loan-calculator');
-    fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(menu().queryByRole('link', { name: 'Shipping Calculator' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Open sidebar menu' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('link', { name: 'Orders' }));
+    expect(where()).toBe('/dashboard/buyer/orders');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('lists every section of a supplier\'s dashboard and has no Tools list', () => {
-    signIn('supplier');
-    renderAt('/dashboard/supplier');
-    const labels = menu()
-      .getAllByRole('link')
-      .map((link) => link.textContent);
-    expect(labels).toEqual([
-      'Overview',
-      'AI Sales Assistant',
-      'Business Overview',
-      'My Products',
-      'Inventory & Stock',
-      'RFQ Leads',
-      'Quotations',
-      'Orders',
-      'Messages',
-      'Notifications',
-      'Verification',
-      'Disputes',
-      'Analytics',
-      'Subscription',
-      'Business Profile',
-    ]);
-    expect(menu().queryByRole('button', { name: 'Tools' })).not.toBeInTheDocument();
-  });
-
-  it('marks only Overview on the overview page, not every page under it', () => {
-    signIn('supplier');
-    renderAt('/dashboard/supplier');
-    expect(menu().getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
-    expect(menu().getByRole('link', { name: 'My Products' })).not.toHaveAttribute('aria-current');
-  });
-
-  it('has two sections for an admin', () => {
-    signIn('admin');
-    renderAt('/dashboard/admin');
-    expect(
-      menu()
-        .getAllByRole('link')
-        .map((link) => link.textContent),
-    ).toEqual(['Control Panel', 'AI Match Analytics']);
-  });
-
-  it('names the hub on a gold plaque', () => {
-    signIn('buyer');
-    const buyer = renderAt('/dashboard/buyer');
-    expect(screen.getByText('Buyer hub')).toBeInTheDocument();
-    buyer.unmount();
-    signIn('supplier');
-    renderAt('/dashboard/supplier');
-    expect(screen.getByText('Supplier hub')).toBeInTheDocument();
-  });
-
-  it('has the help desk, the marketplace and sign out at the bottom', () => {
+  it('signs out from the list', async () => {
+    const user = userEvent.setup();
     signIn('buyer');
     renderAt('/dashboard/buyer');
-    const side = within(screen.getByRole('complementary', { name: 'Dashboard menu' }));
-    expect(side.getByRole('link', { name: 'Help Desk' })).toHaveAttribute('href', '/contact');
-    expect(side.getByRole('link', { name: 'Market' })).toHaveAttribute('href', '/');
-    expect(side.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
-  });
-
-  it('signs out and goes to the home page', async () => {
-    signIn('buyer');
-    renderAt('/dashboard/buyer');
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }));
-    });
+    await user.click(screen.getByRole('button', { name: 'Open sidebar menu' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign Out' }));
     expect(auth.value.signOut).toHaveBeenCalledTimes(1);
-    expect(toastMock.success).toHaveBeenCalledWith('Signed out successfully');
-    expect(where()).toBe('/');
-  });
-
-  it('opens the same menu on a phone from the menu button', () => {
-    signIn('buyer');
-    renderAt('/dashboard/buyer');
-    expect(screen.getAllByRole('complementary', { name: 'Dashboard menu' })).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Open sidebar menu' }));
-    // an open drawer hides the page behind it from screen readers, so the page's own sidebar is looked for with `hidden`
-    expect(screen.getAllByRole('complementary', { name: 'Dashboard menu', hidden: true })).toHaveLength(2);
-  });
-});
-
-describe('Dashboard shell: the clock', () => {
-  it('shows the time and date and says the browser is online', () => {
-    signIn('buyer');
-    renderAt('/dashboard/buyer');
-    const clock = document.querySelector('.dsh-clock') as HTMLElement;
-    expect(clock).toHaveTextContent(/Local time \d{2}:\d{2}/);
-    expect(clock).toHaveTextContent('Online');
-    expect(clock).not.toHaveClass('is-offline');
-  });
-
-  it('says offline when the browser loses its connection, and online again when it is back', () => {
-    signIn('buyer');
-    renderAt('/dashboard/buyer');
-    const clock = document.querySelector('.dsh-clock') as HTMLElement;
-    act(() => {
-      window.dispatchEvent(new Event('offline'));
-    });
-    expect(clock).toHaveClass('is-offline');
-    expect(clock).toHaveTextContent('Offline');
-    act(() => {
-      window.dispatchEvent(new Event('online'));
-    });
-    expect(clock).not.toHaveClass('is-offline');
-  });
-
-  it('moves the seconds on', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 10, 15, 16, 20, 5));
-    signIn('buyer');
-    renderAt('/dashboard/buyer');
-    const seconds = () => document.querySelector('.dsh-clock-time small')?.textContent;
-    expect(seconds()).toBe('05');
-    act(() => {
-      vi.advanceTimersByTime(3000);
-    });
-    expect(seconds()).toBe('08');
+    await waitFor(() => expect(where()).toBe('/'));
   });
 });
 
@@ -374,12 +441,18 @@ describe('Dashboard shell: the rules that were already there', () => {
     expect(where()).toBe('/dashboard/admin/ai-match-analytics');
   });
 
-  it('shows the unpaid banner and flags Subscription for a manufacturer who has not subscribed', () => {
+  it('shows the unpaid banner and flags Subscription for a manufacturer who has not subscribed', async () => {
+    const user = userEvent.setup();
     signIn('supplier', { isPaidSubscriber: false });
     renderAt('/dashboard/supplier/subscription');
     expect(screen.getByText('Unpaid Manufacturer Account')).toBeInTheDocument();
+    expect(screen.getByText('Contacts Locked')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Subscribe Now' })).toHaveAttribute('href', '/dashboard/supplier/subscription');
-    expect(menu().getByRole('link', { name: /Subscription/ })).toHaveTextContent('Unpaid');
+    expect(screen.getByRole('link', { name: 'Compare Plans' })).toHaveAttribute('href', '/pricing');
+    const more = menu().getByRole('button', { name: /More/ });
+    expect(more.querySelector('.dsh-dot')).not.toBeNull();
+    await user.click(more);
+    expect(screen.getByRole('menuitem', { name: /Subscription/ })).toHaveTextContent('Unpaid');
   });
 
   it('keeps an unpaid manufacturer on the pages they may open', () => {
@@ -399,6 +472,7 @@ describe('Dashboard shell: the rules that were already there', () => {
     signIn('supplier');
     const paid = renderAt('/dashboard/supplier');
     expect(screen.queryByText('Unpaid Manufacturer Account')).not.toBeInTheDocument();
+    expect(menu().getByRole('button', { name: /More/ }).querySelector('.dsh-dot')).toBeNull();
     paid.unmount();
     signIn('buyer');
     renderAt('/dashboard/buyer');
