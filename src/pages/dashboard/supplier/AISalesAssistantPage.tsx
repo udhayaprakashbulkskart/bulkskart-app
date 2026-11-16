@@ -170,9 +170,9 @@ export default function AISalesAssistantPage() {
               <span className="p-1.5 rounded-lg bg-[#FF5A00]/15 text-[#FF5A00]">
                 <Sparkles className="w-5 h-5" />
               </span>
-              <h1 className="text-xl sm:text-2xl font-black text-white">AI Sales Assistant</h1>
+              <h1 className="text-xl sm:text-2xl font-black text-foreground">AI Sales Assistant</h1>
             </div>
-            <p className="text-xs sm:text-sm text-white/60 mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Autonomous catalog analyzer, real-time RFQ matching engine, and intelligent quotation drafting system.
             </p>
           </div>

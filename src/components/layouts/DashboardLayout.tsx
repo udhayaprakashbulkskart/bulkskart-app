@@ -13,9 +13,10 @@ import {
   Settings, LogOut, Menu, Globe, BarChart3, TrendingUp,
   Shield, Flag, CreditCard, Building2, UserCircle,
   Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
-  Search, ChevronDown, LifeBuoy, Plus,
+  Search, ChevronDown, LifeBuoy, Plus, Sun, Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import '@/components/dashboard/dashboard.css';
 
 /** Routes unpaid manufacturers may still open (subscribe / setup / inbox / browse). */
@@ -212,10 +213,12 @@ interface MobileMenuProps {
   roleLabel: string;
   unpaid: boolean;
   showPublicProfile: boolean;
+  theme: string;
+  onToggleTheme: () => void;
 }
 
 /** The same sections as a list, for a phone. */
-function MobileMenu({ items, isActive, onNavigate, onSignOut, roleLabel, unpaid, showPublicProfile }: MobileMenuProps) {
+function MobileMenu({ items, isActive, onNavigate, onSignOut, roleLabel, unpaid, showPublicProfile, theme, onToggleTheme }: MobileMenuProps) {
   const main = items.filter((item) => !item.tool);
   const tools = items.filter((item) => item.tool);
   const link = (item: NavItem) => {
@@ -232,7 +235,7 @@ function MobileMenu({ items, isActive, onNavigate, onSignOut, roleLabel, unpaid,
   return (
     <>
       <Link to="/" className="dsh-brand" onClick={onNavigate} aria-label="BulkSkart home">
-        <BrandLogo size="md" variant="dark" linkTo={null} />
+        <BrandLogo size="md" variant="auto" linkTo={null} />
       </Link>
       <span className="dsh-slabel">{roleLabel}</span>
       <nav className="dsh-slist" aria-label="Dashboard sections">
@@ -250,6 +253,10 @@ function MobileMenu({ items, isActive, onNavigate, onSignOut, roleLabel, unpaid,
           <Globe aria-hidden="true" />
           <span>Market</span>
         </Link>
+        <button type="button" onClick={onToggleTheme} className="dsh-slink">
+          {theme === 'dark' ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+          <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+        </button>
         <button type="button" onClick={onSignOut} className="dsh-slink is-danger">
           <LogOut aria-hidden="true" />
           <span>Sign Out</span>
@@ -265,6 +272,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isPaidSubscriber, signOut, loading, resolvedRole, displayName, profile } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -411,12 +419,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 roleLabel={roleLabel}
                 unpaid={isUnpaidManufacturer}
                 showPublicProfile={showPublicProfile}
+                theme={theme}
+                onToggleTheme={toggleTheme}
               />
             </SheetContent>
           </Sheet>
 
           <Link to="/" className="dsh-brand" aria-label="BulkSkart home">
-            <BrandLogo size="md" variant="dark" linkTo={null} />
+            <BrandLogo size="md" variant="auto" linkTo={null} />
           </Link>
 
           <NavBar items={navItems} isActive={isActive} unpaid={isUnpaidManufacturer} />
@@ -481,6 +491,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <span>Open the marketplace</span>
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem className="dsh-mi" onSelect={() => toggleTheme()}>
+                  {theme === 'dark' ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+                  <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="dsh-mi is-danger" onSelect={handleSignOut}>
                   <LogOut aria-hidden="true" />
@@ -531,7 +545,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <Link to="/pricing" className="dbtn is-ghost">
               Compare Plans
             </Link>
-            <Link to="/dashboard/supplier/subscription" className="dbtn is-dark">
+            <Link to="/dashboard/supplier/subscription" className="dbtn is-primary">
               <Sparkles aria-hidden="true" />
               <span>Subscribe Now</span>
             </Link>

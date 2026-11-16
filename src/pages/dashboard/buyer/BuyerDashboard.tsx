@@ -121,7 +121,7 @@ export default function BuyerDashboard() {
               <Link to="/dashboard/buyer/requirements" className="dbtn is-ghost">
                 My requirements
               </Link>
-              <Link to="/post-requirement" className="dbtn is-dark">
+              <Link to="/post-requirement" className="dbtn is-primary">
                 <Plus aria-hidden="true" /> Post requirement
               </Link>
             </>
@@ -134,7 +134,7 @@ export default function BuyerDashboard() {
             icon={ShieldCheck}
             title="Get Verified Buyer Badge"
             action={
-              <Link to="/dashboard/buyer/verification" className="dbtn is-dark">
+              <Link to="/dashboard/buyer/verification" className="dbtn is-primary">
                 Verify Now
               </Link>
             }
@@ -164,7 +164,7 @@ export default function BuyerDashboard() {
             tone="warn"
             title={`Complete Business Procurement Profile (${completion || 30}% Completed)`}
             action={
-              <Link to="/business-setup" className="dbtn is-dark">
+              <Link to="/business-setup" className="dbtn is-primary">
                 Complete Profile
               </Link>
             }
@@ -264,7 +264,7 @@ export default function BuyerDashboard() {
           subtitle="Your five newest"
           right={
             <div className="flex shrink-0 items-center gap-2">
-              <Link to="/post-requirement" className="dbtn is-dark hidden md:inline-flex">
+              <Link to="/post-requirement" className="dbtn is-primary hidden md:inline-flex">
                 <Plus aria-hidden="true" /> Post Requirement
               </Link>
               <Link to="/dashboard/buyer/requirements" className="dbtn is-ghost">

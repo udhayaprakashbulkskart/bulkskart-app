@@ -156,7 +156,7 @@ export default function SupplierDashboard() {
             <span className="inline-flex flex-wrap items-center gap-2">
               <span>{company?.company_name ?? 'Your Dashboard'}</span>
               {company?.is_verified && (
-                <Badge className="shrink-0 gap-0.5 border-green-300 bg-green-100 px-1.5 py-0 text-[10px] text-green-700">
+                <Badge className="shrink-0 gap-0.5 border-green-500/30 bg-green-500/15 px-1.5 py-0 text-[10px] text-green-700 dark:text-green-400">
                   <ShieldCheck className="h-2.5 w-2.5" /> Verified
                 </Badge>
               )}
@@ -167,7 +167,7 @@ export default function SupplierDashboard() {
               <Link to="/dashboard/supplier/rfqs" className="dbtn is-ghost">
                 RFQ leads
               </Link>
-              <Link to="/dashboard/supplier/products" className="dbtn is-dark">
+              <Link to="/dashboard/supplier/products" className="dbtn is-primary">
                 <Plus aria-hidden="true" /> Add Product
               </Link>
             </>
@@ -182,7 +182,7 @@ export default function SupplierDashboard() {
             title={!company ? 'Setup Your Business Profile (Mandatory)' : `Complete Business Profile (${completion || 35}% Complete)`}
             tag={`Step ${(company as { onboarding_step?: number } | null)?.onboarding_step || 1} of 5`}
             action={
-              <Link to="/business-setup" className="dbtn is-dark">
+              <Link to="/business-setup" className="dbtn is-primary">
                 <Building2 aria-hidden="true" />
                 {!company ? 'Start Setup Wizard' : 'Resume Profile Setup'}
               </Link>
@@ -205,7 +205,7 @@ export default function SupplierDashboard() {
             icon={ShieldCheck}
             title="Get Verified Manufacturer Badge"
             action={
-              <Link to="/dashboard/supplier/verification" className="dbtn is-dark">
+              <Link to="/dashboard/supplier/verification" className="dbtn is-primary">
                 Verify Now
               </Link>
             }
@@ -236,7 +236,7 @@ export default function SupplierDashboard() {
             title="Action Required: Unpaid Manufacturer Account"
             tag="Contacts Locked"
             action={
-              <Link to="/dashboard/supplier/subscription" className="dbtn is-dark">
+              <Link to="/dashboard/supplier/subscription" className="dbtn is-primary">
                 <Sparkles aria-hidden="true" /> Pay Subscription Now
               </Link>
             }

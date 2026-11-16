@@ -9,6 +9,9 @@ vi.mock('sonner', () => ({ toast: toastMock }));
 const auth = vi.hoisted(() => ({ value: {} as Record<string, unknown> }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => auth.value }));
 
+const themeState = vi.hoisted(() => ({ theme: 'dark', toggleTheme: vi.fn() }));
+vi.mock('@/contexts/ThemeContext', () => ({ useTheme: () => themeState }));
+
 vi.mock('@/components/common/NotificationBell', () => ({
   default: ({ className }: { className?: string }) => (
     <button type="button" className={className} aria-label="Notifications">
@@ -63,6 +66,8 @@ const where = () => screen.getByTestId('where').textContent;
 const menu = () => within(screen.getByRole('navigation', { name: 'Dashboard sections' }));
 
 beforeEach(() => {
+  themeState.theme = 'dark';
+  themeState.toggleTheme.mockClear();
   toastMock.success.mockClear();
   toastMock.error.mockClear();
   toastMock.message.mockClear();
@@ -328,6 +333,22 @@ describe('Dashboard shell: the account menu', () => {
     expect(screen.queryByRole('button', { name: 'Copy public link' })).not.toBeInTheDocument();
   });
 
+  it('switches between the light and the dark look of the site from the menu', async () => {
+    const user = userEvent.setup();
+    signIn('buyer');
+    const dark = renderAt('/dashboard/buyer');
+    await user.click(screen.getByRole('button', { name: 'Suresh Kumar account menu' }));
+    // the site is dark, so the menu offers the other one
+    await user.click(screen.getByRole('menuitem', { name: 'Light mode' }));
+    expect(themeState.toggleTheme).toHaveBeenCalledTimes(1);
+    dark.unmount();
+    themeState.theme = 'light';
+    renderAt('/dashboard/buyer');
+    await user.click(screen.getByRole('button', { name: 'Suresh Kumar account menu' }));
+    expect(screen.getByRole('menuitem', { name: 'Dark mode' })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Light mode' })).not.toBeInTheDocument();
+  });
+
   it('signs out and goes to the home page', async () => {
     const user = userEvent.setup();
     signIn('buyer');
@@ -386,6 +407,15 @@ describe('Dashboard shell: the menu on a phone', () => {
     expect(sheet.getByRole('link', { name: 'Help Desk' })).toHaveAttribute('href', '/contact');
     expect(sheet.getByRole('link', { name: 'Market' })).toHaveAttribute('href', '/');
     expect(sheet.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
+  });
+
+  it('has the same light / dark switch', async () => {
+    const user = userEvent.setup();
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    await user.click(screen.getByRole('button', { name: 'Open sidebar menu' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Light mode' }));
+    expect(themeState.toggleTheme).toHaveBeenCalledTimes(1);
   });
 
   it('names the hub for a supplier and flags Subscription when unpaid', async () => {

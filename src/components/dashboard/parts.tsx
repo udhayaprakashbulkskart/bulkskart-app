@@ -547,10 +547,10 @@ function fanSegment(index: number): string {
 }
 
 function segmentColor(index: number, total: number): string {
-  // brighter red at the start of the arc, deeper at the end
+  // the brand orange: lighter at the start of the arc, deeper at the end
   const t = total <= 1 ? 0 : index / (total - 1);
-  const from = [244, 98, 106];
-  const to = [190, 20, 44];
+  const from = [255, 150, 70];
+  const to = [224, 79, 0];
   const c = from.map((f, k) => Math.round(f + (to[k] - f) * t));
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
 }
