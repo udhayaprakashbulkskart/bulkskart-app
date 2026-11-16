@@ -6,19 +6,28 @@
  * RequirementsPage state — it only calls createRequirement() and on success
  * invokes onPosted() so the parent can prepend the new row.
  */
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Upload, Zap, Calendar, Package, AlertCircle } from 'lucide-react';
+import React, { useId, useState } from 'react';
+import { Calendar, FileText, Globe2, IndianRupee, Layers, Loader2, MapPin, MessagesSquare, Plus, Tag, Users, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Actions,
+  CheckRow,
+  CountedTextArea,
+  Field,
+  FormDialog,
+  IconBox,
+  KitButton,
+  NativeSelect,
+  SectionTitle,
+  Stepper,
+  TextArea,
+  TextInput,
+  type FormPoint,
+} from '@/components/formkit';
 import { createRequirement } from '@/lib/api';
 import { supabase } from '@/db/supabase';
 import { invokeAutoQuotation } from '@/lib/autoQuotationApi';
+import { CITY_NAMES } from '@/lib/signup/places';
 import type { Category, Requirement } from '@/types/types';
 import SingleImageUploader from '@/components/common/SingleImageUploader';
 
@@ -38,9 +47,16 @@ interface Props {
   onPosted: (req: Requirement) => void;
 }
 
+const POINTS: FormPoint[] = [
+  { icon: FileText, title: 'Say what you need', detail: 'Product, quantity and delivery' },
+  { icon: Users, title: 'Matching suppliers see it', detail: 'Those who make this product' },
+  { icon: MessagesSquare, title: 'Quotes in your dashboard', detail: 'Compare them side by side' },
+  { icon: Zap, title: 'Mark it urgent', detail: 'When you need it fast' },
+];
+
 export default function PostRequirementDialog({ open, onClose, categories, buyerId, onPosted }: Props) {
+  const ids = useId();
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
@@ -58,21 +74,6 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
   });
 
   const set = (k: string, v: string | boolean) => setForm(f => ({ ...f, [k]: v }));
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error('File must be under 5 MB'); return; }
-    setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `requirements/${buyerId}/${Date.now()}.${ext}`;
-    const { data, error } = await supabase.storage.from('attachments').upload(path, file);
-    if (error) { toast.error('Upload failed'); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from('attachments').getPublicUrl(data.path);
-    setAttachmentUrl(urlData.publicUrl);
-    setUploading(false);
-    toast.success('File uploaded');
-  };
 
   const validateDialogForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -141,7 +142,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
       .eq('id', id)
       .maybeSingle();
     if (newReq) onPosted(newReq as Requirement);
-    toast.success('Requirement posted with reference photo! Suppliers will respond shortly.');
+    toast.success('Requirement posted. Matching suppliers can now send you quotes.');
     // Trigger auto-quotation matching in background (non-blocking)
     invokeAutoQuotation(id).catch(() => {/* silent — non-critical */});
     // Reset form
@@ -151,215 +152,216 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
     onClose();
   };
 
+  const clear = (key: string) => setFieldErrors((prev) => ({ ...prev, [key]: '' }));
+
   return (
-    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-2xl max-h-[90dvh] overflow-y-auto bg-card">
-        <DialogHeader>
-          <DialogTitle className="text-[18px] font-black text-foreground flex items-center gap-2">
-            <Package className="w-5 h-5 text-[#FF5A00]" />
-            Post a Requirement
-          </DialogTitle>
-          <DialogDescription className="text-[13px] text-muted-foreground">
-            Describe what you need — verified suppliers will respond with quotes.
-          </DialogDescription>
-        </DialogHeader>
+    <FormDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+      busy={loading}
+      title={
+        <>
+          Post a <em>Requirement</em>
+        </>
+      }
+      description="Describe what you need and suppliers can send you quotes."
+      points={POINTS}
+      sheetArt="quote"
+    >
+      <form onSubmit={handleSubmit} noValidate className="fk-form fk-stack">
+        <SectionTitle>What you need</SectionTitle>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          {/* Urgency toggle */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => set('is_urgent', !form.is_urgent)}
-              className={`flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full border transition-colors ${form.is_urgent ? 'bg-red-50 border-red-400 text-red-600' : 'border-border text-muted-foreground hover:border-[#FF5A00]'}`}
-            >
-              <Zap className="w-3.5 h-3.5" />
-              {form.is_urgent ? 'Urgent' : 'Normal'} Priority
-            </button>
-            {form.is_urgent && <Badge className="bg-red-100 text-red-600 border-red-300 text-[10px]">URGENT</Badge>}
-          </div>
-
-          {/* Title */}
-          <div className="space-y-1.5">
-            <Label className="text-[13px] font-semibold text-foreground">Requirement / Product Name <span className="text-red-500">*</span></Label>
-            <Input
+        <Field htmlFor={`${ids}-title`} label="Requirement / Product Name" required error={fieldErrors.title}>
+          <IconBox icon={Tag}>
+            <TextInput
+              id={`${ids}-title`}
               value={form.title}
-              onChange={e => { set('title', e.target.value); setFieldErrors(prev => ({ ...prev, title: '' })); }}
-              placeholder="e.g. Basmati Rice 1121 Grade Export Quality"
-              className={`border-border text-[13px] h-10 ${fieldErrors.title ? 'border-destructive ring-1 ring-destructive' : ''}`}
-              required
-            />
-            {fieldErrors.title && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {fieldErrors.title}</p>}
-          </div>
-
-          {/* Reference Image Uploader */}
-          <div className="bg-muted/30 p-3 rounded-xl border border-border">
-            <SingleImageUploader
-              label="Requirement Reference Image *"
-              description="Upload a photo or drawing of the exact requested product/commodity (JPG, PNG, WEBP, max 5MB)."
-              value={attachmentUrl}
-              shape="rectangle"
-              bucket="rfq-images"
-              folder={`rfqs/${buyerId}`}
-              onChange={(url) => {
-                setAttachmentUrl(url ?? null);
-                if (url) setFieldErrors(prev => ({ ...prev, image: '' }));
+              onChange={(e) => {
+                set('title', e.target.value);
+                clear('title');
               }}
+              placeholder="e.g. Basmati Rice 1121 Grade Export Quality"
+              invalid={Boolean(fieldErrors.title)}
+              iconPadding
             />
-            {fieldErrors.image && (
-              <p className="text-xs text-destructive mt-2 flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" /> {fieldErrors.image}
-              </p>
-            )}
-          </div>
+          </IconBox>
+        </Field>
 
-          {/* Category + Unit in 2 cols */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">Category <span className="text-red-500">*</span></Label>
-              <Select value={form.category_id} onValueChange={v => { set('category_id', v); setFieldErrors(prev => ({ ...prev, category_id: '' })); }}>
-                <SelectTrigger className={`border-border text-[13px] h-10 ${fieldErrors.category_id ? 'border-destructive ring-1 ring-destructive' : ''}`}>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border">
-                  {categories.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {fieldErrors.category_id && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {fieldErrors.category_id}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">Unit <span className="text-red-500">*</span></Label>
-              <Select value={form.quantity_unit} onValueChange={v => set('quantity_unit', v)}>
-                <SelectTrigger className="border-border text-[13px] h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border">
-                  {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        <Field label="Reference Image" required error={fieldErrors.image} hint="A photo or drawing of the exact product (JPG, PNG or WEBP, up to 5 MB).">
+          <SingleImageUploader
+            value={attachmentUrl}
+            shape="rectangle"
+            bucket="rfq-images"
+            folder={`rfqs/${buyerId}`}
+            onChange={(url) => {
+              setAttachmentUrl(url ?? null);
+              if (url) clear('image');
+            }}
+          />
+        </Field>
 
-          {/* Quantity + Budget */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">Quantity <span className="text-red-500">*</span></Label>
-              <Input
-                type="number" min="1"
-                value={form.quantity}
-                onChange={e => { set('quantity', e.target.value); setFieldErrors(prev => ({ ...prev, quantity: '' })); }}
-                placeholder="e.g. 500"
-                className={`border-border text-[13px] h-10 ${fieldErrors.quantity ? 'border-destructive ring-1 ring-destructive' : ''}`}
-              />
-              {fieldErrors.quantity && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {fieldErrors.quantity}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">Budget / Expected Price (₹, optional)</Label>
-              <Input
-                type="number" min="0"
+        <div className="fk-grid">
+          <Field htmlFor={`${ids}-category`} label="Category" required error={fieldErrors.category_id}>
+            <IconBox icon={Layers}>
+              <NativeSelect
+                id={`${ids}-category`}
+                value={form.category_id}
+                onChange={(e) => {
+                  set('category_id', e.target.value);
+                  clear('category_id');
+                }}
+                invalid={Boolean(fieldErrors.category_id)}
+                iconPadding
+              >
+                <option value="">Select category</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            </IconBox>
+          </Field>
+          <Field htmlFor={`${ids}-qty`} label="Quantity" required error={fieldErrors.quantity}>
+            <Stepper
+              id={`${ids}-qty`}
+              value={form.quantity}
+              onChange={(value) => {
+                set('quantity', value);
+                clear('quantity');
+              }}
+              min={1}
+              unitName={form.quantity_unit}
+              invalid={Boolean(fieldErrors.quantity)}
+            />
+          </Field>
+          <Field htmlFor={`${ids}-unit`} label="Unit" required>
+            <NativeSelect id={`${ids}-unit`} value={form.quantity_unit} onChange={(e) => set('quantity_unit', e.target.value)}>
+              {UNITS.map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Field htmlFor={`${ids}-budget`} label="Budget / Expected Price" optional>
+            <IconBox icon={IndianRupee} accent>
+              <TextInput
+                id={`${ids}-budget`}
+                type="number"
+                inputMode="decimal"
+                min={0}
                 value={form.budget_max}
-                onChange={e => set('budget_max', e.target.value)}
-                placeholder="e.g. 50000"
-                className="border-border text-[13px] h-10"
+                onChange={(e) => set('budget_max', e.target.value)}
+                placeholder="e.g. 50,000"
+                iconPadding
               />
-            </div>
-          </div>
+            </IconBox>
+          </Field>
+        </div>
 
-          {/* Destination + City */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">Delivery Location (Country) <span className="text-red-500">*</span></Label>
-              <Select value={form.destination_country} onValueChange={v => { set('destination_country', v); setFieldErrors(prev => ({ ...prev, destination: '' })); }}>
-                <SelectTrigger className={`border-border text-[13px] h-10 ${fieldErrors.destination ? 'border-destructive ring-1 ring-destructive' : ''}`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border max-h-60">
-                  {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">City / State</Label>
-              <Input
+        <SectionTitle>Delivery</SectionTitle>
+
+        <div className="fk-grid">
+          <Field htmlFor={`${ids}-country`} label="Country" required error={fieldErrors.destination}>
+            <IconBox icon={Globe2}>
+              <NativeSelect
+                id={`${ids}-country`}
+                value={form.destination_country}
+                onChange={(e) => {
+                  set('destination_country', e.target.value);
+                  clear('destination');
+                }}
+                invalid={Boolean(fieldErrors.destination)}
+                iconPadding
+              >
+                {COUNTRIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </NativeSelect>
+            </IconBox>
+          </Field>
+          <Field htmlFor={`${ids}-city`} label="City / State">
+            <IconBox icon={MapPin} accent>
+              <TextInput
+                id={`${ids}-city`}
+                list={`${ids}-cities`}
                 value={form.destination_city}
-                onChange={e => { set('destination_city', e.target.value); setFieldErrors(prev => ({ ...prev, destination: '' })); }}
+                onChange={(e) => {
+                  set('destination_city', e.target.value);
+                  clear('destination');
+                }}
                 placeholder="e.g. Mumbai"
-                className="border-border text-[13px] h-10"
+                autoComplete="address-level2"
+                iconPadding
               />
-            </div>
-          </div>
-          {fieldErrors.destination && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {fieldErrors.destination}</p>}
+            </IconBox>
+            <datalist id={`${ids}-cities`}>
+              {CITY_NAMES.map((city) => (
+                <option key={city} value={city} />
+              ))}
+            </datalist>
+          </Field>
+          <Field htmlFor={`${ids}-deadline`} label="Required Delivery Date" optional wide>
+            <IconBox icon={Calendar}>
+              <TextInput
+                id={`${ids}-deadline`}
+                type="date"
+                value={form.deadline}
+                onChange={(e) => set('deadline', e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                iconPadding
+              />
+            </IconBox>
+          </Field>
+        </div>
 
-          {/* Deadline */}
-          <div className="space-y-1.5">
-            <Label className="text-[13px] font-semibold text-foreground flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-[#FF5A00]" /> Required Delivery Date (optional)
-            </Label>
-            <Input
-              type="date"
-              value={form.deadline}
-              onChange={e => set('deadline', e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
-              className="border-border text-[13px] h-10"
-            />
-          </div>
+        <SectionTitle>Details</SectionTitle>
 
-          {/* Description */}
-          <div className="space-y-1.5">
-            <Label className="text-[13px] font-semibold text-foreground">Description <span className="text-red-500">*</span></Label>
-            <Textarea
-              value={form.description}
-              onChange={e => { set('description', e.target.value); setFieldErrors(prev => ({ ...prev, description: '' })); }}
-              placeholder="Describe your requirement in detail (material grade, intended use, testing standards)..."
-              className={`border-border text-[13px] min-h-[80px] resize-none ${fieldErrors.description ? 'border-destructive ring-1 ring-destructive' : ''}`}
-            />
-            {fieldErrors.description && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {fieldErrors.description}</p>}
-          </div>
+        <Field htmlFor={`${ids}-description`} label="Description" required error={fieldErrors.description} hint="At least 15 characters: material grade, intended use, testing standards.">
+          <CountedTextArea
+            id={`${ids}-description`}
+            icon={FileText}
+            rows={3}
+            maxLength={1000}
+            value={form.description}
+            onChange={(e) => {
+              set('description', e.target.value);
+              clear('description');
+            }}
+            placeholder="Describe your requirement in detail (material grade, intended use, testing standards)..."
+            invalid={Boolean(fieldErrors.description)}
+          />
+        </Field>
 
-          {/* Specifications */}
-          <div className="space-y-1.5">
-            <Label className="text-[13px] font-semibold text-foreground">Product Specifications (optional)</Label>
-            <Textarea
-              value={form.specifications}
-              onChange={e => set('specifications', e.target.value)}
-              placeholder="Grade, size, certifications, packaging, etc."
-              className="border-border text-[13px] min-h-[70px] resize-none"
-            />
-          </div>
+        <Field htmlFor={`${ids}-specs`} label="Product Specifications" optional>
+          <TextArea
+            id={`${ids}-specs`}
+            rows={2}
+            value={form.specifications}
+            onChange={(e) => set('specifications', e.target.value)}
+            placeholder="Grade, size, certifications, packaging, etc."
+          />
+        </Field>
 
-          {/* File upload */}
-          <div className="space-y-1.5">
-            <Label className="text-[13px] font-semibold text-foreground">Image / Document (optional, max 5 MB)</Label>
-            <label className="flex items-center gap-2 border border-dashed border-border rounded-lg px-4 py-3 cursor-pointer hover:border-[#FF5A00] transition-colors group">
-              <Upload className="w-4 h-4 text-muted-foreground group-hover:text-[#FF5A00]" />
-              <span className="text-[12px] text-muted-foreground group-hover:text-[#FF5A00]">
-                {uploading ? 'Uploading…' : attachmentUrl ? '✓ File uploaded' : 'Choose file to upload'}
-              </span>
-              <input type="file" className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={handleFileUpload} disabled={uploading} />
-            </label>
-          </div>
+        <CheckRow id={`${ids}-urgent`} checked={form.is_urgent} onCheckedChange={(checked) => set('is_urgent', checked)} icon={Zap}>
+          Mark this requirement as urgent
+        </CheckRow>
 
-          {/* Submit */}
-          <div className="flex gap-3 pt-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onClose}
-              className="flex-1 border border-border text-muted-foreground hover:bg-muted"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading || uploading}
-              className="flex-1 bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold gap-2 shadow-[0_2px_0_#b83c00]"
-            >
-              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Posting…</> : <><Plus className="w-4 h-4" /> Post Requirement</>}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <Actions>
+          <KitButton type="submit" disabled={loading}>
+            {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Plus aria-hidden="true" />}
+            {loading ? 'Posting…' : 'Post Requirement'}
+          </KitButton>
+          <KitButton variant="ghost" onClick={onClose} disabled={loading}>
+            Cancel
+          </KitButton>
+        </Actions>
+      </form>
+    </FormDialog>
   );
 }

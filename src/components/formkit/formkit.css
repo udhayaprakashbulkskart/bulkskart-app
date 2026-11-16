@@ -795,6 +795,34 @@
   color: var(--fk-orange);
 }
 
+/* choosing files to attach */
+.fk-upload {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--fk-h, 48px);
+  padding: 10px 14px;
+  border: 1.5px dashed hsl(var(--foreground) / 0.28);
+  border-radius: var(--fk-r, 12px);
+  background: var(--fk-surface);
+  color: var(--fk-ink-2);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+.fk-upload:hover,
+.fk-upload:focus-within {
+  border-color: var(--fk-orange);
+  color: var(--fk-orange);
+  background: var(--fk-tint);
+}
+.fk-upload svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
 /* after it is sent */
 .fk-done {
   display: flex;
