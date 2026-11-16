@@ -10,6 +10,7 @@ export {
   IconBox,
   KitButton,
   NativeSelect,
+  RatingPicker,
   SectionTitle,
   Stepper,
   TextArea,
@@ -17,4 +18,5 @@ export {
   type EntityMeta,
 } from './fields';
 export { fk } from './classes';
+export { DELIVERY_TERMS, PAYMENT_TERMS, optionsWith } from './terms';
 export { ClipboardArt, WarehouseArt } from './art';

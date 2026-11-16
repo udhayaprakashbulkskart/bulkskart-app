@@ -1,5 +1,5 @@
-import React, { forwardRef, useId } from 'react';
-import { AlertCircle, CheckCircle2, Minus, Plus, type LucideIcon } from 'lucide-react';
+import React, { forwardRef, useId, useState } from 'react';
+import { AlertCircle, CheckCircle2, Minus, Plus, Star, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fk } from './classes';
 import './formkit.css';
@@ -191,6 +191,51 @@ export function CheckRow({
       {Icon && <Icon aria-hidden="true" />}
       <span>{children}</span>
     </label>
+  );
+}
+
+const RATING_WORDS = ['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'];
+
+/** Five stars to pick a rating from: a radio group, so it works with a keyboard and a screen reader. */
+export function RatingPicker({ id, value, onChange, labelledBy }: { id: string; value: number; onChange: (value: number) => void; labelledBy?: string }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const shown = hover ?? value;
+  const pick = (next: number) => {
+    const clamped = Math.min(5, Math.max(1, next));
+    onChange(clamped);
+    document.getElementById(`${id}-${clamped}`)?.focus();
+  };
+  return (
+    <div className="fk-rating" role="radiogroup" id={id} aria-labelledby={labelledBy} onMouseLeave={() => setHover(null)}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          id={`${id}-${n}`}
+          type="button"
+          role="radio"
+          aria-checked={value === n}
+          aria-label={`${n} ${n === 1 ? 'star' : 'stars'}, ${RATING_WORDS[n]}`}
+          tabIndex={value === n || (value < 1 && n === 1) ? 0 : -1}
+          className={n <= shown ? 'is-on' : undefined}
+          onClick={() => onChange(n)}
+          onMouseEnter={() => setHover(n)}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
+              event.preventDefault();
+              pick(value + 1);
+            } else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+              event.preventDefault();
+              pick(value - 1);
+            }
+          }}
+        >
+          <Star aria-hidden="true" />
+        </button>
+      ))}
+      <span className="fk-rating-word" aria-hidden="true">
+        {RATING_WORDS[shown] ?? ''}
+      </span>
+    </div>
   );
 }
 

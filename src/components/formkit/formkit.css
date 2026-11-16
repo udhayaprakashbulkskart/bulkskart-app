@@ -775,6 +775,139 @@
   color: var(--fk-ink-2);
   text-align: center;
 }
+/* five stars to rate with */
+.fk-rating {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+.fk-rating > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: hsl(var(--foreground) / 0.3);
+  cursor: pointer;
+  transition: transform 0.12s ease, color 0.12s ease;
+}
+.fk-rating > button svg {
+  width: 30px;
+  height: 30px;
+}
+.fk-rating > button.is-on {
+  color: #d97706;
+}
+.dark .fk-rating > button.is-on {
+  color: #fbbf24;
+}
+.fk-rating > button.is-on svg {
+  fill: currentColor;
+}
+.fk-rating > button:hover {
+  transform: scale(1.08);
+}
+.fk-rating > button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.35);
+}
+.fk-rating-word {
+  min-width: 5.5em;
+  margin-left: 8px;
+  font-size: 0.93rem;
+  font-weight: 700;
+  color: var(--fk-ink);
+}
+/* inline forms (on a page, not in a pop-up): the buttons sit at the end of the row on wider screens */
+@media (min-width: 640px) {
+  .fk-actions.is-inline {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  .fk-actions.is-inline .fk-btn {
+    min-width: 200px;
+  }
+}
+/* a running total ("Estimated total ₹1,20,000") */
+.fk-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 13px 16px;
+  border-radius: var(--fk-r);
+  border: 1px solid hsl(var(--primary) / 0.28);
+  background: var(--fk-tint);
+}
+.fk-total > span {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--fk-ink-2);
+}
+.fk-total > b {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--fk-orange);
+  font-variant-numeric: tabular-nums;
+}
+/* a read-back of what will be sent, row by row */
+.fk-summary {
+  margin: 0;
+  border: 1px solid var(--fk-line);
+  border-radius: var(--fk-r);
+  background: var(--fk-surface);
+  overflow: hidden;
+}
+.fk-summary > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-top: 1px solid var(--fk-line);
+}
+.fk-summary > div:first-child {
+  border-top: 0;
+}
+.fk-summary dt {
+  flex: none;
+  font-size: 0.86rem;
+  color: var(--fk-ink-2);
+}
+.fk-summary dd {
+  margin: 0;
+  min-width: 0;
+  text-align: right;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--fk-ink);
+  overflow-wrap: anywhere;
+}
+.fk-summary .is-total {
+  background: var(--fk-tint);
+}
+.fk-summary .is-total dd {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--fk-orange);
+  font-variant-numeric: tabular-nums;
+}
+.fk-summary .is-block {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.fk-summary .is-block dd {
+  text-align: left;
+  font-weight: 500;
+  white-space: pre-line;
+}
 .fk-callout {
   display: flex;
   align-items: flex-start;
@@ -949,6 +1082,12 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .fk-rating > button {
+    transition: none;
+  }
+  .fk-rating > button:hover {
+    transform: none;
+  }
   .fk-overlay,
   .fk-dialog {
     animation: none;

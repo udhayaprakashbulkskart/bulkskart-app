@@ -1,11 +1,25 @@
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Send, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, Eye, Edit3, Building2, Package, Lock } from 'lucide-react';
+import React, { useEffect, useId, useState } from 'react';
+import { Box, Clock, Edit3, Eye, FileText, Handshake, IndianRupee, Loader2, Package, Send, ShieldCheck, Sparkles, Truck } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Actions,
+  Callout,
+  CountedTextArea,
+  DELIVERY_TERMS,
+  EntityCard,
+  Field,
+  FormDialog,
+  IconBox,
+  KitButton,
+  NativeSelect,
+  PAYMENT_TERMS,
+  SectionTitle,
+  Stepper,
+  TextInput,
+  optionsWith,
+  type EntityMeta,
+  type FormPoint,
+} from '@/components/formkit';
 import type { Requirement } from '@/types/types';
 import type { AIQuotationDraft, MatchedProduct } from '@/lib/aiSalesAssistant';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,58 +35,87 @@ interface AIQuotationModalProps {
   onRequireSubscription?: () => void;
 }
 
-export default function AIQuotationModal({
-  open,
-  onOpenChange,
-  requirement,
-  product,
-  initialDraft,
-  onSuccess,
-  onRequireSubscription,
-}: AIQuotationModalProps) {
+const POINTS: FormPoint[] = [
+  { icon: Sparkles, title: 'Started from your catalogue', detail: 'Your product price and MOQ' },
+  { icon: Eye, title: 'You check it first', detail: 'Nothing is sent until you confirm' },
+  { icon: Send, title: 'Goes to the buyer', detail: 'As a quotation on their requirement' },
+];
+
+interface QuoteForm {
+  unitPrice: string;
+  quantity: string;
+  moq: string;
+  deliveryDays: string;
+  paymentTerms: string;
+  deliveryTerms: string;
+  notes: string;
+}
+
+const positive = (value: number | null | undefined) => (value && value > 0 ? String(value) : '');
+
+function fromDraft(draft: AIQuotationDraft | null, requirement: Requirement | null): QuoteForm {
+  return {
+    unitPrice: positive(draft?.unitPrice),
+    quantity: positive(draft?.quantity || Number(requirement?.quantity)),
+    moq: positive(draft?.moq),
+    deliveryDays: positive(draft?.deliveryDays),
+    paymentTerms: draft?.paymentTerms ?? '',
+    deliveryTerms: draft?.deliveryTerms ?? '',
+    notes: draft?.notes ?? '',
+  };
+}
+
+const rupees = (value: number) => `₹${Math.round(value).toLocaleString('en-IN')}`;
+
+/**
+ * A quotation drafted from the supplier's own catalogue. The supplier checks every value on a read-back screen and
+ * only then sends it; nothing goes to the buyer without that confirmation.
+ */
+export default function AIQuotationModal({ open, onOpenChange, requirement, product, initialDraft, onSuccess, onRequireSubscription }: AIQuotationModalProps) {
   const { user, company } = useAuth();
-
-  // Editable fields with human-in-the-loop confirmation
-  const [unitPrice, setUnitPrice] = useState<string>(initialDraft?.unitPrice ? String(initialDraft.unitPrice) : '250');
-  const [moq, setMoq] = useState<string>(initialDraft?.moq ? String(initialDraft.moq) : '500');
-  const [quantity, setQuantity] = useState<string>(initialDraft?.quantity ? String(initialDraft.quantity) : String(requirement?.quantity || 1000));
-  const [deliveryDays, setDeliveryDays] = useState<string>(initialDraft?.deliveryDays ? String(initialDraft.deliveryDays) : '15');
-  const [notes, setNotes] = useState<string>(initialDraft?.notes || 'Direct factory quotation with pre-dispatch inspection and export grade packaging.');
-  const [paymentTerms, setPaymentTerms] = useState<string>(initialDraft?.paymentTerms || '30% Advance, 70% against BL/Dispatch');
-  const [deliveryTerms, setDeliveryTerms] = useState<string>(initialDraft?.deliveryTerms || 'FOB Origin Port / Door Delivery Options');
-
-  // Preview stage state
+  const ids = useId();
+  const [form, setForm] = useState<QuoteForm>(() => fromDraft(initialDraft, requirement));
+  const [errors, setErrors] = useState<{ price?: string; quantity?: string }>({});
   const [isPreview, setIsPreview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sync draft when opened with new draft
-  React.useEffect(() => {
+  // a new draft (another requirement or product) starts the form again
+  useEffect(() => {
     if (initialDraft) {
-      setUnitPrice(String(initialDraft.unitPrice || 250));
-      setMoq(String(initialDraft.moq || 500));
-      setQuantity(String(initialDraft.quantity || requirement?.quantity || 1000));
-      setDeliveryDays(String(initialDraft.deliveryDays || 15));
-      setNotes(initialDraft.notes || 'Direct factory quotation with pre-dispatch inspection and export grade packaging.');
-      setPaymentTerms(initialDraft.paymentTerms || '30% Advance, 70% against BL/Dispatch');
-      setDeliveryTerms(initialDraft.deliveryTerms || 'FOB Origin Port');
+      setForm(fromDraft(initialDraft, requirement));
+      setErrors({});
       setIsPreview(false);
     }
   }, [initialDraft, requirement]);
 
   if (!requirement) return null;
 
-  const numPrice = Number(unitPrice) || 0;
-  const numQty = Number(quantity) || 0;
+  const set = (key: keyof QuoteForm, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
+  const unit = initialDraft?.moqUnit || requirement.quantity_unit || 'Pieces';
+  const numPrice = Number(form.unitPrice) || 0;
+  const numQty = Number(form.quantity) || 0;
   const totalCalculated = numPrice * numQty;
+  const requested = Number(requirement.quantity) || 0;
+
+  const priceHint =
+    initialDraft?.priceSource === 'catalogue' && form.unitPrice === positive(initialDraft.unitPrice)
+      ? 'From your catalogue price. Change it if this order needs a different price.'
+      : initialDraft?.priceSource === 'buyer' && form.unitPrice === positive(initialDraft.unitPrice)
+        ? "From the buyer's target price or budget. Check it before you send."
+        : `Your price for one ${unit.toLowerCase()}.`;
+
+  const meta: EntityMeta[] = [];
+  if (requested > 0) meta.push({ icon: Box, children: `Needs ${requested.toLocaleString('en-IN')} ${requirement.quantity_unit || unit}` });
+  if (product) meta.push({ icon: Sparkles, children: `${product.matchScore}% match` });
 
   const handleValidateAndPreview = (e: React.FormEvent) => {
     e.preventDefault();
-    if (numPrice <= 0) {
-      toast.error('Please enter a valid unit price greater than 0');
-      return;
-    }
-    if (numQty <= 0) {
-      toast.error('Please enter a valid quotation quantity');
+    const found: typeof errors = {};
+    if (numPrice <= 0) found.price = 'Please enter a unit price greater than 0.';
+    if (numQty <= 0) found.quantity = 'Please enter the quantity you are quoting for.';
+    setErrors(found);
+    if (found.price || found.quantity) {
+      document.getElementById(found.price ? `${ids}-price` : `${ids}-qty`)?.focus();
       return;
     }
     setIsPreview(true);
@@ -105,12 +148,12 @@ export default function AIQuotationModal({
         buyer_id: requirement.buyer_id || user.id,
         unit_price: numPrice,
         currency: 'INR',
-        moq: Number(moq) || 100,
-        moq_unit: initialDraft?.moqUnit || requirement.quantity_unit || 'Pieces',
-        delivery_days: Number(deliveryDays) || 15,
-        payment_terms: paymentTerms,
-        delivery_terms: deliveryTerms,
-        notes,
+        moq: Number(form.moq) || 1,
+        moq_unit: unit,
+        delivery_days: Number(form.deliveryDays) || null,
+        payment_terms: form.paymentTerms || null,
+        delivery_terms: form.deliveryTerms || null,
+        notes: form.notes.trim() || null,
         total_price: totalCalculated,
         status: 'pending',
       });
@@ -124,7 +167,7 @@ export default function AIQuotationModal({
         return;
       }
 
-      toast.success('Quotation proposal submitted successfully to buyer!');
+      toast.success('Quotation sent to the buyer.');
       onOpenChange(false);
       setIsPreview(false);
       onSuccess?.();
@@ -137,243 +180,217 @@ export default function AIQuotationModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100%-1.5rem)] md:max-w-xl bg-card border-border text-foreground p-3.5 sm:p-6 rounded-2xl max-h-[92dvh] overflow-y-auto">
-        <DialogHeader className="space-y-1.5 text-left">
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-[#FF5A00]/15 text-[#FF5A00] shrink-0">
-              <Sparkles className="w-4 h-4" />
-            </span>
-            <DialogTitle className="text-base sm:text-lg font-black text-foreground leading-tight">
-              {isPreview ? 'Review & Confirm Quotation' : 'AI Quotation Generator'}
-            </DialogTitle>
-          </div>
-          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-            {isPreview
-              ? 'Please verify quote parameters before transmission. Quotations are never sent automatically without your explicit confirmation.'
-              : `Auto-drafted from your catalogue specs for "${requirement.title}". You have complete control to edit all values.`}
-          </DialogDescription>
-        </DialogHeader>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      busy={isSubmitting}
+      title={
+        isPreview ? (
+          <>
+            Check & <em>Send Quote</em>
+          </>
+        ) : (
+          <>
+            AI <em>Quotation</em>
+          </>
+        )
+      }
+      description={
+        isPreview
+          ? 'This is exactly what the buyer will receive. Nothing is sent until you confirm.'
+          : 'Drafted from your catalogue for this requirement. Change anything before you send it.'
+      }
+      points={POINTS}
+      sheetArt="quote"
+      width={1040}
+    >
+      <div className="fk-stack">
+        <EntityCard
+          image={product?.image}
+          fallbackIcon={Package}
+          name={requirement.title}
+          byLabel={product ? 'Your product:' : 'Requirement'}
+          by={product?.name}
+          meta={meta}
+        />
 
-        {/* Requirement & Matched Product Context */}
-        <div className="bg-muted/40 border border-border rounded-xl p-3 sm:p-3.5 space-y-2 mt-1">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1">
-            <span className="text-muted-foreground shrink-0">Target Requirement:</span>
-            <span className="font-bold text-foreground min-w-0 sm:text-right truncate">{requirement.title}</span>
-          </div>
-          {product && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs border-t border-border pt-1.5 gap-1">
-              <span className="text-muted-foreground shrink-0">Matched Catalog Item:</span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400 min-w-0 sm:text-right truncate flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{product.name} ({product.matchScore}% Match)</span>
-              </span>
-            </div>
-          )}
-          <div className="flex items-center justify-between text-xs border-t border-border pt-1.5">
-            <span className="text-muted-foreground">Requested Volume:</span>
-            <span className="font-bold text-foreground">
-              {(Number(requirement.quantity) || 1000).toLocaleString()} {requirement.quantity_unit || 'Units'}
-            </span>
-          </div>
-        </div>
-
-        {/* STAGE 1: EDITABLE FORM */}
         {!isPreview ? (
-          <form onSubmit={handleValidateAndPreview} className="space-y-3.5 sm:space-y-4 mt-2">
-            {/* Price & Quantity */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
-              <div className="space-y-1">
-                <Label className="text-xs text-foreground font-semibold">Unit Price (INR / ₹) *</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-xs pointer-events-none">₹</span>
-                  <Input
+          <form onSubmit={handleValidateAndPreview} noValidate className="fk-form fk-stack">
+            <SectionTitle>Your Quote</SectionTitle>
+
+            <div className="fk-grid">
+              <Field htmlFor={`${ids}-price`} label={`Unit Price (₹ per ${unit})`} required error={errors.price} hint={priceHint}>
+                <IconBox icon={IndianRupee} accent>
+                  <TextInput
+                    id={`${ids}-price`}
                     type="number"
-                    min="1"
+                    inputMode="decimal"
+                    min="0"
                     step="any"
-                    required
-                    value={unitPrice}
-                    onChange={e => setUnitPrice(e.target.value)}
-                    className="pl-7 bg-card border-border text-foreground h-11 text-xs rounded-xl focus:border-[#FF5A00]"
+                    value={form.unitPrice}
+                    onChange={(e) => {
+                      set('unitPrice', e.target.value);
+                      setErrors((prev) => ({ ...prev, price: undefined }));
+                    }}
+                    placeholder="e.g. 250"
+                    invalid={Boolean(errors.price)}
+                    aria-describedby={errors.price ? `${ids}-price-error` : `${ids}-price-hint`}
+                    iconPadding
                   />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs text-foreground font-semibold">Quotation Quantity *</Label>
-                <Input
-                  type="number"
-                  min="1"
+                </IconBox>
+              </Field>
+              <Field htmlFor={`${ids}-qty`} label={`Quantity (${unit})`} required error={errors.quantity}>
+                <Stepper
+                  id={`${ids}-qty`}
+                  value={form.quantity}
+                  onChange={(value) => {
+                    set('quantity', value);
+                    setErrors((prev) => ({ ...prev, quantity: undefined }));
+                  }}
+                  min={1}
+                  unitName={unit}
+                  invalid={Boolean(errors.quantity)}
+                  describedBy={errors.quantity ? `${ids}-qty-error` : undefined}
                   required
-                  value={quantity}
-                  onChange={e => setQuantity(e.target.value)}
-                  className="bg-card border-border text-foreground h-11 text-xs rounded-xl focus:border-[#FF5A00]"
                 />
-              </div>
+              </Field>
+              <Field htmlFor={`${ids}-moq`} label="Minimum Order (MOQ)" optional>
+                <Stepper id={`${ids}-moq`} value={form.moq} onChange={(value) => set('moq', value)} min={1} unitName={`MOQ ${unit}`} />
+              </Field>
+              <Field htmlFor={`${ids}-days`} label="Delivery Time (days)" optional>
+                <IconBox icon={Clock}>
+                  <TextInput
+                    id={`${ids}-days`}
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    value={form.deliveryDays}
+                    onChange={(e) => set('deliveryDays', e.target.value)}
+                    placeholder="e.g. 15"
+                    iconPadding
+                  />
+                </IconBox>
+              </Field>
+              <Field htmlFor={`${ids}-payment`} label="Payment Terms" optional>
+                <IconBox icon={Handshake}>
+                  <NativeSelect id={`${ids}-payment`} value={form.paymentTerms} onChange={(e) => set('paymentTerms', e.target.value)} iconPadding>
+                    <option value="">Select…</option>
+                    {optionsWith(PAYMENT_TERMS, form.paymentTerms).map((term) => (
+                      <option key={term} value={term}>
+                        {term}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </IconBox>
+              </Field>
+              <Field htmlFor={`${ids}-delivery`} label="Delivery Terms" optional>
+                <IconBox icon={Truck}>
+                  <NativeSelect id={`${ids}-delivery`} value={form.deliveryTerms} onChange={(e) => set('deliveryTerms', e.target.value)} iconPadding>
+                    <option value="">Select…</option>
+                    {optionsWith(DELIVERY_TERMS, form.deliveryTerms).map((term) => (
+                      <option key={term} value={term}>
+                        {term}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </IconBox>
+              </Field>
             </div>
 
-            {/* MOQ and Lead Days */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
-              <div className="space-y-1">
-                <Label className="text-xs text-foreground font-semibold">Minimum Order Quantity (MOQ)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={moq}
-                  onChange={e => setMoq(e.target.value)}
-                  className="bg-card border-border text-foreground h-11 text-xs rounded-xl focus:border-[#FF5A00]"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs text-foreground font-semibold">Delivery Timeline (Days)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={deliveryDays}
-                  onChange={e => setDeliveryDays(e.target.value)}
-                  className="bg-card border-border text-foreground h-11 text-xs rounded-xl focus:border-[#FF5A00]"
-                />
-              </div>
-            </div>
-
-            {/* Terms */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
-              <div className="space-y-1">
-                <Label className="text-xs text-foreground font-semibold">Payment Terms</Label>
-                <Input
-                  value={paymentTerms}
-                  onChange={e => setPaymentTerms(e.target.value)}
-                  className="bg-card border-border text-foreground h-11 text-xs rounded-xl focus:border-[#FF5A00]"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-foreground font-semibold">Incoterms / Delivery</Label>
-                <Input
-                  value={deliveryTerms}
-                  onChange={e => setDeliveryTerms(e.target.value)}
-                  className="bg-card border-border text-foreground h-11 text-xs rounded-xl focus:border-[#FF5A00]"
-                />
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-1">
-              <Label className="text-xs text-foreground font-semibold">Manufacturer Notes & Specifications</Label>
-              <Textarea
+            <Field htmlFor={`${ids}-notes`} label="Notes for the Buyer" optional>
+              <CountedTextArea
+                id={`${ids}-notes`}
+                icon={FileText}
                 rows={3}
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                className="bg-card border-border text-foreground text-xs rounded-xl focus:border-[#FF5A00] p-3 leading-relaxed"
+                maxLength={1000}
+                value={form.notes}
+                onChange={(e) => set('notes', e.target.value)}
+                placeholder="Specifications, packaging, inspection, what the price includes…"
               />
+            </Field>
+
+            <div className="fk-total" aria-live="polite">
+              <span>Estimated total</span>
+              <b>{totalCalculated > 0 ? rupees(totalCalculated) : '—'}</b>
             </div>
 
-            {/* Total value display */}
-            <div className="bg-muted/40 p-3 sm:p-3.5 rounded-xl border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-              <span className="text-xs text-muted-foreground">Estimated Total Proposal Value:</span>
-              <span className="text-base sm:text-lg font-black text-[#FF5A00]">
-                ₹{Math.round(totalCalculated).toLocaleString('en-IN')}
-              </span>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col-reverse sm:flex-row gap-2.5 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => onOpenChange(false)}
-                className="w-full sm:flex-1 border border-white/15 text-white hover:bg-white/10 h-11 rounded-xl text-xs font-semibold"
-              >
+            <Actions>
+              <KitButton type="submit">
+                <Eye aria-hidden="true" /> Preview Quote
+              </KitButton>
+              <KitButton variant="ghost" onClick={() => onOpenChange(false)}>
                 Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="w-full sm:flex-1 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-extrabold text-xs h-11 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.4)] gap-1.5"
-              >
-                <Eye className="w-4 h-4" />
-                <span>Preview Quote →</span>
-              </Button>
-            </div>
+              </KitButton>
+            </Actions>
           </form>
         ) : (
-          /* STAGE 2: CONFIRMATION PREVIEW */
-          <div className="space-y-3.5 sm:space-y-4 mt-2">
-            <div className="border border-[#FF5A00]/40 bg-[#161320] rounded-xl p-3.5 sm:p-4 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-2.5 gap-2">
+          <>
+            <SectionTitle>Your Quote</SectionTitle>
+            <dl className="fk-summary">
+              <div className="is-total">
+                <dt>Total</dt>
+                <dd>{rupees(totalCalculated)}</dd>
+              </div>
+              <div>
+                <dt>Unit price</dt>
+                <dd>
+                  {rupees(numPrice)} / {unit}
+                </dd>
+              </div>
+              <div>
+                <dt>Quantity</dt>
+                <dd>
+                  {numQty.toLocaleString('en-IN')} {unit}
+                </dd>
+              </div>
+              {Number(form.moq) > 0 && (
                 <div>
-                  <span className="text-[10px] text-white/50 block">PROPOSAL TOTAL</span>
-                  <span className="text-lg sm:text-xl font-black text-[#FF5A00]">
-                    ₹{Math.round(totalCalculated).toLocaleString('en-IN')}
-                  </span>
+                  <dt>MOQ</dt>
+                  <dd>
+                    {Number(form.moq).toLocaleString('en-IN')} {unit}
+                  </dd>
                 </div>
-                <div className="sm:text-right">
-                  <span className="text-[10px] text-white/50 block">UNIT RATE</span>
-                  <span className="text-sm font-bold text-white">
-                    ₹{numPrice.toLocaleString('en-IN')} / unit
-                  </span>
+              )}
+              {Number(form.deliveryDays) > 0 && (
+                <div>
+                  <dt>Delivery time</dt>
+                  <dd>{Number(form.deliveryDays)} days</dd>
                 </div>
-              </div>
+              )}
+              {form.paymentTerms && (
+                <div>
+                  <dt>Payment terms</dt>
+                  <dd>{form.paymentTerms}</dd>
+                </div>
+              )}
+              {form.deliveryTerms && (
+                <div>
+                  <dt>Delivery terms</dt>
+                  <dd>{form.deliveryTerms}</dd>
+                </div>
+              )}
+              {form.notes.trim() && (
+                <div className="is-block">
+                  <dt>Notes</dt>
+                  <dd>{form.notes.trim()}</dd>
+                </div>
+              )}
+            </dl>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                <div className="flex justify-between sm:block">
-                  <span className="text-white/50 sm:block">Volume:</span>
-                  <span className="font-semibold text-white">{numQty.toLocaleString()} units</span>
-                </div>
-                <div className="flex justify-between sm:block">
-                  <span className="text-white/50 sm:block">MOQ:</span>
-                  <span className="font-semibold text-white">{moq} units</span>
-                </div>
-                <div className="flex justify-between sm:block">
-                  <span className="text-white/50 sm:block">Delivery Time:</span>
-                  <span className="font-semibold text-white">{deliveryDays} business days</span>
-                </div>
-                <div className="flex justify-between sm:block">
-                  <span className="text-white/50 sm:block">Incoterms:</span>
-                  <span className="font-semibold text-white truncate">{deliveryTerms}</span>
-                </div>
-              </div>
+            <Callout icon={ShieldCheck}>When you press Confirm & Send, this quotation goes to the buyer.</Callout>
 
-              <div className="text-xs pt-1 border-t border-white/5">
-                <span className="text-white/50 block mb-0.5">Payment Terms:</span>
-                <span className="font-medium text-white/90">{paymentTerms}</span>
-              </div>
-
-              <div className="text-xs pt-1 border-t border-white/5">
-                <span className="text-white/50 block mb-0.5">Manufacturer Notes:</span>
-                <p className="text-white/80 text-xs italic bg-black/20 p-2.5 rounded-lg break-words">{notes}</p>
-              </div>
-            </div>
-
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-2.5 text-xs text-amber-300">
-              <ShieldCheck className="w-4 h-4 shrink-0 text-amber-400" />
-              <span className="leading-relaxed">
-                Confirmation Guard: By clicking Send Quote, you confirm this formal offer will be submitted to the buyer procurement desk.
-              </span>
-            </div>
-
-            <div className="flex flex-col-reverse sm:flex-row gap-2.5 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setIsPreview(false)}
-                className="w-full sm:flex-1 border border-white/15 text-white hover:bg-white/10 h-11 rounded-xl text-xs font-semibold gap-1.5"
-              >
-                <Edit3 className="w-4 h-4" />
-                <span>Edit Parameters</span>
-              </Button>
-              <Button
-                type="button"
-                onClick={handleConfirmAndSendQuote}
-                disabled={isSubmitting}
-                className="w-full sm:flex-1 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-extrabold text-xs h-11 rounded-xl shadow-[0_2px_12px_rgba(255,90,0,0.4)] gap-1.5"
-              >
-                <Send className="w-4 h-4" />
-                <span>{isSubmitting ? 'Sending...' : 'Confirm & Send Quote'}</span>
-              </Button>
-            </div>
-          </div>
+            <Actions>
+              <KitButton onClick={handleConfirmAndSendQuote} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+                {isSubmitting ? 'Sending…' : 'Confirm & Send Quote'}
+              </KitButton>
+              <KitButton variant="ghost" onClick={() => setIsPreview(false)} disabled={isSubmitting}>
+                <Edit3 aria-hidden="true" /> Edit
+              </KitButton>
+            </Actions>
+          </>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </FormDialog>
   );
 }

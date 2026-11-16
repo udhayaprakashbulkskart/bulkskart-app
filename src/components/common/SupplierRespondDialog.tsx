@@ -19,6 +19,8 @@ import {
   SectionTitle,
   Stepper,
   TextInput,
+  DELIVERY_TERMS,
+  PAYMENT_TERMS,
   type EntityMeta,
   type FormPoint,
 } from '@/components/formkit';
@@ -27,8 +29,6 @@ import { supabase } from '@/db/supabase';
 import type { Requirement, Quotation } from '@/types/types';
 
 const UNITS = ['Pcs', 'KG', 'Tons', 'MT', 'Litre', 'Box', 'Carton', 'Dozen', 'Set', 'Pair', 'Metre', 'Yard'];
-const PAYMENT_TERMS = ['100% Advance', '50% Advance', 'LC 30 Days', 'LC 60 Days', 'Net 30', 'Net 60', 'CAD', 'TT'];
-const DELIVERY_TERMS = ['Ex-Works', 'FOB', 'CIF', 'C&F', 'DAP', 'DDP'];
 
 const POINTS: FormPoint[] = [
   { icon: BadgeIndianRupee, title: 'Your price and terms', detail: 'Unit price, MOQ, delivery' },

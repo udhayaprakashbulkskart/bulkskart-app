@@ -9,9 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BrandLogo from '@/components/common/BrandLogo';
 import { supabase } from '@/db/supabase';
 import { toast } from 'sonner';
-import { Globe, Shield, Eye, EyeOff, Upload, AlertCircle, CheckCircle, ArrowRight, BadgeCheck, Package, TrendingUp, Zap, Users } from 'lucide-react';
+import { Globe, Shield, Eye, EyeOff, Upload, AlertCircle, CheckCircle, ArrowRight, BadgeCheck, Package, TrendingUp, Zap, Users, Mail, Loader2, Send } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Actions, Done, Field, FormDialog, IconBox, KitButton, TextInput } from '@/components/formkit';
 import { Checkbox } from '@/components/ui/checkbox';
 import { trackSignUp } from '@/lib/analytics';
 
@@ -281,23 +282,25 @@ export default function AuthPage() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState('');
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!forgotEmail.trim()) {
-      toast.error('Please enter your email address');
+    const email = forgotEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setForgotError(email ? 'Please enter a valid e-mail address.' : 'Please enter your e-mail address.');
+      document.getElementById('forgot-email')?.focus();
       return;
     }
     setForgotLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth?tab=login`,
       });
       if (error) {
         toast.error(error.message || 'Failed to send password reset email');
       } else {
         setForgotSent(true);
-        toast.success('Password reset link has been dispatched to your email address');
       }
     } catch (err: any) {
       toast.error(err?.message || 'Failed to send password reset email');
@@ -659,6 +662,7 @@ export default function AuthPage() {
                       onClick={() => {
                         setForgotEmail(loginEmail.trim());
                         setForgotSent(false);
+                        setForgotError('');
                         setForgotOpen(true);
                       }}
                       className="text-xs text-[#FF5A00] hover:underline"
@@ -994,65 +998,64 @@ export default function AuthPage() {
       </Dialog>
 
       {/* Forgot Password Dialog */}
-      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md bg-[#12141E] border-border text-white">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-white">Reset Password</DialogTitle>
-          </DialogHeader>
-          {forgotSent ? (
-            <div className="py-4 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-              <p className="text-sm font-semibold text-white">Reset Link Dispatched</p>
-              <p className="text-xs text-muted-foreground">
-                We've sent a password recovery email to <span className="text-white font-medium">{forgotEmail}</span>. Please check your inbox and follow the instructions.
-              </p>
-              <Button
-                type="button"
-                onClick={() => setForgotOpen(false)}
-                className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-10 rounded-xl mt-2"
-              >
-                Back to Sign In
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={handleForgotPassword} className="space-y-4 pt-2">
-              <p className="text-xs text-muted-foreground">
-                Enter your registered BulkSkart account email and we'll send you a secure link to reset your password.
-              </p>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Registered Email</Label>
-                <Input
+      <FormDialog
+        open={forgotOpen}
+        onOpenChange={setForgotOpen}
+        busy={forgotLoading}
+        title={
+          <>
+            Reset <em>Password</em>
+          </>
+        }
+        description="Enter the e-mail you use for BulkSkart and we will send you a link to choose a new password."
+        width={560}
+      >
+        {forgotSent ? (
+          <Done
+            title="Check your inbox"
+            actions={
+              <Actions single>
+                <KitButton onClick={() => setForgotOpen(false)}>Back to Log In</KitButton>
+              </Actions>
+            }
+          >
+            <p>
+              If an account uses <b>{forgotEmail.trim()}</b>, a reset link is on its way. Open it on this device to set a new password.
+            </p>
+          </Done>
+        ) : (
+          <form onSubmit={handleForgotPassword} noValidate className="fk-form fk-stack">
+            <Field htmlFor="forgot-email" label="E-mail address" required error={forgotError}>
+              <IconBox icon={Mail}>
+                <TextInput
+                  id="forgot-email"
                   type="email"
-                  required
+                  inputMode="email"
+                  autoComplete="email"
                   value={forgotEmail}
-                  onChange={(e) => setForgotEmail(e.target.value)}
+                  onChange={(e) => {
+                    setForgotEmail(e.target.value);
+                    if (forgotError) setForgotError('');
+                  }}
                   placeholder="you@company.com"
-                  className="bg-[#0A0A0F] border-border text-white"
+                  invalid={Boolean(forgotError)}
+                  aria-describedby={forgotError ? 'forgot-email-error' : undefined}
+                  iconPadding
                 />
-              </div>
-              <div className="flex gap-2 justify-end pt-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setForgotOpen(false)}
-                  className="border border-border text-white hover:bg-white/10"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={forgotLoading}
-                  className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold"
-                >
-                  {forgotLoading ? 'Sending...' : 'Send Reset Link'}
-                </Button>
-              </div>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+              </IconBox>
+            </Field>
+            <Actions>
+              <KitButton type="submit" disabled={forgotLoading}>
+                {forgotLoading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+                {forgotLoading ? 'Sending…' : 'Send Reset Link'}
+              </KitButton>
+              <KitButton variant="ghost" onClick={() => setForgotOpen(false)} disabled={forgotLoading}>
+                Cancel
+              </KitButton>
+            </Actions>
+          </form>
+        )}
+      </FormDialog>
     </div>
   );
 }

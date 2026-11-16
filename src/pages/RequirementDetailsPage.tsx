@@ -39,6 +39,7 @@ import SubmitQuotationWizard from '@/components/rfq/SubmitQuotationWizard';
 import ProtectedContact from '@/components/common/ProtectedContact';
 import {
   calculateProductMatchScore,
+  catalogueInr,
   generateAIQuotationDraft,
   generateAIChatReplies,
   type MatchedProduct,
@@ -196,19 +197,20 @@ export default function RequirementDetailsPage() {
     for (const p of sourceProducts) {
       const score = calculateProductMatchScore(p, req);
       if (score > 25) {
-        const priceNum = p.price_min ? (p.price_currency === 'INR' ? p.price_min : Math.round(p.price_min * 83.5)) : 280;
+        const priceNum = catalogueInr(p.price_min, p.price_currency);
         scored.push({
           id: p.id,
           name: p.name || req.title,
           slug: p.slug || 'product',
           categoryName: p.category_id || undefined,
-          price: priceNum,
+          price: Number(p.price_min) || 0,
           priceINR: priceNum,
-          priceCurrency: 'INR',
-          moq: p.moq || 1,
+          priceCurrency: p.price_currency || '',
+          moq: Number(p.moq) || 0,
           moqUnit: p.moq_unit || req.quantity_unit || 'Pieces',
-          availableQuantity: (p as any).available_quantity || Math.max(Number(req.quantity) || 100, 500),
-          estimatedDeliveryDays: (p as any).delivery_days || 7,
+          // only what the product row holds; 0 means not stated
+          availableQuantity: Number((p as any).available_quantity) || 0,
+          estimatedDeliveryDays: Number((p as any).delivery_days) || 0,
           matchScore: score,
           image: p.images?.[0] || req.attachment_url || undefined,
           unitCompatibility: true
@@ -2337,7 +2339,21 @@ export default function RequirementDetailsPage() {
                               </span>
                             </div>
                             <div className="text-[11px] text-white/60 mt-0.5">
-                              Price: <strong className="text-white">₹{prod.priceINR.toLocaleString('en-IN')}</strong> / {prod.moqUnit}
+                              Price:{' '}
+                              {prod.priceINR > 0 ? (
+                                <>
+                                  <strong className="text-white">₹{prod.priceINR.toLocaleString('en-IN')}</strong> / {prod.moqUnit}
+                                </>
+                              ) : prod.price > 0 ? (
+                                <>
+                                  <strong className="text-white">
+                                    {prod.priceCurrency} {prod.price.toLocaleString()}
+                                  </strong>{' '}
+                                  / {prod.moqUnit}
+                                </>
+                              ) : (
+                                <strong className="text-white">not set</strong>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -2345,14 +2361,18 @@ export default function RequirementDetailsPage() {
                         {/* Specs grid: Match %, Product price, MOQ, Available quantity, Estimated delivery */}
                         <div className="grid grid-cols-2 gap-1.5 text-[10px] bg-[#171A27] p-2 rounded-lg border border-white/5">
                           <div className="text-white/60">
-                            MOQ: <span className="font-bold text-white">{prod.moq} {prod.moqUnit}</span>
+                            MOQ: <span className="font-bold text-white">{prod.moq > 0 ? `${prod.moq} ${prod.moqUnit}` : 'not set'}</span>
                           </div>
-                          <div className="text-white/60">
-                            Available Qty: <span className="font-bold text-white">{prod.availableQuantity.toLocaleString()}</span>
-                          </div>
-                          <div className="text-white/60 col-span-2">
-                            Estimated Delivery: <span className="font-bold text-emerald-400">{prod.estimatedDeliveryDays} days</span>
-                          </div>
+                          {prod.availableQuantity > 0 && (
+                            <div className="text-white/60">
+                              Available Qty: <span className="font-bold text-white">{prod.availableQuantity.toLocaleString()}</span>
+                            </div>
+                          )}
+                          {prod.estimatedDeliveryDays > 0 && (
+                            <div className="text-white/60 col-span-2">
+                              Estimated Delivery: <span className="font-bold text-emerald-400">{prod.estimatedDeliveryDays} days</span>
+                            </div>
+                          )}
                         </div>
 
                         {/* CTA: Use for Quote (Prompt Requirement) */}

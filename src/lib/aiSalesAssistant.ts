@@ -66,7 +66,10 @@ export interface AIQuotationDraft {
   requirementId: string;
   productId?: string;
   productName: string;
+  /** 0 when there is no real price to start from: the supplier types it */
   unitPrice: number;
+  /** where the starting price came from: the supplier's catalogue, or the buyer's target or budget */
+  priceSource?: 'catalogue' | 'buyer' | null;
   currency: string;
   moq: number;
   moqUnit: string;
@@ -379,6 +382,19 @@ export function formatPotentialBusinessINR(amount: number): string {
 }
 
 /**
+ * A catalogue price in rupees, or 0 when it cannot be worked out. A rupee price is used as it is and a US-dollar price
+ * is converted at `inrRate`. A price in another currency, or with no currency, is not guessed at.
+ */
+export function catalogueInr(amount: number | null | undefined, currency: string | null | undefined, inrRate = 83.5): number {
+  const value = Number(amount);
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  const code = (currency ?? '').trim().toUpperCase();
+  if (code === 'INR') return Math.round(value);
+  if (code === 'USD') return Math.round(value * inrRate);
+  return 0;
+}
+
+/**
  * Matches all manufacturer products against active requirements and ranks opportunities.
  * Returns only genuine matches (no fake catalog injection, no cross-category mismatches).
  */
@@ -406,8 +422,6 @@ export function analyzeAndMatchOpportunities(
       const score = calculateProductMatchScore(p, req);
       // ONLY include products that scored >= 50%
       if (score >= 50) {
-        const isUsd = !p.price_currency || p.price_currency.toUpperCase() === 'USD' || (p.price_min || 0) < 1000;
-        const priceINR = isUsd ? (p.price_min || 50) * inrRate : (p.price_min || 250);
         const unitComp = checkUnitCompatibility(req.quantity_unit || 'Units', p.moq_unit || 'Units');
 
         scoredProducts.push({
@@ -415,13 +429,14 @@ export function analyzeAndMatchOpportunities(
           name: p.name,
           slug: p.slug,
           categoryName: p.categories?.name || 'General Wholesale',
-          price: p.price_min || 250,
-          priceCurrency: p.price_currency || 'INR',
-          priceINR: Math.round(priceINR),
-          moq: p.moq || 100,
+          price: Number(p.price_min) || 0,
+          priceCurrency: p.price_currency || '',
+          priceINR: catalogueInr(p.price_min, p.price_currency, inrRate),
+          moq: Number(p.moq) || 0,
           moqUnit: p.moq_unit || 'Units',
-          availableQuantity: (p.moq || 100) * 10,
-          estimatedDeliveryDays: 12,
+          // what the product row really holds; 0 means not stated
+          availableQuantity: Number((p as any).available_quantity) || 0,
+          estimatedDeliveryDays: Number((p as any).delivery_days) || 0,
           matchScore: score,
           image: p.images?.[0],
           unitCompatibility: unitComp.compatible,
@@ -447,12 +462,10 @@ export function analyzeAndMatchOpportunities(
 
     // Location & timeline resolution
     const buyerLocation = (req as any).destination_city || req.destination_country || 'India';
-    const buyerName = (req as any).buyer_company_name || (req as any).buyer_name || 'Verified Buyer';
+    const buyerName = (req as any).buyer_company_name || (req as any).buyer_name || 'Buyer';
     const targetPriceVal = (req as any).target_price || req.budget_max;
-    const expectedPrice = targetPriceVal
-      ? `₹${Math.round(Number(targetPriceVal)).toLocaleString('en-IN')}`
-      : `₹${unitPriceINR.toLocaleString('en-IN')} (Target Open)`;
-    const timeline = (req as any).delivery_timeline || (req.deadline ? `By ${new Date(req.deadline).toLocaleDateString()}` : '15-20 Days Delivery');
+    const expectedPrice = targetPriceVal ? `₹${Math.round(Number(targetPriceVal)).toLocaleString('en-IN')}` : 'Not stated';
+    const timeline = (req as any).delivery_timeline || (req.deadline ? `By ${new Date(req.deadline).toLocaleDateString()}` : 'No deadline given');
 
     opportunities.push({
       id: `opp-${req.id}`,
@@ -532,46 +545,55 @@ export function generateAIOpportunitySummary(
 }
 
 /**
- * Auto-generates AI Quotation Draft from Product and Requirement
+ * Starts a quotation for a requirement from what is really known: the supplier's own catalogue price and MOQ, or the
+ * buyer's target price or budget, and the buyer's quantity. Nothing else is filled in for the supplier (no made-up
+ * price, delivery time, payment terms or promises); the supplier completes and checks the quote before it is sent.
  */
 export function generateAIQuotationDraft(
   requirement: Requirement,
   product?: MatchedProduct | Product | null,
   inrRate: number = 83.5
 ): AIQuotationDraft {
-  const reqQty = Number(requirement.quantity) || 1000;
+  const reqQty = Number(requirement.quantity) || 0;
   const unit = requirement.quantity_unit || (product as any)?.moq_unit || (product as any)?.moqUnit || 'Pieces';
 
-  let unitPrice = 250;
-  if (product && 'priceINR' in product && typeof product.priceINR === 'number') {
+  let unitPrice = 0;
+  let priceSource: AIQuotationDraft['priceSource'] = null;
+  if (product && 'priceINR' in product && product.priceINR > 0) {
     unitPrice = product.priceINR;
-  } else if (product && 'price_min' in product && product.price_min) {
-    const isUsd = !product.price_currency || product.price_currency.toUpperCase() === 'USD' || product.price_min < 1000;
-    unitPrice = Math.round(isUsd ? product.price_min * inrRate : product.price_min);
-  } else if ((requirement as any).target_price || requirement.budget_max) {
-    unitPrice = Math.round(Number((requirement as any).target_price || requirement.budget_max));
+  } else if (product && 'price_min' in product) {
+    unitPrice = catalogueInr(product.price_min, product.price_currency, inrRate);
+  }
+  if (unitPrice > 0) {
+    priceSource = 'catalogue';
+  } else {
+    const target = Number((requirement as any).target_price || requirement.budget_max);
+    if (Number.isFinite(target) && target > 0) {
+      unitPrice = Math.round(target);
+      priceSource = 'buyer';
+    }
   }
 
-  const moq = (product as any)?.moq || Math.min(500, Math.round(reqQty * 0.4));
-  const deliveryDays = 15;
-  const totalPrice = unitPrice * reqQty;
-
-  const notes = `Direct factory quotation for ${requirement.title}. Strict quality inspection, standard industrial packaging included. Custom branding and export documentation supported.`;
+  const moq = Number((product as any)?.moq) || 0;
+  const notes = product?.name
+    ? `Quotation for "${requirement.title}", from our product ${product.name}.`
+    : `Quotation for "${requirement.title}".`;
 
   return {
     requirementId: requirement.id,
     productId: product?.id,
     productName: product?.name || requirement.title,
     unitPrice,
+    priceSource,
     currency: 'INR',
     moq,
     moqUnit: unit,
     quantity: reqQty,
-    deliveryDays,
-    paymentTerms: '30% Advance, 70% against BL/Dispatch (Escrow Supported)',
-    deliveryTerms: `FOB ${(requirement as any).destination_city || requirement.destination_country || 'Origin Port'} / Door Delivery Available`,
+    deliveryDays: 0,
+    paymentTerms: '',
+    deliveryTerms: '',
     notes,
-    totalPrice,
+    totalPrice: unitPrice * reqQty,
   };
 }
 

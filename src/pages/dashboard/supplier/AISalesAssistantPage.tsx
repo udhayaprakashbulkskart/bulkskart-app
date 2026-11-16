@@ -422,13 +422,18 @@ export default function AISalesAssistantPage() {
                                   </span>
                                 </div>
                                 <div className="text-[11px] text-muted-foreground mt-0.5">
-                                  ₹{p.priceINR.toLocaleString('en-IN')} / {p.moqUnit} • MOQ: {p.moq}
+                                  {p.priceINR > 0
+                                    ? `₹${p.priceINR.toLocaleString('en-IN')} / ${p.moqUnit}`
+                                    : p.price > 0
+                                      ? `${p.priceCurrency} ${p.price.toLocaleString()} / ${p.moqUnit}`
+                                      : 'Price not set'}
+                                  {p.moq > 0 && ` • MOQ: ${p.moq}`}
                                 </div>
                               </div>
                             </div>
 
                             <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[10px] text-white/40">
-                              <span>Delivery: {p.estimatedDeliveryDays} days</span>
+                              <span>{p.estimatedDeliveryDays > 0 ? `Delivery: ${p.estimatedDeliveryDays} days` : ''}</span>
                               <button
                                 onClick={() => handleOpenAIQuote(opp, p)}
                                 className="font-bold text-[#FF5A00] hover:text-[#ff7a2e] transition-colors"

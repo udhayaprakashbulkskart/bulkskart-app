@@ -314,10 +314,10 @@ export default function ProductDetailPage() {
                 name: product.companies?.company_name || 'Verified Supplier',
               },
             },
-            aggregateRating: product.companies?.rating_avg ? {
+            aggregateRating: product.companies?.rating_avg && product.companies?.review_count ? {
               '@type': 'AggregateRating',
               ratingValue: String(product.companies.rating_avg),
-              reviewCount: String(product.companies?.review_count || 12),
+              reviewCount: String(product.companies.review_count),
               bestRating: '5',
               worstRating: '1',
             } : undefined,
@@ -823,7 +823,9 @@ export default function ProductDetailPage() {
                     <ProductReviewsAndRatingSection
                       productId={product.id}
                       productName={product.name}
-                      initialRating={4.8}
+                      companyId={product.company_id}
+                      companyName={product.companies?.company_name}
+                      companyRating={product.companies?.rating_avg}
                     />
                   </div>
                 )}

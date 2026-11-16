@@ -590,7 +590,7 @@ export default function CompanyProfilePage() {
                   companyName={company.company_name}
                   reviews={reviews}
                   onReviewAdded={(newRev) => setReviews((prev) => [newRev, ...prev])}
-                  avgRating={company.rating_avg || 4.9}
+                  avgRating={Number(company.rating_avg) || 0}
                 />
               </TabsContent>
             </Tabs>

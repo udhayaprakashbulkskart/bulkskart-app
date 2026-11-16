@@ -6,6 +6,7 @@ import AutoImageSyncManager from '@/components/common/AutoImageSyncManager';
 import VersionCheckSafetyNet from '@/components/common/VersionCheckSafetyNet';
 import PageSkeleton from '@/components/common/PageSkeleton';
 import AIChatAssistant from '@/components/common/AIChatAssistant';
+import PasswordRecoveryDialog from '@/components/common/PasswordRecoveryDialog';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -54,6 +55,7 @@ const App: React.FC = () => {
             <AutoImageSyncManager />
             <VersionCheckSafetyNet />
             <AIChatAssistant />
+            <PasswordRecoveryDialog />
             <Toaster richColors position="top-right" />
           </AuthProvider>
         </CurrencyProvider>
