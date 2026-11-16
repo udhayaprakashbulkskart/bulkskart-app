@@ -62,6 +62,7 @@ export default function ReportItemModal({ open, onOpenChange, targetType, target
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<{ reason?: string; notes?: string }>({});
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
   const [reference, setReference] = useState('');
 
   const name = NAMES[targetType];
@@ -100,11 +101,13 @@ export default function ReportItemModal({ open, onOpenChange, targetType, target
       return;
     }
     setReference(String(data?.id ?? '').slice(0, 8).toUpperCase());
+    setSent(true);
   };
 
   const handleClose = () => {
     onOpenChange(false);
     setTimeout(() => {
+      setSent(false);
       setReference('');
       setReason('');
       setNotes('');
@@ -128,7 +131,7 @@ export default function ReportItemModal({ open, onOpenChange, targetType, target
       points={POINTS}
       width={980}
     >
-      {reference ? (
+      {sent ? (
         <Done
           title="Report received"
           actions={
@@ -138,9 +141,11 @@ export default function ReportItemModal({ open, onOpenChange, targetType, target
           }
         >
           <p>Thank you. Your report has been sent to the BulkSkart team.</p>
-          <p>
-            Your reference: <b>{reference}</b>
-          </p>
+          {reference && (
+            <p>
+              Your reference: <b>{reference}</b>
+            </p>
+          )}
         </Done>
       ) : (
         <form onSubmit={handleSubmit} noValidate className="fk-form fk-stack">

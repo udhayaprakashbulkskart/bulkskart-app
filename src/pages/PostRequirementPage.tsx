@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { trackRFQPosted } from '@/lib/analytics';
 import SingleImageUploader from '@/components/common/SingleImageUploader';
+import '@/components/formkit/formkit.css';
 
 const UNITS = ['Pcs', 'Metres', 'Kilograms (kg)', 'Metric Tons (MT)', 'Boxes', 'Cartons', 'Liters', 'Pairs', 'Sets', 'Units'];
 const COUNTRIES = ['India', 'UAE', 'USA', 'UK', 'Germany', 'Singapore', 'Australia', 'Canada', 'China', 'Japan', 'France', 'Italy', 'Saudi Arabia', 'South Africa', 'Kenya', 'Nigeria', 'Other'];
@@ -246,8 +247,7 @@ export default function PostRequirementPage() {
             {/* Sourcing Timeline Card */}
             <div className="p-4 rounded-2xl bg-muted/40 border border-border text-left text-xs space-y-2">
               <div className="flex justify-between items-center text-foreground font-semibold">
-                <span>Next Steps & Notification Alerts:</span>
-                <span className="text-[#FF5A1F] font-bold">Within 24 Hours</span>
+                <span>What happens next</span>
               </div>
               <ul className="text-muted-foreground space-y-1 list-disc list-inside">
                 <li>Automated broadcast sent to registered factories matching category.</li>
@@ -377,7 +377,7 @@ export default function PostRequirementPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="fk-skin space-y-6">
           
           {/* Card 1: Product Identity & Reference Upload */}
           <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">

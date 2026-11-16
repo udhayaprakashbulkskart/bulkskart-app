@@ -22,6 +22,7 @@ import {
 import PageMeta from '@/components/common/PageMeta';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import '@/components/formkit/formkit.css';
 
 const PAYMENT_TERMS_OPTIONS = ['LC', 'TT', 'DP', 'DA', 'Cash in Advance', 'Others'];
 const EMPLOYEE_RANGES = ['1-10', '11-50', '51-200', '201-500', '500+'];
@@ -274,7 +275,7 @@ export default function SupplierProfilePage() {
         robots="noindex, nofollow"
       />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
-        <div className="max-w-4xl w-full mx-auto space-y-6">
+        <div className="fk-skin max-w-4xl w-full mx-auto space-y-6">
 
           {/* Header */}
           <div className="flex items-start justify-between flex-wrap gap-3">

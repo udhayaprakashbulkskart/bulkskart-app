@@ -10,6 +10,7 @@ import { supabase } from '@/db/supabase';
 import { toast } from 'sonner';
 import { ShieldCheck, Upload, FileText, CheckCircle2, Clock, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
+import '@/components/formkit/formkit.css';
 
 const toHex = (s: string) =>
   Array.from(new TextEncoder().encode(s), (b) => b.toString(16).padStart(2, '0')).join('');
@@ -210,7 +211,7 @@ export default function SupplierVerificationPage() {
         </Card>
 
         {(canEdit || isExpiringSoon || isExpired) && (
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 w-full min-w-0">
+          <form onSubmit={handleSubmit} className="fk-skin space-y-4 sm:space-y-5 w-full min-w-0">
             {/* Business documents */}
             <Card className="w-full overflow-hidden">
               <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">

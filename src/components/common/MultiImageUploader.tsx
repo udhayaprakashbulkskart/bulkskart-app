@@ -21,6 +21,11 @@ interface MultiImageUploaderProps {
   disabled?: boolean;
   defaultSearchTerm?: string;
   defaultCategory?: string;
+  /**
+   * Offer a search of Pixabay stock photos. Off by default: a listing shows the real item, and a stock photo would
+   * show buyers something the seller does not have.
+   */
+  allowStockSearch?: boolean;
 }
 
 interface UploadTask {
@@ -42,6 +47,7 @@ export default function MultiImageUploader({
   disabled = false,
   defaultSearchTerm = '',
   defaultCategory = 'industry',
+  allowStockSearch = false,
 }: MultiImageUploaderProps) {
   const [tasks, setTasks] = useState<UploadTask[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -171,7 +177,7 @@ export default function MultiImageUploader({
           {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
         </div>
         <div className="flex items-center gap-2">
-          {canAddMore && !disabled && (
+          {allowStockSearch && canAddMore && !disabled && (
             <Button
               type="button"
               variant="outline"

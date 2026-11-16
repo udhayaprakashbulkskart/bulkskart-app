@@ -15,6 +15,7 @@ import {
   Truck, Plane, Ship, Train, Package, MapPin, Clock,
   Calculator, CheckCircle2, Send, ArrowRight, Info,
 } from 'lucide-react';
+import '@/components/formkit/formkit.css';
 
 const MODES = [
   { value: 'road', label: 'Road / Truck', icon: Truck, eta: '2–7 days', note: 'Best for domestic' },
@@ -160,7 +161,7 @@ export default function ShippingCalculatorPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleCalculate} className="space-y-4">
+                <form onSubmit={handleCalculate} className="fk-skin space-y-4">
                   {/* Origin */}
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1"><MapPin className="w-3 h-3" /> Origin</p>

@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import PageMeta from '@/components/common/PageMeta';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
+import { SUPPORT_EMAIL } from '@/lib/supportContact';
+import '@/components/formkit/formkit.css';
 import { toast } from 'sonner';
 import {
   AlertTriangle, ShieldAlert, Trash2, ArrowLeft,
@@ -130,7 +132,7 @@ export default function DeleteAccountPage() {
           .update({ is_active: false })
           .eq('company_id', company.id);
 
-        await supabase
+        const { error: companyErr } = await supabase
           .from('companies')
           .update({
             description: '[Account Deleted by User]',
@@ -141,6 +143,7 @@ export default function DeleteAccountPage() {
             is_verified: false,
           })
           .eq('id', company.id);
+        if (companyErr) throw companyErr;
       }
 
       // 3. Mark buyer profile as deleted if buyer
@@ -150,7 +153,7 @@ export default function DeleteAccountPage() {
         .eq('user_id', user.id);
 
       // 4. Update or clear profile data
-      await supabase
+      const { error: profileErr } = await supabase
         .from('profiles')
         .update({
           full_name: 'Deleted User',
@@ -160,10 +163,15 @@ export default function DeleteAccountPage() {
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
+      if (profileErr) throw profileErr;
 
       // 5. Invalidate auth and sign out
       await signOut();
-      toast.success('Your BulkSkart account has been successfully deleted.');
+      // the sign-in itself (e-mail and password) can only be erased by the BulkSkart team
+      toast.success('Your account is closed and your profile details are removed.', {
+        description: `To have your login and e-mail erased completely, write to ${SUPPORT_EMAIL}.`,
+        duration: 10000,
+      });
       navigate('/', { replace: true });
     } catch (err: unknown) {
       const e = err as { message?: string };
@@ -245,7 +253,7 @@ export default function DeleteAccountPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleDeleteAccount} className="space-y-5">
+            <form onSubmit={handleDeleteAccount} className="fk-skin space-y-5">
               {/* Reason selection */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-foreground">Reason for Leaving *</Label>

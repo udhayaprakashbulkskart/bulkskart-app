@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import PageMeta from '@/components/common/PageMeta';
 import { cn } from '@/lib/utils';
 import { GSTIN_REGEX, IEC_REGEX, PAN_REGEX, PRODUCT_CATEGORIES } from '@/lib/signup/vocab';
+import '@/components/formkit/formkit.css';
 
 type FieldErrors = Record<string, string>;
 
@@ -807,7 +808,7 @@ export default function BusinessSetupWizardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="fk-skin min-h-screen bg-background text-foreground flex flex-col">
       <PageMeta title="Business Profile Setup Wizard | BulkSkart" description="Complete your official BulkSkart business registration and trade profile." />
 
       {/* Top Header */}

@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
 import { toast } from 'sonner';
 import { AlertTriangle, Upload, FileText, RefreshCw, Plus, ChevronRight, Package, Loader2, Send, X, Bell, ShieldCheck } from 'lucide-react';
-import { Actions, CountedTextArea, Field, FormDialog, IconBox, KitButton, NativeSelect, type FormPoint } from '@/components/formkit';
+import { Actions, CountedTextArea, Field, FormDialog, IconBox, KitButton, NativeSelect, SectionTitle, type FormPoint } from '@/components/formkit';
 import { Link } from 'react-router-dom';
 import PageMeta from '@/components/common/PageMeta';
 
@@ -243,6 +243,7 @@ export default function DisputeCenterPage() {
             handleSubmit();
           }}
         >
+          <SectionTitle>The Order</SectionTitle>
           <div className="fk-grid">
             <Field htmlFor="dispute-order" label="Order" required error={formErrors.order}>
               <IconBox icon={Package}>

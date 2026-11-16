@@ -19,6 +19,7 @@ import PageMeta from '@/components/common/PageMeta';
 import { Link } from 'react-router-dom';
 import { buyerPublicUrl, copyText } from '@/lib/supplierPublicProfile';
 import SingleImageUploader from '@/components/common/SingleImageUploader';
+import '@/components/formkit/formkit.css';
 
 const BUSINESS_TYPES = [
   'Wholesaler / Distributor',
@@ -329,7 +330,7 @@ export default function BuyerProfilePage() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSaveProfile} className="space-y-6">
+        <form onSubmit={handleSaveProfile} className="fk-skin space-y-6">
           {/* Personal & Account Info */}
           <Card>
             <CardHeader className="pb-3">
@@ -546,7 +547,7 @@ export default function BuyerProfilePage() {
             <CardDescription>Update your account password</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handlePasswordChange} className="space-y-4">
+            <form onSubmit={handlePasswordChange} className="fk-skin space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="newPassword">New Password</Label>

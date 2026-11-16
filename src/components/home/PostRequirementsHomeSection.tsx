@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import SectionHeader from '@/components/home/SectionHeader';
+import '@/components/formkit/formkit.css';
 
 const POPULAR_CATEGORIES = [
   'Machinery & Equipment',
@@ -92,7 +93,7 @@ export default function PostRequirementsHomeSection() {
         <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-          <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+          <form onSubmit={handleSubmit} className="fk-skin space-y-5 relative z-10">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               
               {/* Product / Requirement Title */}

@@ -10,6 +10,7 @@ import { supabase } from '@/db/supabase';
 import { toast } from 'sonner';
 import { ShieldCheck, Upload, FileText, CheckCircle2, Clock, XCircle, RefreshCw } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
+import '@/components/formkit/formkit.css';
 
 type BuyerProfile = {
   id: string;
@@ -184,7 +185,7 @@ export default function BuyerVerificationPage() {
         </Card>
 
         {canEdit && (
-          <form onSubmit={handleSubmit} className="space-y-5 w-full">
+          <form onSubmit={handleSubmit} className="fk-skin space-y-5 w-full">
             <Card className="w-full">
               <CardHeader className="pb-3 px-4 sm:px-6">
                 <CardTitle className="text-base">Business Information</CardTitle>

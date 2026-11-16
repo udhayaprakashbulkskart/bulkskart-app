@@ -13,6 +13,7 @@ import {
   type LoanRequestDraft,
   type LoanRequestErrors,
 } from '@/lib/loanRequest';
+import '@/components/formkit/formkit.css';
 
 interface LoanRequestFormProps {
   tone?: 'landing' | 'page';
@@ -109,7 +110,7 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
   }
 
   return (
-    <form onSubmit={handleSubmit} className={`mt-5 rounded-2xl border p-4 ${landing ? 'border-white/10 bg-black/30' : 'border-border bg-muted/30'}`} noValidate>
+    <form onSubmit={handleSubmit} className={`mt-5 rounded-2xl border p-4 ${landing ? 'border-white/10 bg-black/30' : 'fk-skin border-border bg-muted/30'}`} noValidate>
       <h3 className={`text-base font-black ${landing ? 'text-white' : 'text-foreground'}`}>How much loan do you need?</h3>
       <p className={`mt-1 text-xs leading-relaxed ${landing ? 'text-slate-400' : 'text-muted-foreground'}`}>
         Submit the amount and your details. This is a request for the team to contact you, not an approval.

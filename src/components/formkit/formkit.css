@@ -346,7 +346,8 @@
 
 /* ───────────── 2. the fields ───────────── */
 .fk-dialog,
-.fk-form {
+.fk-form,
+.fk-skin {
   --fk-orange: #ff5a00;
   --fk-orange-hi: #ff7a1a;
   --fk-orange-lo: #ee4f00;
@@ -1212,4 +1213,77 @@
   .fk-dialog {
     animation: none;
   }
+}
+
+/* ───────────── 4. the skin: page forms built from the site's own inputs ───────────── */
+/*
+ * Put .fk-skin on a page form and its existing Input, Textarea, Select and Label take the kit's look, without
+ * rewriting each field. Paddings stay each field's own, so icons and show-password buttons keep their room.
+ */
+.fk-skin
+  :is(
+    input:not([type='checkbox'], [type='radio'], [type='file'], [type='range'], [type='color'], [type='hidden'], [type='submit'], [type='button'], [type='reset']),
+    textarea,
+    select,
+    button[role='combobox']
+  ) {
+  min-height: var(--fk-h);
+  border: 1.5px solid hsl(var(--foreground) / 0.2);
+  border-radius: var(--fk-r);
+  background-color: var(--fk-surface);
+  color: var(--fk-ink);
+  font-size: 1rem;
+  box-shadow: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.fk-skin textarea {
+  min-height: 104px;
+  line-height: 1.5;
+}
+.fk-skin :is(input, textarea)::placeholder {
+  color: hsl(var(--muted-foreground) / 0.8);
+  font-weight: 400;
+}
+.fk-skin
+  :is(
+    input:not([type='checkbox'], [type='radio'], [type='file'], [type='range'], [type='color'], [type='hidden'], [type='submit'], [type='button'], [type='reset']),
+    textarea,
+    select,
+    button[role='combobox']
+  ):hover:not(:disabled) {
+  border-color: hsl(var(--foreground) / 0.35);
+}
+.fk-skin
+  :is(
+    input:not([type='checkbox'], [type='radio'], [type='file'], [type='range'], [type='color'], [type='hidden'], [type='submit'], [type='button'], [type='reset']),
+    textarea,
+    select,
+    button[role='combobox']
+  ):focus-visible,
+.fk-skin button[role='combobox'][data-state='open'] {
+  border-color: var(--fk-orange);
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(255 90 0 / 0.2);
+}
+.fk-skin :is(input, textarea, select, button[role='combobox'])[aria-invalid='true'] {
+  border-color: hsl(var(--destructive));
+}
+/* field labels: bold and readable; the label of a tick box or an upload keeps its own look */
+.fk-skin label:not(:has(input[type='checkbox'], input[type='radio'], input[type='file'], [role='checkbox'], [role='radio'])) {
+  font-size: 0.93rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--fk-ink);
+}
+.fk-skin :is([role='checkbox'], [role='radio'], input[type='checkbox'], input[type='radio']) + label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--fk-ink-2);
+}
+/* the main button of the form */
+.fk-skin button[type='submit']:not(.fk-btn) {
+  min-height: 52px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 800;
 }

@@ -9,10 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BrandLogo from '@/components/common/BrandLogo';
 import { supabase } from '@/db/supabase';
 import { toast } from 'sonner';
-import { Globe, Shield, Eye, EyeOff, Upload, AlertCircle, CheckCircle, ArrowRight, BadgeCheck, Package, TrendingUp, Zap, Users, Mail, Loader2, Send } from 'lucide-react';
+import { Globe, Shield, Eye, EyeOff, Upload, AlertCircle, CheckCircle, ArrowRight, BadgeCheck, Package, TrendingUp, Zap, Users, Mail, Loader2, Send, Lock, User, Phone, Building2, MapPin, Receipt, Hash } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Actions, Done, Field, FormDialog, IconBox, KitButton, TextInput } from '@/components/formkit';
+import { Actions, Done, Field, FormDialog, IconBox, KitButton, TextInput, fk } from '@/components/formkit';
+import { CITY_NAMES } from '@/lib/signup/places';
 import { Checkbox } from '@/components/ui/checkbox';
 import { trackSignUp } from '@/lib/analytics';
 
@@ -629,10 +630,10 @@ export default function AuthPage() {
                 <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
                 <p className="text-sm text-muted-foreground">Sign in to your BulkSkart account</p>
               </div>
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="fk-form fk-stack">
                 {error && (
-                  <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3" role="alert">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                     <div className="flex-1">
                       <p>{error}</p>
                       {error.includes('already exists') && (
@@ -643,20 +644,19 @@ export default function AuthPage() {
                     </div>
                   </div>
                 )}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Email Address</Label>
-                  <Input
-                    value={loginEmail}
-                    onChange={e => setLoginEmail(e.target.value)}
-                    type="email"
-                    required
-                    placeholder="you@company.com"
-                    className="bg-card border-border"
-                  />
+                <div className="fk-field">
+                  <label htmlFor="login-email" className={fk.label}>
+                    Email Address
+                  </label>
+                  <IconBox icon={Mail}>
+                    <TextInput id="login-email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} type="email" required autoComplete="email" inputMode="email" placeholder="you@company.com" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">Password</Label>
+                <div className="fk-field">
+                  <div className="flex items-center justify-between gap-3">
+                    <label htmlFor="login-password" className={fk.label}>
+                      Password
+                    </label>
                     <button
                       type="button"
                       onClick={() => {
@@ -665,35 +665,31 @@ export default function AuthPage() {
                         setForgotError('');
                         setForgotOpen(true);
                       }}
-                      className="text-xs text-[#FF5A00] hover:underline"
+                      className="text-sm font-semibold text-[#FF5A00] hover:underline"
                     >
                       Forgot password?
                     </button>
                   </div>
-                  <div className="relative">
-                    <Input
-                      value={loginPw}
-                      onChange={e => setLoginPw(e.target.value)}
-                      type={showPw ? 'text' : 'password'}
-                      required
-                      placeholder="••••••••"
-                      className="bg-card border-border pr-10"
-                    />
+                  <IconBox icon={Lock}>
+                    <TextInput id="login-password" value={loginPw} onChange={e => setLoginPw(e.target.value)} type={showPw ? 'text' : 'password'} required autoComplete="current-password" placeholder="••••••••" iconPadding className="pr-12" />
                     <button
                       type="button"
                       onClick={() => setShowPw(!showPw)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label={showPw ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPw}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                     >
-                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPw ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                     </button>
-                  </div>
+                  </IconBox>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
-                  {loading ? 'Signing in...' : 'Sign In'}
-                </Button>
+                <button type="submit" disabled={loading} className="fk-btn is-primary w-full">
+                  {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+                  {loading ? 'Signing in…' : 'Sign In'}
+                </button>
 
-                <p className="text-xs text-center text-muted-foreground">
+                <p className="text-sm text-center text-muted-foreground">
                   Don't have an account?{' '}
                   <button type="button" onClick={() => setActiveTab('buyer')} className="text-primary font-semibold hover:underline">
                     Register free as Buyer
@@ -712,49 +708,80 @@ export default function AuthPage() {
                 <h1 className="text-2xl font-bold text-foreground">Register as Buyer</h1>
                 <p className="text-sm text-muted-foreground">Free registration — Post requirements &amp; get quotes</p>
               </div>
-              <form onSubmit={handleBuyerRegister} className="space-y-3">
+              <form onSubmit={handleBuyerRegister} className="fk-form fk-stack">
                 {error && (
-                  <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3" role="alert">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>{error}</span>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Full Name *</Label>
-                    <Input value={buyerData.fullName} onChange={e => setBuyerData(p => ({ ...p, fullName: e.target.value }))} required placeholder="John Doe" className="bg-card border-border" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Phone</Label>
-                    <Input value={buyerData.phone} onChange={e => setBuyerData(p => ({ ...p, phone: e.target.value }))} placeholder="+91 98765..." className="bg-card border-border" />
-                  </div>
+                <div className="fk-grid">
+                  <div className="fk-field">
+                  <label htmlFor="buyer-name" className={fk.label}>
+                    Full Name<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={User}>
+                    <TextInput id="buyer-name" value={buyerData.fullName} onChange={e => setBuyerData(p => ({ ...p, fullName: e.target.value }))} required autoComplete="name" placeholder="John Doe" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Company / Organisation Name</Label>
-                  <Input value={buyerData.companyName} onChange={e => setBuyerData(p => ({ ...p, companyName: e.target.value }))} placeholder="Acme Corp Ltd (optional)" className="bg-card border-border" />
+                  <div className="fk-field">
+                  <label htmlFor="buyer-phone" className={fk.label}>
+                    Phone
+                  </label>
+                  <IconBox icon={Phone}>
+                    <TextInput id="buyer-phone" value={buyerData.phone} onChange={e => setBuyerData(p => ({ ...p, phone: e.target.value }))} type="tel" autoComplete="tel" inputMode="tel" placeholder="+91 98765…" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">City</Label>
-                    <Input value={buyerData.city} onChange={e => setBuyerData(p => ({ ...p, city: e.target.value }))} placeholder="Mumbai" className="bg-card border-border" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Country</Label>
-                    <Input value={buyerData.country} onChange={e => setBuyerData(p => ({ ...p, country: e.target.value }))} placeholder="India" className="bg-card border-border" />
-                  </div>
+                  <div className="fk-field is-wide">
+                  <label htmlFor="buyer-company" className={fk.label}>
+                    Company / Organisation
+                  </label>
+                  <IconBox icon={Building2}>
+                    <TextInput id="buyer-company" value={buyerData.companyName} onChange={e => setBuyerData(p => ({ ...p, companyName: e.target.value }))} autoComplete="organization" placeholder="Acme Corp Ltd (optional)" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Email *</Label>
-                  <Input value={buyerData.email} onChange={e => setBuyerData(p => ({ ...p, email: e.target.value }))} type="email" required placeholder="you@company.com" className="bg-card border-border" />
+                  <div className="fk-field">
+                  <label htmlFor="buyer-city" className={fk.label}>
+                    City
+                  </label>
+                  <IconBox icon={MapPin}>
+                    <TextInput id="buyer-city" value={buyerData.city} onChange={e => setBuyerData(p => ({ ...p, city: e.target.value }))} list="auth-city-list" autoComplete="address-level2" placeholder="Mumbai" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Password * (min 8 chars)</Label>
-                  <div className="relative">
-                    <Input value={buyerData.password} onChange={e => setBuyerData(p => ({ ...p, password: e.target.value }))} type={showPw ? 'text' : 'password'} required placeholder="••••••••" className="bg-card border-border pr-10" />
-                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  <div className="fk-field">
+                  <label htmlFor="buyer-country" className={fk.label}>
+                    Country
+                  </label>
+                  <IconBox icon={Globe}>
+                    <TextInput id="buyer-country" value={buyerData.country} onChange={e => setBuyerData(p => ({ ...p, country: e.target.value }))} autoComplete="country-name" placeholder="India" iconPadding />
+                  </IconBox>
+                </div>
+                </div>
+                <div className="fk-field">
+                  <label htmlFor="buyer-email" className={fk.label}>
+                    Email<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={Mail}>
+                    <TextInput id="buyer-email" value={buyerData.email} onChange={e => setBuyerData(p => ({ ...p, email: e.target.value }))} type="email" required autoComplete="email" inputMode="email" placeholder="you@company.com" iconPadding />
+                  </IconBox>
+                </div>
+                <div className="fk-field">
+                  <label htmlFor="buyer-password" className={fk.label}>
+                    Password<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={Lock}>
+                    <TextInput id="buyer-password" value={buyerData.password} onChange={e => setBuyerData(p => ({ ...p, password: e.target.value }))} type={showPw ? 'text' : 'password'} required autoComplete="new-password" placeholder="••••••••" iconPadding className="pr-12" />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw(!showPw)}
+                      aria-label={showPw ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPw}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    >
+                      {showPw ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                     </button>
-                  </div>
+                  </IconBox>
+                  <p className={fk.hint}>At least 8 characters.</p>
                 </div>
 
                 {/* User Agreement & Privacy Policy Checkbox */}
@@ -765,7 +792,7 @@ export default function AuthPage() {
                     onCheckedChange={(checked) => setBuyerAgreed(!!checked)}
                     className="mt-0.5 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
-                  <label htmlFor="buyer-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
+                  <label htmlFor="buyer-terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer select-none">
                     I agree to the BulkSkart{' '}
                     <button
                       type="button"
@@ -786,10 +813,11 @@ export default function AuthPage() {
                   </label>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-2 font-bold">
-                  {loading ? 'Creating account...' : 'Create Buyer Account — Free'}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
+                <button type="submit" disabled={loading} className="fk-btn is-primary w-full">
+                  {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+                  {loading ? 'Creating account…' : 'Create Buyer Account — Free'}
+                </button>
+                <p className="text-sm text-center text-muted-foreground">
                   Already have an account?{' '}
                   <button type="button" onClick={() => setActiveTab('login')} className="text-primary font-semibold hover:underline">Sign in</button>
                 </p>
@@ -802,50 +830,74 @@ export default function AuthPage() {
                 <h1 className="text-2xl font-bold text-foreground">Register as Supplier</h1>
                 <p className="text-sm text-muted-foreground">Get verified & start receiving bulk order enquiries</p>
               </div>
-              <form onSubmit={handleSupplierRegister} className="space-y-3">
+              <form onSubmit={handleSupplierRegister} className="fk-form fk-stack">
                 {error && (
-                  <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3" role="alert">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>{error}</span>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Full Name *</Label>
-                    <Input value={supplierData.fullName} onChange={e => setSupplierData(p => ({ ...p, fullName: e.target.value }))} required placeholder="John Doe" className="bg-card border-border" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Phone</Label>
-                    <Input value={supplierData.phone} onChange={e => setSupplierData(p => ({ ...p, phone: e.target.value }))} placeholder="+91 98765..." className="bg-card border-border" />
-                  </div>
+                <div className="fk-grid">
+                  <div className="fk-field">
+                  <label htmlFor="supplier-name" className={fk.label}>
+                    Full Name<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={User}>
+                    <TextInput id="supplier-name" value={supplierData.fullName} onChange={e => setSupplierData(p => ({ ...p, fullName: e.target.value }))} required autoComplete="name" placeholder="John Doe" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Company Name *</Label>
-                  <Input value={supplierData.companyName} onChange={e => setSupplierData(p => ({ ...p, companyName: e.target.value }))} required placeholder="Your Manufacturing Co." className="bg-card border-border" />
+                  <div className="fk-field">
+                  <label htmlFor="supplier-phone" className={fk.label}>
+                    Phone
+                  </label>
+                  <IconBox icon={Phone}>
+                    <TextInput id="supplier-phone" value={supplierData.phone} onChange={e => setSupplierData(p => ({ ...p, phone: e.target.value }))} type="tel" autoComplete="tel" inputMode="tel" placeholder="+91 98765…" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">GST Number</Label>
-                    <Input value={supplierData.gst} onChange={e => setSupplierData(p => ({ ...p, gst: e.target.value }))} placeholder="22AAAAA..." className="bg-card border-border" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">IEC Number</Label>
-                    <Input value={supplierData.iec} onChange={e => setSupplierData(p => ({ ...p, iec: e.target.value }))} placeholder="IEC No." className="bg-card border-border" />
-                  </div>
+                  <div className="fk-field is-wide">
+                  <label htmlFor="supplier-company" className={fk.label}>
+                    Company Name<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={Building2}>
+                    <TextInput id="supplier-company" value={supplierData.companyName} onChange={e => setSupplierData(p => ({ ...p, companyName: e.target.value }))} required autoComplete="organization" placeholder="Your Manufacturing Co." iconPadding />
+                  </IconBox>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">City</Label>
-                    <Input value={supplierData.city} onChange={e => setSupplierData(p => ({ ...p, city: e.target.value }))} placeholder="Mumbai" className="bg-card border-border" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Country</Label>
-                    <Input value={supplierData.country} onChange={e => setSupplierData(p => ({ ...p, country: e.target.value }))} placeholder="India" className="bg-card border-border" />
-                  </div>
+                  <div className="fk-field">
+                  <label htmlFor="supplier-gst" className={fk.label}>
+                    GST Number
+                  </label>
+                  <IconBox icon={Receipt}>
+                    <TextInput id="supplier-gst" value={supplierData.gst} onChange={e => setSupplierData(p => ({ ...p, gst: e.target.value }))} placeholder="22AAAAA…" iconPadding />
+                  </IconBox>
+                </div>
+                  <div className="fk-field">
+                  <label htmlFor="supplier-iec" className={fk.label}>
+                    IEC Number
+                  </label>
+                  <IconBox icon={Hash}>
+                    <TextInput id="supplier-iec" value={supplierData.iec} onChange={e => setSupplierData(p => ({ ...p, iec: e.target.value }))} placeholder="IEC No." iconPadding />
+                  </IconBox>
+                </div>
+                  <div className="fk-field">
+                  <label htmlFor="supplier-city" className={fk.label}>
+                    City
+                  </label>
+                  <IconBox icon={MapPin}>
+                    <TextInput id="supplier-city" value={supplierData.city} onChange={e => setSupplierData(p => ({ ...p, city: e.target.value }))} list="auth-city-list" autoComplete="address-level2" placeholder="Mumbai" iconPadding />
+                  </IconBox>
+                </div>
+                  <div className="fk-field">
+                  <label htmlFor="supplier-country" className={fk.label}>
+                    Country
+                  </label>
+                  <IconBox icon={Globe}>
+                    <TextInput id="supplier-country" value={supplierData.country} onChange={e => setSupplierData(p => ({ ...p, country: e.target.value }))} autoComplete="country-name" placeholder="India" iconPadding />
+                  </IconBox>
+                </div>
                 </div>
                 {/* Document uploads */}
-                <div className="bg-muted/50 border border-border rounded-lg p-3 space-y-2">
-                  <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Upload className="w-3.5 h-3.5" /> Business Documents (for verification)</p>
+                <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-2">
+                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5"><Upload className="w-4 h-4" aria-hidden="true" /> Business Documents (for verification)</p>
                   {[
                     { label: 'GST Certificate', key: 'gst', state: gstDoc, setter: setGstDoc },
                     { label: 'IEC Certificate', key: 'iec', state: iecDoc, setter: setIecDoc },
@@ -853,7 +905,7 @@ export default function AuthPage() {
                   ].map(({ label, key, state, setter }) => (
                     <div key={key} className="flex items-center gap-2">
                       <label className="flex-1 flex items-center gap-2 cursor-pointer">
-                        <div className={`flex-1 border border-dashed rounded-md px-3 py-2 text-xs transition-colors ${state ? 'border-primary/40 text-primary bg-primary/5' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
+                        <div className={`flex-1 border-[1.5px] border-dashed rounded-xl px-3 py-3 text-sm transition-colors ${state ? 'border-primary/40 text-primary bg-primary/5' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
                           {state ? <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" />{state.name}</span> : `Upload ${label}`}
                         </div>
                         <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setter(e.target.files?.[0] ?? null)} />
@@ -861,18 +913,31 @@ export default function AuthPage() {
                     </div>
                   ))}
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Business Email *</Label>
-                  <Input value={supplierData.email} onChange={e => setSupplierData(p => ({ ...p, email: e.target.value }))} type="email" required placeholder="you@company.com" className="bg-card border-border" />
+                <div className="fk-field">
+                  <label htmlFor="supplier-email" className={fk.label}>
+                    Business Email<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={Mail}>
+                    <TextInput id="supplier-email" value={supplierData.email} onChange={e => setSupplierData(p => ({ ...p, email: e.target.value }))} type="email" required autoComplete="email" inputMode="email" placeholder="you@company.com" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Password * (min 8 chars)</Label>
-                  <div className="relative">
-                    <Input value={supplierData.password} onChange={e => setSupplierData(p => ({ ...p, password: e.target.value }))} type={showPw ? 'text' : 'password'} required placeholder="••••••••" className="bg-card border-border pr-10" />
-                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <div className="fk-field">
+                  <label htmlFor="supplier-password" className={fk.label}>
+                    Password<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={Lock}>
+                    <TextInput id="supplier-password" value={supplierData.password} onChange={e => setSupplierData(p => ({ ...p, password: e.target.value }))} type={showPw ? 'text' : 'password'} required autoComplete="new-password" placeholder="••••••••" iconPadding className="pr-12" />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw(!showPw)}
+                      aria-label={showPw ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPw}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    >
+                      {showPw ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                     </button>
-                  </div>
+                  </IconBox>
+                  <p className={fk.hint}>At least 8 characters.</p>
                 </div>
 
                 {/* User Agreement & Privacy Policy Checkbox */}
@@ -883,7 +948,7 @@ export default function AuthPage() {
                     onCheckedChange={(checked) => setSupplierAgreed(!!checked)}
                     className="mt-0.5 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
-                  <label htmlFor="supplier-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
+                  <label htmlFor="supplier-terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer select-none">
                     I agree to the BulkSkart{' '}
                     <button
                       type="button"
@@ -904,16 +969,22 @@ export default function AuthPage() {
                   </label>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-2 font-bold">
-                  {loading ? 'Creating account...' : 'Register as Supplier'}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
+                <button type="submit" disabled={loading} className="fk-btn is-primary w-full">
+                  {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+                  {loading ? 'Creating account…' : 'Register as Supplier'}
+                </button>
+                <p className="text-sm text-center text-muted-foreground">
                   Already have an account?{' '}
                   <button type="button" onClick={() => setActiveTab('login')} className="text-primary font-semibold hover:underline">Sign in</button>
                 </p>
               </form>
             </TabsContent>
           </Tabs>
+          <datalist id="auth-city-list">
+            {CITY_NAMES.map((city) => (
+              <option key={city} value={city} />
+            ))}
+          </datalist>
         </div>
       </div>
 

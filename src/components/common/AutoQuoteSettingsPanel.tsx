@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Zap, Clock, RefreshCw, Info } from 'lucide-react';
+import '@/components/formkit/formkit.css';
 
 interface Settings {
   id?: string;
@@ -116,7 +117,7 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="fk-skin space-y-6">
       {/* Toggle row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Auto-send */}
