@@ -2944,12 +2944,11 @@ export default function RequirementDetailsPage() {
           title: req.title,
           quantity: req.quantity,
           quantityUnit: req.quantity_unit,
-          targetPriceMin: req.budget_min || 60,
-          targetPriceMax: req.budget_max || 75,
+          targetPriceMin: req.budget_min ?? null,
+          targetPriceMax: req.budget_max ?? null,
           deliveryLocation: buyerLocation,
-          deliveryTimeText: 'Within 7-10 days',
-          paymentTerms: '50% advance, 50% before dispatch',
-          endSecondsRemaining: 26 * 60 + 51
+          deadline: req.deadline ?? null,
+          image: req.attachment_url ?? null,
         }}
         onSuccess={() => {
           loadData();

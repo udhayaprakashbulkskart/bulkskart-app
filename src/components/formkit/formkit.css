@@ -889,6 +889,63 @@
   flex: none;
   min-height: 0;
 }
+/* files already added to a form */
+.fk-files {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+.fk-files li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--fk-line);
+  border-radius: 10px;
+  background: var(--fk-surface);
+  font-size: 0.88rem;
+  color: var(--fk-ink);
+}
+.fk-files li > svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--fk-orange);
+}
+.fk-files li > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fk-files li > button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fk-ink-2);
+  cursor: pointer;
+}
+.fk-files li > button:hover {
+  background: hsl(var(--muted));
+  color: var(--fk-ink);
+}
+.fk-files li > button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.35);
+}
+.fk-files li > button svg {
+  width: 16px;
+  height: 16px;
+}
 /* a running total ("Estimated total ₹1,20,000") */
 .fk-total {
   display: flex;
