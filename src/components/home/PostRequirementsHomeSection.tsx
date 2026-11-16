@@ -130,11 +130,11 @@ export default function PostRequirementsHomeSection() {
 
               {/* Quantity & Unit */}
               <div className="md:col-span-3 space-y-1.5">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <label htmlFor="homerfq-target-quantity-unit" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   Target Quantity & Unit
                 </label>
                 <div className="flex gap-2">
-                  <Input
+                  <Input id="homerfq-target-quantity-unit"
                     type="number"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
@@ -171,10 +171,10 @@ export default function PostRequirementsHomeSection() {
               </div>
 
               <div className="md:col-span-8 space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
+                <label htmlFor="homerfq-specifications-trade-terms" className="text-xs font-semibold text-foreground">
                   Specifications & Trade Terms (Optional)
                 </label>
-                <Input
+                <Input id="homerfq-specifications-trade-terms"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Include material grades, custom OEM branding, target unit rate, or packing instructions..."

@@ -23,7 +23,6 @@ import {
 import ProductReviewsAndRatingSection from '@/components/common/ProductReviewsAndRatingSection';
 import CountryChargesFeesModal from '@/components/common/CountryChargesFeesModal';
 import ReportItemModal from '@/components/common/ReportItemModal';
-import InteractiveStarRating from '@/components/common/InteractiveStarRating';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountry } from '@/contexts/CurrencyContext';
 import PageMeta from '@/components/common/PageMeta';
@@ -467,12 +466,24 @@ export default function ProductDetailPage() {
 
                 {/* Interactive rating & Report trigger */}
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  {/* the supplier's real rating; reviews on BulkSkart are kept per supplier */}
                   <button
                     type="button"
                     onClick={() => setActiveTab('Reviews')}
-                    className="flex items-center gap-1 text-xs hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <InteractiveStarRating value={4.8} readOnly size="sm" showNumber />
+                    <Star
+                      className={`w-3.5 h-3.5 ${Number(product.companies?.rating_avg) > 0 ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}`}
+                      aria-hidden="true"
+                    />
+                    {Number(product.companies?.rating_avg) > 0 && Number(product.companies?.review_count) > 0 ? (
+                      <span>
+                        <b className="text-foreground">{Number(product.companies?.rating_avg).toFixed(1)}</b> supplier rating · {Number(product.companies?.review_count)}{' '}
+                        {Number(product.companies?.review_count) === 1 ? 'review' : 'reviews'}
+                      </span>
+                    ) : (
+                      <span>No ratings yet</span>
+                    )}
                   </button>
                   <button
                     type="button"
@@ -972,7 +983,15 @@ export default function ProductDetailPage() {
                       onClick={() => setActiveTab('Reviews')}
                       className="flex items-center gap-1 text-xs hover:opacity-80 transition-opacity cursor-pointer"
                     >
-                      <InteractiveStarRating value={4.8} readOnly size="sm" showNumber />
+                      <Star
+                        className={`w-3.5 h-3.5 ${Number(product.companies?.rating_avg) > 0 ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}`}
+                        aria-hidden="true"
+                      />
+                      <span className="text-muted-foreground">
+                        {Number(product.companies?.rating_avg) > 0 && Number(product.companies?.review_count) > 0
+                          ? `${Number(product.companies?.rating_avg).toFixed(1)} supplier rating`
+                          : 'No ratings yet'}
+                      </span>
                       <span className="text-[11px] text-primary hover:underline ml-1">Write Review</span>
                     </button>
                     <div className="ml-auto flex items-center gap-1.5">

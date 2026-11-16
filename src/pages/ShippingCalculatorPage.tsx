@@ -167,12 +167,12 @@ export default function ShippingCalculatorPage() {
                     <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1"><MapPin className="w-3 h-3" /> Origin</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label className="text-xs text-muted-foreground">City / Port</Label>
-                        <Input value={form.originCity} onChange={e => set('originCity', e.target.value)} placeholder="Mumbai" required className="bg-input border-border mt-0.5" />
+                        <Label htmlFor="ship-city-port" className="text-xs text-muted-foreground">City / Port</Label>
+                        <Input id="ship-city-port" value={form.originCity} onChange={e => set('originCity', e.target.value)} placeholder="Mumbai" required className="bg-input border-border mt-0.5" />
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Country</Label>
-                        <Input value={form.originCountry} onChange={e => set('originCountry', e.target.value)} placeholder="India" className="bg-input border-border mt-0.5" />
+                        <Label htmlFor="ship-country" className="text-xs text-muted-foreground">Country</Label>
+                        <Input id="ship-country" value={form.originCountry} onChange={e => set('originCountry', e.target.value)} placeholder="India" className="bg-input border-border mt-0.5" />
                       </div>
                     </div>
                   </div>
@@ -181,29 +181,29 @@ export default function ShippingCalculatorPage() {
                     <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1"><MapPin className="w-3 h-3" /> Destination</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label className="text-xs text-muted-foreground">City / Port</Label>
-                        <Input value={form.destCity} onChange={e => set('destCity', e.target.value)} placeholder="Dubai" required className="bg-input border-border mt-0.5" />
+                        <Label htmlFor="ship-city-port-2" className="text-xs text-muted-foreground">City / Port</Label>
+                        <Input id="ship-city-port-2" value={form.destCity} onChange={e => set('destCity', e.target.value)} placeholder="Dubai" required className="bg-input border-border mt-0.5" />
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Country</Label>
-                        <Input value={form.destCountry} onChange={e => set('destCountry', e.target.value)} placeholder="UAE" required className="bg-input border-border mt-0.5" />
+                        <Label htmlFor="ship-country-2" className="text-xs text-muted-foreground">Country</Label>
+                        <Input id="ship-country-2" value={form.destCountry} onChange={e => set('destCountry', e.target.value)} placeholder="UAE" required className="bg-input border-border mt-0.5" />
                       </div>
                     </div>
                   </div>
                   {/* Cargo */}
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Weight (kg)</Label>
-                      <Input type="number" min="0" value={form.weightKg} onChange={e => set('weightKg', e.target.value)} placeholder="500" className="bg-input border-border mt-0.5" />
+                      <Label htmlFor="ship-weight" className="text-xs text-muted-foreground">Weight (kg)</Label>
+                      <Input id="ship-weight" type="number" min="0" value={form.weightKg} onChange={e => set('weightKg', e.target.value)} placeholder="500" className="bg-input border-border mt-0.5" />
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Volume (CBM)</Label>
-                      <Input type="number" min="0" value={form.volumeCbm} onChange={e => set('volumeCbm', e.target.value)} placeholder="2.5" className="bg-input border-border mt-0.5" />
+                      <Label htmlFor="ship-volume" className="text-xs text-muted-foreground">Volume (CBM)</Label>
+                      <Input id="ship-volume" type="number" min="0" value={form.volumeCbm} onChange={e => set('volumeCbm', e.target.value)} placeholder="2.5" className="bg-input border-border mt-0.5" />
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Incoterms</Label>
+                      <Label htmlFor="ship-incoterms" className="text-xs text-muted-foreground">Incoterms</Label>
                       <Select value={form.incoterms} onValueChange={v => set('incoterms', v)}>
-                        <SelectTrigger className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger id="ship-incoterms" className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent className="bg-card border-border">
                           {INCOTERMS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
                         </SelectContent>
@@ -212,18 +212,18 @@ export default function ShippingCalculatorPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Cargo Type</Label>
+                      <Label htmlFor="ship-cargo-type" className="text-xs text-muted-foreground">Cargo Type</Label>
                       <Select value={form.cargoType} onValueChange={v => set('cargoType', v)}>
-                        <SelectTrigger className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger id="ship-cargo-type" className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent className="bg-card border-border">
                           {CARGO_TYPES.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Preferred Mode</Label>
+                      <Label htmlFor="ship-preferred-mode" className="text-xs text-muted-foreground">Preferred Mode</Label>
                       <Select value={form.shipmentMode} onValueChange={v => set('shipmentMode', v)}>
-                        <SelectTrigger className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger id="ship-preferred-mode" className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent className="bg-card border-border">
                           <SelectItem value="all" className="text-xs">All Modes</SelectItem>
                           {MODES.map(m => <SelectItem key={m.value} value={m.value} className="text-xs">{m.label}</SelectItem>)}

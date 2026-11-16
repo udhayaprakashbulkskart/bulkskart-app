@@ -221,8 +221,8 @@ export default function SupplierVerificationPage() {
               <CardContent className="p-4 sm:p-6 pt-2 sm:pt-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 w-full min-w-0">
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">GST Number</Label>
-                    <Input
+                    <Label htmlFor="sverify-gst-number" className="text-xs sm:text-sm font-medium">GST Number</Label>
+                    <Input id="sverify-gst-number"
                       value={form.gst_number}
                       placeholder="e.g. 22AAAAA0000A1Z5"
                       onChange={e => setForm(p => ({ ...p, gst_number: e.target.value }))}
@@ -230,8 +230,8 @@ export default function SupplierVerificationPage() {
                     />
                   </div>
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">PAN Number</Label>
-                    <Input
+                    <Label htmlFor="sverify-pan-number" className="text-xs sm:text-sm font-medium">PAN Number</Label>
+                    <Input id="sverify-pan-number"
                       value={form.pan_number}
                       placeholder="e.g. AAAAA0000A"
                       onChange={e => setForm(p => ({ ...p, pan_number: e.target.value }))}
@@ -250,8 +250,8 @@ export default function SupplierVerificationPage() {
               <CardContent className="p-4 sm:p-6 pt-2 sm:pt-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 w-full min-w-0">
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">Account Holder Name</Label>
-                    <Input
+                    <Label htmlFor="sverify-account-holder-name" className="text-xs sm:text-sm font-medium">Account Holder Name</Label>
+                    <Input id="sverify-account-holder-name"
                       value={form.bank_account_name}
                       placeholder="As per bank passbook / cheque"
                       onChange={e => setForm(p => ({ ...p, bank_account_name: e.target.value }))}
@@ -259,8 +259,8 @@ export default function SupplierVerificationPage() {
                     />
                   </div>
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">Account Number</Label>
-                    <Input
+                    <Label htmlFor="sverify-account-number" className="text-xs sm:text-sm font-medium">Account Number</Label>
+                    <Input id="sverify-account-number"
                       value={form.bank_account_number}
                       placeholder="Bank account number"
                       onChange={e => setForm(p => ({ ...p, bank_account_number: e.target.value }))}
@@ -268,8 +268,8 @@ export default function SupplierVerificationPage() {
                     />
                   </div>
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">IFSC Code</Label>
-                    <Input
+                    <Label htmlFor="sverify-ifsc-code" className="text-xs sm:text-sm font-medium">IFSC Code</Label>
+                    <Input id="sverify-ifsc-code"
                       value={form.bank_ifsc}
                       placeholder="e.g. SBIN0001234"
                       onChange={e => setForm(p => ({ ...p, bank_ifsc: e.target.value }))}
@@ -277,8 +277,8 @@ export default function SupplierVerificationPage() {
                     />
                   </div>
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">Bank Name</Label>
-                    <Input
+                    <Label htmlFor="sverify-bank-name" className="text-xs sm:text-sm font-medium">Bank Name</Label>
+                    <Input id="sverify-bank-name"
                       value={form.bank_name}
                       placeholder="Bank name and branch"
                       onChange={e => setForm(p => ({ ...p, bank_name: e.target.value }))}

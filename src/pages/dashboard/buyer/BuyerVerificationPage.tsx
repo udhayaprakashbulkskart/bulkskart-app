@@ -194,41 +194,41 @@ export default function BuyerVerificationPage() {
               <CardContent className="space-y-4 px-4 sm:px-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">Company Name *</Label>
-                    <Input value={form.company_name} onChange={e => setForm(p => ({ ...p, company_name: e.target.value }))} required className="h-9 text-sm" />
+                    <Label htmlFor="bverify-company-name" className="text-xs sm:text-sm">Company Name *</Label>
+                    <Input id="bverify-company-name" value={form.company_name} onChange={e => setForm(p => ({ ...p, company_name: e.target.value }))} required className="h-9 text-sm" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">Business Type</Label>
-                    <Input value={form.business_type} placeholder="e.g. Wholesaler, Trader" onChange={e => setForm(p => ({ ...p, business_type: e.target.value }))} className="h-9 text-sm" />
+                    <Label htmlFor="bverify-business-type" className="text-xs sm:text-sm">Business Type</Label>
+                    <Input id="bverify-business-type" value={form.business_type} placeholder="e.g. Wholesaler, Trader" onChange={e => setForm(p => ({ ...p, business_type: e.target.value }))} className="h-9 text-sm" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">GST Number</Label>
-                    <Input value={form.gst_number} placeholder="22AAAAA0000A1Z5" onChange={e => setForm(p => ({ ...p, gst_number: e.target.value }))} className="h-9 text-sm" />
+                    <Label htmlFor="bverify-gst-number" className="text-xs sm:text-sm">GST Number</Label>
+                    <Input id="bverify-gst-number" value={form.gst_number} placeholder="22AAAAA0000A1Z5" onChange={e => setForm(p => ({ ...p, gst_number: e.target.value }))} className="h-9 text-sm" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">PAN Number</Label>
-                    <Input value={form.pan_number} placeholder="AAAAA0000A" onChange={e => setForm(p => ({ ...p, pan_number: e.target.value }))} className="h-9 text-sm" />
+                    <Label htmlFor="bverify-pan-number" className="text-xs sm:text-sm">PAN Number</Label>
+                    <Input id="bverify-pan-number" value={form.pan_number} placeholder="AAAAA0000A" onChange={e => setForm(p => ({ ...p, pan_number: e.target.value }))} className="h-9 text-sm" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">Registration Number</Label>
-                    <Input value={form.registration_number} onChange={e => setForm(p => ({ ...p, registration_number: e.target.value }))} className="h-9 text-sm" />
+                    <Label htmlFor="bverify-registration-number" className="text-xs sm:text-sm">Registration Number</Label>
+                    <Input id="bverify-registration-number" value={form.registration_number} onChange={e => setForm(p => ({ ...p, registration_number: e.target.value }))} className="h-9 text-sm" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">City</Label>
-                    <Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} className="h-9 text-sm" />
+                    <Label htmlFor="bverify-city" className="text-xs sm:text-sm">City</Label>
+                    <Input id="bverify-city" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} className="h-9 text-sm" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">State</Label>
-                    <Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} className="h-9 text-sm" />
+                    <Label htmlFor="bverify-state" className="text-xs sm:text-sm">State</Label>
+                    <Input id="bverify-state" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} className="h-9 text-sm" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">Country</Label>
-                    <Input value={form.country} onChange={e => setForm(p => ({ ...p, country: e.target.value }))} className="h-9 text-sm" />
+                    <Label htmlFor="bverify-country" className="text-xs sm:text-sm">Country</Label>
+                    <Input id="bverify-country" value={form.country} onChange={e => setForm(p => ({ ...p, country: e.target.value }))} className="h-9 text-sm" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs sm:text-sm">Registered Address</Label>
-                  <Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} className="h-9 text-sm" />
+                  <Label htmlFor="bverify-registered-address" className="text-xs sm:text-sm">Registered Address</Label>
+                  <Input id="bverify-registered-address" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} className="h-9 text-sm" />
                 </div>
               </CardContent>
             </Card>

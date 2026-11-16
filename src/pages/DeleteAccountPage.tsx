@@ -256,8 +256,8 @@ export default function DeleteAccountPage() {
             <form onSubmit={handleDeleteAccount} className="fk-skin space-y-5">
               {/* Reason selection */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-foreground">Reason for Leaving *</Label>
-                <select
+                <Label htmlFor="delete-reason-for-leaving" className="text-xs font-semibold text-foreground">Reason for Leaving *</Label>
+                <select id="delete-reason-for-leaving"
                   value={reason}
                   onChange={e => setReason(e.target.value)}
                   required
@@ -272,8 +272,8 @@ export default function DeleteAccountPage() {
 
               {/* Optional Feedback */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground">Additional Feedback / Suggestions (Optional)</Label>
-                <Textarea
+                <Label htmlFor="delete-additional-feedback-suggestions" className="text-xs font-semibold text-muted-foreground">Additional Feedback / Suggestions (Optional)</Label>
+                <Textarea id="delete-additional-feedback-suggestions"
                   value={feedback}
                   onChange={e => setFeedback(e.target.value)}
                   placeholder="How could we have improved your experience?"
@@ -284,8 +284,8 @@ export default function DeleteAccountPage() {
 
               {/* Password Re-confirmation */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-foreground">Current Password Verification</Label>
-                <Input
+                <Label htmlFor="delete-current-password-verification" className="text-xs font-semibold text-foreground">Current Password Verification</Label>
+                <Input id="delete-current-password-verification"
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -297,10 +297,11 @@ export default function DeleteAccountPage() {
 
               {/* Confirm Text Box */}
               <div className="space-y-2 pt-2 border-t border-border">
-                <Label className="text-xs font-semibold text-foreground">
+                <Label htmlFor="delete-confirm-text" className="text-xs font-semibold text-foreground">
                   To confirm, type <span className="text-destructive font-mono font-bold bg-destructive/10 px-1.5 py-0.5 rounded">DELETE</span> in the box below *
                 </Label>
                 <Input
+                  id="delete-confirm-text"
                   type="text"
                   value={confirmText}
                   onChange={e => setConfirmText(e.target.value)}

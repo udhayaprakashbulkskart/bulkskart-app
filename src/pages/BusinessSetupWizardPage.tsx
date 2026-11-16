@@ -1009,8 +1009,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">WhatsApp Number (For Direct RFQ Alerts)</Label>
-                    <Input
+                    <Label htmlFor="setup-whatsapp-number" className="text-xs font-semibold">WhatsApp Number (For Direct RFQ Alerts)</Label>
+                    <Input id="setup-whatsapp-number"
                       placeholder="e.g. +91 98765 43210"
                       value={personal.whatsappNumber}
                       inputMode="tel"
@@ -1107,8 +1107,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Brand / Trade Name</Label>
-                    <Input
+                    <Label htmlFor="setup-brand-trade-name" className="text-xs font-semibold">Brand / Trade Name</Label>
+                    <Input id="setup-brand-trade-name"
                       placeholder="e.g. Apex Tools (if different)"
                       value={business.brandName}
                       onChange={e => setBusiness(b => ({ ...b, brandName: e.target.value }))}
@@ -1117,8 +1117,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Business Registration / CIN / Udyam</Label>
-                    <Input
+                    <Label htmlFor="setup-business-registration-cin-udyam" className="text-xs font-semibold">Business Registration / CIN / Udyam</Label>
+                    <Input id="setup-business-registration-cin-udyam"
                       placeholder="e.g. UDYAM-MH-01-0012345"
                       value={business.registrationNumber}
                       onChange={e => setBusiness(b => ({ ...b, registrationNumber: e.target.value }))}
@@ -1127,8 +1127,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">GSTIN (India) / Tax ID</Label>
-                    <Input
+                    <Label htmlFor="setup-gstin-tax-id" className="text-xs font-semibold">GSTIN (India) / Tax ID</Label>
+                    <Input id="setup-gstin-tax-id"
                       placeholder="e.g. 27ABCDE1234F1Z5"
                       value={business.gstNumber}
                       aria-invalid={Boolean(fieldErrors.gstNumber)}
@@ -1142,8 +1142,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">PAN Number</Label>
-                    <Input
+                    <Label htmlFor="setup-pan-number" className="text-xs font-semibold">PAN Number</Label>
+                    <Input id="setup-pan-number"
                       placeholder="e.g. ABCDE1234F"
                       value={business.panNumber}
                       aria-invalid={Boolean(fieldErrors.panNumber)}
@@ -1157,8 +1157,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">IEC Code (For Import / Export)</Label>
-                    <Input
+                    <Label htmlFor="setup-iec-code" className="text-xs font-semibold">IEC Code (For Import / Export)</Label>
+                    <Input id="setup-iec-code"
                       placeholder="e.g. 0308994411 (10 Digits)"
                       value={business.iecNumber}
                       aria-invalid={Boolean(fieldErrors.iecNumber)}
@@ -1172,8 +1172,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Year of Establishment</Label>
-                    <Input
+                    <Label htmlFor="setup-year-of-establishment" className="text-xs font-semibold">Year of Establishment</Label>
+                    <Input id="setup-year-of-establishment"
                       type="number"
                       placeholder="e.g. 2012"
                       value={business.yearEstablished}
@@ -1188,8 +1188,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Company Website (Optional)</Label>
-                    <Input
+                    <Label htmlFor="setup-company-website" className="text-xs font-semibold">Company Website (Optional)</Label>
+                    <Input id="setup-company-website"
                       placeholder="https://www.yourcompany.com"
                       value={business.website}
                       aria-invalid={Boolean(fieldErrors.website)}
@@ -1203,8 +1203,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-semibold">Registered Factory / Office Address</Label>
-                    <Input
+                    <Label htmlFor="setup-registered-factory-office-address" className="text-xs font-semibold">Registered Factory / Office Address</Label>
+                    <Input id="setup-registered-factory-office-address"
                       placeholder="Plot No., Industrial Area, Phase II"
                       value={business.address}
                       onChange={e => setBusiness(b => ({ ...b, address: e.target.value }))}
@@ -1213,8 +1213,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-semibold">Business Overview & Capabilities</Label>
-                    <Textarea
+                    <Label htmlFor="setup-business-overview-capabilities" className="text-xs font-semibold">Business Overview & Capabilities</Label>
+                    <Textarea id="setup-business-overview-capabilities"
                       rows={3}
                       placeholder="Describe your manufacturing facilities, quality control standards, machinery, and wholesale specialties..."
                       value={business.description}
@@ -1333,8 +1333,8 @@ export default function BusinessSetupWizardPage() {
                 {/* MOQ & Capacity */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Minimum Order Quantity (MOQ)</Label>
-                    <Input
+                    <Label htmlFor="setup-minimum-order-quantity" className="text-xs font-semibold">Minimum Order Quantity (MOQ)</Label>
+                    <Input id="setup-minimum-order-quantity"
                       placeholder="e.g. 50 Units, 500 Kilograms, 1 Container"
                       value={moq}
                       onChange={e => setMoq(e.target.value)}
@@ -1343,8 +1343,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Monthly Production / Supply Capacity</Label>
-                    <Input
+                    <Label htmlFor="setup-monthly-production-supply-capacity" className="text-xs font-semibold">Monthly Production / Supply Capacity</Label>
+                    <Input id="setup-monthly-production-supply-capacity"
                       placeholder="e.g. 25,000 Units / Month"
                       value={capacity}
                       onChange={e => setCapacity(e.target.value)}
@@ -1353,8 +1353,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Trade Scope</Label>
-                    <select
+                    <Label htmlFor="setup-trade-scope" className="text-xs font-semibold">Trade Scope</Label>
+                    <select id="setup-trade-scope"
                       value={tradeType}
                       onChange={e => setTradeType(e.target.value)}
                       className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
@@ -1367,8 +1367,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Key Countries / Regions Served</Label>
-                    <Input
+                    <Label htmlFor="setup-key-countries-regions-served" className="text-xs font-semibold">Key Countries / Regions Served</Label>
+                    <Input id="setup-key-countries-regions-served"
                       placeholder="e.g. India, UAE, USA, Germany, Africa"
                       value={countriesServed.join(', ')}
                       onChange={e => setCountriesServed(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}

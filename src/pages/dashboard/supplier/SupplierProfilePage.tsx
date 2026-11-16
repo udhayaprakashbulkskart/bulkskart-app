@@ -440,8 +440,8 @@ export default function SupplierProfilePage() {
             {/* Basic Info Inputs */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-border">
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Company Legal Name *</Label>
-                <Input
+                <Label htmlFor="supplier-company-legal-name" className="text-xs text-muted-foreground">Company Legal Name *</Label>
+                <Input id="supplier-company-legal-name"
                   value={form.company_name}
                   onChange={e => { setForm(f => ({ ...f, company_name: e.target.value })); setFieldErrors(prev => ({ ...prev, company_name: '' })); }}
                   placeholder="e.g. Apex Industrial Solutions Ltd"
@@ -450,15 +450,15 @@ export default function SupplierProfilePage() {
                 {fieldErrors.company_name && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {fieldErrors.company_name}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Tagline</Label>
-                <Input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
+                <Label htmlFor="supplier-tagline" className="text-xs text-muted-foreground">Tagline</Label>
+                <Input id="supplier-tagline" value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
                   placeholder="e.g. Premium Textile Manufacturer Since 2001"
                   className="h-9 text-sm bg-background border-border" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Business Type *</Label>
+                <Label htmlFor="supplier-business-type" className="text-xs text-muted-foreground">Business Type *</Label>
                 <Select value={form.business_type} onValueChange={v => { setForm(f => ({ ...f, business_type: v })); setFieldErrors(prev => ({ ...prev, business_type: '' })); }}>
-                  <SelectTrigger className={`h-9 text-sm bg-background ${fieldErrors.business_type ? 'border-destructive ring-1 ring-destructive' : 'border-border'}`}>
+                  <SelectTrigger id="supplier-business-type" className={`h-9 text-sm bg-background ${fieldErrors.business_type ? 'border-destructive ring-1 ring-destructive' : 'border-border'}`}>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -492,16 +492,16 @@ export default function SupplierProfilePage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Year Established</Label>
-                <Input type="number" min="1900" max={new Date().getFullYear()}
+                <Label htmlFor="supplier-year-established" className="text-xs text-muted-foreground">Year Established</Label>
+                <Input id="supplier-year-established" type="number" min="1900" max={new Date().getFullYear()}
                   value={form.year_established}
                   onChange={e => setForm(f => ({ ...f, year_established: e.target.value }))}
                   placeholder="e.g. 2005" className="h-9 text-sm bg-background border-border" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Employees</Label>
+                <Label htmlFor="supplier-employees" className="text-xs text-muted-foreground">Employees</Label>
                 <Select value={form.employee_count_range} onValueChange={v => setForm(f => ({ ...f, employee_count_range: v }))}>
-                  <SelectTrigger className="h-9 text-sm bg-background border-border">
+                  <SelectTrigger id="supplier-employees" className="h-9 text-sm bg-background border-border">
                     <SelectValue placeholder="Select range" />
                   </SelectTrigger>
                   <SelectContent>
@@ -510,9 +510,9 @@ export default function SupplierProfilePage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Annual Turnover</Label>
+                <Label htmlFor="supplier-annual-turnover" className="text-xs text-muted-foreground">Annual Turnover</Label>
                 <Select value={form.annual_turnover_range} onValueChange={v => setForm(f => ({ ...f, annual_turnover_range: v }))}>
-                  <SelectTrigger className="h-9 text-sm bg-background border-border">
+                  <SelectTrigger id="supplier-annual-turnover" className="h-9 text-sm bg-background border-border">
                     <SelectValue placeholder="Select range" />
                   </SelectTrigger>
                   <SelectContent>
@@ -590,9 +590,9 @@ export default function SupplierProfilePage() {
               <div key={cert.id} className="flex gap-3 items-start p-3 border border-border rounded-lg bg-muted/20">
                 <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Type</Label>
+                    <Label htmlFor={`supplier-type-${cert.id}`} className="text-xs text-muted-foreground">Type</Label>
                     <Select value={cert.cert_type} onValueChange={v => updateCertField(cert.id, 'cert_type', v)}>
-                      <SelectTrigger className="h-8 text-xs bg-background border-border">
+                      <SelectTrigger id={`supplier-type-${cert.id}`} className="h-8 text-xs bg-background border-border">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -602,14 +602,14 @@ export default function SupplierProfilePage() {
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Certificate Name</Label>
-                    <Input value={cert.cert_name}
+                    <Label htmlFor={`supplier-certificate-name-${cert.id}`} className="text-xs text-muted-foreground">Certificate Name</Label>
+                    <Input id={`supplier-certificate-name-${cert.id}`} value={cert.cert_name}
                       onChange={e => updateCertField(cert.id, 'cert_name', e.target.value)}
                       className="h-8 text-xs bg-background border-border" placeholder="e.g. ISO 9001:2015" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Certificate Number</Label>
-                    <Input value={cert.cert_number ?? ''}
+                    <Label htmlFor={`supplier-certificate-number-${cert.id}`} className="text-xs text-muted-foreground">Certificate Number</Label>
+                    <Input id={`supplier-certificate-number-${cert.id}`} value={cert.cert_number ?? ''}
                       onChange={e => updateCertField(cert.id, 'cert_number', e.target.value)}
                       className="h-8 text-xs bg-background border-border" placeholder="Cert number" />
                   </div>
@@ -632,20 +632,20 @@ export default function SupplierProfilePage() {
               <Users className="w-4 h-4 text-primary" /> Trade Capabilities
             </h3>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Production Capacity</Label>
-              <Input value={form.production_capacity}
+              <Label htmlFor="supplier-production-capacity" className="text-xs text-muted-foreground">Production Capacity</Label>
+              <Input id="supplier-production-capacity" value={form.production_capacity}
                 onChange={e => setForm(f => ({ ...f, production_capacity: e.target.value }))}
                 placeholder="e.g. 50,000 meters/month" className="h-9 text-sm bg-background border-border" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Minimum Order Quantity Policy</Label>
-              <Input value={form.moq_policy}
+              <Label htmlFor="supplier-minimum-order-quantity-policy" className="text-xs text-muted-foreground">Minimum Order Quantity Policy</Label>
+              <Input id="supplier-minimum-order-quantity-policy" value={form.moq_policy}
                 onChange={e => setForm(f => ({ ...f, moq_policy: e.target.value }))}
                 placeholder="e.g. Minimum 500 kg per order" className="h-9 text-sm bg-background border-border" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Packaging & Shipping Details</Label>
-              <Textarea value={form.packaging_details}
+              <Label htmlFor="supplier-packaging-shipping-details" className="text-xs text-muted-foreground">Packaging & Shipping Details</Label>
+              <Textarea id="supplier-packaging-shipping-details" value={form.packaging_details}
                 onChange={e => setForm(f => ({ ...f, packaging_details: e.target.value }))}
                 placeholder="Describe your packaging standards and shipping capabilities..."
                 rows={3} className="text-sm bg-background border-border resize-none" />
@@ -691,8 +691,8 @@ export default function SupplierProfilePage() {
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">New Password (min 8 chars)</Label>
-                  <Input
+                  <Label htmlFor="supplier-new-password" className="text-xs text-muted-foreground">New Password (min 8 chars)</Label>
+                  <Input id="supplier-new-password"
                     type="password"
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
@@ -701,8 +701,8 @@ export default function SupplierProfilePage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Confirm New Password</Label>
-                  <Input
+                  <Label htmlFor="supplier-confirm-new-password" className="text-xs text-muted-foreground">Confirm New Password</Label>
+                  <Input id="supplier-confirm-new-password"
                     type="password"
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
