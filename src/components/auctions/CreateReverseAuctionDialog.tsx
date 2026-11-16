@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, Building2, Clock, CreditCard, FileText, Flame, Globe2, Hash, Layers, ListChecks, Loader2, LogIn, MapPin, Receipt, ShieldCheck, Tag, Timer, TrendingUp, Truck, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
@@ -149,6 +149,7 @@ export default function CreateReverseAuctionDialog({ open: controlledOpen, onOpe
   const [createdAuctionId, setCreatedAuctionId] = useState('');
   const [paymentReferenceId, setPaymentReferenceId] = useState('');
   const [publishFailed, setPublishFailed] = useState(false);
+  const lastPayment = useRef<{ razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string } | null>(null);
 
   const bill = calculateSubscriptionBill(selectedCountryCode);
   const paysOnline = selectedCountryCode === 'IN';
@@ -190,62 +191,64 @@ export default function CreateReverseAuctionDialog({ open: controlledOpen, onOpe
     setCurrentStep(2);
   };
 
-  const publishAuctionToDatabase = async (paymentRef: string) => {
-    const now = new Date();
-    const durationHours = auctionDuration === '24h' ? 24 : 1;
-    const endTime = new Date(now.getTime() + durationHours * 60 * 60 * 1000);
-    const auctionNumber = `BS-REV-${Math.floor(1000 + Math.random() * 9000)}`;
-    const qty = parseInt(totalQuantity, 10);
-    const startP = parseFloat(startingPrice);
+  /** The lot as entered. The server checks it, keeps it with the payment order and publishes it once the payment is verified. */
+  const auctionDraft = () => ({
+    title: title.trim(),
+    description: description.trim(),
+    total_quantity: parseInt(totalQuantity, 10),
+    quantity_unit: quantityUnit,
+    starting_price: parseFloat(startingPrice),
+    reserve_price: reservePrice ? parseFloat(reservePrice) : null,
+    min_bid_increment: parseFloat(minBidIncrement) || 2,
+    duration: auctionDuration === '24h' ? '24h' : '1h',
+    delivery_location: deliveryLocation.trim() || null,
+    lead_time: leadTime,
+    specs: specs.trim(),
+    billing_name: companyBillingName.trim(),
+    tax_id: taxIdGstin.trim(),
+    images: lotImages,
+  });
 
-    const auctionData = {
-      auction_number: auctionNumber,
-      auction_type: 'reverse',
-      title: title.trim(),
-      description: description.trim() || `Bulk lot of ${qty} ${quantityUnit} for ${auctionDuration === '24h' ? '24-hour' : '60-minute'} bidding.`,
-      total_quantity: qty,
-      moq: Math.max(1, Math.floor(qty * 0.1)),
-      quantity_unit: quantityUnit,
-      starting_price: startP,
-      reserve_price: reservePrice ? parseFloat(reservePrice) : startP,
-      min_bid_increment: parseFloat(minBidIncrement) || 2,
-      current_highest_bid: startP,
-      total_bids: 0,
-      currency: bill.country.currency,
-      duration_minutes: durationHours * 60,
-      start_time: now.toISOString(),
-      end_time: endTime.toISOString(),
-      anti_sniping_enabled: true,
-      anti_sniping_trigger_seconds: 120,
-      anti_sniping_extend_seconds: 120,
-      status: 'live',
-      delivery_location: deliveryLocation.trim() || null,
-      freight_terms: leadTime,
-      seller_id: user?.id || null,
-      specifications: {
-        'Lot Quantity': `${qty} ${quantityUnit}`,
-        ...(specs.trim() ? { 'Specs Note': specs.trim() } : {}),
-        'Auction Window': auctionDuration === '24h' ? '24-Hour Bidding' : '60-Minute Bidding',
-        'Dispatch Time': leadTime,
-        'Posting Fee Paid': `${bill.formattedTotal} (${bill.country.name}, incl. ${bill.country.taxName})`,
-        'Payment Ref': paymentRef,
-        'Seller Billing Name': companyBillingName.trim(),
-        'Tax ID / GSTIN': taxIdGstin.trim(),
+  /** Error text from a function call, whether it came back in the body or as an HTTP error. */
+  const functionError = async (error: unknown, data: unknown): Promise<string | null> => {
+    const fromBody = (data as { error?: unknown } | null)?.error;
+    if (typeof fromBody === 'string') return fromBody;
+    const context = (error as { context?: Response } | null)?.context;
+    if (context && typeof context.json === 'function') {
+      try {
+        const body = await context.json();
+        if (typeof body?.error === 'string') return body.error;
+      } catch {
+        /* not JSON */
+      }
+    }
+    return error ? (error as Error).message || 'Something went wrong' : null;
+  };
+
+  // After Razorpay reports the payment, the server checks its signature and only then publishes the auction.
+  const confirmPaymentAndPublish = async (response: { razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string }) => {
+    const payId = response?.razorpay_payment_id ?? '';
+    lastPayment.current = response;
+    setPaymentReferenceId(payId);
+    setPublishFailed(false);
+    const { data, error } = await supabase.functions.invoke('razorpay-verify-payment', {
+      body: {
+        type: 'auction_fee',
+        razorpay_order_id: response?.razorpay_order_id,
+        razorpay_payment_id: payId,
+        razorpay_signature: response?.razorpay_signature,
       },
-      images: lotImages,
-    };
-
-    const { data, error } = await supabase.from('auctions').insert(auctionData).select('id').single();
-    setPaymentReferenceId(paymentRef);
+    });
     setCurrentStep(3);
-    if (error || !data?.id) {
-      console.error('Auction creation error:', error);
+    const problem = await functionError(error, data);
+    if (problem || !data?.success || !data?.auction_id) {
+      console.error('Auction publish after payment failed:', problem);
       setPublishFailed(true);
       return;
     }
-    setCreatedAuctionId(data.id);
-    toast.success('Payment received. Your auction is live.');
-    onSuccess?.(data.id);
+    setCreatedAuctionId(data.auction_id);
+    toast.success('Payment verified. Your auction is live.');
+    onSuccess?.(data.auction_id);
   };
 
   const handlePayAndLaunchAuction = async () => {
@@ -265,10 +268,23 @@ export default function CreateReverseAuctionDialog({ open: controlledOpen, onOpe
         toast.error('The payment window could not be loaded. Please check your connection and try again.');
         return;
       }
+
+      // The server sets the fee and keeps the lot with the order
+      const { data: order, error: orderError } = await supabase.functions.invoke('razorpay-create-order', {
+        body: { type: 'auction_fee', auction: auctionDraft() },
+      });
+      const orderProblem = await functionError(orderError, order);
+      if (orderProblem || !order?.order_id) {
+        setLoading(false);
+        toast.error(orderProblem || 'The payment could not be started. Please try again.');
+        return;
+      }
+
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TZ1W7USRc0Injp',
-        amount: Math.round(bill.totalAmount * 100),
-        currency: 'INR',
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency || 'INR',
+        order_id: order.order_id,
         name: 'BulkSkart B2B Marketplace',
         description: `Auction posting fee (${bill.formattedTotal})`,
         image: '/brand/bulkskart-icon.png',
@@ -279,20 +295,16 @@ export default function CreateReverseAuctionDialog({ open: controlledOpen, onOpe
         },
         notes: {
           service: 'auction-posting-fee',
-          base_fee: String(bill.baseFee),
-          tax_amount: String(bill.taxAmount),
-          total_fee: String(bill.totalAmount),
           lot_title: title.substring(0, 40),
         },
         theme: { color: '#FF5A1F' },
         handler: async (response: any) => {
-          const payId = response?.razorpay_payment_id;
-          if (!payId) {
+          if (!response?.razorpay_payment_id) {
             setLoading(false);
             toast.error('The payment did not complete. You have not been charged for this auction.');
             return;
           }
-          await publishAuctionToDatabase(payId);
+          await confirmPaymentAndPublish(response);
           setLoading(false);
         },
         modal: {
@@ -358,13 +370,23 @@ export default function CreateReverseAuctionDialog({ open: controlledOpen, onOpe
             <span className="fk-done-ico">
               <AlertTriangle aria-hidden="true" />
             </span>
-            <h3>Your payment went through, but the auction was not posted</h3>
-            <p>
-              Please write to <a href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Auction not posted: ${paymentReferenceId}`)}`}>{SUPPORT_EMAIL}</a> with your payment reference{' '}
+            <h3>Your payment went through, but the auction was not posted yet</h3>
+            <p>Try again in a moment. If it still does not post, please write to <a href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Auction not posted: ${paymentReferenceId}`)}`}>{SUPPORT_EMAIL}</a> with your payment reference{' '}
               <b>{paymentReferenceId}</b> so the team can sort it out.
             </p>
-            <Actions single>
-              <KitButton onClick={() => setOpen(false)}>Close</KitButton>
+            <Actions>
+              <KitButton
+                disabled={loading}
+                onClick={async () => {
+                  if (!lastPayment.current) return;
+                  setLoading(true);
+                  await confirmPaymentAndPublish(lastPayment.current);
+                  setLoading(false);
+                }}
+              >
+                {loading ? 'Trying again…' : 'Try again'}
+              </KitButton>
+              <KitButton variant="ghost" onClick={() => setOpen(false)}>Close</KitButton>
             </Actions>
           </div>
         ) : (

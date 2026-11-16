@@ -900,17 +900,21 @@ function openRequirementsQuery(columns: string, filters: OpenRequirementFilters,
 export async function getOpenRequirements(
   filters: OpenRequirementFilters & { page: number; pageSize: number; sort?: OpenRequirementSort },
 ): Promise<{ rows: Requirement[]; total: number; error: string | null }> {
-  const from = Math.max(0, (filters.page - 1) * filters.pageSize);
-  let query = openRequirementsQuery('*, profiles!buyer_id(id,full_name,company_name,phone), categories!category_id(id,name,slug)', filters);
-  if (filters.sort === 'quotes_high') query = query.order('quote_count', { ascending: false });
-  else if (filters.sort === 'qty_high') query = query.order('quantity', { ascending: false });
-  else if (filters.sort === 'deadline') query = query.order('deadline', { ascending: true, nullsFirst: false });
-  query = query.order('created_at', { ascending: false }).range(from, from + filters.pageSize - 1);
+  try {
+    const from = Math.max(0, (filters.page - 1) * filters.pageSize);
+    let query = openRequirementsQuery('*, profiles!buyer_id(id,full_name,company_name,phone), categories!category_id(id,name,slug)', filters);
+    if (filters.sort === 'quotes_high') query = query.order('quote_count', { ascending: false });
+    else if (filters.sort === 'qty_high') query = query.order('quantity', { ascending: false });
+    else if (filters.sort === 'deadline') query = query.order('deadline', { ascending: true, nullsFirst: false });
+    query = query.order('created_at', { ascending: false }).range(from, from + filters.pageSize - 1);
 
-  const { data, count, error } = await query;
-  if (error) return { rows: [], total: 0, error: error.message };
-  const rows = ((data ?? []) as unknown as Requirement[]).filter((row) => !isSeededRequirement(row));
-  return { rows, total: count ?? rows.length, error: null };
+    const { data, count, error } = await query;
+    if (error) return { rows: [], total: 0, error: error.message };
+    const rows = ((data ?? []) as unknown as Requirement[]).filter((row) => !isSeededRequirement(row));
+    return { rows, total: count ?? rows.length, error: null };
+  } catch (e) {
+    return { rows: [], total: 0, error: (e as Error)?.message || 'Requirements could not be loaded' };
+  }
 }
 
 /** How many open requirements each tab holds under the other filters (null where a count failed or was not asked for). */
@@ -921,8 +925,12 @@ export async function countOpenRequirements(
   const result: Record<OpenRequirementTab, number | null> = { all: null, urgent: null, new: null, expiring: null };
   await Promise.all(
     tabs.map(async (tab) => {
-      const { count, error } = await openRequirementsQuery('id', { ...filters, tab }, true);
-      result[tab] = error ? null : (count ?? 0);
+      try {
+        const { count, error } = await openRequirementsQuery('id', { ...filters, tab }, true);
+        result[tab] = error ? null : (count ?? 0);
+      } catch {
+        result[tab] = null;
+      }
     }),
   );
   return result;
@@ -930,8 +938,15 @@ export async function countOpenRequirements(
 
 /** Delivery places named on open requirements, most common first, for the location filter. */
 export async function getOpenRequirementPlaces(limit = 20): Promise<{ value: string; label: string; count: number }[]> {
-  const { data, error } = await openRequirementsQuery('destination_city,destination_country', {}).limit(1000);
-  if (error || !Array.isArray(data)) return [];
+  let data: unknown;
+  try {
+    const result = await openRequirementsQuery('destination_city,destination_country', {}).limit(1000);
+    if (result.error) return [];
+    data = result.data;
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(data)) return [];
   const tally = new Map<string, { label: string; count: number }>();
   for (const row of data as unknown as { destination_city: string | null; destination_country: string | null }[]) {
     const city = (row.destination_city ?? '').trim();

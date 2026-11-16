@@ -26,33 +26,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRazorpay } from '@/hooks/useRazorpay';
 import { toast } from 'sonner';
 import type { Product } from '@/types/types';
+import { PROMOTION_PLANS, promotionTotal, type DurationDays, type PlanOption, type PromotionType } from '@/lib/promotionPlans';
 
-type PromotionType = 'featured' | 'boost' | 'campaign';
-type DurationDays  = 7 | 15 | 30;
-
-interface PlanOption {
-  days: DurationDays;
-  label: string;
-  basePrice: number;           // INR
-}
-
-const PLANS: Record<PromotionType, PlanOption[]> = {
-  featured: [
-    { days: 7,  label: '7 Days',  basePrice:  999 },
-    { days: 15, label: '15 Days', basePrice: 1799 },
-    { days: 30, label: '30 Days', basePrice: 2999 },
-  ],
-  boost: [
-    { days: 7,  label: '7 Days',  basePrice:  799 },
-    { days: 15, label: '15 Days', basePrice: 1399 },
-    { days: 30, label: '30 Days', basePrice: 2299 },
-  ],
-  campaign: [
-    { days: 7,  label: '7 Days',  basePrice: 1499 },
-    { days: 15, label: '15 Days', basePrice: 2499 },
-    { days: 30, label: '30 Days', basePrice: 3999 },
-  ],
-};
+const PLANS = PROMOTION_PLANS;
 
 const PROMOTION_TYPES: {
   type: PromotionType;
@@ -122,8 +98,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
 
   // Tax calculations (18% GST)
   const basePrice = selectedPlan.basePrice;
-  const gstAmount = Math.round(basePrice * 0.18);
-  const totalPayable = basePrice + gstAmount;
+  const { gst: gstAmount, total: totalPayable } = promotionTotal(basePrice);
 
   const reset = () => {
     setStep(1);

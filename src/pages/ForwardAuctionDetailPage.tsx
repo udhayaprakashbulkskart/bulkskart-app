@@ -1389,13 +1389,13 @@ export default function ForwardAuctionDetailPage() {
                   </div>
                 </div>
 
-                {/* Posting fee, as recorded with the lot */}
-                {auction.specifications?.['Posting Fee Paid'] && (
+                {/* Posting fee: shown only when the payment server verified it (fee_paid_at is set by the server alone) */}
+                {auction.fee_paid_at && (
                   <div className="mt-3.5 p-3.5 rounded-2xl bg-orange-50/60 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 space-y-2">
                     <div className="flex items-center justify-between gap-2 text-xs font-bold text-foreground">
                       <span className="flex items-center gap-1.5 text-[#FF5A1F]">
                         <Receipt className="w-3.5 h-3.5" />
-                        Posting fee paid: {String(auction.specifications['Posting Fee Paid'])}
+                        Posting fee paid and verified{auction.specifications?.['Posting Fee Paid'] ? `: ${String(auction.specifications['Posting Fee Paid'])}` : ''}
                       </span>
                       {auction.seller_verified && (
                         <Badge className="bg-emerald-600 text-white text-[9px]">
@@ -1403,9 +1403,9 @@ export default function ForwardAuctionDetailPage() {
                         </Badge>
                       )}
                     </div>
-                    {auction.specifications?.['Payment Ref'] && (
+                    {auction.fee_payment_id && (
                       <div className="pt-2 border-t border-[#FF5A1F]/20 text-[10px] text-muted-foreground">
-                        Payment reference: <span className="font-mono font-semibold text-foreground">{String(auction.specifications['Payment Ref'])}</span>
+                        Payment reference: <span className="font-mono font-semibold text-foreground">{String(auction.fee_payment_id)}</span>
                       </div>
                     )}
                   </div>

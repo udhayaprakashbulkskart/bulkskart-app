@@ -316,7 +316,7 @@ export default function DashboardLayout({ children, hideUnpaidNotice = false }: 
     ? supplierNavItems
     : buyerNavItems;
 
-  // buyers and manufacturers have a long menu, which needs a row of its own; the admin's two sections fit beside the logo
+  // buyers and manufacturers have a long menu, which needs a row of its own; the admin's few sections fit beside the logo
   const stacked = navItems.length > 4;
 
   const handleSignOut = async () => {

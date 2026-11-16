@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import PageMeta from '@/components/common/PageMeta';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
-import { SUPPORT_EMAIL } from '@/lib/supportContact';
 import '@/components/formkit/formkit.css';
 import { toast } from 'sonner';
 import {
@@ -125,51 +124,27 @@ export default function DeleteAccountPage() {
         }
       }
 
-      // 2. Mark / Archive company and products if supplier
-      if (company?.id) {
-        await supabase
-          .from('products')
-          .update({ is_active: false })
-          .eq('company_id', company.id);
-
-        const { error: companyErr } = await supabase
-          .from('companies')
-          .update({
-            description: '[Account Deleted by User]',
-            tagline: null,
-            logo_url: null,
-            banner_url: null,
-            verification_status: 'deactivated',
-            is_verified: false,
-          })
-          .eq('id', company.id);
-        if (companyErr) throw companyErr;
+      // 2. The server removes the personal details, closes the listings, frees the e-mail and blocks the login
+      const { data, error } = await supabase.functions.invoke('delete-account', { body: { reason } });
+      let problem: string | null = typeof data?.error === 'string' ? data.error : null;
+      if (error && !problem) {
+        const context = (error as { context?: Response }).context;
+        try {
+          const body = context ? await context.json() : null;
+          problem = typeof body?.error === 'string' ? body.error : error.message;
+        } catch {
+          problem = error.message;
+        }
+      }
+      if (problem || !data?.success) {
+        toast.error(problem || 'Your account could not be deleted. Please try again or contact support.');
+        return;
       }
 
-      // 3. Mark buyer profile as deleted if buyer
-      await supabase
-        .from('buyer_profiles')
-        .delete()
-        .eq('user_id', user.id);
-
-      // 4. Update or clear profile data
-      const { error: profileErr } = await supabase
-        .from('profiles')
-        .update({
-          full_name: 'Deleted User',
-          phone: null,
-          company_name: null,
-          avatar_url: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
-      if (profileErr) throw profileErr;
-
-      // 5. Invalidate auth and sign out
-      await signOut();
-      // the sign-in itself (e-mail and password) can only be erased by the BulkSkart team
-      toast.success('Your account is closed and your profile details are removed.', {
-        description: `To have your login and e-mail erased completely, write to ${SUPPORT_EMAIL}.`,
+      // 3. Sign out on this device too
+      await signOut().catch(() => undefined);
+      toast.success('Your account is deleted.', {
+        description: 'Your details are removed and this login no longer works. You can sign up again with the same e-mail.',
         duration: 10000,
       });
       navigate('/', { replace: true });
@@ -211,8 +186,9 @@ export default function DeleteAccountPage() {
             </div>
           </div>
           <p className="text-xs md:text-sm text-muted-foreground">
-            Deleting your account will permanently disconnect your email <strong className="text-foreground">{user.email}</strong>,
-            remove all active product catalogues, unlist your company storefront, cancel open RFQ matches, and revoke your verified trust badge.
+            Deleting your account removes your name, phone and the e-mail <strong className="text-foreground">{user.email}</strong> from BulkSkart,
+            hides your products and company details, closes your open requirements and live auctions, and blocks this login. Quotations,
+            orders and messages other people have with you stay in their history, shown as from a deleted user.
           </p>
         </div>
 

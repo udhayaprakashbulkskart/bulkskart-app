@@ -183,10 +183,10 @@ describe('Dashboard shell: the top bar', () => {
     expect(menu().getByRole('link', { name: 'My Products' })).not.toHaveAttribute('aria-current');
   });
 
-  it('has two sections for an admin', () => {
+  it('has three sections for an admin, including the reports users send', () => {
     signIn('admin');
     renderAt('/dashboard/admin');
-    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics']);
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Reports']);
   });
 
   it('has no More button: nothing in the menu is hidden behind a button', () => {
