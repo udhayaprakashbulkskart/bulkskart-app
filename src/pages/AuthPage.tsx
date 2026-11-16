@@ -9,13 +9,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BrandLogo from '@/components/common/BrandLogo';
 import { supabase } from '@/db/supabase';
 import { toast } from 'sonner';
-import { Globe, Shield, Eye, EyeOff, Upload, AlertCircle, CheckCircle, ArrowRight, BadgeCheck, Package, TrendingUp, Zap, Users, Mail, Loader2, Send, Lock, User, Phone, Building2, MapPin, Receipt, Hash } from 'lucide-react';
+import { Globe, Shield, Eye, EyeOff, Upload, AlertCircle, CheckCircle, ArrowRight, Package, Mail, Loader2, Send, Lock, User, Phone, Building2, MapPin, Receipt, Hash } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Actions, Done, Field, FormDialog, IconBox, KitButton, TextInput, fk } from '@/components/formkit';
 import { CITY_NAMES } from '@/lib/signup/places';
 import { Checkbox } from '@/components/ui/checkbox';
 import { trackSignUp } from '@/lib/analytics';
+import { getOpenRequirements } from '@/lib/api';
+import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
+
+function timeSince(iso: string): string {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hr${hrs === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
 
 // ── Industry mockup images (Optimized Unsplash CDN with auto-format) ────────────
 const INDUSTRY_SLIDES = [
@@ -45,58 +57,49 @@ const INDUSTRY_SLIDES = [
   },
 ];
 
-// Per-tab context shown on the left panel
+// Per-tab context shown on the left panel: what each kind of account can do, with no made-up counts.
 const TAB_CONTEXT: Record<string, { heading: string; sub: string; stats: { label: string; value: string }[]; pills: string[] }> = {
   login: {
     heading: 'Welcome Back to\nBulkSkart',
-    sub: 'Sign in to manage your requirements, track quotes, and connect with verified global suppliers.',
+    sub: 'Sign in to manage your requirements, track quotations and talk to suppliers and buyers.',
     stats: [
-      { label: 'Registered Businesses', value: '1,20,000+' },
-      { label: 'Verified Manufacturers', value: '75,000+' },
-      { label: 'Active Requirements', value: '50,000+' },
-      { label: 'Countries Connected', value: '180+' },
+      { value: 'Requirements', label: 'Post what you need and follow each one' },
+      { value: 'Quotations', label: 'Compare the quotes suppliers send you' },
+      { value: 'Messages', label: 'Chat with buyers and suppliers' },
+      { value: 'Auctions', label: 'Bid on, or sell, bulk lots live' },
     ],
     pills: ['Textiles', 'Machinery', 'Agriculture', 'Electronics', 'Pharma'],
   },
   buyer: {
-    heading: 'Source Bulk Products\nFrom Verified Factories',
-    sub: 'Post your requirements once — receive quotes from 50,000+ manufacturers across India and 180 countries.',
+    heading: 'Source Bulk Products\nFrom Manufacturers',
+    sub: 'Post your requirement once and receive quotations from suppliers on BulkSkart.',
     stats: [
-      { label: 'Free RFQs / Month', value: 'Unlimited' },
-      { label: 'Verified Suppliers', value: '75,000+' },
-      { label: 'Avg. Quotes per RFQ', value: '10+' },
-      { label: 'Avg. Response Time', value: '<24 hrs' },
+      { value: 'Post an RFQ', label: 'Product, quantity and where to deliver' },
+      { value: 'Get quotes', label: 'Suppliers send their price and terms' },
+      { value: 'Compare', label: 'Quotes side by side, in one place' },
+      { value: 'Chat', label: 'Message suppliers directly' },
     ],
-    pills: ['Free Registration', 'Post RFQ Free', 'Compare Quotes', 'Direct Chat'],
+    pills: ['Free Registration', 'Post RFQs', 'Compare Quotes', 'Direct Chat'],
   },
   supplier: {
-    heading: 'Reach 1,20,000+ Buyers\nGlobally',
-    sub: 'Get your business verified, list products, and receive qualified bulk-order RFQs from international buyers every day.',
+    heading: 'Reach Bulk Buyers\nOn BulkSkart',
+    sub: "Get your business verified, list your products, and quote on buyers' bulk requirements.",
     stats: [
-      { label: 'Active Buyer RFQs', value: '50,000+' },
-      { label: 'Avg. Order Value', value: '₹5L+' },
-      { label: 'Export Countries', value: '180+' },
-      { label: 'New RFQs Daily', value: '500+' },
+      { value: 'Buyer RFQs', label: 'Browse open requirements and quote' },
+      { value: 'Products', label: 'List products with your own photos' },
+      { value: 'Verification', label: 'Earn the verified badge with KYC' },
+      { value: 'Auctions', label: 'Sell bulk stock in a live auction' },
     ],
-    pills: ['KYC Verified Badge', 'Priority Visibility', 'RFQ Matching', 'Analytics'],
+    pills: ['Verification Badge', 'RFQ Leads', 'Product Listings', 'Live Auctions'],
   },
 };
-
-// Floating mock activity cards cycling on the panel
-const ACTIVITY_ITEMS = [
-  { icon: Package,    color: 'bg-[#FF5A00]',   text: 'New RFQ: 500 MT Basmati Rice — UAE Buyer' },
-  { icon: BadgeCheck, color: 'bg-green-500',  text: 'Sunrise Machinery verified — Pune' },
-  { icon: TrendingUp, color: 'bg-primary',    text: '12 quotes received on Cotton Fabric RFQ' },
-  { icon: Zap,        color: 'bg-amber-500',  text: 'New RFQ: 10,000 Pcs LED Bulb — Germany' },
-  { icon: Users,      color: 'bg-purple-500', text: '3 new suppliers matched to your RFQ' },
-  { icon: Package,    color: 'bg-teal-500',   text: 'New RFQ: 50 Tons Groundnut Oil — Singapore' },
-];
 
 // ── Left panel component ───────────────────────────────────────────────────────
 function AuthLeftPanel({ tab }: { tab: string }) {
   const ctx = TAB_CONTEXT[tab] ?? TAB_CONTEXT.login;
   const [slideIdx, setSlideIdx] = useState(0);
   const [activityIdx, setActivityIdx] = useState(0);
+  const [latest, setLatest] = useState<{ id: string; text: string; when: string }[]>([]);
   const [fadeSlide, setFadeSlide] = useState(true);
   const [fadeActivity, setFadeActivity] = useState(true);
 
@@ -112,21 +115,36 @@ function AuthLeftPanel({ tab }: { tab: string }) {
     return () => clearInterval(t);
   }, []);
 
-  // Cycle activity card every 3s
+  // The newest open requirements, as posted (the ticker stays hidden when there are none)
   useEffect(() => {
+    let alive = true;
+    getOpenRequirements({ page: 1, pageSize: 6, sort: 'latest' }).then(({ rows }) => {
+      if (!alive) return;
+      setLatest(rows.map((r) => {
+        const place = placeLabel(r);
+        return { id: r.id, text: `New RFQ: ${quantityLabel(r)} ${r.title}${place ? ` — ${place}` : ''}`, when: timeSince(r.created_at) };
+      }));
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Cycle the ticker every 3s
+  useEffect(() => {
+    if (latest.length < 2) return;
     const t = setInterval(() => {
       setFadeActivity(false);
       setTimeout(() => {
-        setActivityIdx(i => (i + 1) % ACTIVITY_ITEMS.length);
+        setActivityIdx(i => (i + 1) % latest.length);
         setFadeActivity(true);
       }, 300);
     }, 3000);
     return () => clearInterval(t);
-  }, []);
+  }, [latest.length]);
 
   const slide = INDUSTRY_SLIDES[slideIdx];
-  const activity = ACTIVITY_ITEMS[activityIdx];
-  const ActivityIcon = activity.icon;
+  const activity = latest.length ? latest[activityIdx % latest.length] : null;
 
   return (
     <div className="hidden md:flex md:w-[52%] relative flex-col justify-between overflow-hidden bg-[#0d1117]">
@@ -135,31 +153,31 @@ function AuthLeftPanel({ tab }: { tab: string }) {
         className="absolute inset-0 z-0 transition-opacity duration-500"
         style={{ opacity: fadeSlide ? 1 : 0 }}
       >
-        <img src={slide.img} alt={slide.label} className="w-full h-full object-cover" />
+        <img src={slide.img} alt="" className="w-full h-full object-cover" />
         {/* deep dark overlay — darker at top/bottom for legibility */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#0d1117]/85 via-[#0d1117]/55 to-[#0d1117]/90" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0d1117]/60 via-transparent to-transparent" />
       </div>
 
-      {/* ── Slide label chip ── */}
-      <div className="absolute bottom-[52%] left-6 z-20">
+      {/* ── Slide label chip and dots, out of the way of the text ── */}
+      <div className="absolute bottom-5 right-6 z-20 flex items-center gap-3">
         <span
           className="text-[10px] font-bold text-white/60 uppercase tracking-widest px-2.5 py-1 rounded-full border border-white/15 bg-white/5 backdrop-blur-sm transition-opacity duration-500"
           style={{ opacity: fadeSlide ? 1 : 0 }}
         >
           {slide.label}
         </span>
-      </div>
-
-      {/* ── Slide dots ── */}
-      <div className="absolute bottom-[49%] right-6 z-20 flex gap-1.5">
-        {INDUSTRY_SLIDES.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setSlideIdx(i)}
-            className={`rounded-full transition-all duration-300 ${i === slideIdx ? 'w-4 h-1.5 bg-primary' : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'}`}
-          />
-        ))}
+        <div className="flex gap-1.5">
+          {INDUSTRY_SLIDES.map((item, i) => (
+            <button
+              key={item.label}
+              type="button"
+              aria-label={`Show ${item.label}`}
+              onClick={() => setSlideIdx(i)}
+              className={`rounded-full transition-all duration-300 ${i === slideIdx ? 'w-4 h-1.5 bg-primary' : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'}`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* ── Top: logo ── */}
@@ -195,29 +213,27 @@ function AuthLeftPanel({ tab }: { tab: string }) {
           ))}
         </div>
 
-        {/* Live activity ticker */}
-        <div
-          className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 backdrop-blur-sm transition-opacity duration-300"
-          style={{ opacity: fadeActivity ? 1 : 0 }}
-        >
-          <div className={`w-7 h-7 rounded-lg ${activity.color} flex items-center justify-center shrink-0`}>
-            <ActivityIcon className="w-3.5 h-3.5 text-white" />
+        {/* Newest real requirement */}
+        {activity && (
+          <div
+            className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 backdrop-blur-sm transition-opacity duration-300"
+            style={{ opacity: fadeActivity ? 1 : 0 }}
+          >
+            <div className="w-7 h-7 rounded-lg bg-[#FF5A00] flex items-center justify-center shrink-0">
+              <Package className="w-3.5 h-3.5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-medium text-white/80 truncate">{activity.text}</p>
+              <p className="text-[9px] text-white/35 mt-0.5">{activity.when} · posted on BulkSkart</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-medium text-white/80 truncate">{activity.text}</p>
-            <p className="text-[9px] text-white/35 mt-0.5">Just now · BulkSkart Live</p>
-          </div>
-          <span className="relative flex h-2 w-2 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-          </span>
-        </div>
+        )}
       </div>
 
       {/* ── Bottom: trust badge ── */}
       <div className="relative z-10 px-8 pb-6 flex items-center gap-2">
         <Shield className="w-4 h-4 text-primary shrink-0" />
-        <span className="text-[11px] text-white/40">Verified businesses only · Secure & compliant</span>
+        <span className="text-[11px] text-white/40">Secure sign-in · Your contact details stay private</span>
       </div>
     </div>
   );
