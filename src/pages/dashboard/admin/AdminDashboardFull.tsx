@@ -64,7 +64,7 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  verified: 'bg-green-100 text-green-700',
+  verified: 'bg-primary/10 text-primary',
   pending: 'bg-yellow-100 text-yellow-700',
   unverified: 'bg-muted text-muted-foreground',
   rejected: 'bg-red-100 text-red-700',
@@ -347,7 +347,7 @@ export default function AdminDashboardFull() {
                           <p className="text-xs text-muted-foreground">{c.profiles?.email}</p>
                         </div>
                         <div className="flex gap-1 shrink-0">
-                          <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => approveVerification(c.id)} disabled={saving === c.id}>
+                          <Button size="sm" className="h-7 text-xs bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => approveVerification(c.id)} disabled={saving === c.id}>
                             <CheckCircle className="w-3 h-3" />
                           </Button>
                           <Button size="sm" variant="outline" className="h-7 text-xs border-red-300 text-red-600" onClick={() => setRejectId(c.id)}>
@@ -480,7 +480,7 @@ export default function AdminDashboardFull() {
                         <td className="px-3 py-3">
                           {c.verification_status === 'pending' && (
                             <div className="flex gap-1">
-                              <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white px-2"
+                              <Button size="sm" className="h-7 text-xs bg-primary hover:bg-primary/90 text-primary-foreground px-2"
                                 onClick={() => approveVerification(c.id)} disabled={saving === c.id}>
                                 {saving === c.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
                               </Button>
@@ -538,7 +538,7 @@ export default function AdminDashboardFull() {
                             }}>
                               Start Review
                             </Button>
-                            <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
+                            <Button size="sm" className="h-7 text-xs bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
                               Resolve
                             </Button>
                           </div>

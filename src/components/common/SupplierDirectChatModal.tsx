@@ -215,11 +215,13 @@ export default function SupplierDirectChatModal({
                   )}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                  <span>{company.city || company.country || 'Verified Factory'}</span>
-                  <span>•</span>
-                  <span className="text-emerald-400 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> Typically replies in ~2h
-                  </span>
+                  <span>{[company.city, company.country].filter(Boolean).join(', ') || 'Manufacturer'}</span>
+                  {company.is_verified && (
+                    <>
+                      <span>•</span>
+                      <span className="text-primary font-medium">Verified</span>
+                    </>
+                  )}
                 </DialogDescription>
               </div>
             </div>

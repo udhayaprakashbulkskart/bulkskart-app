@@ -228,7 +228,7 @@ export default function NegotiationRoomPage() {
             <div className="flex items-center gap-2">
               <span className="font-semibold text-sm truncate">{otherName}</span>
               {conv?.companies?.is_verified && (
-                <Badge className="bg-green-100 text-green-700 border-green-300 text-[10px] px-1.5 py-0 gap-0.5">
+                <Badge className="bg-primary/10 text-primary border-primary/30 text-[10px] px-1.5 py-0 gap-0.5">
                   <ShieldCheck className="w-2.5 h-2.5" /> Verified
                 </Badge>
               )}

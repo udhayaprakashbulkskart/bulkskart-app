@@ -381,7 +381,7 @@ export default function HelpAIPopupModal() {
             {/* Direct Shortcuts Footer */}
             <div className="px-4 py-2 bg-slate-950 border-t border-slate-900 text-[11px] flex flex-wrap items-center justify-between gap-2 text-muted-foreground">
               <span className="flex items-center gap-1 text-[10px]">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                <ShieldCheck className="w-3 h-3 text-primary" />
                 Verified B2B Intelligence
               </span>
               <div className="flex items-center gap-3">

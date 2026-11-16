@@ -83,7 +83,7 @@ export default function SupplierDashboard() {
         totalProducts: prodRes.count ?? 0,
         rfqLeads: sub?.used_rfq_leads ?? 0,
         quotesSent: quotRes.count ?? 0,
-        leadsLeft: sub ? (sub.max_rfq_leads - sub.used_rfq_leads) : 0,
+        leadsLeft: sub ? Math.max(0, (sub.max_rfq_leads ?? 10) - (sub.used_rfq_leads ?? 0)) : 0,
         maxLeads: sub?.max_rfq_leads ?? 10,
         activeOrders: activeOrdRes.count ?? 0,
         completedOrders: compOrdRes.count ?? 0,
@@ -148,7 +148,7 @@ export default function SupplierDashboard() {
             <span className="inline-flex flex-wrap items-center gap-2">
               <span>{company?.company_name ?? 'Your Dashboard'}</span>
               {company?.is_verified && (
-                <Badge className="shrink-0 gap-0.5 border-green-500/30 bg-green-500/15 px-1.5 py-0 text-[10px] text-green-700 dark:text-green-400">
+                <Badge className="shrink-0 gap-0.5 border-primary/30 bg-primary/15 px-1.5 py-0 text-[10px] text-primary">
                   <ShieldCheck className="h-2.5 w-2.5" /> Verified
                 </Badge>
               )}

@@ -50,7 +50,7 @@ const ADVANCE_LABEL: Partial<Record<PipelineStatus, { icon: React.ElementType; l
 
 type OrderData = OrderPaymentFields & {
   id: string; order_number: string; order_status: PipelineStatus; milestone: string;
-  total_amount: number; currency: string; quantity: number;
+  total_amount: number; currency: string; quantity: number; quantity_unit?: string | null;
   notes: string | null; cancelled_reason: string | null; created_at: string;
   tracking_courier: string | null; tracking_number: string | null; tracking_eta: string | null;
   buyer_id: string; supplier_id: string | null; supplier_company_id: string;
@@ -258,7 +258,7 @@ export default function OrderTrackingPage() {
           <Card>
             <CardContent className="pt-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div><p className="text-xs text-muted-foreground">Supplier</p><p className="font-medium">{order.companies?.company_name ?? '—'}</p></div>
-              <div><p className="text-xs text-muted-foreground">Quantity</p><p className="font-medium">{order.requirements?.quantity} {order.requirements?.quantity_unit}</p></div>
+              <div><p className="text-xs text-muted-foreground">Quantity</p><p className="font-medium">{(() => { const qty = order.quantity ?? order.requirements?.quantity; const unit = order.quantity_unit || order.requirements?.quantity_unit || ''; return qty != null ? `${Number(qty).toLocaleString('en-IN')} ${unit}`.trim() : 'Not stated'; })()}</p></div>
               <div><p className="text-xs text-muted-foreground">Total Value</p><p className="font-medium">{order.currency} {Number(order.total_amount).toLocaleString()}</p></div>
               <div><p className="text-xs text-muted-foreground">Order Date</p><p className="font-medium">{new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p></div>
               {order.quotations?.payment_terms && <div><p className="text-xs text-muted-foreground">Payment Terms</p><p className="font-medium">{order.quotations.payment_terms}</p></div>}

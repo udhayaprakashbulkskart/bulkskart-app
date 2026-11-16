@@ -292,19 +292,19 @@ export default function SupplierSubscriptionPage() {
                 <div className="flex items-center gap-3">
                   <span className="text-3xl leading-none">{countryConfig.flag}</span>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="text-sm font-bold text-foreground">
                         Billing Jurisdiction: {countryConfig.name}
                       </span>
-                      <Badge variant="outline" className="text-xs font-mono">
+                      <Badge variant="outline" className="text-xs font-mono whitespace-nowrap">
                         {countryConfig.currency} ({countryConfig.symbol})
                       </Badge>
                       {autoDetectedSource === 'login' ? (
-                        <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                        <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20 whitespace-nowrap">
                           Synced with Company Country
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                        <Badge variant="outline" className="text-[10px] text-muted-foreground whitespace-nowrap">
                           Auto-detected
                         </Badge>
                       )}

@@ -199,7 +199,7 @@ export default function MaskedPhone({
             {formatted}
           </a>
           {verified && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-green-600 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-full px-1.5 py-0.5 leading-none shrink-0">
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-primary bg-primary/10 border border-primary/25 rounded-full px-1.5 py-0.5 leading-none shrink-0">
               <ShieldCheck className="w-2.5 h-2.5" /> Verified
             </span>
           )}

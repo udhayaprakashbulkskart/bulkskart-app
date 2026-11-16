@@ -24,7 +24,7 @@ const TYPE_COLORS: Record<string, string> = {
   quote_accepted: 'bg-green-100 text-green-700 border-green-200',
   quote_rejected: 'bg-red-100 text-red-700 border-red-200',
   order_status: 'bg-purple-100 text-purple-700 border-purple-200',
-  verification: 'bg-teal-100 text-teal-700 border-teal-200',
+  verification: 'bg-primary/10 text-primary border-primary/30',
   subscription: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   product_update: 'bg-pink-100 text-pink-700 border-pink-200',
   dispute: 'bg-red-100 text-red-800 border-red-200',

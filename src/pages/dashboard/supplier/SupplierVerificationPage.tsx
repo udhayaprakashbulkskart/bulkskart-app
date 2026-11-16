@@ -121,7 +121,7 @@ export default function SupplierVerificationPage() {
   const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
     unverified: { label: 'Not Submitted', color: 'bg-muted text-muted-foreground', icon: <FileText className="w-4 h-4" /> },
     pending: { label: 'Under Review', color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: <Clock className="w-4 h-4" /> },
-    verified: { label: 'Verified', color: 'bg-green-100 text-green-700 border-green-300', icon: <CheckCircle2 className="w-4 h-4" /> },
+    verified: { label: 'Verified', color: 'bg-primary/10 text-primary border-primary/30', icon: <CheckCircle2 className="w-4 h-4" /> },
     rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700 border-red-300', icon: <XCircle className="w-4 h-4" /> },
   };
 
@@ -186,7 +186,7 @@ export default function SupplierVerificationPage() {
                 )}
               </div>
               {status === 'verified' && (
-                <Badge className="bg-green-600 text-white gap-1 shrink-0 text-xs sm:text-sm">
+                <Badge className="bg-primary text-primary-foreground gap-1 shrink-0 text-xs sm:text-sm">
                   <ShieldCheck className="w-3.5 h-3.5" /> Verified Manufacturer
                 </Badge>
               )}
@@ -349,7 +349,7 @@ export default function SupplierVerificationPage() {
         {status === 'verified' && !isExpiringSoon && !isExpired && (
           <Card>
             <CardContent className="text-center py-10">
-              <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
+              <CheckCircle2 className="w-10 h-10 text-primary mx-auto mb-3" />
               <h3 className="font-semibold text-foreground">Your business is fully verified!</h3>
               <p className="text-sm text-muted-foreground mt-1">Verified Manufacturer badge is active. You can accept orders.</p>
             </CardContent>

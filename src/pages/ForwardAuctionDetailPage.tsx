@@ -23,8 +23,12 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import BidderProfileModal from '@/components/auctions/BidderProfileModal';
+import { createOrder, updateQuotationStatus } from '@/lib/api';
 import AuctionLiveChat from '@/components/auctions/AuctionLiveChat';
 import ProtectedContact from '@/components/common/ProtectedContact';
+
+/** Bidder names carry a "(You)" style suffix on the viewer's own bids. */
+const bidderKey = (name: string) => name.replace(/\s*\((You|Your Active Bid)\)/gi, '').trim().toLowerCase();
 
 interface BidRecord {
   id: string;
@@ -89,10 +93,12 @@ export default function ForwardAuctionDetailPage() {
           // The seller's company name, when it can be read
           let sellerName: string | null = null;
           let sellerVerified = false;
+          let sellerSlug: string | null = null;
           if (data.seller_company_id) {
-            const { data: seller } = await supabase.from('companies').select('company_name, verification_status').eq('id', data.seller_company_id).maybeSingle();
+            const { data: seller } = await supabase.from('companies').select('company_name, slug, verification_status, is_verified').eq('id', data.seller_company_id).maybeSingle();
             sellerName = seller?.company_name?.trim() || null;
-            sellerVerified = seller?.verification_status === 'verified';
+            sellerSlug = seller?.slug || null;
+            sellerVerified = seller?.verification_status === 'verified' || seller?.is_verified === true;
           }
 
           // Fetch real bids from auction_bids table first to determine leading bid
@@ -119,6 +125,7 @@ export default function ForwardAuctionDetailPage() {
             images: (Array.isArray(data.images) ? data.images : []).filter((img: unknown) => typeof img === 'string' && sellerPhoto([img])),
             specifications: data.specifications || {},
             manufacturer_name: sellerName || 'Seller',
+            seller_slug: sellerSlug,
             seller_verified: sellerVerified
           });
 
@@ -146,6 +153,9 @@ export default function ForwardAuctionDetailPage() {
           if (quoteData && quoteData.length > 0 && isMounted) {
             setQuotations(quoteData.map((q: any) => ({
               id: q.id,
+              supplier_id: q.supplier_id ?? null,
+              supplier_company_id: q.supplier_company_id ?? null,
+              currency: q.currency || 'INR',
               supplier_name: q.supplier_name || 'Supplier',
               supplier_location: q.supplier_location || '',
               unit_price: Number(q.unit_price) || Number(q.price_per_unit) || 0,
@@ -273,31 +283,43 @@ export default function ForwardAuctionDetailPage() {
       return;
     }
 
+    if (!selectedQuoteForAward.supplier_company_id) {
+      toast.error('This quotation is not linked to a manufacturer account, so an order cannot be created from it.');
+      return;
+    }
+
     setIsAwardingOrder(true);
     try {
-      const poNum = `PO-${auction.auction_number || 'AUCT'}-${Math.floor(1000 + Math.random() * 9000)}`;
-      const totalAmount = Number(selectedQuoteForAward.unit_price) * Number(auction.total_quantity);
-      const gstAmount = Math.round(totalAmount * ((Number(selectedQuoteForAward.gst_percent) || 18) / 100));
+      // The server only accepts an order on a quotation the buyer has accepted,
+      // and it takes the price from that quotation.
+      const accepted = await updateQuotationStatus(selectedQuoteForAward.id, 'accepted');
+      if (accepted.error) throw new Error(accepted.error);
 
-      await supabase.from('orders').insert({
-        order_number: poNum,
+      const quantity = Number(auction.total_quantity) || 1;
+      const { data: order, error } = await createOrder({
+        quotation_id: selectedQuoteForAward.id,
+        requirement_id: auction.requirement_id || null,
         buyer_id: user.id,
-        seller_company_id: auction.seller_company_id || null,
-        total_amount: totalAmount + gstAmount,
-        tax_amount: gstAmount,
-        status: 'pending_payment',
-        payment_status: 'pending',
-        notes: `Awarded from 60-Minute Reverse Auction ${auction.auction_number} to ${selectedQuoteForAward.supplier_name}`
+        supplier_id: selectedQuoteForAward.supplier_id ?? null,
+        supplier_company_id: selectedQuoteForAward.supplier_company_id,
+        total_amount: Number(selectedQuoteForAward.unit_price) * quantity,
+        currency: selectedQuoteForAward.currency || 'INR',
+        quantity,
+        quantity_unit: auction.quantity_unit || null,
+        notes: `Awarded from auction ${auction.auction_number} to ${selectedQuoteForAward.supplier_name}`
       });
+      if (error || !order) throw new Error(error || 'The order could not be created.');
 
-      setIsAwardingOrder(false);
+      setQuotations(prev => prev.map(q => q.id === selectedQuoteForAward.id ? { ...q, status: 'accepted' } : q));
       setAwardOrderDialogOpen(false);
       setIsSoldConcluded(true);
-      toast.success(`Purchase Order Generated! (${poNum})`, {
-        description: `Order officially awarded to ${selectedQuoteForAward.supplier_name} at ₹${selectedQuoteForAward.unit_price}/${auction.quantity_unit}. Contract released to Escrow.`
+      toast.success(`Order ${order.order_number} created`, {
+        description: `Awarded to ${selectedQuoteForAward.supplier_name}. Choose how to pay on the order page.`
       });
+      navigate(`/dashboard/buyer/orders/${order.id}`);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to award Purchase Order');
+      toast.error(err.message || 'The order could not be created.');
+    } finally {
       setIsAwardingOrder(false);
     }
   };
@@ -573,19 +595,6 @@ export default function ForwardAuctionDetailPage() {
                 )}
               </Button>
 
-              {/* Test conclusion trigger */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSecondsRemaining(5);
-                  toast.info('Simulating final 5 seconds to test 60-min SOLD conclusion!');
-                }}
-                className="h-8 text-[11px] font-semibold border-orange-200 dark:border-orange-900 text-[#FF5A1F] hidden sm:flex items-center gap-1"
-              >
-                <Clock className="w-3.5 h-3.5" /> Test Expiration
-              </Button>
-
               <Button
                 variant="outline"
                 size="sm"
@@ -623,7 +632,7 @@ export default function ForwardAuctionDetailPage() {
                       {auction.auction_number}
                     </span>
                     {auction.seller_verified && (
-                      <Badge className="bg-emerald-600 text-white text-[9px]">
+                      <Badge className="bg-primary text-primary-foreground text-[9px]">
                         Verified seller
                       </Badge>
                     )}
@@ -749,14 +758,20 @@ export default function ForwardAuctionDetailPage() {
                 </div>
                 <div>
                   <div className="text-[10px] text-muted-foreground font-semibold uppercase">Listing Manufacturer</div>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenBidder(auction.manufacturer_name)}
-                    className="text-xs sm:text-sm font-bold text-foreground hover:text-[#FF5A1F] transition-colors flex items-center gap-1"
-                  >
-                    <span>{auction.manufacturer_name}</span>
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  </button>
+                  {auction.seller_slug ? (
+                    <Link
+                      to={`/companies/${auction.seller_slug}`}
+                      className="text-xs sm:text-sm font-bold text-foreground hover:text-[#FF5A1F] transition-colors flex items-center gap-1"
+                    >
+                      <span>{auction.manufacturer_name}</span>
+                      {auction.seller_verified && <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" aria-label="Verified seller" />}
+                    </Link>
+                  ) : (
+                    <span className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1">
+                      <span>{auction.manufacturer_name}</span>
+                      {auction.seller_verified && <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" aria-label="Verified seller" />}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -1398,7 +1413,7 @@ export default function ForwardAuctionDetailPage() {
                         Posting fee paid and verified{auction.specifications?.['Posting Fee Paid'] ? `: ${String(auction.specifications['Posting Fee Paid'])}` : ''}
                       </span>
                       {auction.seller_verified && (
-                        <Badge className="bg-emerald-600 text-white text-[9px]">
+                        <Badge className="bg-primary text-primary-foreground text-[9px]">
                           Verified seller
                         </Badge>
                       )}
@@ -1425,6 +1440,8 @@ export default function ForwardAuctionDetailPage() {
       {/* Interactive Bidder Profile Modal */}
       <BidderProfileModal
         bidderName={selectedBidderName}
+        bids={bidHistory.filter((b) => bidderKey(b.bidder_name) === bidderKey(selectedBidderName ?? ''))}
+        quantityUnit={auction?.quantity_unit}
         open={bidderModalOpen}
         onOpenChange={setBidderModalOpen}
         isPostOwner={Boolean(user && auction && (user.id === auction.seller_id || user.id === (auction as any).created_by || user.id === (auction as any).user_id || user.id === (auction as any).owner_id))}
@@ -1442,22 +1459,20 @@ export default function ForwardAuctionDetailPage() {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center font-bold shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-primary/15 text-primary flex items-center justify-center font-bold shrink-0">
                 <Receipt className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-foreground">Award Purchase Order (PO)</h3>
-                <p className="text-xs text-muted-foreground">Finalize order terms and release contract via BulkSkart Escrow</p>
+                <h3 className="text-lg font-bold text-foreground">Award order</h3>
+                <p className="text-xs text-muted-foreground">Accept this quotation and create the order</p>
               </div>
             </div>
 
             {/* Official PO Header */}
             <div className="p-4 rounded-2xl bg-muted/40 border border-border/70 space-y-2 text-xs">
               <div className="flex justify-between items-center pb-2 border-b border-border/50">
-                <span className="font-mono font-bold text-foreground">PO-BS-RFQ-{auction.auction_number.replace(/\D/g, '') || '1042'}-89</span>
-                <span className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold text-[10px]">
-                  Verified B2B Purchase Order
-                </span>
+                <span className="font-mono font-bold text-foreground">Auction {auction.auction_number}</span>
+                <span className="text-muted-foreground text-[10px]">Order number is given when you confirm</span>
               </div>
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <div>
@@ -1487,16 +1502,16 @@ export default function ForwardAuctionDetailPage() {
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Freight & Handling:</span>
-                <span className="font-mono font-semibold text-emerald-500">
-                  {selectedQuoteForAward.freight_included ? '₹0 (Included Door Delivery)' : 'To be billed at actuals'}
+                <span className="font-mono font-semibold text-foreground">
+                  {selectedQuoteForAward.freight_included ? 'Included in the price' : 'To be billed at actuals'}
                 </span>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Estimated Dispatch Window:</span>
-                <span className="font-semibold text-foreground">{selectedQuoteForAward.lead_time_days ? `${selectedQuoteForAward.lead_time_days} Days from Escrow Confirmation` : 'Not stated'}</span>
+                <span className="font-semibold text-foreground">{selectedQuoteForAward.lead_time_days ? `${selectedQuoteForAward.lead_time_days} days after payment` : 'Not stated'}</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-border font-bold text-sm text-foreground">
-                <span>Total Escrow Amount:</span>
+                <span>Estimated total (with GST):</span>
                 <span className="text-[#FF5A1F] text-base">
                   ₹{((selectedQuoteForAward.unit_price * auction.total_quantity) * (1 + selectedQuoteForAward.gst_percent / 100)).toLocaleString('en-IN')}
                 </span>
@@ -1507,7 +1522,7 @@ export default function ForwardAuctionDetailPage() {
             <div className="flex items-start gap-2 text-[11px] text-muted-foreground p-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
               <ShieldCheck className="w-4 h-4 text-[#FF5A1F] shrink-0 mt-0.5" />
               <span>
-                <strong>100% Escrow Protection:</strong> Funds are locked securely until physical inspection and proof of delivery (POD) is confirmed by buyer.
+                After you confirm, open the order to pay online or at the factory. Online payments are held by BulkSkart and reach the manufacturer only after you confirm delivery.
               </span>
             </div>
 
@@ -1524,7 +1539,7 @@ export default function ForwardAuctionDetailPage() {
                 disabled={isAwardingOrder}
                 className="flex-1 h-11 rounded-xl bg-[#FF5A1F] hover:bg-[#e04f1a] text-white font-bold text-xs shadow-md"
               >
-                {isAwardingOrder ? 'Generating & Signing PO...' : 'Confirm & Release Purchase Order'}
+                {isAwardingOrder ? 'Creating order…' : 'Accept quote & create order'}
               </Button>
             </div>
           </div>

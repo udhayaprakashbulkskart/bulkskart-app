@@ -351,13 +351,13 @@ export default function SupplierProfilePage() {
           {company && (
             <div className={`rounded-xl border p-4 flex items-center gap-3 ${
               company.is_verified
-                ? 'bg-green-500/10 border-green-500/30'
+                ? 'bg-primary/10 border-primary/30'
                 : company.verification_status === 'pending'
                 ? 'bg-yellow-500/10 border-yellow-500/30'
                 : 'bg-muted border-border'
             }`}>
               {company.is_verified ? (
-                <ShieldCheck className="w-5 h-5 text-green-400 shrink-0" />
+                <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
               ) : company.verification_status === 'pending' ? (
                 <Clock className="w-5 h-5 text-yellow-400 shrink-0" />
               ) : (
@@ -369,7 +369,9 @@ export default function SupplierProfilePage() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {company.is_verified
-                    ? `Verified on ${new Date(company.verified_at!).toLocaleDateString('en-GB', { day:'2-digit',month:'short',year:'numeric' })}`
+                    ? (company.verified_at && !Number.isNaN(new Date(company.verified_at).getTime())
+                      ? `Verified on ${new Date(company.verified_at).toLocaleDateString('en-GB', { day:'2-digit',month:'short',year:'numeric' })}`
+                      : 'Your business documents have been checked by BulkSkart.')
                     : company.verification_status === 'pending'
                     ? 'Admin is reviewing your documents. This may take 1–2 business days.'
                     : 'Upload GST, IEC and company registration documents for verification.'
@@ -377,7 +379,7 @@ export default function SupplierProfilePage() {
                 </p>
               </div>
               {company.is_verified && (
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs shrink-0">
+                <Badge className="bg-primary/15 text-primary border-primary/30 text-xs shrink-0">
                   <ShieldCheck className="w-3 h-3 mr-1" /> Verified
                 </Badge>
               )}
@@ -565,11 +567,11 @@ export default function SupplierProfilePage() {
                 const isPending = pendingCerts.some(c => c.cert_type === badge.certType);
                 return (
                   <div key={badge.label} className={`rounded-lg border p-3 flex items-center gap-3 ${
-                    isVerified ? 'bg-green-500/10 border-green-500/30' :
+                    isVerified ? 'bg-primary/10 border-primary/30' :
                     isPending ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-muted border-border'
                   }`}>
                     {isVerified
-                      ? <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
+                      ? <CheckCircle className="w-4 h-4 text-primary shrink-0" />
                       : isPending
                       ? <Clock className="w-4 h-4 text-yellow-400 shrink-0" />
                       : <ShieldCheck className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -615,7 +617,7 @@ export default function SupplierProfilePage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 pt-5 shrink-0">
-                  {cert.is_verified && <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">Verified</Badge>}
+                  {cert.is_verified && <Badge className="bg-primary/15 text-primary border-primary/30 text-xs">Verified</Badge>}
                   {cert.pending_review && !cert.is_verified && <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">Pending</Badge>}
                   <button type="button" onClick={() => removeCert(cert.id)}
                     className="text-muted-foreground hover:text-destructive transition-colors">

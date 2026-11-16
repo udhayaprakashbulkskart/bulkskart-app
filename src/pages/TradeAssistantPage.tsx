@@ -1042,7 +1042,7 @@ export default function TradeAssistantPage() {
                               <Building2 className="w-4 h-4" />
                             </div>
                             {sup.verified && (
-                              <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px]">
+                              <Badge className="bg-primary/10 text-primary border-primary/30 text-[10px]">
                                 Verified Factory
                               </Badge>
                             )}

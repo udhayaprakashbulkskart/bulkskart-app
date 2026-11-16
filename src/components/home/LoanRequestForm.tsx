@@ -97,7 +97,7 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
     return (
       <div className={`mt-5 rounded-2xl border p-4 ${landing ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-emerald-500/30 bg-emerald-500/10'}`}>
         <div className="flex items-start gap-3">
-          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+          <CheckCircle2 className={`mt-0.5 h-5 w-5 shrink-0 ${landing ? 'text-emerald-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
           <div>
             <p className={`text-sm font-bold ${landing ? 'text-white' : 'text-foreground'}`}>Loan request received</p>
             <p className={`mt-1 text-xs leading-relaxed ${landing ? 'text-slate-300' : 'text-muted-foreground'}`}>

@@ -556,7 +556,7 @@ export function getCategoryPlaceholderSVG(categoryName?: string, productName?: s
       ${title}
     </text>
     <text x="200" y="260" fill="#64748b" font-family="system-ui, -apple-system, sans-serif" font-size="11" text-anchor="middle">
-      BulkSkart Verified Sourcing Standard
+      Photo not added yet
     </text>
   </svg>`;
 

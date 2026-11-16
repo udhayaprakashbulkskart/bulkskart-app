@@ -138,7 +138,7 @@ export default function BuyerOrdersPage() {
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-foreground">{order.requirements?.title ?? 'Order'}</p>
-                            {order.companies?.verification_status === 'verified' && <ShieldCheck className="w-3.5 h-3.5 text-green-500" />}
+                            {order.companies?.verification_status === 'verified' && <ShieldCheck className="w-3.5 h-3.5 text-primary" />}
                           </div>
                           <p className="text-xs text-muted-foreground">{order.companies?.company_name ?? '—'}</p>
                         </div>

@@ -1426,7 +1426,7 @@ export default function BusinessSetupWizardPage() {
                 {/* Status Indicator Banner */}
                 <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 ${
                   verificationStatus === 'verified'
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                    ? 'bg-primary/10 border-primary/30 text-primary'
                     : verificationStatus === 'pending'
                     ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
                     : verificationStatus === 'rejected'

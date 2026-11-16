@@ -165,7 +165,7 @@ function SupplierCard({
   const verified = co.verification_status === 'verified' || co.is_verified;
 
   return (
-    <div className="bg-[#0e121b]/95 hover:bg-[#151a26] border border-slate-800/90 hover:border-[#FF5A00]/70 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_12px_30px_rgba(255,90,0,0.2)] hover:-translate-y-1 transition-all duration-300 flex flex-col group backdrop-blur-md">
+    <div className="bg-card border border-border hover:border-[#FF5A00]/70 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_12px_30px_rgba(255,90,0,0.2)] hover:-translate-y-1 transition-all duration-300 flex flex-col group backdrop-blur-md">
       {/* Cover image */}
       <div className="aspect-[16/9] overflow-hidden bg-muted relative">
         <SafeImage
@@ -178,18 +178,14 @@ function SupplierCard({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         
-        {/* Verification & Pixabay Live Badges */}
-        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 flex-wrap">
-          {verified && (
+        {/* Verification badge */}
+        {verified && (
+          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 flex-wrap">
             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-[#FF5A00] rounded-full px-2.5 py-0.5 shadow-md">
               <BadgeCheck className="w-3.5 h-3.5" /> Verified Factory
             </span>
-          )}
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-200 bg-black/75 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/10 shadow-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            Pixabay Verified
-          </span>
-        </div>
+          </div>
+        )}
         
         {/* Favorite Heart Button */}
         <button
@@ -203,7 +199,7 @@ function SupplierCard({
 
         {co.is_featured && (
           <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 text-[10px] font-bold text-white bg-[#1a1a2e]/90 rounded-full px-2.5 py-0.5 shadow z-10 border border-white/10">
-            ⭐ Top Rated OEM
+            ⭐ Featured
           </span>
         )}
       </div>
@@ -221,40 +217,39 @@ function SupplierCard({
           <MapPin className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
           <span>{[co.city, co.country].filter(Boolean).join(', ')}</span>
           {co.years_in_business ? (
-            <span className="ml-1 text-slate-400">· {co.years_in_business}+ Yrs Operating</span>
+            <span className="ml-1 text-muted-foreground">· {co.years_in_business}+ Yrs Operating</span>
           ) : null}
         </div>
 
         {/* Rating and Verification details */}
         <div className="flex items-center gap-2 mb-2.5 min-w-0 flex-wrap">
-          <StarRating value={co.rating_avg ?? 4.8} />
-          <span className="text-xs font-bold text-foreground shrink-0">{co.rating_avg ? co.rating_avg.toFixed(1) : '4.8'}</span>
-          <span className="text-[11px] text-muted-foreground shrink-0">({co.review_count || 12} audits)</span>
-          
-          <span className="text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 rounded px-1.5 py-0.5 ml-auto">
-            GSTIN Active
-          </span>
+          {co.review_count > 0 && co.rating_avg > 0 ? (
+            <>
+              <StarRating value={co.rating_avg} />
+              <span className="text-xs font-bold text-foreground shrink-0">{co.rating_avg.toFixed(1)}</span>
+              <span className="text-[11px] text-muted-foreground shrink-0">({co.review_count} {co.review_count === 1 ? 'review' : 'reviews'})</span>
+            </>
+          ) : (
+            <span className="text-[11px] text-muted-foreground shrink-0">No reviews yet</span>
+          )}
+
+          {co.gst_number && (
+            <span className="text-[10px] font-mono font-semibold bg-primary/10 text-primary border border-primary/30 rounded px-1.5 py-0.5 ml-auto">
+              GSTIN on file
+            </span>
+          )}
         </div>
 
         {/* Certifications badges */}
-        <div className="flex flex-wrap gap-1 mb-2.5">
-          {Array.isArray((co as any).certifications) && (co as any).certifications.length > 0 ? (
-            (co as any).certifications.slice(0, 3).map((cert: string) => (
-              <span key={cert} className="text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded px-1.5 py-0.5">
+        {Array.isArray((co as any).certifications) && (co as any).certifications.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2.5">
+            {(co as any).certifications.slice(0, 3).map((cert: string) => (
+              <span key={cert} className="text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 rounded px-1.5 py-0.5">
                 ✓ {cert}
               </span>
-            ))
-          ) : (
-            <>
-              <span className="text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded px-1.5 py-0.5">
-                ✓ ISO 9001:2015
-              </span>
-              <span className="text-[10px] font-medium bg-orange-500/10 text-[#FF5A00] border border-[#FF5A00]/25 rounded px-1.5 py-0.5">
-                ✓ CE Certified
-              </span>
-            </>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Description */}
         {co.description && (
@@ -289,14 +284,14 @@ function SupplierCard({
         )}
 
         {/* Stats row: MOQ & Capacity */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2.5 border-t border-border mt-auto mb-3.5">
-          <span className="flex items-center gap-1 font-medium">
-            <Package className="w-3.5 h-3.5 text-[#FF5A00]" /> 
-            MOQ: <strong>500 units</strong>
+        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground pt-2.5 border-t border-border mt-auto mb-3.5 min-w-0">
+          <span className="flex items-center gap-1 font-medium min-w-0">
+            <Package className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
+            <span className="truncate">MOQ: <strong>{co.moq_policy?.trim() || 'Ask supplier'}</strong></span>
           </span>
-          <span className="flex items-center gap-1 font-medium">
-            <Globe className="w-3.5 h-3.5 text-[#FF5A00]" />
-            Cap: <strong>50K/mo</strong>
+          <span className="flex items-center gap-1 font-medium min-w-0">
+            <Globe className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
+            <span className="truncate">Capacity: <strong>{co.production_capacity?.trim() || 'Ask supplier'}</strong></span>
           </span>
         </div>
 
@@ -519,7 +514,8 @@ export default function ManufacturersPage() {
         <div className="max-w-[1400px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-7">
           <Breadcrumbs
             items={[{ name: 'Verified Manufacturers & Exporters' }]}
-            className="text-white/60 mb-2 text-[11px]"
+            tone="onDark"
+            className="mb-2 text-[11px]"
           />
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-5">
             <div>
@@ -572,7 +568,7 @@ export default function ManufacturersPage() {
           <div className="bg-card border border-border rounded-xl p-3 md:p-4 mb-4 md:mb-5 shadow-sm">
             <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
               {/* Search */}
-              <div className="flex-1 relative min-w-0">
+              <div className="w-full md:w-auto flex-1 relative min-w-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   value={search}

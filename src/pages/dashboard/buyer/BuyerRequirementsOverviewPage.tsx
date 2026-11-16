@@ -375,7 +375,7 @@ export default function BuyerRequirementsOverviewPage() {
                                   {q.companies?.company_name ?? 'Supplier'}
                                 </Link>
                                 {(q.companies?.is_verified || q.companies?.verification_status === 'verified') && (
-                                  <ShieldCheck className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                                  <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" />
                                 )}
                               </div>
                               <p className="text-xs text-muted-foreground">{q.companies?.city}, {q.companies?.country}</p>

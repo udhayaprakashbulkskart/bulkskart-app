@@ -17,6 +17,8 @@ export default function FreeDeliveryCard({ tone = 'page' }: FreeDeliveryCardProp
   const landing = tone === 'landing';
   const { formatLocalPrice } = useCurrency();
 
+  // The landing variant sits on a dark panel; the plain one follows the light/dark theme
+  const green = landing ? 'text-emerald-400' : 'text-emerald-700 dark:text-emerald-400';
   return (
     <article
       className={
@@ -25,7 +27,7 @@ export default function FreeDeliveryCard({ tone = 'page' }: FreeDeliveryCardProp
           : 'h-full rounded-3xl border border-emerald-500/30 bg-card p-5 sm:p-7 text-foreground'
       }
     >
-      <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+      <div className={`inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${green}`}>
         <Truck className="h-3.5 w-3.5" />
         Platform benefit
       </div>
@@ -42,7 +44,7 @@ export default function FreeDeliveryCard({ tone = 'page' }: FreeDeliveryCardProp
           const Icon = point.icon;
           return (
             <li key={point.text} className="flex items-start gap-2.5 text-sm">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400">
+              <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 ${green}`}>
                 <Icon className="h-3.5 w-3.5" />
               </span>
               <span className={landing ? 'text-slate-200' : 'text-foreground'}>{point.text}</span>
@@ -52,7 +54,7 @@ export default function FreeDeliveryCard({ tone = 'page' }: FreeDeliveryCardProp
       </ul>
 
       <div className={`mt-6 rounded-2xl px-4 py-3 ${landing ? 'bg-black/30 border border-white/10' : 'bg-muted/60 border border-border'}`}>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Your delivery fee</p>
+        <p className={`text-[11px] font-semibold uppercase tracking-wider ${green}`}>Your delivery fee</p>
         <p className={`text-3xl font-black tracking-tight ${landing ? 'text-white' : 'text-foreground'}`}>
           {formatLocalPrice(0)}
           <span className={`ml-2 text-sm font-semibold ${landing ? 'text-slate-400' : 'text-muted-foreground'}`}>on all orders</span>

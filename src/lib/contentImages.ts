@@ -539,7 +539,7 @@ export function generateIsolatedProductFallback(title?: string, category?: strin
       ${cleanTitle.length > 36 ? cleanTitle.slice(0, 36) + '...' : cleanTitle}
     </text>
     <text x="300" y="325" fill="#64748B" font-family="system-ui, -apple-system, sans-serif" font-size="12" text-anchor="middle">
-      BulkSkart B2B Verified Commodity
+      Photo not added yet
     </text>
   </svg>`;
 

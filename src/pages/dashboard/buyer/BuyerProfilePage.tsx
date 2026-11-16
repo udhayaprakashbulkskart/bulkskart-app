@@ -264,7 +264,7 @@ export default function BuyerProfilePage() {
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Header with Avatar Uploader */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border bg-card/40 p-4 rounded-xl border">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-4 min-w-0">
             <SingleImageUploader
               value={formData.avatarUrl}
               onChange={url => setFormData(p => ({ ...p, avatarUrl: url || '' }))}
@@ -274,8 +274,8 @@ export default function BuyerProfilePage() {
               className="shrink-0"
               placeholderIcon={<User className="w-7 h-7 text-primary/70" />}
             />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 min-w-0">
                 <h1 className="text-xl md:text-2xl font-bold text-foreground truncate">{formData.fullName || 'Buyer Account'}</h1>
                 <Badge variant="outline" className="text-xs capitalize font-semibold border-primary/30 text-primary shrink-0">
                   Buyer
@@ -289,7 +289,7 @@ export default function BuyerProfilePage() {
           <div className="flex items-center gap-2 shrink-0">
             <Link to="/dashboard/buyer/verification">
               <Badge className={`text-xs px-3 py-1 gap-1 cursor-pointer hover:opacity-90 transition-opacity ${
-                kycStatus === 'verified' ? 'bg-green-600 text-white' :
+                kycStatus === 'verified' ? 'bg-primary text-primary-foreground' :
                 kycStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/40' :
                 'bg-muted text-muted-foreground border border-border'
               }`}>

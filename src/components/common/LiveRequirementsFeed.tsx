@@ -416,7 +416,7 @@ export default function LiveRequirementsFeed() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-1 text-foreground font-medium leading-tight truncate">
                               {visual.verifiedStatus ? (
-                                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />
                               ) : (
                                 <MessageSquare className="w-3 h-3 text-muted-foreground shrink-0" />
                               )}

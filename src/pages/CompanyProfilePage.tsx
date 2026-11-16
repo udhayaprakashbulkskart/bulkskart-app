@@ -24,7 +24,6 @@ import ReportItemModal from '@/components/common/ReportItemModal';
 import BookFactoryVisitDialog from '@/components/common/BookFactoryVisitDialog';
 import { formatPriceRange, productCurrency } from '@/lib/productPrice';
 
-const FALLBACK_BANNER = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80';
 
 function StarRating({ rating, count }: { rating: number; count: number }) {
   return (
@@ -44,10 +43,10 @@ function CertBadge({ cert }: { cert: CompanyCertification }) {
   const label = cert.cert_type === 'iso' || cert.cert_type === 'other' ? cert.cert_name : labels[cert.cert_type];
   if (!label) return null;
   return (
-    <div className="flex items-center gap-1.5 bg-green-500/10 border border-green-500/25 rounded-lg px-3 py-1.5">
-      <CheckCircle className="w-3.5 h-3.5 text-green-400 shrink-0" />
+    <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/25 rounded-lg px-3 py-1.5">
+      <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
       <div>
-        <p className="text-xs font-medium text-green-400">{label}</p>
+        <p className="text-xs font-medium text-primary">{label}</p>
         {cert.cert_number && <p className="text-xs text-muted-foreground">{cert.cert_number}</p>}
       </div>
     </div>
@@ -280,14 +279,19 @@ export default function CompanyProfilePage() {
         {/* ── Hero / Banner ── */}
         <div className="bg-card border border-border rounded-xl overflow-hidden mb-6 shadow-sm">
           <div className="relative aspect-[21/9] md:h-56 max-h-56 w-full overflow-hidden bg-muted">
-            <SafeImage
-              src={company.cover_url || company.banner_url || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80'}
-              alt={company.company_name}
-              category={company.business_type}
-              isRepresentativeImage={true}
-              type="banner"
-              className="w-full h-full object-cover"
-            />
+            {company.cover_url || company.banner_url ? (
+              <SafeImage
+                src={(company.cover_url || company.banner_url) as string}
+                alt={company.company_name}
+                category={company.business_type}
+                isRepresentativeImage={true}
+                type="banner"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              // No cover photo added: a plain brand backdrop instead of a stock picture
+              <div className="w-full h-full bg-gradient-to-br from-[#1a1f2e] via-[#232838] to-[#FF5A00]/40" aria-hidden="true" />
+            )}
             {/* gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           </div>
@@ -308,7 +312,7 @@ export default function CompanyProfilePage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-xl md:text-2xl font-bold text-foreground break-words">{company.company_name}</h1>
                     {(company.is_verified || company.verification_status === 'verified') && (
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs gap-1">
+                      <Badge className="bg-primary/15 text-primary border-primary/30 text-xs gap-1">
                         <ShieldCheck className="w-3 h-3" /> Verified Business
                       </Badge>
                     )}
@@ -411,8 +415,8 @@ export default function CompanyProfilePage() {
         {/* ── Quick Stats ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
-            { label: 'Products Listed', value: company.total_products, icon: Package },
-            { label: 'Quotes Sent', value: company.total_quotes_sent, icon: FileText },
+            { label: 'Products Listed', value: company.total_products ?? products.length, icon: Package },
+            { label: 'Quotes Sent', value: company.total_quotes_sent ?? 0, icon: FileText },
             { label: 'Export Countries', value: company.export_destinations?.length ?? 0, icon: Globe },
             { label: 'Member Since', value: new Date(company.created_at).getFullYear(), icon: Calendar },
           ].map(stat => {
@@ -463,18 +467,16 @@ export default function CompanyProfilePage() {
                 {(!(company as any).gallery_images || (company as any).gallery_images.length === 0) && !company.cover_url ? (
                   <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground text-sm">
                     <Camera className="w-8 h-8 mx-auto mb-2 opacity-40 text-primary" />
-                    Facility photos are being auto-synced. Check back in a moment!
+                    This company has not added facility photos yet.
                   </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-xs text-muted-foreground pb-1 border-b border-border">
                       <span className="flex items-center gap-1.5 font-medium text-foreground">
-                        <Sparkles className="w-3.5 h-3.5 text-primary" />
-                        Verified Facility & Production Showcase
+                        <Camera className="w-3.5 h-3.5 text-primary" />
+                        Facility & production photos
                       </span>
-                      <span className="text-[11px] text-emerald-400 font-mono">
-                        Auto-refreshed via 1-Min Image Engine
-                      </span>
+                      <span className="text-[11px] text-muted-foreground">Added by the company</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                       {Array.from(new Set([
@@ -741,9 +743,8 @@ export default function CompanyProfilePage() {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border px-4 py-2.5 flex items-center justify-between gap-3 shadow-lg">
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold text-foreground truncate">{company.company_name}</p>
-          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-            Online • Ready for quotes
+          <p className="text-[11px] text-muted-foreground truncate">
+            {[company.city, company.country].filter(Boolean).join(', ') || 'Send an enquiry'}
           </p>
         </div>
         <Button

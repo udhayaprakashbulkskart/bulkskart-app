@@ -373,19 +373,19 @@ export default function PricingPage() {
             <div className="flex items-center gap-3">
               <span className="text-2xl leading-none">{countryConfig.flag}</span>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="text-sm font-bold text-foreground">
                     Localized Pricing: {countryConfig.name}
                   </span>
-                  <Badge variant="outline" className="text-[11px] font-mono bg-muted">
+                  <Badge variant="outline" className="text-[11px] font-mono bg-muted whitespace-nowrap">
                     {countryConfig.currency} ({countryConfig.symbol})
                   </Badge>
                   {autoDetectedSource === 'login' ? (
-                    <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                    <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20 whitespace-nowrap">
                       Synced from Login Profile
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                    <Badge variant="outline" className="text-[10px] text-muted-foreground whitespace-nowrap">
                       Auto-detected
                     </Badge>
                   )}
@@ -546,7 +546,7 @@ export default function PricingPage() {
 
                   <ul className="space-y-2 flex-1 mb-6">
                     {plan.features.map(f => (
-                      <li key={f.text} className={`flex items-center gap-2 text-xs ${f.included ? 'text-muted-foreground' : 'text-muted/40 line-through'}`}>
+                      <li key={f.text} className={`flex items-center gap-2 text-xs ${f.included ? 'text-muted-foreground' : 'text-muted-foreground/60 line-through'}`}>
                         {f.included
                           ? <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
                           : <span className="w-3.5 h-3.5 rounded-full border border-muted-foreground/20 shrink-0 inline-block" />

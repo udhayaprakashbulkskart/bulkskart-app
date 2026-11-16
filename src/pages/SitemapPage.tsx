@@ -115,7 +115,8 @@ export default function SitemapPage() {
         <div className="max-w-5xl mx-auto">
           <Breadcrumbs
             items={[{ name: 'Platform Sitemap' }]}
-            className="text-white/60 mb-4 text-xs"
+            tone="onDark"
+            className="mb-4 text-xs"
           />
 
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-3">

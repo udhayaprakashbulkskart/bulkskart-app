@@ -174,12 +174,12 @@ function FastTruck() {
   );
 }
 
-/** The green circle with a tick that starts the "Verified Product" badge. */
+/** The white circle with an orange tick that starts the "Verified Product" badge. */
 function VerifiedDot() {
   return (
     <svg viewBox="0 0 38 38" aria-hidden="true">
-      <circle cx="19" cy="19" r="19" fill="#05d046" />
-      <path d="M10.5 19.5l6.2 6.3L28 13.2" fill="none" stroke="#fff" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="19" cy="19" r="19" fill="#fff" />
+      <path d="M10.5 19.5l6.2 6.3L28 13.2" fill="none" stroke="#FF5A00" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

@@ -390,7 +390,7 @@ export default function SEOHubPage({ forcedSlug }: { forcedSlug?: string }) {
       </div>
 
       {/* ── Hero Banner Section ── */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#0a0f1d] via-[#0d1322] to-background border-b border-border py-10 md:py-14">
+      <section className="relative overflow-hidden bg-gradient-to-b from-orange-50 via-background to-background dark:from-[#0a0f1d] dark:via-[#0d1322] dark:to-background border-b border-border py-10 md:py-14">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 relative z-10">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-[#FF5A00]/10 border border-[#FF5A00]/25 rounded-full px-3 py-1 mb-3">

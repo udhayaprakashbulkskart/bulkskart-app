@@ -214,7 +214,7 @@ function LoanCalculator({ tone = 'page' }: LoanCalculatorProps) {
           <Row label="Total you repay" value={money(quote.totalPayable)} muted={muted} strong={landing ? 'text-white' : 'text-foreground'} />
           <div className={`flex items-center justify-between gap-3 border-t pt-2 ${landing ? 'border-white/10' : 'border-border'}`}>
             <dt className={muted}>Delivery fee</dt>
-            <dd className="font-black text-emerald-400">Free</dd>
+            <dd className={`font-black ${landing ? 'text-emerald-400' : 'text-emerald-700 dark:text-emerald-400'}`}>Free</dd>
           </div>
         </dl>
 

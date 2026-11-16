@@ -218,7 +218,7 @@ export default function BuyerPublicProfilePage() {
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold text-foreground sm:text-2xl">{displayName}</h1>
                 {verified && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-bold text-primary">
                     <ShieldCheck className="h-3.5 w-3.5" /> Verified buyer
                   </span>
                 )}

@@ -172,7 +172,7 @@ function ProductCard({
             {product.name}
           </h3>
           {isVerified && (
-            <span className="verified-badge shrink-0 mt-0.5"><Shield className="w-2.5 h-2.5" />V</span>
+            <span className="shrink-0 mt-0.5 inline-flex items-center gap-0.5 rounded-full border border-primary/25 bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary" title="Verified supplier"><Shield className="w-2.5 h-2.5" />Verified</span>
           )}
         </div>
 
@@ -341,7 +341,7 @@ export default function ProductsPage() {
               <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border font-medium">
                 OEM / ODM Available
               </span>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium">
+              <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
                 Verified Global Exporters
               </span>
             </div>

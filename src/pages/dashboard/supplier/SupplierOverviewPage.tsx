@@ -214,12 +214,12 @@ export default function SupplierOverviewPage() {
                 <Shield className="w-4 h-4 text-primary" /> Verification Status
               </h3>
               <div className={`flex items-center gap-3 rounded-lg p-3 ${
-                company?.is_verified ? 'bg-green-500/10 border border-green-500/25'
+                company?.is_verified ? 'bg-primary/10 border border-primary/25'
                 : company?.verification_status === 'pending' ? 'bg-yellow-500/10 border border-yellow-500/25'
                 : 'bg-muted border border-border'
               }`}>
                 {company?.is_verified
-                  ? <ShieldCheck className="w-5 h-5 text-green-400 shrink-0" />
+                  ? <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
                   : company?.verification_status === 'pending'
                   ? <Clock className="w-5 h-5 text-yellow-400 shrink-0" />
                   : <AlertCircle className="w-5 h-5 text-muted-foreground shrink-0" />

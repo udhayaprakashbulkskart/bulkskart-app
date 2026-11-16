@@ -490,7 +490,7 @@ export default function BuyerRFQMatchPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-sm font-semibold text-foreground truncate">{c?.company_name}</span>
-                              {c?.is_verified && <Shield className="w-3.5 h-3.5 text-green-500 shrink-0" />}
+                              {c?.is_verified && <Shield className="w-3.5 h-3.5 text-primary shrink-0" />}
                               {m.response_status === 'quoted' && (
                                 <Badge className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-300 shrink-0">Quoted</Badge>
                               )}
@@ -730,7 +730,7 @@ export default function BuyerRFQMatchPage() {
                                       {q.companies?.company_name ?? '—'}
                                     </Link>
                                     <div className="flex items-center gap-1 mt-0.5">
-                                      {q.companies?.is_verified && <Shield className="w-3 h-3 text-green-500" />}
+                                      {q.companies?.is_verified && <Shield className="w-3 h-3 text-primary" />}
                                       {matchForQ && (
                                         <span className={`text-[9px] font-bold px-1 rounded ${scoreGrade(matchForQ.match_score).color}`}>
                                           {matchForQ.match_score}% Match
@@ -742,11 +742,11 @@ export default function BuyerRFQMatchPage() {
                               </td>
                               <td className="py-3 pr-4">
                                 <span className="text-sm font-black text-foreground whitespace-nowrap">
-                                  {q.unit_price.toLocaleString()}
+                                  {Number(q.unit_price ?? 0).toLocaleString()}
                                 </span>
                               </td>
                               <td className="py-3 pr-4 text-xs text-foreground whitespace-nowrap">
-                                {q.moq.toLocaleString()} {q.moq_unit}
+                                {Number(q.moq ?? 1).toLocaleString()} {q.moq_unit}
                               </td>
                               <td className="py-3 pr-4 text-xs text-muted-foreground">{q.currency}</td>
                               <td className="py-3 pr-4 text-xs text-foreground whitespace-nowrap">

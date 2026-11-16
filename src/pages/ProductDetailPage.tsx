@@ -37,7 +37,6 @@ import LiveChatModal from '@/components/common/LiveChatModal';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const TABS = ['Overview', 'Specifications', 'Applications', 'Company', 'Reviews'];
-const CATEGORIES = ['Industrial Equipment', 'Electronics', 'Machinery', 'Raw Materials', 'View All'];
 
 // ── Skeleton ────────────────────────────────────────────────────────────────
 function Skeleton() {
@@ -310,26 +309,6 @@ export default function ProductDetailPage() {
           }}
         />
 
-        {/* ── Mobile search bar ──────────────────────────────────────── */}
-        <div className="md:hidden bg-card border-b border-border px-3 py-2 sticky top-[56px] z-30">
-          <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <input className="flex-1 min-w-0 text-sm outline-none bg-transparent text-foreground placeholder:text-muted-foreground" placeholder="Search products, suppliers, categories..." />
-            <button className="bg-primary p-1 rounded shrink-0">
-              <Search className="w-3.5 h-3.5 text-white" />
-            </button>
-          </div>
-        </div>
-
-        {/* ── Category nav (mobile horizontal scroll) ───────────────── */}
-        <div className="bg-background border-b border-border overflow-x-auto whitespace-nowrap px-3 py-2 md:hidden">
-          {CATEGORIES.map(c => (
-            <button key={c} className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full mr-2 shrink-0 transition-colors ${c === (categoryName ?? 'Industrial Equipment') ? 'bg-primary/10 text-primary border border-primary/30' : 'text-muted-foreground border border-border hover:border-primary/30'}`}>
-              {c}
-            </button>
-          ))}
-        </div>
-
         <div className="max-w-[1400px] mx-auto px-3 md:px-6 pb-20 md:pb-8">
 
           {/* ── Breadcrumb — dynamic from product data ───────────────── */}
@@ -351,7 +330,7 @@ export default function ProductDetailPage() {
               {/* Badges row (desktop only) */}
               <div className="hidden md:flex items-center gap-2 mb-3">
                 {isVerified && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1">
                     <CheckCircle className="w-3.5 h-3.5" /> Verified Supplier
                   </span>
                 )}
@@ -446,7 +425,7 @@ export default function ProductDetailPage() {
                 <h1 className="text-xl font-black text-foreground mb-2 leading-tight">{product.name}</h1>
 
                 {isVerified && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1 mb-3">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1 mb-3">
                     <CheckCircle className="w-3.5 h-3.5" /> Verified Supplier
                   </span>
                 )}
@@ -500,7 +479,7 @@ export default function ProductDetailPage() {
                       <button
                         type="button"
                         onClick={() => setShowCountryTaxesModal(true)}
-                        className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-[#00D2FF] hover:underline"
+                        className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-sky-700 dark:text-[#00D2FF] hover:underline"
                       >
                         <Calculator className="w-3 h-3" /> Country Taxes &amp; Fees
                       </button>
@@ -538,7 +517,7 @@ export default function ProductDetailPage() {
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {isVerified && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 border border-primary/25 rounded px-2 py-0.5">
                         <CheckCircle className="w-3 h-3" /> Verified
                       </span>
                     )}
@@ -948,7 +927,7 @@ export default function ProductDetailPage() {
                 <div className="bg-card border border-border rounded-xl p-3 md:p-4">
                   <div className="flex items-start gap-2 mb-2">
                     {isVerified && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 border border-primary/25 rounded-full px-2 py-0.5">
                         <CheckCircle className="w-3 h-3" /> Verified Supplier
                       </span>
                     )}
@@ -1007,7 +986,7 @@ export default function ProductDetailPage() {
                         <button
                           type="button"
                           onClick={() => setShowCountryTaxesModal(true)}
-                          className="flex items-center gap-1 text-[11px] font-semibold text-[#00D2FF] hover:underline"
+                          className="flex items-center gap-1 text-[11px] font-semibold text-sky-700 dark:text-[#00D2FF] hover:underline"
                         >
                           <Calculator className="w-3.5 h-3.5" />
                           Country Taxes, GST &amp; Fees
@@ -1078,7 +1057,7 @@ export default function ProductDetailPage() {
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {isVerified && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 border border-primary/25 rounded px-2 py-0.5">
                         <CheckCircle className="w-3 h-3" /> Verified
                       </span>
                     )}

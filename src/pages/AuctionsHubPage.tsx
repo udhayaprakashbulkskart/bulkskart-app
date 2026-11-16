@@ -183,13 +183,13 @@ export default function AuctionsHubPage() {
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
               {/* Status Filter */}
-              <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border">
+              <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border overflow-x-auto scrollbar-none">
                 <button
                   type="button"
                   onClick={() => setStatusFilter('live')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                     statusFilter === 'live' ? 'bg-card text-[#FF5A1F] shadow-sm' : 'text-muted-foreground'
                   }`}
                 >
@@ -198,7 +198,7 @@ export default function AuctionsHubPage() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('sold')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                     statusFilter === 'sold' ? 'bg-card text-emerald-600 shadow-sm' : 'text-muted-foreground'
                   }`}
                 >
@@ -207,7 +207,7 @@ export default function AuctionsHubPage() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('all')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                     statusFilter === 'all' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
                   }`}
                 >
@@ -215,7 +215,7 @@ export default function AuctionsHubPage() {
                 </button>
               </div>
 
-              <div className="relative w-44 sm:w-60">
+              <div className="relative w-full sm:w-60">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={searchQuery}

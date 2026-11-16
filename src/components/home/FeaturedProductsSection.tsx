@@ -1093,7 +1093,7 @@ export default function FeaturedProductsSection() {
             {/* Verified Only Toggle */}
             <div className="pt-2 border-t border-border flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <ShieldCheck className="w-4 h-4 text-primary" />
                 <span className="text-foreground font-medium">Verified Suppliers Only</span>
               </div>
               <input

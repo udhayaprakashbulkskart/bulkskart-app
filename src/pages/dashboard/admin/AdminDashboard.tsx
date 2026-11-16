@@ -189,7 +189,7 @@ function CompanyTable({ companies, loading, onVerify, emptyMessage }: {
   emptyMessage?: string;
 }) {
   const statusColor = (s: string) => {
-    if (s === 'verified') return 'text-green-400 border-green-400/30';
+    if (s === 'verified') return 'text-primary border-primary/30';
     if (s === 'pending') return 'text-yellow-400 border-yellow-400/30';
     if (s === 'rejected') return 'text-destructive border-destructive/30';
     return 'text-muted-foreground';
@@ -245,7 +245,7 @@ function CompanyTable({ companies, loading, onVerify, emptyMessage }: {
                   <div className="flex items-center gap-1.5">
                     {c.verification_status === 'pending' && (
                       <>
-                        <Button onClick={() => onVerify(c.id, 'verified')} size="sm" variant="ghost" className="text-green-400 border border-green-400/20 hover:bg-green-400/10 h-7 text-xs gap-1">
+                        <Button onClick={() => onVerify(c.id, 'verified')} size="sm" variant="ghost" className="text-primary border border-primary/25 hover:bg-primary/10 h-7 text-xs gap-1">
                           <CheckCircle className="w-3 h-3" /> Verify
                         </Button>
                         <Button onClick={() => onVerify(c.id, 'rejected')} size="sm" variant="ghost" className="text-destructive border border-destructive/20 hover:bg-destructive/10 h-7 text-xs">

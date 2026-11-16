@@ -159,7 +159,7 @@ export default function RFQMatchResultsPanel({ rfqId, rfqTitle }: Props) {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-sm font-semibold text-foreground truncate">{c?.company_name}</span>
                     {c?.is_verified && (
-                      <Shield className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                      <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
                     )}
                     <Badge
                       variant="outline"

@@ -793,8 +793,8 @@ export default function RequirementsPage() {
                         <div className="w-full md:w-auto shrink-0 flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-border">
                           <div className="flex flex-col items-start md:items-end gap-1">
                             {visual.verifiedStatus && (
-                              <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                              <div className="flex items-center gap-1 text-xs font-semibold text-primary">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                                 <span>{visual.verifiedStatus}</span>
                               </div>
                             )}
