@@ -769,6 +769,13 @@
 .fk-btn.is-ghost:hover:not(:disabled) {
   background: hsl(var(--muted));
 }
+.fk-btn.is-danger {
+  background: hsl(var(--destructive));
+  color: #fff;
+}
+.fk-btn.is-danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
 .fk-note {
   font-size: 0.82rem;
   line-height: 1.4;

@@ -311,10 +311,10 @@ export function EntityCard({
   );
 }
 
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'ghost' };
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'ghost' | 'danger' };
 
 export const KitButton = forwardRef<HTMLButtonElement, ButtonProps>(function KitButton({ variant = 'primary', className, type = 'button', ...props }, ref) {
-  return <button ref={ref} type={type} className={cn('fk-btn', variant === 'primary' ? 'is-primary' : 'is-ghost', className)} {...props} />;
+  return <button ref={ref} type={type} className={cn('fk-btn', `is-${variant}`, className)} {...props} />;
 });
 
 /** The buttons at the end: the main one first and wide, "Cancel" beside it on desktop and under it on a phone. */

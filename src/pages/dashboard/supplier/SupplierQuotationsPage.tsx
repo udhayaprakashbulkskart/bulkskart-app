@@ -33,7 +33,7 @@ type QuotationRow = {
   unit_price: number; total_price: number | null; quantity: number | null; currency: string;
   moq: number; moq_unit: string; delivery_days: number | null; production_days: number | null;
   payment_terms: string | null; delivery_terms: string | null; validity_days: number; notes: string | null;
-  status: string; is_draft: boolean; pdf_url: string | null; created_at: string;
+  status: string; is_draft: boolean; pdf_url: string | null; created_at: string; change_request?: string | null;
   requirements?: { title: string; quantity: number; quantity_unit: string; destination_country: string | null };
   companies?: { company_name: string };
 };
@@ -235,6 +235,11 @@ export default function SupplierQuotationsPage() {
                         <span>Valid: <b className="text-foreground">{q.validity_days} days</b></span>
                       </div>
                       {q.payment_terms && <p className="text-xs text-muted-foreground mt-1">Payment: {q.payment_terms}</p>}
+                      {q.status === 'revised' && q.change_request && (
+                        <p className="text-xs mt-2 rounded-lg border border-[#FF5A00]/30 bg-[#FF5A00]/10 px-2.5 py-1.5 text-foreground">
+                          <b className="text-[#FF5A00]">Buyer asked for changes:</b> {q.change_request}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {q.pdf_url && (

@@ -3,12 +3,7 @@ import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
-} from '@/components/ui/dialog';
+import { Actions, CountedTextArea, Field, FormDialog, IconBox, KitButton, SectionTitle, TextInput } from '@/components/formkit';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
 import { advanceOrderStatus, cancelOrder, getOrderStatusHistory } from '@/lib/api';
@@ -17,7 +12,7 @@ import OrderStatusTimeline, { PIPELINE_STAGES } from '@/components/common/OrderS
 import { toast } from 'sonner';
 import {
   RefreshCw, ChevronLeft, MessageSquare, CheckCircle2,
-  Truck, XCircle, Package, AlertTriangle,
+  Truck, XCircle, Package, AlertTriangle, Calendar, FileText, Hash, Loader2,
 } from 'lucide-react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import PageMeta from '@/components/common/PageMeta';
@@ -77,6 +72,8 @@ export default function OrderTrackingPage() {
   const [showCancel, setShowCancel] = useState(false);
   const [actionNote, setActionNote] = useState('');
   const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState('');
+  const [trackingError, setTrackingError] = useState('');
   const [trackingCourier, setTrackingCourier] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [trackingEta, setTrackingEta] = useState('');
@@ -166,7 +163,8 @@ export default function OrderTrackingPage() {
   const handleAdvance = async () => {
     if (!order || !nextStatus || !role) return;
     if (needsTracking && !trackingNumber.trim()) {
-      toast.error('Tracking number is required when marking as Shipped');
+      setTrackingError('A tracking number is needed to mark the order as shipped.');
+      document.getElementById('order-tracking')?.focus();
       return;
     }
     setSaving(true);
@@ -201,7 +199,11 @@ export default function OrderTrackingPage() {
 
   const handleCancel = async () => {
     if (!order || !role) return;
-    if (!cancelReason.trim()) { toast.error('Please provide a cancellation reason'); return; }
+    if (!cancelReason.trim()) {
+      setCancelError('Please say why you are cancelling.');
+      document.getElementById('order-cancel-reason')?.focus();
+      return;
+    }
     setSaving(true);
     const changerRole = role === 'admin' ? 'admin' : isSupplier ? 'supplier' : 'buyer';
     const { error } = await cancelOrder(order.id, curStatus, changerRole, cancelReason.trim());
@@ -328,91 +330,120 @@ export default function OrderTrackingPage() {
       </div>
 
       {/* Advance dialog */}
-      <Dialog open={showAdvance} onOpenChange={setShowAdvance}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg bg-card border-border">
-          <DialogHeader>
-            <DialogTitle>
-              {advanceMeta?.label ?? 'Update Status'}
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground text-sm">
-              {nextStatus && `This will mark the order as "${STATUS_META[nextStatus]?.label}".`}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            {needsTracking && (
-              <div className="space-y-3 p-3 bg-muted/40 rounded-lg border border-border">
-                <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" />Tracking Details</p>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Courier / Carrier</Label>
-                  <Input value={trackingCourier} onChange={e => setTrackingCourier(e.target.value)} placeholder="e.g. DHL, FedEx, BlueDart" className="bg-input border-border" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Tracking Number *</Label>
-                  <Input value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="e.g. DHL123456789" className="bg-input border-border" required />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Estimated Delivery Date</Label>
-                  <Input type="date" value={trackingEta} onChange={e => setTrackingEta(e.target.value)} className="bg-input border-border" />
-                </div>
+      <FormDialog
+        open={showAdvance}
+        onOpenChange={(open) => {
+          if (!saving) setShowAdvance(open);
+        }}
+        busy={saving}
+        title={advanceMeta?.label ?? 'Update Status'}
+        description={nextStatus ? `This marks order #${order.order_number} as "${STATUS_META[nextStatus]?.label}".` : undefined}
+        width={640}
+      >
+        <form
+          noValidate
+          className="fk-form fk-stack"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleAdvance();
+          }}
+        >
+          {needsTracking && (
+            <>
+              <SectionTitle>Tracking Details</SectionTitle>
+              <div className="fk-grid">
+                <Field htmlFor="order-courier" label="Courier / Carrier" optional>
+                  <IconBox icon={Truck}>
+                    <TextInput id="order-courier" value={trackingCourier} onChange={(e) => setTrackingCourier(e.target.value)} placeholder="e.g. DHL, FedEx, BlueDart" iconPadding />
+                  </IconBox>
+                </Field>
+                <Field htmlFor="order-tracking" label="Tracking Number" required error={trackingError}>
+                  <IconBox icon={Hash}>
+                    <TextInput
+                      id="order-tracking"
+                      value={trackingNumber}
+                      onChange={(e) => {
+                        setTrackingNumber(e.target.value);
+                        if (trackingError) setTrackingError('');
+                      }}
+                      placeholder="e.g. DHL123456789"
+                      invalid={Boolean(trackingError)}
+                      iconPadding
+                    />
+                  </IconBox>
+                </Field>
+                <Field htmlFor="order-eta" label="Estimated Delivery Date" optional wide>
+                  <IconBox icon={Calendar}>
+                    <TextInput id="order-eta" type="date" value={trackingEta} onChange={(e) => setTrackingEta(e.target.value)} iconPadding />
+                  </IconBox>
+                </Field>
               </div>
-            )}
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Note (optional)</Label>
-              <Textarea
-                value={actionNote}
-                onChange={e => setActionNote(e.target.value)}
-                placeholder="Add a note for the other party..."
-                rows={3}
-                className="bg-input border-border resize-none"
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowAdvance(false)} className="border-border">Cancel</Button>
-              <Button onClick={handleAdvance} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                {saving ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
-                Confirm
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </>
+          )}
+          <Field htmlFor="order-note" label="Note for the other party" optional>
+            <CountedTextArea id="order-note" icon={FileText} rows={3} maxLength={500} value={actionNote} onChange={(e) => setActionNote(e.target.value)} placeholder="Add a note for the other party..." />
+          </Field>
+          <Actions>
+            <KitButton type="submit" disabled={saving}>
+              {saving ? <Loader2 className="animate-spin" aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" />}
+              {saving ? 'Saving…' : 'Confirm'}
+            </KitButton>
+            <KitButton variant="ghost" onClick={() => setShowAdvance(false)} disabled={saving}>
+              Cancel
+            </KitButton>
+          </Actions>
+        </form>
+      </FormDialog>
 
       {/* Cancel dialog */}
-      <Dialog open={showCancel} onOpenChange={setShowCancel}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-4 h-4" /> Cancel Order
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground text-sm">
-              This action cannot be undone. Please provide a reason for cancellation.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Cancellation Reason *</Label>
-              <Textarea
-                value={cancelReason}
-                onChange={e => setCancelReason(e.target.value)}
-                placeholder="e.g. Budget constraints, Specifications changed..."
-                rows={3}
-                className="bg-input border-border resize-none"
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowCancel(false)} className="border-border">Go Back</Button>
-              <Button
-                onClick={handleCancel}
-                disabled={saving || !cancelReason.trim()}
-                className="bg-destructive text-white hover:bg-destructive/90"
-              >
-                {saving ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
-                Cancel Order
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <FormDialog
+        open={showCancel}
+        onOpenChange={(open) => {
+          if (!saving) setShowCancel(open);
+        }}
+        busy={saving}
+        title={
+          <>
+            Cancel <em>Order</em>
+          </>
+        }
+        description="This cannot be undone. Tell the other party why you are cancelling."
+        width={600}
+      >
+        <form
+          noValidate
+          className="fk-form fk-stack"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCancel();
+          }}
+        >
+          <Field htmlFor="order-cancel-reason" label="Reason for cancelling" required error={cancelError}>
+            <CountedTextArea
+              id="order-cancel-reason"
+              icon={AlertTriangle}
+              rows={3}
+              maxLength={500}
+              value={cancelReason}
+              onChange={(e) => {
+                setCancelReason(e.target.value);
+                if (cancelError) setCancelError('');
+              }}
+              placeholder="e.g. Budget constraints, specifications changed..."
+              invalid={Boolean(cancelError)}
+            />
+          </Field>
+          <Actions>
+            <KitButton type="submit" variant="danger" disabled={saving}>
+              {saving ? <Loader2 className="animate-spin" aria-hidden="true" /> : <XCircle aria-hidden="true" />}
+              {saving ? 'Cancelling…' : 'Cancel Order'}
+            </KitButton>
+            <KitButton variant="ghost" onClick={() => setShowCancel(false)} disabled={saving}>
+              Go Back
+            </KitButton>
+          </Actions>
+        </form>
+      </FormDialog>
     </DashboardLayout>
   );
 }

@@ -3,14 +3,13 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRequirements, getQuotationsForRequirement, updateQuotationStatus, createOrder } from '@/lib/api';
 import type { Requirement, Quotation } from '@/types/types';
-import { Shield, CheckCircle, XCircle, MessageSquare, Package, RefreshCw, Edit3, Download, Clock, Truck, DollarSign, Calendar } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, MessageSquare, Package, RefreshCw, Edit3, Download, Clock, Truck, DollarSign, Calendar, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Actions, CountedTextArea, Field, FormDialog, KitButton } from '@/components/formkit';
 import { supabase } from '@/db/supabase';
 import PageMeta from '@/components/common/PageMeta';
 
@@ -25,6 +24,7 @@ export default function BuyerQuotesPage() {
   const [reviseDialogOpen, setReviseDialogOpen] = useState(false);
   const [reviseQuoteId, setReviseQuoteId] = useState<string | null>(null);
   const [reviseNote, setReviseNote] = useState('');
+  const [reviseError, setReviseError] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
@@ -106,17 +106,28 @@ export default function BuyerQuotesPage() {
     setActionLoading(null);
   };
 
-  const openRevise = (id: string) => { setReviseQuoteId(id); setReviseNote(''); setReviseDialogOpen(true); };
+  const openRevise = (id: string) => { setReviseQuoteId(id); setReviseNote(''); setReviseError(''); setReviseDialogOpen(true); };
 
   const handleRevise = async () => {
-    if (!reviseQuoteId || !reviseNote.trim()) return;
+    if (!reviseQuoteId) return;
+    const note = reviseNote.trim();
+    if (!note) {
+      setReviseError('Please describe the changes you want.');
+      document.getElementById('revise-note')?.focus();
+      return;
+    }
     const q = quotations.find(qt => qt.id === reviseQuoteId);
     setActionLoading(reviseQuoteId);
-    await updateQuotationStatus(reviseQuoteId, 'revised');
-    // Store revision note in quotation notes field
-    await supabase.from('quotations').update({ notes: `[REVISION REQUEST] ${reviseNote}` }).eq('id', reviseQuoteId);
-    if (q) await notifySupplier(q, 'revised', `Buyer requested changes: "${reviseNote}"`);
-    toast.success('Revision requested. Supplier will update the quote.');
+    const { error } = await updateQuotationStatus(reviseQuoteId, 'revised');
+    if (error) {
+      setActionLoading(null);
+      toast.error('Your request could not be sent. Please try again.');
+      return;
+    }
+    // the request is kept beside the quote, so the supplier's own notes stay as they wrote them
+    await supabase.from('quotations').update({ change_request: note }).eq('id', reviseQuoteId);
+    if (q) await notifySupplier(q, 'revised', `Buyer requested changes: "${note}"`);
+    toast.success('Change request sent to the supplier.');
     setQuotations(prev => prev.map(qt => qt.id === reviseQuoteId ? { ...qt, status: 'revised' } : qt));
     setReviseDialogOpen(false);
     setActionLoading(null);
@@ -316,31 +327,54 @@ export default function BuyerQuotesPage() {
       </div>
 
       {/* Revise dialog */}
-      <Dialog open={reviseDialogOpen} onOpenChange={setReviseDialogOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md">
-          <DialogHeader><DialogTitle>Request Revision</DialogTitle></DialogHeader>
-          <div className="py-2 space-y-3">
-            <p className="text-sm text-muted-foreground">Describe the changes you'd like the supplier to make to this quote.</p>
-            <Textarea
-              value={reviseNote}
-              onChange={e => setReviseNote(e.target.value)}
+      <FormDialog
+        open={reviseDialogOpen}
+        onOpenChange={(open) => {
+          if (actionLoading !== reviseQuoteId) setReviseDialogOpen(open);
+        }}
+        busy={actionLoading === reviseQuoteId}
+        title={
+          <>
+            Request <em>Changes</em>
+          </>
+        }
+        description="Tell the supplier what to change in this quote. They are notified straight away."
+        width={600}
+      >
+        <form
+          noValidate
+          className="fk-form fk-stack"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleRevise();
+          }}
+        >
+          <Field htmlFor="revise-note" label="What should change?" required error={reviseError}>
+            <CountedTextArea
+              id="revise-note"
+              icon={Edit3}
               rows={4}
-              placeholder="e.g. Please reduce unit price, increase delivery time to 30 days, and include GST separately…"
+              maxLength={1000}
+              value={reviseNote}
+              onChange={(e) => {
+                setReviseNote(e.target.value);
+                if (reviseError) setReviseError('');
+              }}
+              placeholder="e.g. Please reduce the unit price, allow 30 days for delivery and show GST separately…"
+              invalid={Boolean(reviseError)}
             />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReviseDialogOpen(false)}>Cancel</Button>
-            <Button
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={handleRevise}
-              disabled={!reviseNote.trim() || actionLoading === reviseQuoteId}
-            >
-              {actionLoading === reviseQuoteId ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Send Request
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </Field>
+          <Actions>
+            <KitButton type="submit" disabled={actionLoading === reviseQuoteId}>
+              {actionLoading === reviseQuoteId ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+              {actionLoading === reviseQuoteId ? 'Sending…' : 'Send Request'}
+            </KitButton>
+            <KitButton variant="ghost" onClick={() => setReviseDialogOpen(false)} disabled={actionLoading === reviseQuoteId}>
+              Cancel
+            </KitButton>
+          </Actions>
+        </form>
+      </FormDialog>
     </DashboardLayout>
   );
 }
