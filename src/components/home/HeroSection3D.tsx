@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import IndustrialPort3D from './IndustrialPort3D';
+import TransportBackdrop from './hero/TransportBackdrop';
 
 interface HeroSection3DProps {
   onSearch?: (query: string, category: string) => void;
@@ -56,20 +56,12 @@ export default function HeroSection3D({ onSearch }: HeroSection3DProps) {
 
   return (
     <section className="relative w-full flex flex-col overflow-hidden bg-[#070B12] text-foreground">
-      {/* ── High-Resolution Industrial Port & Twilight Logistics Backdrop ── */}
+      {/* ── Moving background: cargo plane, container ship and truck (decorative) ── */}
       <div className="absolute inset-0 z-0">
-        <img
-          src="https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg"
-          alt="BulkSkart Global Shipping & Industrial Port"
-          className="w-full h-full object-cover object-center opacity-45 select-none pointer-events-none"
-        />
-        {/* Dark cinematic gradient overlays to guarantee pristine contrast */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#070B12]/95 via-[#070B12]/85 to-[#070B12]/75" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#070B12]/80 via-transparent to-[#070B12]" />
-        {/* WebGL 3D Industrial Port canvas overlay for interactive atmospheric lighting */}
-        <div className="absolute inset-0 opacity-40 hidden md:block pointer-events-none">
-          <IndustrialPort3D />
-        </div>
+        <TransportBackdrop />
+        {/* Shade the text side so the copy stays readable; leave the right side open for the scene */}
+        <div className="absolute inset-0 bg-[#070B12]/70 lg:bg-transparent lg:bg-gradient-to-r lg:from-[#070B12]/95 lg:via-[#070B12]/75 lg:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#070B12]/70 via-transparent to-transparent" />
       </div>
 
       {/* ── Subtle Ambient Brand Glow ── */}
