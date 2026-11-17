@@ -25,8 +25,7 @@ export interface RequirementVisualInfo {
   quantityDisplay: string;
 }
 
-export function getRequirementVisualInfo(req: Requirement, index = 0): RequirementVisualInfo {
-  const titleLower = (req.title || '').toLowerCase();
+export function getRequirementVisualInfo(req: Requirement, _index = 0): RequirementVisualInfo {
   const catSlug = req.categories?.slug?.toLowerCase() || '';
   const catName = req.categories?.name?.toLowerCase() || '';
 
@@ -52,104 +51,52 @@ export function getRequirementVisualInfo(req: Requirement, index = 0): Requireme
     }
   }
 
-  // 3. Resolve location
-  let locationDisplay = (req as any).delivery_location || (req.destination_city && req.destination_country ? `${req.destination_city}, ${req.destination_country}` : req.destination_country || 'Global Sourcing');
-  if (!locationDisplay || locationDisplay === 'Global Sourcing') {
-    if (titleLower.includes('saree')) {
-      locationDisplay = 'Surat, Gujarat, India';
-    } else if (titleLower.includes('t-shirt')) {
-      locationDisplay = 'Tiruppur, Tamil Nadu, India';
-    } else if (titleLower.includes('corrugated') || titleLower.includes('box')) {
-      locationDisplay = 'Bangalore, Karnataka, India';
-    } else if (titleLower.includes('jute')) {
-      locationDisplay = 'Kolkata, West Bengal, India';
-    } else if (titleLower.includes('rice')) {
-      locationDisplay = 'Delhi NCR, India';
-    } else if (titleLower.includes('chilli')) {
-      locationDisplay = 'Guntur, Andhra Pradesh, India';
-    } else if (titleLower.includes('cnc')) {
-      locationDisplay = 'Coimbatore, Tamil Nadu, India';
-    } else if (titleLower.includes('steel')) {
-      locationDisplay = 'Chennai, Tamil Nadu, India';
-    } else if (titleLower.includes('shrimp')) {
-      locationDisplay = 'Cochin, Kerala, India';
-    } else if (titleLower.includes('solar')) {
-      locationDisplay = 'Gujarat, India';
-    } else if (titleLower.includes('earbud') || titleLower.includes('headphone')) {
-      locationDisplay = 'Los Angeles, CA, USA';
-    } else if (req.destination_country) {
-      locationDisplay = `${req.destination_country}, Global`;
-    }
-  }
+  // 3. Location as the buyer gave it (never guessed from the title)
+  const locationDisplay =
+    (req as any).delivery_location ||
+    [req.destination_city, req.destination_country].filter(Boolean).join(', ') ||
+    'Location not given';
 
   // 4. Resolve subtitle / specifications
-  let subtitle = req.specifications || (req as any).specs || req.description?.slice(0, 85) || 'Verified B2B Procurement Requirement';
+  let subtitle = req.specifications || (req as any).specs || req.description?.slice(0, 85) || req.categories?.name || 'Buyer requirement';
   if (subtitle.length > 85) {
     subtitle = subtitle.slice(0, 82) + '...';
   }
 
-  // 5. Urgency Tag determination
-  const tagMod = (index + req.id.charCodeAt(0)) % 7;
-  let tag: RequirementVisualInfo['tag'] = {
-    label: 'URGENT',
-    type: 'urgent',
-    bgClass: 'bg-[#C94400]',
-    textClass: 'text-white',
-  };
-
-  if (titleLower.includes('saree') || titleLower.includes('cnc') || tagMod === 0) {
-    tag = { label: 'URGENT', type: 'urgent', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
-  } else if (titleLower.includes('t-shirt') || titleLower.includes('jute') || titleLower.includes('ldpe') || tagMod === 1) {
-    tag = { label: 'NEW', type: 'new', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
-  } else if (titleLower.includes('chilli') || tagMod === 2) {
+  // 5. Tag from real facts only: the deadline, when it was posted and where it goes.
+  const DAY = 864e5;
+  const now = Date.now();
+  const deadlineMs = req.deadline ? new Date(`${req.deadline}`.length === 10 ? `${req.deadline}T23:59:59` : req.deadline).getTime() : NaN;
+  const daysLeft = Number.isFinite(deadlineMs) ? (deadlineMs - now) / DAY : Infinity;
+  const ageDays = req.created_at ? (now - new Date(req.created_at).getTime()) / DAY : Infinity;
+  const country = (req.destination_country || '').trim().toLowerCase();
+  const isExport = Boolean(country) && country !== 'india';
+  let tag: RequirementVisualInfo['tag'];
+  if (daysLeft >= 0 && daysLeft <= 3) {
     tag = { label: 'EXPIRING', type: 'expiring', bgClass: 'bg-[#B33D00]', textClass: 'text-white' };
-  } else if (titleLower.includes('corrugated') || tagMod === 3) {
+  } else if (daysLeft >= 0 && daysLeft <= 7) {
+    tag = { label: 'URGENT', type: 'urgent', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
+  } else if (ageDays <= 1) {
     tag = { label: 'LIVE', type: 'live', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
-  } else if (titleLower.includes('rice') || tagMod === 4) {
-    tag = { label: 'BULK ORDER', type: 'bulk', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
-  } else if (titleLower.includes('steel') || tagMod === 5) {
-    tag = { label: 'REGULAR', type: 'regular', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
-  } else {
+  } else if (ageDays <= 3) {
+    tag = { label: 'NEW', type: 'new', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
+  } else if (isExport) {
     tag = { label: 'EXPORT', type: 'export', bgClass: 'bg-[#1E1E1E]', textClass: 'text-[#FF7A2E]' };
+  } else {
+    tag = { label: 'OPEN', type: 'regular', bgClass: 'bg-[#1E1E1E]', textClass: 'text-[#FF7A2E]' };
   }
 
-  // 6. Verification and order attributes
-  let verifiedStatus = 'Verified Buyer';
-  if (titleLower.includes('cnc') || titleLower.includes('steel')) {
-    verifiedStatus = 'Verified Company';
-  } else if (titleLower.includes('corrugated') && !titleLower.includes('pcs')) {
-    verifiedStatus = 'Business Verified';
-  }
+  // 6. Only say "verified" when the buyer is verified.
+  const verifiedStatus = req.is_verified_buyer ? 'Verified Buyer' : '';
 
   let orderAttribute = 'Direct Sourcing';
   let attributeIcon: RequirementVisualInfo['attributeIcon'] = 'building';
-
-  if (titleLower.includes('saree')) {
-    orderAttribute = 'Direct Sourcing';
-    attributeIcon = 'building';
-  } else if (titleLower.includes('t-shirt')) {
-    orderAttribute = 'Bulk Purchase';
-    attributeIcon = 'building';
-  } else if (titleLower.includes('corrugated')) {
-    if (titleLower.includes('25,000')) {
-      orderAttribute = 'Delivery in 15 Days';
-      attributeIcon = 'truck';
-    } else {
-      orderAttribute = 'Long Term Requirement';
-      attributeIcon = 'building';
-    }
-  } else if (titleLower.includes('rice') || titleLower.includes('shrimp') || titleLower.includes('chilli') || titleLower.includes('ldpe')) {
+  if (isExport) {
     orderAttribute = 'Export Requirement';
     attributeIcon = 'ship';
-  } else if (titleLower.includes('jute')) {
-    orderAttribute = 'Delivery in 30 Days';
+  } else if (Number.isFinite(deadlineMs) && daysLeft >= 0) {
+    orderAttribute = `Needed by ${new Date(deadlineMs).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`;
     attributeIcon = 'truck';
-  } else if (titleLower.includes('cnc')) {
-    orderAttribute = 'Long Term Supply';
-    attributeIcon = 'building';
-  } else if (titleLower.includes('steel')) {
-    orderAttribute = 'Project Supply';
-    attributeIcon = 'building';
   }
 
   return {

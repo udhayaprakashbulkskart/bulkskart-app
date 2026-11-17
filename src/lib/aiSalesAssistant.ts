@@ -666,3 +666,13 @@ export function generateAIChatReplies(
     },
   ];
 }
+
+/** A catalogue price in rupees: rupee prices as saved, US-dollar prices converted, 0 when unknown (never guessed). */
+export function catalogueInr(amount: number | null | undefined, currency: string | null | undefined, inrRate = 83.5): number {
+  const value = Number(amount);
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  const code = (currency ?? '').trim().toUpperCase();
+  if (code === 'INR' || code === '') return Math.round(value);
+  if (code === 'USD') return Math.round(value * inrRate);
+  return 0;
+}

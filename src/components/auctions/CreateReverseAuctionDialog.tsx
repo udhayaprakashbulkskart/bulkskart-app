@@ -190,9 +190,10 @@ export default function CreateReverseAuctionDialog({
     // 24 hours standard or 60 minutes
     const durationHours = auctionDuration === '24h' ? 24 : 1;
     const endTime = new Date(now.getTime() + durationHours * 60 * 60 * 1000);
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const auctionNumber = `BS-REV-${randomSuffix}`;
-    const invNum = `BS-INV-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+    // Time-based and random together, so two listings never share a number (4 random digits soon collide).
+    const uniquePart = `${now.getTime().toString(36)}${Math.floor(Math.random() * 1296).toString(36).padStart(2, '0')}`.toUpperCase();
+    const auctionNumber = `BS-REV-${uniquePart}`;
+    const invNum = `BS-INV-${now.getFullYear()}-${uniquePart}`;
 
     const qty = parseInt(totalQuantity, 10);
     const startP = parseFloat(startingPrice);
@@ -257,17 +258,20 @@ export default function CreateReverseAuctionDialog({
       .select()
       .single();
 
-    if (error) {
+    if (error || !data?.id) {
       console.error('Auction creation error:', error);
+      // The fee was paid but the listing was not saved: say so, with the payment reference, instead of a fake success.
+      toast.error(`Your payment went through (ref ${paymentRef}), but the auction could not be saved. Please e-mail info@bulkskart.com with this reference.`, { duration: 15000 });
+      return;
     }
 
-    const newId = data?.id || `BS-REV-${randomSuffix}`;
+    const newId = data.id;
     setCreatedAuctionId(newId);
     setInvoiceNumber(invNum);
     setPaymentReferenceId(paymentRef);
     setCurrentStep(3);
 
-    toast.success(`🎉 ₹${bill.totalAmount.toLocaleString()} Payment Verified! 24-Hour Auction Lot is LIVE.`);
+    toast.success(`₹${bill.totalAmount.toLocaleString()} paid. Your ${auctionDuration === '24h' ? '24-hour' : '60-minute'} auction is live.`);
     if (onSuccess) onSuccess(newId);
   };
 
@@ -301,7 +305,7 @@ export default function CreateReverseAuctionDialog({
           prefill: {
             name: companyBillingName || (user?.user_metadata as any)?.full_name || '',
             email: user?.email || '',
-            contact: user?.phone || (user?.user_metadata as any)?.phone || '9876543210'
+            contact: user?.phone || (user?.user_metadata as any)?.phone || ''
           },
           notes: {
             service: '24-hour-auction-participation-fee',
@@ -314,7 +318,12 @@ export default function CreateReverseAuctionDialog({
             color: '#FF5A1F'
           },
           handler: async (response: any) => {
-            const payId = response?.razorpay_payment_id || `rzp_pay_${Date.now()}`;
+            const payId = response?.razorpay_payment_id;
+            if (!payId) {
+              setLoading(false);
+              toast.error('The payment was not confirmed, so the auction was not published. Please try again.');
+              return;
+            }
             await publishAuctionToDatabase(payId);
             setLoading(false);
           },
@@ -333,12 +342,9 @@ export default function CreateReverseAuctionDialog({
         });
         rzpInstance.open();
       } else {
-        // Fallback for non-INR countries or if Razorpay script is blocked
-        // Simulates instant gateway redirect confirmation
-        await new Promise(r => setTimeout(r, 1200));
-        const generatedPaymentId = `pay_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-        await publishAuctionToDatabase(generatedPaymentId);
+        // No payment window (blocked script or a non-rupee bill): never publish without a real payment.
         setLoading(false);
+        toast.error('Online payment is not available right now, so the auction was not published. Please try again, or e-mail info@bulkskart.com.');
       }
     } catch (err: any) {
       toast.error('Payment checkout error: ' + (err?.message || 'Please retry'));

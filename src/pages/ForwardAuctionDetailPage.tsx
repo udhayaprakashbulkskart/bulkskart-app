@@ -14,6 +14,7 @@ import {
 import { toast } from 'sonner';
 import SafeImage from '@/components/common/SafeImage';
 import { supabase } from '@/db/supabase';
+import { createOrder, updateQuotationStatus } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
@@ -183,15 +184,19 @@ export default function ForwardAuctionDetailPage() {
           if (quoteData && quoteData.length > 0 && isMounted) {
             setQuotations(quoteData.map((q: any) => ({
               id: q.id,
-              supplier_name: q.supplier_name || 'Verified Industrial Supplier',
-              supplier_location: q.supplier_location || 'India',
+              // Only what the supplier actually quoted; missing values stay empty instead of being made up.
+              supplier_id: q.supplier_id ?? null,
+              supplier_company_id: q.supplier_company_id ?? null,
+              currency: q.currency || 'INR',
+              supplier_name: q.supplier_name || 'Supplier',
+              supplier_location: q.supplier_location || '',
               unit_price: Number(q.unit_price) || Number(q.price_per_unit) || 0,
-              moq: Number(q.moq) || Number(data.total_quantity) || 1000,
-              lead_time_days: Number(q.lead_time_days) || 7,
-              gst_percent: Number(q.gst_rate) || 18,
+              moq: Number(q.moq) || 0,
+              lead_time_days: Number(q.lead_time_days) || Number(q.delivery_days) || 0,
+              gst_percent: Number(q.gst_rate) || 0,
               freight_included: Boolean(q.freight_included),
-              validity_days: Number(q.validity_days) || 14,
-              rating: Number(q.rating) || 4.9,
+              validity_days: Number(q.validity_days) || 0,
+              rating: Number(q.rating) || 0,
               is_shortlisted: Boolean(q.is_shortlisted),
               status: q.status || 'active',
               submitted_at: q.created_at ? new Date(q.created_at).toLocaleDateString() : 'Active'
@@ -352,33 +357,43 @@ export default function ForwardAuctionDetailPage() {
       return;
     }
 
-    setIsAwardingOrder(true);
-    try {
-      const poNum = `PO-${auction.auction_number || 'AUCT'}-${Math.floor(1000 + Math.random() * 9000)}`;
-      const totalAmount = Number(selectedQuoteForAward.unit_price) * Number(auction.total_quantity);
-      const gstAmount = Math.round(totalAmount * ((Number(selectedQuoteForAward.gst_percent) || 18) / 100));
-
-      await supabase.from('orders').insert({
-        order_number: poNum,
-        buyer_id: user.id,
-        seller_company_id: auction.seller_company_id || null,
-        total_amount: totalAmount + gstAmount,
-        tax_amount: gstAmount,
-        status: 'pending_payment',
-        payment_status: 'pending',
-        notes: `Awarded from 60-Minute Reverse Auction ${auction.auction_number} to ${selectedQuoteForAward.supplier_name}`
-      });
-
-      setIsAwardingOrder(false);
-      setAwardOrderDialogOpen(false);
-      setIsSoldConcluded(true);
-      toast.success(`Purchase Order Generated! (${poNum})`, {
-        description: `Order officially awarded to ${selectedQuoteForAward.supplier_name} at ₹${selectedQuoteForAward.unit_price}/${auction.quantity_unit}. Contract released to Escrow.`
-      });
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to award Purchase Order');
-      setIsAwardingOrder(false);
+    const quote = selectedQuoteForAward;
+    if (!quote.supplier_company_id) {
+      toast.error('This quotation has no supplier company, so an order cannot be created from it.');
+      return;
     }
+    setIsAwardingOrder(true);
+    const quantity = Number(auction.total_quantity) || 0;
+    const base = Number(quote.unit_price) * quantity;
+    const total = Math.round(base * (1 + (Number(quote.gst_percent) || 0) / 100));
+    const accepted = await updateQuotationStatus(quote.id, 'accepted');
+    if (accepted.error) {
+      setIsAwardingOrder(false);
+      toast.error(`The quotation could not be accepted: ${accepted.error}`);
+      return;
+    }
+    const { data: order, error } = await createOrder({
+      quotation_id: quote.id,
+      requirement_id: auction.requirement_id ?? null,
+      buyer_id: user.id,
+      supplier_id: quote.supplier_id ?? null,
+      supplier_company_id: quote.supplier_company_id,
+      total_amount: total,
+      currency: quote.currency || 'INR',
+      quantity,
+      quantity_unit: auction.quantity_unit ?? null,
+      notes: `Awarded from auction ${auction.auction_number || ''} to ${quote.supplier_name}`,
+    });
+    setIsAwardingOrder(false);
+    if (error || !order) {
+      toast.error(`The order could not be created: ${error || 'unknown error'}`);
+      return;
+    }
+    setAwardOrderDialogOpen(false);
+    setIsSoldConcluded(true);
+    toast.success(`Order ${order.order_number} created`, {
+      description: `Awarded to ${quote.supplier_name} at ₹${quote.unit_price}/${auction.quantity_unit}. You can follow it under Orders.`,
+    });
   };
 
   const handleSubmitSupplierQuote = async (e: React.FormEvent) => {
@@ -1025,10 +1040,10 @@ export default function ForwardAuctionDetailPage() {
                     </span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-muted/20 border border-border/40">
-                    <span className="text-muted-foreground block font-medium">Escrow Protection</span>
+                    <span className="text-muted-foreground block font-medium">Payment</span>
                     <span className="font-bold text-[#FF7A2E] dark:text-[#FF7A2E] mt-0.5 flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                      100% Escrow Protected
+                      Agreed with the supplier
                     </span>
                   </div>
                 </div>
@@ -1209,10 +1224,8 @@ export default function ForwardAuctionDetailPage() {
                                   )}
                                 </div>
                                 <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
-                                  <span>{quote.supplier_location}</span>
-                                  <span>•</span>
-                                  <span>⭐ {quote.rating} Rating</span>
-                                  <span>•</span>
+                                  {quote.supplier_location && <><span>{quote.supplier_location}</span><span>•</span></>}
+                                  {quote.rating > 0 && <><span>⭐ {quote.rating} Rating</span><span>•</span></>}
                                   <span>{quote.submitted_at}</span>
                                 </div>
                               </div>
@@ -1232,11 +1245,11 @@ export default function ForwardAuctionDetailPage() {
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-border/50 text-[11px]">
                               <div className="bg-background/80 p-2 rounded-xl border border-border/50">
                                 <span className="text-muted-foreground block text-[10px]">MOQ:</span>
-                                <span className="font-bold text-foreground">{quote.moq.toLocaleString()} {auction.quantity_unit}</span>
+                                <span className="font-bold text-foreground">{quote.moq > 0 ? `${quote.moq.toLocaleString()} ${auction.quantity_unit}` : 'Not stated'}</span>
                               </div>
                               <div className="bg-background/80 p-2 rounded-xl border border-border/50">
                                 <span className="text-muted-foreground block text-[10px]">Lead Time:</span>
-                                <span className="font-bold text-foreground">{quote.lead_time_days} Days Dispatch</span>
+                                <span className="font-bold text-foreground">{quote.lead_time_days > 0 ? `${quote.lead_time_days} Days Dispatch` : 'Not stated'}</span>
                               </div>
                               <div className="bg-background/80 p-2 rounded-xl border border-border/50">
                                 <span className="text-muted-foreground block text-[10px]">Freight:</span>
@@ -1246,7 +1259,7 @@ export default function ForwardAuctionDetailPage() {
                               </div>
                               <div className="bg-background/80 p-2 rounded-xl border border-border/50">
                                 <span className="text-muted-foreground block text-[10px]">Quote Validity:</span>
-                                <span className="font-bold text-foreground">{quote.validity_days} Days</span>
+                                <span className="font-bold text-foreground">{quote.validity_days > 0 ? `${quote.validity_days} Days` : 'Not stated'}</span>
                               </div>
                             </div>
 
@@ -1566,7 +1579,7 @@ export default function ForwardAuctionDetailPage() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-foreground">Award Purchase Order (PO)</h3>
-                <p className="text-xs text-muted-foreground">Finalize order terms and release contract via BulkSkart Escrow</p>
+                <p className="text-xs text-muted-foreground">Accept this quotation and create the order</p>
               </div>
             </div>
 
@@ -1600,10 +1613,10 @@ export default function ForwardAuctionDetailPage() {
                 <span>Base Cost ({auction.total_quantity.toLocaleString()} {auction.quantity_unit} @ ₹{selectedQuoteForAward.unit_price}):</span>
                 <span className="font-mono font-semibold text-foreground">₹{(selectedQuoteForAward.unit_price * auction.total_quantity).toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>GST (Estimated {selectedQuoteForAward.gst_percent}%):</span>
+              {selectedQuoteForAward.gst_percent > 0 && <div className="flex justify-between text-muted-foreground">
+                <span>GST ({selectedQuoteForAward.gst_percent}%):</span>
                 <span className="font-mono font-semibold text-foreground">₹{((selectedQuoteForAward.unit_price * auction.total_quantity) * (selectedQuoteForAward.gst_percent / 100)).toLocaleString('en-IN')}</span>
-              </div>
+              </div>}
               <div className="flex justify-between text-muted-foreground">
                 <span>Freight & Handling:</span>
                 <span className="font-mono font-semibold text-[#FF7A2E]">
@@ -1611,11 +1624,11 @@ export default function ForwardAuctionDetailPage() {
                 </span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Estimated Dispatch Window:</span>
-                <span className="font-semibold text-foreground">{selectedQuoteForAward.lead_time_days} Days from Escrow Confirmation</span>
+                <span>Dispatch time quoted:</span>
+                <span className="font-semibold text-foreground">{selectedQuoteForAward.lead_time_days > 0 ? `${selectedQuoteForAward.lead_time_days} days after the order` : 'Not stated'}</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-border font-bold text-sm text-foreground">
-                <span>Total Escrow Amount:</span>
+                <span>Order total:</span>
                 <span className="text-[#FF5A1F] text-base">
                   ₹{((selectedQuoteForAward.unit_price * auction.total_quantity) * (1 + selectedQuoteForAward.gst_percent / 100)).toLocaleString('en-IN')}
                 </span>
@@ -1626,7 +1639,7 @@ export default function ForwardAuctionDetailPage() {
             <div className="flex items-start gap-2 text-[11px] text-muted-foreground p-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
               <ShieldCheck className="w-4 h-4 text-[#FF5A1F] shrink-0 mt-0.5" />
               <span>
-                <strong>100% Escrow Protection:</strong> Funds are locked securely until physical inspection and proof of delivery (POD) is confirmed by buyer.
+                <strong>Before you pay:</strong> agree payment and delivery terms with the supplier, and pay only against an invoice. Inspect the goods on delivery.
               </span>
             </div>
 

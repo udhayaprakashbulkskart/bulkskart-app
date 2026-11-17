@@ -1704,13 +1704,61 @@ export async function adminUpdateCompanyVerification(id: string, status: string)
   return { error: error?.message ?? null };
 }
 
-export async function adminGetReports(): Promise<any[]> {
-  const { data } = await supabase
+export type ReportStatus = 'open' | 'under_review' | 'resolved' | 'dismissed';
+
+export interface AdminReport {
+  id: string;
+  reporter_id: string;
+  reported_user_id: string | null;
+  reported_company_id: string | null;
+  reported_product_id: string | null;
+  reason: string;
+  description: string | null;
+  status: ReportStatus;
+  admin_notes: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  reporter?: { full_name: string | null; email: string | null } | null;
+}
+
+/** Reports for the admin screen, newest first (admins can read every report). */
+export async function adminGetReports(options?: { status?: ReportStatus | 'all'; limit?: number }): Promise<{ rows: AdminReport[]; error: string | null }> {
+  let query = supabase
     .from('reports')
-    .select('*')
+    .select('*, reporter:profiles!reporter_id(full_name,email)')
     .order('created_at', { ascending: false })
-    .limit(PAGE_SIZE);
-  return Array.isArray(data) ? data : [];
+    .limit(options?.limit ?? 100);
+  if (options?.status && options.status !== 'all') query = query.eq('status', options.status);
+  const { data, error } = await query;
+  if (error) return { rows: [], error: error.message };
+  return { rows: (Array.isArray(data) ? data : []) as AdminReport[], error: null };
+}
+
+/** How many reports are in each status. */
+export async function adminCountReports(): Promise<Record<ReportStatus, number | null>> {
+  const statuses: ReportStatus[] = ['open', 'under_review', 'resolved', 'dismissed'];
+  const result: Record<ReportStatus, number | null> = { open: null, under_review: null, resolved: null, dismissed: null };
+  await Promise.all(
+    statuses.map(async (status) => {
+      const { count, error } = await supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', status);
+      result[status] = error ? null : (count ?? 0);
+    }),
+  );
+  return result;
+}
+
+/** Change a report's status and the admin's notes; closing it stamps the time. */
+export async function adminUpdateReport(id: string, changes: { status: ReportStatus; admin_notes: string }): Promise<{ error: string | null }> {
+  const closed = changes.status === 'resolved' || changes.status === 'dismissed';
+  const { error } = await supabase
+    .from('reports')
+    .update({
+      status: changes.status,
+      admin_notes: changes.admin_notes.trim() || null,
+      resolved_at: closed ? new Date().toISOString() : null,
+    })
+    .eq('id', id);
+  return { error: error?.message ?? null };
 }
 
 export async function adminUpdateUserStatus(userId: string, status: string): Promise<{ error: string | null }> {
@@ -1918,4 +1966,59 @@ export async function getCompanyReviews(companyId: string): Promise<CompanyRevie
 export async function createCompanyReview(payload: Partial<CompanyReview>): Promise<{ error: string | null }> {
   const { error } = await supabase.from('company_reviews').insert(payload as CompanyReview);
   return { error: error?.message ?? null };
+}
+
+export type RequirementStatusFilter = 'all' | 'urgent' | 'new' | 'expiring' | 'live';
+
+/**
+ * One page of open buyer requirements from the database, with the real total for the same filters.
+ * "urgent"/"expiring" = deadline within 7/3 days, "new"/"live" = posted in the last 3 days/24 hours.
+ */
+export async function getRequirementsPage(q: {
+  page: number;
+  pageSize: number;
+  categoryId?: string;
+  search?: string;
+  location?: string;
+  statusFilter?: RequirementStatusFilter;
+  sort?: string;
+}): Promise<{ data: Requirement[]; count: number }> {
+  const DAY = 864e5;
+  const now = Date.now();
+  const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  let query = supabase
+    .from('requirements')
+    .select('*, profiles!buyer_id(id,full_name,email,phone), categories!category_id(id,name,slug)', { count: 'exact' })
+    .eq('status', 'active');
+  if (q.categoryId && q.categoryId !== 'all') query = query.eq('category_id', q.categoryId);
+  const term = (q.search || '').trim().replace(/[%,()*]/g, ' ').trim();
+  if (term) query = query.or(`title.ilike.%${term}%,description.ilike.%${term}%`);
+  if (q.location && q.location !== 'all') query = query.ilike('destination_city', `%${q.location}%`);
+  switch (q.statusFilter) {
+    case 'expiring':
+      query = query.gte('deadline', day(now)).lte('deadline', day(now + 3 * DAY));
+      break;
+    case 'urgent':
+      query = query.gte('deadline', day(now)).lte('deadline', day(now + 7 * DAY));
+      break;
+    case 'new':
+      query = query.gte('created_at', new Date(now - 3 * DAY).toISOString());
+      break;
+    case 'live':
+      query = query.gte('created_at', new Date(now - DAY).toISOString());
+      break;
+    default:
+      break;
+  }
+  if (q.sort === 'quotes_high') query = query.order('quote_count', { ascending: false });
+  else if (q.sort === 'qty_high') query = query.order('quantity', { ascending: false });
+  query = query.order('created_at', { ascending: false });
+  const from = Math.max(0, (q.page - 1) * q.pageSize);
+  const { data, count, error } = await query.range(from, from + q.pageSize - 1);
+  if (error) throw error;
+  const rows = (Array.isArray(data) ? data : []).map((item: any) => ({
+    ...item,
+    buyer_phone: item.profiles?.phone || item.buyer_phone || null,
+  })) as Requirement[];
+  return { data: rows, count: typeof count === 'number' ? count : rows.length };
 }

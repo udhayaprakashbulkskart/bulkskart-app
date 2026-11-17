@@ -156,7 +156,6 @@ export default function PostRequirementPage() {
       computedDeadline = new Date(now.getTime() + durationHours * 3600 * 1000).toISOString().split('T')[0];
     }
 
-    const uniqueRfqNumber = `BS-RFQ-${Math.floor(1000 + Math.random() * 9000)}`;
 
     try {
       const buyerId = user.id;
