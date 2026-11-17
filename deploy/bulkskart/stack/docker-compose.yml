@@ -464,6 +464,9 @@ services:
       SUPABASE_DB_URL: postgresql://postgres:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       # TODO: Allow configuring VERIFY_JWT per function.
       VERIFY_JWT: "${FUNCTIONS_VERIFY_JWT}"
+      # AiSensy WhatsApp (whatsapp-dispatch). Keep the key out of the frontend.
+      AISENSY_API_KEY: ${AISENSY_API_KEY:-}
+      AISENSY_CAMPAIGNS: ${AISENSY_CAMPAIGNS:-}
     command:
       [
         "start",
