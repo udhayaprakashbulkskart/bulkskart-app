@@ -9,9 +9,19 @@ import PageMeta from '@/components/common/PageMeta';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { BLOG_POSTS } from './BlogDetailPage';
 
-const CATEGORIES = ['All', 'Trade Tips', 'Supplier Guides', 'Buyer Resources'];
+const CATEGORIES = ['All', 'News', 'Trade Tips', 'Supplier Guides', 'Buyer Resources'];
 
 const POSTS = [
+  {
+    slug: 'bulkskart-connects-bulk-buyers-with-verified-manufacturers',
+    category: 'News',
+    title: 'BulkSkart Connects Bulk Buyers With Verified Indian Manufacturers',
+    excerpt: 'Press release: post a bulk requirement free, get quotations from manufacturers whose documents BulkSkart has reviewed, and negotiate in one place.',
+    author: 'BulkSkart',
+    date: '17 Nov 2026',
+    readTime: '3 min',
+    tag: 'Press Release',
+  },
   {
     slug: 'how-to-find-manufacturers-in-india',
     category: 'Supplier Guides',
@@ -65,6 +75,7 @@ const POSTS = [
 ];
 
 const TAG_COLORS: Record<string, string> = {
+  'Press Release': 'bg-[#FF5A00]/10 text-[#FF5A00] border-[#FF5A00]/25',
   Trending: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
   Essential: 'bg-[#FF5A00]/10 text-[#FF5A00] border-[#FF5A00]/25',
   Popular: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
@@ -178,7 +189,7 @@ export default function BlogPage() {
                 </div>
                 <Link to={`/blog/${post.slug}`}>
                   <Button size="sm" className="bg-[#FF5A00] hover:bg-[#e04e00] text-white text-xs font-bold gap-1 rounded-xl h-8 px-3">
-                    <span>Read Guide</span>
+                    <span>{post.category === 'News' ? 'Read Release' : 'Read Guide'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Button>
                 </Link>

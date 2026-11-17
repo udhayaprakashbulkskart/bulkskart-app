@@ -603,6 +603,11 @@ export default function SEOHubPage({ forcedSlug }: { forcedSlug?: string }) {
                 </Button>
               </Link>
             ))}
+            <Link to="/blog/bulkskart-connects-bulk-buyers-with-verified-manufacturers">
+              <Button variant="outline" size="sm" className="h-8 text-xs font-medium border-primary/40 text-primary hover:border-[#FF5A00]">
+                BulkSkart Press Release
+              </Button>
+            </Link>
             <Link to="/manufacturers-in-india">
               <Button variant="outline" size="sm" className="h-8 text-xs font-medium border-border hover:border-[#FF5A00]">
                 Manufacturers in India

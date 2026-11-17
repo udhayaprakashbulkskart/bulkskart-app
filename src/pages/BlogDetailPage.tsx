@@ -29,9 +29,68 @@ export interface BlogPostData {
   }[];
   faqs?: { question: string; answer: string }[];
   relatedLinks: { label: string; url: string }[];
+  /** ISO date for the Article schema; older guides fall back to the shared dates. */
+  datePublished?: string;
+  /** Who wrote it, for the Article schema (a press release is written by the company). */
+  authorType?: 'Person' | 'Organization';
 }
 
 export const BLOG_POSTS: Record<string, BlogPostData> = {
+  'bulkskart-connects-bulk-buyers-with-verified-manufacturers': {
+    slug: 'bulkskart-connects-bulk-buyers-with-verified-manufacturers',
+    title: 'BulkSkart Connects Bulk Buyers With Verified Indian Manufacturers',
+    metaDescription: 'Press release: BulkSkart lets businesses post bulk requirements free, get quotations from document-checked Indian manufacturers and negotiate in one place.',
+    category: 'News',
+    author: 'BulkSkart',
+    authorType: 'Organization',
+    date: '17 Nov 2026',
+    datePublished: '2026-11-17',
+    readTime: '3 min',
+    h1: 'BulkSkart Connects Bulk Buyers With Verified Indian Manufacturers Through Free Requirements, Quotations and Live Auctions',
+    summary: 'INDIA, November 17, 2026 — BulkSkart (www.bulkskart.com), a B2B wholesale marketplace run by Tech Pod AI Database Private Limited, helps businesses buy in bulk directly from manufacturers and wholesale suppliers in India. Buyers register for free, post what they need and receive quotations from manufacturers whose business documents the BulkSkart team has reviewed.',
+    content: [
+      {
+        heading: 'How buying works',
+        paragraphs: [
+          'A buyer posts a requirement with the product, quantity, destination, timeline and specifications. Manufacturers with matching products are notified and send quotations to the buyer\u2019s dashboard.',
+          'The buyer compares them side by side on price, minimum order quantity and delivery time, chats with suppliers to negotiate or ask for samples, and accepts the best quote to place the order.',
+        ],
+      },
+      {
+        heading: 'For manufacturers',
+        paragraphs: [
+          'Manufacturers register with their company details, GST and IEC numbers and business documents. The BulkSkart team reviews those documents before granting the Verified Business badge.',
+          'Verified manufacturers list products with MOQ, pricing and specifications, receive matching buyer requirements and reply with quotations. Monthly plans start at ₹2,500 (Starter), with Business at ₹7,500, Growth at ₹15,000 and a custom Enterprise plan.',
+        ],
+      },
+      {
+        heading: 'Live auctions and free tools',
+        paragraphs: [
+          'BulkSkart also runs 60-minute live auctions, where manufacturers sell bulk stock through real-time bidding, and auctions for machinery and plants.',
+          'Free tools on the site include a shipping calculator, a business loan calculator, an AI trade assistant and import-export guidance, along with manufacturer directories for India, Tamil Nadu, Coimbatore and Chennai.',
+        ],
+      },
+      {
+        heading: 'About BulkSkart',
+        paragraphs: [
+          'BulkSkart is a B2B wholesale marketplace for India, run by Tech Pod AI Database Private Limited. It connects bulk buyers with verified manufacturers and wholesale suppliers through free requirement posting, quotations, live auctions and direct negotiation.',
+        ],
+      },
+      {
+        heading: 'Media contact',
+        paragraphs: [
+          'BulkSkart · Email: info@bulkskart.com · WhatsApp: +91 89702 02677 · Web: www.bulkskart.com',
+        ],
+      },
+    ],
+    relatedLinks: [
+      { label: 'Post a Requirement Free', url: '/post-requirement' },
+      { label: 'How It Works', url: '/how-it-works' },
+      { label: 'Manufacturers in India', url: '/manufacturers-in-india' },
+      { label: 'Live Auctions', url: '/auctions' },
+      { label: 'Supplier Plans', url: '/pricing' },
+    ],
+  },
   'how-to-find-manufacturers-in-india': {
     slug: 'how-to-find-manufacturers-in-india',
     title: 'How to Find Verified Manufacturers in India (2026 Sourcing Guide)',
@@ -288,7 +347,7 @@ export default function BlogDetailPage() {
             headline: post.title,
             description: post.metaDescription,
             author: {
-              '@type': 'Person',
+              '@type': post.authorType ?? 'Person',
               name: post.author,
             },
             publisher: {
@@ -299,8 +358,8 @@ export default function BlogDetailPage() {
                 url: 'https://www.bulkskart.com/brand/bulkskart-logo.jpg',
               },
             },
-            datePublished: '2026-09-15',
-            dateModified: '2026-10-07',
+            datePublished: post.datePublished ?? '2026-09-15',
+            dateModified: post.datePublished ?? '2026-10-07',
             mainEntityOfPage: {
               '@type': 'WebPage',
               '@id': `https://www.bulkskart.com/blog/${post.slug}`,
