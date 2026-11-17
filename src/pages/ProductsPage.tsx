@@ -64,10 +64,13 @@ function getProductFallback(product: Product, index: number): string {
 }
 
 function formatProductPrice(val: number, isIndia: boolean, cur: string, rate: number): string {
-  // If India is active or selected, convert USD base prices to INR
-  const isUsd = !cur || cur.toUpperCase() === 'USD' || val < 1000;
+  // Prices are in the currency the supplier saved (rupees when none is given).
+  // Only a US-dollar price is converted for visitors in India; nothing is guessed from the size of the number.
+  const code = (cur || 'INR').toUpperCase();
+  const isUsd = code === 'USD' || code === '$';
   const converted = isIndia && isUsd ? val * (rate || 83.5) : val;
-  const symbol = isIndia ? '₹' : (cur === 'USD' ? '$' : cur);
+  const inRupees = code === 'INR' || code === '₹' || (isIndia && isUsd);
+  const symbol = inRupees ? '₹' : isUsd ? '$' : `${code} `;
 
   if (converted >= 10000000) {
     return `${symbol}${(converted / 10000000).toFixed(1)}Cr`;
@@ -78,7 +81,8 @@ function formatProductPrice(val: number, isIndia: boolean, cur: string, rate: nu
   if (converted >= 1000) {
     return `${symbol}${(converted / 1000).toFixed(converted % 1000 === 0 ? 0 : 1)}K`;
   }
-  return `${symbol}${Math.round(converted).toLocaleString(isIndia ? 'en-IN' : 'en-US')}`;
+  // Keep paise and cents on small prices (₹6.50 is not ₹7).
+  return `${symbol}${converted.toLocaleString(inRupees ? 'en-IN' : 'en-US', { maximumFractionDigits: converted < 100 ? 2 : 0 })}`;
 }
 
 function PriceRange({
@@ -217,7 +221,7 @@ function ProductCard({
           <PriceRange
             min={product.price_min}
             max={product.price_max}
-            currency={product.price_currency || 'USD'}
+            currency={product.price_currency || 'INR'}
             isIndia={isIndia}
             rate={rate}
           />

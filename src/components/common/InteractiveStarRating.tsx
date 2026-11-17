@@ -33,24 +33,34 @@ export default function InteractiveStarRating({
       <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => {
           const isFilled = star <= activeVal;
+          const icon = (
+            <Star
+              className={`${starSizes[size]} transition-colors ${
+                isFilled
+                  ? 'text-[#FF7A2E] fill-[#FF5A00] drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]'
+                  : 'text-neutral-300 fill-transparent'
+              }`}
+            />
+          );
+          // A read-only rating is a picture, not buttons, so it can sit inside a link or button.
+          if (readOnly) {
+            return (
+              <span key={star} className="p-0.5" title={`${value} stars`}>
+                {icon}
+              </span>
+            );
+          }
           return (
             <button
               key={star}
               type="button"
-              disabled={readOnly}
               onClick={() => onChange && onChange(star)}
-              onMouseEnter={() => !readOnly && setHoverVal(star)}
-              onMouseLeave={() => !readOnly && setHoverVal(null)}
-              className={`${readOnly ? 'cursor-default' : 'cursor-pointer hover:scale-115 transition-transform'} p-0.5 focus:outline-none`}
-              title={readOnly ? `${value} stars` : `Rate ${star} star${star > 1 ? 's' : ''}`}
+              onMouseEnter={() => setHoverVal(star)}
+              onMouseLeave={() => setHoverVal(null)}
+              className="cursor-pointer hover:scale-115 transition-transform p-0.5 focus:outline-none"
+              title={`Rate ${star} star${star > 1 ? 's' : ''}`}
             >
-              <Star
-                className={`${starSizes[size]} transition-colors ${
-                  isFilled
-                    ? 'text-[#FF7A2E] fill-[#FF5A00] drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]'
-                    : 'text-neutral-300 fill-transparent'
-                }`}
-              />
+              {icon}
             </button>
           );
         })}

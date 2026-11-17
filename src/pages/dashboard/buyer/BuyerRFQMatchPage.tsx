@@ -24,6 +24,12 @@ import { supabase } from '@/db/supabase';
 import { getQuotationsForRequirement } from '@/lib/api';
 import type { Quotation } from '@/types/types';
 
+/** A number for display, or a dash when the value is missing. */
+const num = (n: unknown) => {
+  const v = typeof n === 'string' && n.trim() !== '' ? Number(n) : n;
+  return typeof v === 'number' && Number.isFinite(v) ? v.toLocaleString() : '—';
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Requirement {
@@ -311,7 +317,7 @@ export default function BuyerRFQMatchPage() {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                     {[
-                      { label: 'Quantity', value: `${requirement.quantity.toLocaleString()} ${requirement.quantity_unit}` },
+                      { label: 'Quantity', value: `${num(requirement.quantity)} ${requirement.quantity_unit ?? ''}` },
                       { label: 'Destination', value: requirement.destination_country ?? '—' },
                       {
                         label: 'Deadline',
@@ -742,11 +748,11 @@ export default function BuyerRFQMatchPage() {
                               </td>
                               <td className="py-3 pr-4">
                                 <span className="text-sm font-black text-foreground whitespace-nowrap">
-                                  {q.unit_price.toLocaleString()}
+                                  {num(q.unit_price)}
                                 </span>
                               </td>
                               <td className="py-3 pr-4 text-xs text-foreground whitespace-nowrap">
-                                {q.moq.toLocaleString()} {q.moq_unit}
+                                {num(q.moq)} {q.moq_unit ?? ''}
                               </td>
                               <td className="py-3 pr-4 text-xs text-muted-foreground">{q.currency}</td>
                               <td className="py-3 pr-4 text-xs text-foreground whitespace-nowrap">
@@ -809,16 +815,16 @@ export default function BuyerRFQMatchPage() {
 
                   {/* Best price highlight */}
                   {quotations.length >= 2 && (() => {
-                    const sorted = [...quotations].sort((a, b) => a.unit_price - b.unit_price);
+                    const sorted = [...quotations].sort((a, b) => (Number(a.unit_price) || 0) - (Number(b.unit_price) || 0));
                     const best = sorted[0];
-                    const savings = sorted[sorted.length - 1].unit_price - best.unit_price;
+                    const savings = (Number(sorted[sorted.length - 1].unit_price) || 0) - (Number(best.unit_price) || 0);
                     return (
                       <div className="bg-[#FF5A00]/10 border border-[#FF5A00]/30 rounded-xl px-4 py-3 flex items-start gap-2.5 text-sm">
                         <TrendingUp className="w-4 h-4 text-[#FF7A2E] shrink-0 mt-0.5" />
                         <div>
                           <span className="font-semibold text-[#FF7A2E]">Lowest Quote: </span>
                           <span className="text-foreground">
-                            {best.companies?.company_name} · {best.currency} {best.unit_price.toLocaleString()}/unit
+                            {best.companies?.company_name} · {best.currency} {num(best.unit_price)}/unit
                           </span>
                           {savings > 0 && (
                             <span className="text-muted-foreground text-xs ml-2">

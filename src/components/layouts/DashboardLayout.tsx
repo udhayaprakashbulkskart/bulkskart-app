@@ -92,7 +92,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const role = resolvedRole || profile?.role || null;
-  const isUnpaidManufacturer = role === 'supplier' && !isPaidSubscriber;
+  // Only decide "unpaid" once the account (and its subscription) has loaded; until then every
+  // manufacturer looks unpaid and paying ones were sent to Subscription on refresh.
+  const isUnpaidManufacturer = role === 'supplier' && !loading && !isPaidSubscriber;
 
   // Route users to the dashboard that matches their signup role
   useEffect(() => {

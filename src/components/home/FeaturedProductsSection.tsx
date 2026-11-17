@@ -483,32 +483,24 @@ export default function FeaturedProductsSection() {
       });
 
       // Transform raw products into DisplayProduct with authentic metadata
-      const formatted: DisplayProduct[] = res.products.flatMap((p, index) => {
+      const formatted: DisplayProduct[] = res.products.flatMap((p) => {
         const catalogImg = catalogProductPhoto(p.images);
         if (!catalogImg) return [];
         const comp = p.companies;
         const cat = p.categories;
         const pCountry = comp?.country || (p.export_destinations && p.export_destinations[0]) || 'India';
-        const rating = Number(comp?.rating_avg ?? (4.7 + ((index % 3) * 0.1)));
-        const reviewCount = Number(comp?.review_count ?? (120 + ((index * 37) % 450)));
+        // Only real figures: no rating or reviews until buyers have left some.
+        const rating = Number(comp?.rating_avg ?? 0) || 0;
+        const reviewCount = Number(comp?.review_count ?? 0) || 0;
+        // Prices are in the currency the supplier saved (rupees when none is given).
+        const priceCur = (p.price_currency || 'INR').toUpperCase();
+        const toUsd = (v: number | null | undefined) => (v && v > 0 ? (priceCur === 'USD' ? v : priceCur === 'INR' ? v / 83.5 : v) : 0);
+        const toInr = (v: number | null | undefined) => (v && v > 0 ? (priceCur === 'INR' ? v : priceCur === 'USD' ? v * 83.5 : v) : 0);
 
-        // Dynamic badges
-        let badgeType: DisplayProduct['badgeType'] = 'popular';
-        let badgeLabel = 'Popular';
-
-        if (index % 4 === 0) {
-          badgeType = 'best_seller';
-          badgeLabel = 'Best Seller';
-        } else if (index % 4 === 1) {
-          badgeType = 'bulk_deal';
-          badgeLabel = 'Bulk Deal';
-        } else if (index % 4 === 2) {
-          badgeType = 'new_arrival';
-          badgeLabel = 'New Arrival';
-        } else if (index % 4 === 3) {
-          badgeType = 'trending';
-          badgeLabel = 'Trending';
-        }
+        // Badges only from real facts: a product added in the last 30 days is a new arrival.
+        const isNew = p.created_at ? Date.now() - new Date(p.created_at).getTime() < 30 * 864e5 : false;
+        const badgeType: DisplayProduct['badgeType'] = 'new_arrival';
+        const badgeLabel = isNew ? 'New Arrival' : '';
 
         return [{
           id: p.id,
@@ -518,16 +510,16 @@ export default function FeaturedProductsSection() {
           companyId: p.company_id || comp?.id,
           supplierOwnerId: comp?.owner_id,
           moq: `MOQ: ${p.moq || 100} ${p.moq_unit || 'Pcs'}`,
-          usdMin: p.price_min ?? 25,
-          usdMax: p.price_max ?? 45,
-          inrMin: (p.price_min ?? 25) * 83.5,
-          inrMax: (p.price_max ?? 45) * 83.5,
+          usdMin: toUsd(p.price_min),
+          usdMax: toUsd(p.price_max),
+          inrMin: toInr(p.price_min),
+          inrMax: toInr(p.price_max),
           badgeType,
           badgeLabel,
           rating,
           reviewCount,
-          isVerifiedSupplier: comp?.verification_status === 'verified' || true,
-          supplierName: comp?.company_name || 'Verified Export Manufacturer',
+          isVerifiedSupplier: comp?.verification_status === 'verified',
+          supplierName: comp?.company_name || 'Supplier',
           country: pCountry,
           countryFlag: COUNTRY_FLAGS[pCountry] || '🌐',
           img: catalogImg,
@@ -1204,7 +1196,9 @@ export default function FeaturedProductsSection() {
                   {products.slice(0, 8).map((product) => {
                     const isIndia = countryFilter === 'India' || product.country === 'India' || countryConfig.code === 'IN' || countryConfig.currency === 'INR' || currencyInfo.currency === 'INR';
                     const inrRate = currencyInfo.rate || 83.5;
-                    const minFormatted = isIndia ? `₹${Math.round(product.inrMin || (product.usdMin * inrRate)).toLocaleString('en-IN')}` : formatPrice(product.usdMin);
+                    const minFormatted = !product.usdMin
+                      ? 'Price on request'
+                      : isIndia ? `₹${Math.round(product.inrMin || (product.usdMin * inrRate)).toLocaleString('en-IN')}` : formatPrice(product.usdMin);
 
                     return (
                       <div
@@ -1218,9 +1212,11 @@ export default function FeaturedProductsSection() {
                             className="w-full h-full object-cover"
                             sizes="165px"
                           />
-                          <span className="absolute top-1 left-1 bg-[#C94400] text-white text-[8.5px] font-bold px-1.5 py-0.2 rounded shadow">
-                            {product.badgeLabel}
-                          </span>
+                          {product.badgeLabel && (
+                            <span className="absolute top-1 left-1 bg-[#C94400] text-white text-[8.5px] font-bold px-1.5 py-0.2 rounded shadow">
+                              {product.badgeLabel}
+                            </span>
+                          )}
                         </div>
                         <div className="p-2 flex-1 flex flex-col justify-between">
                           <Link to={product.slug ? `/products/${product.slug}` : `/products/${product.id}`}>
@@ -1333,9 +1329,11 @@ export default function FeaturedProductsSection() {
                         countryConfig.currency === 'INR' ||
                         currencyInfo.currency === 'INR';
                       const inrRate = currencyInfo.rate || 83.5;
-                      const minFormatted = isIndia
-                        ? `₹${Math.round(product.inrMin || (product.usdMin * inrRate)).toLocaleString('en-IN')}`
-                        : formatPrice(product.usdMin);
+                      const minFormatted = !product.usdMin
+                        ? 'Price on request'
+                        : isIndia
+                          ? `₹${Math.round(product.inrMin || (product.usdMin * inrRate)).toLocaleString('en-IN')}`
+                          : formatPrice(product.usdMin);
                       const maxFormatted = isIndia
                         ? `₹${Math.round(product.inrMax || (product.usdMax * inrRate)).toLocaleString('en-IN')}`
                         : formatPrice(product.usdMax);
@@ -1343,10 +1341,10 @@ export default function FeaturedProductsSection() {
                       return (
                         <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5">
                           <span className="text-[17px] font-black leading-none text-[#FF7A2E] sm:text-[19px]">{minFormatted}</span>
-                          {product.usdMax && product.usdMax !== product.usdMin && (
+                          {product.usdMin > 0 && product.usdMax > 0 && product.usdMax !== product.usdMin && (
                             <span className="text-[11px] font-semibold text-neutral-400">– {maxFormatted}</span>
                           )}
-                          <span className="text-[11px] text-neutral-400">/ Piece</span>
+                          {product.usdMin > 0 && <span className="text-[11px] text-neutral-400">/ Piece</span>}
                         </div>
                       );
                     })()}

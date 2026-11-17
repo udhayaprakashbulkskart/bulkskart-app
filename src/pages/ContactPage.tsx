@@ -107,11 +107,11 @@ export default function ContactPage() {
       <div className="bg-[#C94400] text-white py-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-4">
-            <MessageSquare className="w-3.5 h-3.5 text-[#FF5A00]" />
+            <MessageSquare className="w-3.5 h-3.5 text-white" />
             <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">Get in Touch</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-black mb-3">
-            Contact <span className="text-[#FF5A00]">BulkSkart</span>
+            Contact <span className="text-black">BulkSkart</span>
           </h1>
           <p className="text-white/70 text-sm max-w-xl mx-auto">
             Operated by <strong className="text-white">Tech Pod AI Database Private Limited</strong>. We're here to help you with trade inquiries, support, and partnerships.
