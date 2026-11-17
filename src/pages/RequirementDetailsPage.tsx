@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import MainLayout from '@/components/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -2279,6 +2280,7 @@ export default function RequirementDetailsPage() {
                             <div className="text-[11px] text-white/60 mt-0.5">
                               Price: <strong className="text-white">₹{prod.priceINR.toLocaleString('en-IN')}</strong> / {prod.moqUnit}
                             </div>
+                            <LoanEligibleTag size="xs" className="mt-1" />
                           </div>
                         </div>
 
@@ -2756,6 +2758,7 @@ export default function RequirementDetailsPage() {
                       <div className="text-xs font-extrabold text-[#FF5A00] mt-1.5 truncate">
                         {prod.price}
                       </div>
+                      <LoanEligibleTag size="xs" className="mt-1" />
                     </div>
                   </div>
                 );

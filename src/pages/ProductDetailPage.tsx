@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -509,6 +510,7 @@ export default function ProductDetailPage() {
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Price Range</p>
                     <p className="text-base font-black text-primary leading-tight">{priceDisplay}</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">Excl. GST</p>
+                    <LoanEligibleTag size="sm" link className="mt-1.5" />
                     <button
                       type="button"
                       onClick={() => setShowCountryTaxesModal(true)}
@@ -867,6 +869,7 @@ export default function ProductDetailPage() {
                             <p className="text-xs font-bold text-foreground leading-tight mb-1 line-clamp-2">{p.name}</p>
                             <p className="text-xs font-black text-primary mb-0.5">{simPrice}</p>
                             <p className="text-[10px] text-muted-foreground">MOQ: {p.moq ?? 1} {p.moq_unit ?? 'pcs'}</p>
+                            <LoanEligibleTag size="xs" className="mt-1" />
                             {p.companies?.company_name && (
                               <p className="text-[10px] text-muted-foreground/60 truncate mt-0.5">{p.companies.company_name}</p>
                             )}
@@ -1016,6 +1019,7 @@ export default function ProductDetailPage() {
                       </button>
                     </div>
                     <p className="text-xs text-primary mt-1 font-medium">Better pricing for bulk orders</p>
+                    <LoanEligibleTag size="md" link className="mt-2" />
                   </div>
 
                   {/* MOQ */}

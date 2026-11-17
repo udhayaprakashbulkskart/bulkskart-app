@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -515,6 +516,7 @@ export default function CompanyProfilePage() {
                                 {p.price_currency} {p.price_min.toLocaleString()}{p.price_max ? ` – ${p.price_max.toLocaleString()}` : '+'}
                               </p>
                             )}
+                            <LoanEligibleTag size="sm" link className="mt-1.5" />
                           </div>
                           <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center gap-2">
                             <Button

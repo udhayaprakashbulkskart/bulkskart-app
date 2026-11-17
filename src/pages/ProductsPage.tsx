@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import { Link, useSearchParams, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -220,7 +221,10 @@ function ProductCard({
             isIndia={isIndia}
             rate={rate}
           />
-          <MoqBadge moq={product.moq} unit={product.moq_unit} />
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <MoqBadge moq={product.moq} unit={product.moq_unit} />
+            <LoanEligibleTag size="sm" />
+          </div>
         </div>
       </div>
     </Link>
