@@ -493,6 +493,8 @@ export async function getProducts(options?: {
     }
   }
 
+  // A company's own list ("My Products", inventory, AI matching) holds only that company's rows.
+  if (options?.companyId) return combined.filter((p) => p.company_id === options.companyId);
   return combined;
 }
 
