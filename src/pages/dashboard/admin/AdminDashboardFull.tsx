@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
 import AdminLoanRequests from '@/components/dashboard/AdminLoanRequests';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 // ─── Types ───────────────────────────────────────────────────
 type CompanyRow = {
@@ -190,16 +190,6 @@ export default function AdminDashboardFull() {
     fetchAll();
   };
 
-  const approveWithdrawal = async (id: string) => {
-    await supabase.from('withdrawal_requests').update({ status: 'approved', processed_at: new Date().toISOString() }).eq('id', id);
-    toast.success('Withdrawal approved');
-    fetchAll();
-  };
-  const rejectWithdrawal = async (id: string) => {
-    await supabase.from('withdrawal_requests').update({ status: 'rejected', processed_at: new Date().toISOString() }).eq('id', id);
-    toast.success('Withdrawal rejected');
-    fetchAll();
-  };
 
   const filteredCompanies = companies.filter(c => {
     const q = search.toLowerCase();
@@ -576,14 +566,10 @@ export default function AdminDashboardFull() {
                         <td className="px-3 py-3 text-xs text-muted-foreground">{new Date(w.created_at).toLocaleDateString()}</td>
                         <td className="px-3 py-3">
                           {w.status === 'pending' && (
-                            <div className="flex gap-1">
-                              <Button size="sm" className="h-7 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white" onClick={() => approveWithdrawal(w.id)}>
-                                <CheckCircle className="w-3 h-3" />
-                              </Button>
-                              <Button size="sm" variant="outline" className="h-7 text-xs border-[#FF5A00]/40 text-[#FF7A2E]" onClick={() => rejectWithdrawal(w.id)}>
-                                <XCircle className="w-3 h-3" />
-                              </Button>
-                            </div>
+                            // Paying out needs the bank reference, and a rejection must return the amount to the wallet
+                            <Link to="/dashboard/admin/payments" className="text-xs font-semibold text-primary hover:underline">
+                              Settle in Payments
+                            </Link>
                           )}
                         </td>
                       </tr>

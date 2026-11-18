@@ -201,7 +201,7 @@ export default function AdminReportsPage() {
   return (
     <DashboardLayout>
       <PageMeta title="Reports | BulkSkart Admin" description="Reports sent by BulkSkart users." robots="noindex, nofollow" />
-      <div className="max-w-5xl mx-auto space-y-5">
+      <div className="max-w-5xl mx-auto space-y-5 p-4 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-foreground flex items-center gap-2">

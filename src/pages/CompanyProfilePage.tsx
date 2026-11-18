@@ -15,13 +15,14 @@ import { resolveCompanyBranding } from '@/lib/contentImages';
 import {
   ShieldCheck, MapPin, ArrowLeft, Globe, Calendar, Users,
   Star, Package, Award, CheckCircle, MessageSquare, FileText,
-  Building2, Mail, Phone, Flag, Copy, Check, Camera, Sparkles,
+  Building2, Mail, Phone, Flag, Copy, Check, Camera, Sparkles, CalendarDays,
 } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
 import SupplierDirectChatModal from '@/components/common/SupplierDirectChatModal';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import CompanyReviewsAndRatingSection from '@/components/common/CompanyReviewsAndRatingSection';
 import ReportItemModal from '@/components/common/ReportItemModal';
+import BookFactoryVisitDialog from '@/components/common/BookFactoryVisitDialog';
 
 const FALLBACK_BANNER = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80';
 
@@ -65,6 +66,7 @@ export default function CompanyProfilePage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [directChatProduct, setDirectChatProduct] = useState<Product | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [visitOpen, setVisitOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const publicLinkRef = useRef<HTMLInputElement>(null);
   const [owner, setOwner] = useState<{
@@ -141,6 +143,14 @@ export default function CompanyProfilePage() {
   const logoSrc = company.logo_url || owner?.avatar_url || resolveCompanyBranding({ company_name: company.company_name, industry: company.business_type || undefined }).logo;
 
   const publicUrl = supplierPublicUrl(company.slug);
+  // Booking a visit needs an account, so the manufacturer knows who is coming
+  const openVisit = () => {
+    if (!user) {
+      navigate(`/auth?tab=login&returnUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    setVisitOpen(true);
+  };
   const copyProfileLink = async () => {
     publicLinkRef.current?.focus();
     publicLinkRef.current?.select();
@@ -368,6 +378,11 @@ export default function CompanyProfilePage() {
                     Request Quote
                   </Button>
                 </Link>
+                {user?.id !== company.owner_id && (
+                  <Button variant="outline" size="sm" onClick={openVisit} className="h-9 gap-1.5 font-semibold">
+                    <CalendarDays className="w-3.5 h-3.5" /> Book a Factory Visit
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -690,6 +705,11 @@ export default function CompanyProfilePage() {
                     Request Quote / RFQ
                   </Button>
                 </Link>
+                {user?.id !== company.owner_id && (
+                  <Button variant="outline" size="sm" onClick={openVisit} className="w-full h-9 text-xs gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5" /> Book a Factory Visit
+                  </Button>
+                )}
               </div>
 
               {!user && (
@@ -756,6 +776,9 @@ export default function CompanyProfilePage() {
         targetId={company.id}
         targetTitle={company.company_name}
       />
+      {user && (
+        <BookFactoryVisitDialog open={visitOpen} onOpenChange={setVisitOpen} companyId={company.id} companyName={company.company_name} />
+      )}
     </MainLayout>
   );
 }

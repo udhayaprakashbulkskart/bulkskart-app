@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
+import PaymentBadge from '@/components/orders/PaymentBadge';
+import { money } from '@/lib/orderPayments';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,6 +73,21 @@ export default function BuyerOrdersPage() {
             <p className="text-sm text-muted-foreground">Track your orders from placement to delivery</p>
           </div>
 
+          {/* Money paid online that BulkSkart is holding for this buyer */}
+          {(() => {
+            const held = orders.filter(o => o.payment_status === 'escrow' && pipelineStatus(o) !== 'cancelled');
+            if (!held.length) return null;
+            const total = held.reduce((sum, o) => sum + Number(o.paid_amount ?? o.total_amount), 0);
+            return (
+              <div className="mb-5 rounded-xl border border-[#FF5A00]/35 bg-[#FF5A00]/5 p-4 text-sm">
+                <p className="font-semibold text-foreground">Held safely by BulkSkart: {money(total)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Across {held.length} order{held.length === 1 ? '' : 's'}. The manufacturer is paid only after the goods arrive and you release the payment on the order.
+                </p>
+              </div>
+            );
+          })()}
+
           <div className="flex gap-2 mb-5 flex-wrap">
             {(['all', 'active', 'delivered', 'cancelled'] as const).map(f => (
               <button key={f} onClick={() => setFilter(f)}
@@ -127,6 +144,7 @@ export default function BuyerOrdersPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
+                        <PaymentBadge order={order} viewer="buyer" />
                         <Badge variant="outline" className={`text-xs ${meta.cls}`}>{meta.label}</Badge>
                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>

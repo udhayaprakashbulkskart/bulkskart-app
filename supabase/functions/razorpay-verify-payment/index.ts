@@ -6,6 +6,7 @@
  *  2. Product Promotion (product_promotions + products)
  *
  * POST body for subscription: { type: 'subscription', razorpay_order_id, razorpay_payment_id, razorpay_signature, company_id, plan_tier, billing_cycle }
+ * POST body for an order:     { type: 'order_payment', razorpay_order_id, razorpay_payment_id, razorpay_signature }
  * POST body for promotion:    { type: 'promotion', razorpay_order_id, razorpay_payment_id, razorpay_signature, company_id, product_id }
  */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
@@ -68,7 +69,7 @@ serve(async (req) => {
       billing_cycle,
     } = payload;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !company_id) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || (!company_id && type !== 'order_payment')) {
       return new Response(JSON.stringify({ error: 'Missing required payment verification fields' }), {
         status: 400,
         headers: { ...CORS, 'Content-Type': 'application/json' },
@@ -96,6 +97,50 @@ serve(async (req) => {
         JSON.stringify({ error: 'Payment verification failed: invalid signature' }),
         { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // ========================================================
+    // CASE 0: Order payment → BulkSkart holds it until the order is delivered
+    // ========================================================
+    if (type === 'order_payment') {
+      const reply = (status: number, body: unknown) =>
+        new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
+      const { data: callerProfile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+      const isAdmin = callerProfile?.role === 'admin';
+      const now = new Date();
+      const { data: order } = await supabase
+        .from('orders')
+        .select('id, order_number, buyer_id, total_amount, currency, payment_status, supplier_company_id')
+        .eq('razorpay_order_id', razorpay_order_id)
+        .maybeSingle();
+      if (!order || (order.buyer_id !== user.id && !isAdmin)) return reply(404, { error: 'Order not found' });
+      if (order.payment_status && order.payment_status !== 'pending') {
+        return reply(200, { success: true, order_id: order.id, payment_status: order.payment_status });
+      }
+      const { data: held, error: holdErr } = await supabase
+        .from('orders')
+        .update({ payment_status: 'escrow', payment_method: 'online', paid_amount: order.total_amount, paid_at: now.toISOString(), razorpay_payment_id })
+        .eq('id', order.id)
+        .eq('payment_status', 'pending')
+        .select('id');
+      if (holdErr) {
+        console.error('Could not mark the order paid:', holdErr);
+        return reply(500, { error: 'Payment received, but the order could not be updated yet. Please contact support with your payment reference.', payment_id: razorpay_payment_id });
+      }
+      if (held && held.length > 0) {
+        await supabase.from('order_payment_events').insert({ order_id: order.id, event: 'paid_online', amount: order.total_amount, actor_id: user.id, note: razorpay_payment_id });
+        const { data: company } = await supabase.from('companies').select('owner_id').eq('id', order.supplier_company_id).maybeSingle();
+        if (company?.owner_id) {
+          await supabase.from('notifications').insert({
+            user_id: company.owner_id,
+            title: 'Buyer paid online',
+            message: `Order #${order.order_number}: the buyer paid ${order.currency} ${order.total_amount}. BulkSkart holds it until the buyer confirms delivery, then it moves to your BulkSkart wallet.`,
+            type: 'order_payment',
+            link: `/dashboard/supplier/orders/${order.id}`,
+          });
+        }
+      }
+      return reply(200, { success: true, order_id: order.id, payment_status: 'escrow' });
     }
 
     // ========================================================
