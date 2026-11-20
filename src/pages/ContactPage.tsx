@@ -13,7 +13,8 @@ import {
   Building2, Globe, MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { WHATSAPP_CHAT_URL, WHATSAPP_DISPLAY, WHATSAPP_MESSAGE_URL } from '@/lib/supportContact';
+import { SUPPORT_EMAIL, WHATSAPP_CHAT_URL, WHATSAPP_DISPLAY, WHATSAPP_MESSAGE_URL } from '@/lib/supportContact';
+import '@/components/formkit/formkit.css';
 
 const CONTACT_INFO = [
   {
@@ -73,20 +74,31 @@ const FAQS = [
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sent, setSent] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // The message goes out from the visitor's own e-mail app, addressed to BulkSkart: the site has no mail server of
+  // its own, and a form that only pretended to send would lose the message.
+  const mailtoHref = () => {
+    const subject = form.subject.trim() || `Message from ${form.name.trim()}`;
+    const body = `${form.message.trim()}\n\n— ${form.name.trim()}\n${form.email.trim()}`;
+    return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+  const whatsappHref = () => `${WHATSAPP_CHAT_URL}?text=${encodeURIComponent(`${form.message.trim()}\n\n— ${form.name.trim()} (${form.email.trim()})`)}`;
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.message) {
-      toast.error('Please fill in all required fields');
+    const found: Record<string, string> = {};
+    if (!form.name.trim()) found.name = 'Please enter your name.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) found.email = 'Please enter a valid e-mail address.';
+    if (!form.message.trim()) found.message = 'Please write your message.';
+    setErrors(found);
+    const first = ['name', 'email', 'message'].find((key) => found[key]);
+    if (first) {
+      document.getElementById(first)?.focus();
       return;
     }
-    setSending(true);
-    // Simulate send — replace with real Edge Function call if needed
-    await new Promise(r => setTimeout(r, 1200));
-    setSending(false);
+    window.location.href = mailtoHref();
     setSent(true);
-    toast.success('Message sent! We\'ll get back to you within 24 hours.');
   };
 
   return (
@@ -104,14 +116,14 @@ export default function ContactPage() {
       />
 
       {/* Hero */}
-      <div className="bg-[#C94400] text-white py-12 px-4">
+      <div className="bg-[#242424] text-white py-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-4">
-            <MessageSquare className="w-3.5 h-3.5 text-white" />
+            <MessageSquare className="w-3.5 h-3.5 text-[#FF5A00]" />
             <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">Get in Touch</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-black mb-3">
-            Contact <span className="text-black">BulkSkart</span>
+            Contact <span className="text-[#FF5A00]">BulkSkart</span>
           </h1>
           <p className="text-white/70 text-sm max-w-xl mx-auto">
             Operated by <strong className="text-white">Tech Pod AI Database Private Limited</strong>. We're here to help you with trade inquiries, support, and partnerships.
@@ -124,27 +136,49 @@ export default function ContactPage() {
           {/* Contact form */}
           <div>
             <h2 className="text-xl font-bold text-foreground mb-1">Send Us a Message</h2>
-            <p className="text-sm text-muted-foreground mb-5">Fill in the form and we'll respond within 24 hours.</p>
+            <p className="text-sm text-muted-foreground mb-5">Fill in the form and send it from your e-mail app. We respond within 24 hours.</p>
 
             {sent ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-4 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-xl text-center">
-                <CheckCircle2 className="w-12 h-12 text-[#FF7A2E]" />
-                <h3 className="text-lg font-bold text-foreground">Message Sent!</h3>
-                <p className="text-sm text-muted-foreground max-w-xs">Thank you for reaching out. Our team will get back to you within 24 hours.</p>
-                <Button variant="outline" onClick={() => { setSent(false); setForm({ name: '', email: '', subject: '', message: '' }); }}>
-                  Send Another
-                </Button>
+              <div className="fk-form fk-done rounded-2xl border border-border bg-card" role="status">
+                <span className="fk-done-ico">
+                  <Mail aria-hidden="true" />
+                </span>
+                <h3>Press Send in your e-mail app</h3>
+                <p>
+                  Your message is ready in a new e-mail to <b>{SUPPORT_EMAIL}</b>. It reaches us once you send it from there.
+                </p>
+                <p>If no e-mail opened, use one of these instead:</p>
+                <div className="fk-actions">
+                  <a href={mailtoHref()} className="fk-btn is-primary">
+                    <Mail aria-hidden="true" /> Open the E-mail Again
+                  </a>
+                  <a href={whatsappHref()} target="_blank" rel="noreferrer" className="fk-btn is-ghost">
+                    <MessageSquare aria-hidden="true" /> WhatsApp {WHATSAPP_DISPLAY}
+                  </a>
+                </div>
+                <button
+                  type="button"
+                  className="text-sm font-semibold text-primary hover:underline"
+                  onClick={() => {
+                    setSent(false);
+                    setForm({ name: '', email: '', subject: '', message: '' });
+                  }}
+                >
+                  Write another message
+                </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} noValidate className="fk-skin space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="name">Full Name *</Label>
-                    <Input id="name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Your name" required />
+                    <Input id="name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Your name" autoComplete="name" aria-invalid={Boolean(errors.name) || undefined} aria-describedby={errors.name ? 'name-error' : undefined} />
+                    {errors.name && <p id="name-error" className="fk-error" role="alert">{errors.name}</p>}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="email">Email Address *</Label>
-                    <Input id="email" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="you@company.com" required />
+                    <Input id="email" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="you@company.com" autoComplete="email" aria-invalid={Boolean(errors.email) || undefined} aria-describedby={errors.email ? 'email-error' : undefined} />
+                    {errors.email && <p id="email-error" className="fk-error" role="alert">{errors.email}</p>}
                   </div>
                 </div>
                 <div className="space-y-1.5">
@@ -159,16 +193,15 @@ export default function ContactPage() {
                     onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
                     placeholder="Describe your inquiry, issue, or partnership proposal..."
                     rows={5}
-                    required
+                    aria-invalid={Boolean(errors.message) || undefined}
+                    aria-describedby={errors.message ? 'message-error' : undefined}
                   />
+                  {errors.message && <p id="message-error" className="fk-error" role="alert">{errors.message}</p>}
                 </div>
-                <Button type="submit" disabled={sending} className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-11 gap-2">
-                  {sending ? (
-                    <span className="flex items-center gap-2"><Send className="w-4 h-4 animate-pulse" /> Sending...</span>
-                  ) : (
-                    <><Send className="w-4 h-4" /> Send Message</>
-                  )}
-                </Button>
+                <button type="submit" className="fk-btn is-primary w-full">
+                  <Send aria-hidden="true" /> Send Message
+                </button>
+                <p className="text-xs text-center text-muted-foreground">Opens your e-mail app with this message, addressed to {SUPPORT_EMAIL}.</p>
               </form>
             )}
           </div>
@@ -199,7 +232,7 @@ export default function ContactPage() {
                   href={WHATSAPP_MESSAGE_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-center gap-2 h-11 rounded-lg bg-[#C94400] hover:bg-[#C94400] text-white text-sm font-bold transition-colors"
+                  className="flex items-center justify-center gap-2 h-11 rounded-lg bg-[#E55C13] hover:bg-[#cc5210] text-white text-sm font-bold transition-colors"
                 >
                   <MessageSquare className="w-4 h-4" />
                   Message BulkSkart on WhatsApp

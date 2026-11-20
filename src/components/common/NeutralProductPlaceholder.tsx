@@ -60,7 +60,7 @@ export default function NeutralProductPlaceholder({
 
   return (
     <div
-      className={`w-full h-full flex flex-col items-center justify-center p-3 select-none bg-gradient-to-b from-[#0f1422] to-[#090d16] border border-[#2A2A2A]/80 text-slate-300 relative overflow-hidden ${className}`}
+      className={`w-full h-full flex flex-col items-center justify-center p-3 select-none bg-gradient-to-b from-[#181818] to-[#101010] border border-neutral-800/80 text-neutral-300 relative overflow-hidden ${className}`}
       role="img"
       aria-label={`${title || label} - ${subtext}`}
     >
@@ -75,12 +75,12 @@ export default function NeutralProductPlaceholder({
       />
 
       {/* Product-type specific icon inside subtle rounded enclosure */}
-      <div className="w-12 h-12 rounded-xl bg-[#0A0A0A]/60 border border-[#2A2A2A]/60 flex items-center justify-center mb-2 shadow-inner group-hover:border-[#FF5A00]/40 transition-colors">
+      <div className="w-12 h-12 rounded-xl bg-neutral-800/60 border border-neutral-700/60 flex items-center justify-center mb-2 shadow-inner group-hover:border-[#FF5A00]/40 transition-colors">
         {renderIcon()}
       </div>
 
       {/* Label and "Photo coming soon" indicator */}
-      <span className="text-[11px] font-semibold text-slate-200 text-center tracking-wide line-clamp-1 max-w-[90%]">
+      <span className="text-[11px] font-semibold text-neutral-200 text-center tracking-wide line-clamp-1 max-w-[90%]">
         {subtext}
       </span>
       <span className="text-[9.5px] text-neutral-400/90 font-medium text-center line-clamp-1 max-w-[90%] mt-0.5">

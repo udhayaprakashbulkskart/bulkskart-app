@@ -13,7 +13,7 @@ import {
 import SafeImage from '@/components/common/SafeImage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getCompanies, getOrCreateConversation, checkDirectMessageQuota, incrementMessageQuota } from '@/lib/api';
-import { TOTAL_VERIFIED_SUPPLIERS_COUNT } from '@/data/verifiedSupplierCount';
+import { TOTAL_VERIFIED_SUPPLIERS_COUNT } from '@/data/alibabaVerifiedSuppliers';
 import type { Company } from '@/types/types';
 import { useAuth } from '@/contexts/AuthContext';
 import SubscribeToContactDialog from '@/components/common/SubscribeToContactDialog';
@@ -138,7 +138,7 @@ function StarRating({ value }: { value: number }) {
       {[1, 2, 3, 4, 5].map(n => (
         <Star
           key={n}
-          className={`w-3 h-3 ${n <= Math.round(value) ? 'fill-[#FF5A00] text-[#FF7A2E]' : 'text-border'}`}
+          className={`w-3 h-3 ${n <= Math.round(value) ? 'fill-orange-400 text-orange-400' : 'text-border'}`}
         />
       ))}
     </div>
@@ -165,7 +165,7 @@ function SupplierCard({
   const verified = co.verification_status === 'verified' || co.is_verified;
 
   return (
-    <div className="bg-[#0e121b]/95 hover:bg-[#1A0C05] border border-[#2A2A2A]/90 hover:border-[#FF5A00]/70 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_12px_30px_rgba(255,90,0,0.2)] hover:-translate-y-1 transition-all duration-300 flex flex-col group backdrop-blur-md">
+    <div className="bg-card border border-border hover:border-[#FF5A00]/70 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_12px_30px_rgba(255,90,0,0.2)] hover:-translate-y-1 transition-all duration-300 flex flex-col group backdrop-blur-md">
       {/* Cover image */}
       <div className="aspect-[16/9] overflow-hidden bg-muted relative">
         <SafeImage
@@ -178,32 +178,28 @@ function SupplierCard({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         
-        {/* Verification & Pixabay Live Badges */}
-        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 flex-wrap">
-          {verified && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-[#C94400] rounded-full px-2.5 py-0.5 shadow-md">
+        {/* Verification badge */}
+        {verified && (
+          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 flex-wrap">
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-[#FF5A00] rounded-full px-2.5 py-0.5 shadow-md">
               <BadgeCheck className="w-3.5 h-3.5" /> Verified Factory
             </span>
-          )}
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-200 bg-[#0A0A0A]/75 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/10 shadow-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#C94400]" />
-            Pixabay Verified
-          </span>
-        </div>
+          </div>
+        )}
         
         {/* Favorite Heart Button */}
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); onToggleFav(co.id); }}
-          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-[#0A0A0A]/60 hover:bg-[#0A0A0A]/80 text-white flex items-center justify-center transition-all z-10 backdrop-blur-xs"
+          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-all z-10 backdrop-blur-xs"
           title={isFav ? 'Remove from Favourites' : 'Add to Favourites'}
         >
           <Star className={`w-4 h-4 ${isFav ? 'fill-[#FF5A00] text-[#FF5A00]' : 'text-white'}`} />
         </button>
 
         {co.is_featured && (
-          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 text-[10px] font-bold text-white bg-[#C94400] rounded-full px-2.5 py-0.5 shadow z-10 border border-white/10">
-            ⭐ Top Rated OEM
+          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 text-[10px] font-bold text-white bg-[#242424]/90 rounded-full px-2.5 py-0.5 shadow z-10 border border-white/10">
+            ⭐ Featured
           </span>
         )}
       </div>
@@ -221,40 +217,39 @@ function SupplierCard({
           <MapPin className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
           <span>{[co.city, co.country].filter(Boolean).join(', ')}</span>
           {co.years_in_business ? (
-            <span className="ml-1 text-neutral-400">· {co.years_in_business}+ Yrs Operating</span>
+            <span className="ml-1 text-muted-foreground">· {co.years_in_business}+ Yrs Operating</span>
           ) : null}
         </div>
 
         {/* Rating and Verification details */}
         <div className="flex items-center gap-2 mb-2.5 min-w-0 flex-wrap">
-          <StarRating value={co.rating_avg ?? 4.8} />
-          <span className="text-xs font-bold text-foreground shrink-0">{co.rating_avg ? co.rating_avg.toFixed(1) : '4.8'}</span>
-          <span className="text-[11px] text-muted-foreground shrink-0">({co.review_count || 12} audits)</span>
-          
-          <span className="text-[10px] font-mono font-semibold bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/30 rounded px-1.5 py-0.5 ml-auto">
-            GSTIN Active
-          </span>
+          {co.review_count > 0 && co.rating_avg > 0 ? (
+            <>
+              <StarRating value={co.rating_avg} />
+              <span className="text-xs font-bold text-foreground shrink-0">{co.rating_avg.toFixed(1)}</span>
+              <span className="text-[11px] text-muted-foreground shrink-0">({co.review_count} {co.review_count === 1 ? 'review' : 'reviews'})</span>
+            </>
+          ) : (
+            <span className="text-[11px] text-muted-foreground shrink-0">No reviews yet</span>
+          )}
+
+          {co.gst_number && (
+            <span className="text-[10px] font-mono font-semibold bg-primary/10 text-primary border border-primary/30 rounded px-1.5 py-0.5 ml-auto">
+              GSTIN on file
+            </span>
+          )}
         </div>
 
         {/* Certifications badges */}
-        <div className="flex flex-wrap gap-1 mb-2.5">
-          {Array.isArray((co as any).certifications) && (co as any).certifications.length > 0 ? (
-            (co as any).certifications.slice(0, 3).map((cert: string) => (
-              <span key={cert} className="text-[10px] font-medium bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/20 rounded px-1.5 py-0.5">
+        {Array.isArray((co as any).certifications) && (co as any).certifications.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2.5">
+            {(co as any).certifications.slice(0, 3).map((cert: string) => (
+              <span key={cert} className="text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 rounded px-1.5 py-0.5">
                 ✓ {cert}
               </span>
-            ))
-          ) : (
-            <>
-              <span className="text-[10px] font-medium bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/20 rounded px-1.5 py-0.5">
-                ✓ ISO 9001:2015
-              </span>
-              <span className="text-[10px] font-medium bg-orange-500/10 text-[#FF5A00] border border-[#FF5A00]/25 rounded px-1.5 py-0.5">
-                ✓ CE Certified
-              </span>
-            </>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Description */}
         {co.description && (
@@ -289,14 +284,14 @@ function SupplierCard({
         )}
 
         {/* Stats row: MOQ & Capacity */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2.5 border-t border-border mt-auto mb-3.5">
-          <span className="flex items-center gap-1 font-medium">
-            <Package className="w-3.5 h-3.5 text-[#FF5A00]" /> 
-            MOQ: <strong>500 units</strong>
+        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground pt-2.5 border-t border-border mt-auto mb-3.5 min-w-0">
+          <span className="flex items-center gap-1 font-medium min-w-0">
+            <Package className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
+            <span className="truncate">MOQ: <strong>{co.moq_policy?.trim() || 'Ask supplier'}</strong></span>
           </span>
-          <span className="flex items-center gap-1 font-medium">
-            <Globe className="w-3.5 h-3.5 text-[#FF5A00]" />
-            Cap: <strong>50K/mo</strong>
+          <span className="flex items-center gap-1 font-medium min-w-0">
+            <Globe className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
+            <span className="truncate">Capacity: <strong>{co.production_capacity?.trim() || 'Ask supplier'}</strong></span>
           </span>
         </div>
 
@@ -316,7 +311,7 @@ function SupplierCard({
             size="sm"
             variant="outline"
             onClick={() => onInviteRfq(co)}
-            className="w-full h-8 text-xs font-semibold border-border hover:border-[#FF5A00] hover:bg-[#B33D00]/10 hover:text-[#FF5A00] px-1"
+            className="w-full h-8 text-xs font-semibold border-border hover:border-[#FF5A00] hover:bg-[#FF5A00]/10 hover:text-[#FF5A00] px-1"
           >
             Invite RFQ
           </Button>
@@ -325,7 +320,7 @@ function SupplierCard({
             size="sm"
             disabled={contacting}
             onClick={() => onContact(co)}
-            className="w-full h-8 text-xs font-bold bg-[#C94400] hover:bg-[#B33D00] text-white shadow-sm px-1 flex items-center justify-center gap-1"
+            className="w-full h-8 text-xs font-bold bg-[#FF5A00] hover:bg-[#e04e00] text-white shadow-sm px-1 flex items-center justify-center gap-1"
           >
             <MessageSquare className="w-3 h-3" /> Contact
           </Button>
@@ -381,8 +376,6 @@ export default function ManufacturersPage() {
   const [inviteRfqId, setInviteRfqId] = useState('');
   const [inviteMessage, setInviteMessage] = useState('We would like to invite your factory to submit a quotation for our bulk requirement.');
   const [isSendingInvite, setIsSendingInvite] = useState(false);
-
-  // The buyer's own open requirements, to attach to an invitation.
   const [myOpenReqs, setMyOpenReqs] = useState<{ id: string; title: string; req_number: string | null }[]>([]);
   useEffect(() => {
     if (!inviteTargetCo || !user) return;
@@ -398,7 +391,6 @@ export default function ManufacturersPage() {
     );
   }, [inviteTargetCo, user]);
 
-  // The invitation is a real chat message to the manufacturer, so they see it in their inbox.
   const handleSendInvite = async () => {
     if (!inviteTargetCo) return;
     if (!user) {
@@ -533,7 +525,7 @@ export default function ManufacturersPage() {
         }}
       />
       {/* ── Trust bar */}
-      <div className="w-full bg-[#C94400] text-white text-[11px] py-1.5 px-4">
+      <div className="w-full bg-[#242424] text-white text-[11px] py-1.5 px-4">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between">
           <span className="font-medium">Trusted by 500K+ Businesses Worldwide</span>
           <div className="hidden md:flex items-center gap-4 text-white/60">
@@ -547,28 +539,29 @@ export default function ManufacturersPage() {
       </div>
 
       {/* ── Hero banner */}
-      <div className="bg-[#1A0C05] text-white">
+      <div className="bg-[#242424] text-white">
         <div className="max-w-[1400px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-7">
           <Breadcrumbs
             items={[{ name: 'Verified Manufacturers & Exporters' }]}
-            className="text-white/60 mb-2 text-[11px]"
+            tone="onDark"
+            className="mb-2 text-[11px]"
           />
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-5">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[11px] font-semibold text-white uppercase tracking-widest">Global Directory</span>
+                <span className="text-[11px] font-semibold text-[#FF5A00] uppercase tracking-widest">Global Directory</span>
                 <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full text-white/80">OEM / ODM Factories</span>
                 <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full text-white/80">Wholesale Volume Sourcing</span>
               </div>
               <h1 className="text-[22px] md:text-[36px] font-black leading-tight mb-1 md:mb-2">
-                Verified <span className="text-[#FF7A2E]">Suppliers</span> & Manufacturers
+                Verified <span className="text-[#FF5A00]">Suppliers</span> & Manufacturers
               </h1>
               <p className="text-white/70 text-[14px]">
                 Connect directly with certified factories, OEM/ODM producers, and verified exporters across 180+ countries
               </p>
             </div>
             <Link to="/auth?tab=register">
-              <Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-11 px-7 text-[14px] gap-2 shadow-[0_3px_0_#b83c00] rounded shrink-0">
+              <Button className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-11 px-7 text-[14px] gap-2 shadow-[0_3px_0_#b83c00] rounded shrink-0">
                 Become a Supplier <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -604,7 +597,7 @@ export default function ManufacturersPage() {
           <div className="bg-card border border-border rounded-xl p-3 md:p-4 mb-4 md:mb-5 shadow-sm">
             <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
               {/* Search */}
-              <div className="flex-1 relative min-w-0">
+              <div className="w-full md:w-auto flex-1 relative min-w-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   value={search}
@@ -641,7 +634,7 @@ export default function ManufacturersPage() {
               {/* Min rating */}
               <Select value={minRating} onValueChange={setMinRating}>
                 <SelectTrigger className="w-full md:w-36 bg-muted border-border text-[13px] h-10">
-                  <Star className="w-3.5 h-3.5 mr-1.5 text-[#FF7A2E]" />
+                  <Star className="w-3.5 h-3.5 mr-1.5 text-orange-400" />
                   <SelectValue placeholder="Rating" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border-border">
@@ -666,7 +659,7 @@ export default function ManufacturersPage() {
                 onClick={() => setVerifiedOnly(!verifiedOnly)}
                 className={`shrink-0 h-10 gap-1.5 text-[12px] font-semibold px-4 ${
                   verifiedOnly
-                    ? 'bg-[#C94400] text-white shadow-[0_2px_0_#b83c00] hover:bg-[#B33D00]'
+                    ? 'bg-[#FF5A00] text-white shadow-[0_2px_0_#b83c00] hover:bg-[#e04e00]'
                     : 'bg-card border border-border text-muted-foreground hover:border-primary hover:text-primary'
                 }`}
               >
@@ -684,7 +677,7 @@ export default function ManufacturersPage() {
                 onClick={() => setSelectedCountry('all')}
                 className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
                   selectedCountry === 'all'
-                    ? 'bg-[#C94400] text-white'
+                    ? 'bg-[#FF5A00] text-white'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
@@ -697,7 +690,7 @@ export default function ManufacturersPage() {
                   onClick={() => setSelectedCountry(c)}
                   className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors flex items-center gap-1 ${
                     selectedCountry === c
-                      ? 'bg-[#C94400] text-white'
+                      ? 'bg-[#FF5A00] text-white'
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
@@ -715,7 +708,7 @@ export default function ManufacturersPage() {
                   <button
                     key={label}
                     onClick={() => clearFilter(label)}
-                    className="flex items-center gap-1 text-[11px] font-semibold bg-primary/10 border border-primary/30 text-primary rounded-full px-2.5 py-0.5 hover:bg-[#B33D00] hover:text-primary-foreground transition-colors"
+                    className="flex items-center gap-1 text-[11px] font-semibold bg-primary/10 border border-primary/30 text-primary rounded-full px-2.5 py-0.5 hover:bg-primary hover:text-primary-foreground transition-colors"
                   >
                     {label} <X className="w-3 h-3" />
                   </button>
@@ -767,7 +760,7 @@ export default function ManufacturersPage() {
               <p className="text-[15px] font-semibold text-foreground mb-1">No suppliers found</p>
               <p className="text-[13px] text-muted-foreground mb-6">Try adjusting your filters or search query</p>
               <Link to="/auth?tab=register">
-                <Button className="bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold gap-2">
+                <Button className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold gap-2">
                   Register as Supplier <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
@@ -833,7 +826,7 @@ export default function ManufacturersPage() {
                       }}
                       className={`h-9 min-w-9 px-2 text-[12px] font-bold ${
                         currentPage === item
-                          ? 'bg-[#C94400] hover:bg-[#B33D00] text-white shadow-sm'
+                          ? 'bg-[#FF5A00] hover:bg-[#e04e00] text-white shadow-sm'
                           : 'border-border text-foreground hover:border-[#FF5A00]'
                       }`}
                     >
@@ -859,7 +852,7 @@ export default function ManufacturersPage() {
 
           {/* Bottom CTA */}
           {!user && !loading && (
-            <div className="mt-5 md:mt-10 bg-[#1A0C05] rounded-2xl p-4 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
+            <div className="mt-5 md:mt-10 bg-[#242424] rounded-2xl p-4 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
               <div>
                 <h3 className="text-[20px] font-black text-white mb-1">Are you a supplier or manufacturer?</h3>
                 <p className="text-white/60 text-[13px]">Join Bulkskart and reach thousands of verified global buyers.</p>
@@ -871,7 +864,7 @@ export default function ManufacturersPage() {
                   </Button>
                 </Link>
                 <Link to="/auth?tab=register">
-                  <Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 px-6 gap-2 shadow-[0_3px_0_#b83c00]">
+                  <Button className="bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-10 px-6 gap-2 shadow-[0_3px_0_#b83c00]">
                     Join Free <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
@@ -889,7 +882,7 @@ export default function ManufacturersPage() {
 
       {/* ── Invite to RFQ Modal ── */}
       {inviteTargetCo && (
-        <div className="fixed inset-0 z-50 bg-[#0A0A0A]/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-3xl max-w-lg w-full p-6 shadow-2xl relative space-y-4">
             <button
               onClick={() => setInviteTargetCo(null)}
@@ -909,17 +902,15 @@ export default function ManufacturersPage() {
             </div>
 
             <div className="space-y-1.5 pt-1">
-              <label className="text-xs font-bold text-foreground">Your requirement (optional)</label>
+              <label className="text-xs font-bold text-foreground">Select Active Requirement (RFQ) *</label>
               <select
                 value={inviteRfqId}
                 onChange={(e) => setInviteRfqId(e.target.value)}
                 className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-primary"
               >
                 <option value="">No specific requirement</option>
-                {myOpenReqs.map((r) => (
-                  <option key={r.id} value={`${r.req_number || r.id.slice(0, 8)}: ${r.title} (https://www.bulkskart.com/requirements/${r.id})`}>
-                    {r.req_number ? `${r.req_number}: ` : ''}{r.title}
-                  </option>
+                {myOpenReqs.map(req => (
+                  <option key={req.id} value={req.req_number || req.id}>{req.req_number || 'RFQ'}: {req.title}</option>
                 ))}
               </select>
             </div>
@@ -946,7 +937,7 @@ export default function ManufacturersPage() {
               <Button
                 onClick={handleSendInvite}
                 disabled={isSendingInvite}
-                className="flex-1 h-10 rounded-xl bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs shadow-sm"
+                className="flex-1 h-10 rounded-xl bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold text-xs shadow-sm"
               >
                 {isSendingInvite ? 'Sending Invitation...' : 'Send RFQ Invitation'}
               </Button>

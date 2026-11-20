@@ -76,8 +76,8 @@ export default function AIMatchAnalyticsPage() {
 
   // Score buckets
   const buckets: BucketData[] = [
-    { label: '91–100', total: 0, responded: 0, rate: 0, fill: '#22c55e' },
-    { label: '71–90', total: 0, responded: 0, rate: 0, fill: '#eab308' },
+    { label: '91–100', total: 0, responded: 0, rate: 0, fill: '#d65611' },
+    { label: '71–90', total: 0, responded: 0, rate: 0, fill: '#ea5708' },
     { label: '51–70', total: 0, responded: 0, rate: 0, fill: '#f97316' },
     { label: '0–50', total: 0, responded: 0, rate: 0, fill: '#ef4444' },
   ];
@@ -137,10 +137,10 @@ export default function AIMatchAnalyticsPage() {
             <>
               {/* KPI cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <StatCard label="RFQs Processed" value={totalRfqs} icon={Target} color="bg-[#C94400]" />
-                <StatCard label="Total Matches" value={totalMatches} sub={`~${avgPerRfq} per RFQ`} icon={Users} color="bg-[#C94400]" />
-                <StatCard label="Avg Match Score" value={`${avgScore}/100`} icon={Activity} color="bg-[#C94400]" />
-                <StatCard label="Overall Response Rate" value={`${overallResponseRate}%`} sub={`${responded} quoted`} icon={TrendingUp} color="bg-[#B33D00]" />
+                <StatCard label="RFQs Processed" value={totalRfqs} icon={Target} color="bg-primary" />
+                <StatCard label="Total Matches" value={totalMatches} sub={`~${avgPerRfq} per RFQ`} icon={Users} color="bg-[#FF5A00]" />
+                <StatCard label="Avg Match Score" value={`${avgScore}/100`} icon={Activity} color="bg-orange-500" />
+                <StatCard label="Overall Response Rate" value={`${overallResponseRate}%`} sub={`${responded} quoted`} icon={TrendingUp} color="bg-orange-600" />
               </div>
 
               {/* Score distribution chart */}
@@ -208,11 +208,11 @@ export default function AIMatchAnalyticsPage() {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                     {[
-                      { label: 'Category Match', weight: 30, color: 'bg-[#C94400]' },
-                      { label: 'Location Match', weight: 20, color: 'bg-[#C94400]' },
-                      { label: 'MOQ Compatibility', weight: 20, color: 'bg-[#C94400]' },
+                      { label: 'Category Match', weight: 30, color: 'bg-primary' },
+                      { label: 'Location Match', weight: 20, color: 'bg-[#FF5A00]' },
+                      { label: 'MOQ Compatibility', weight: 20, color: 'bg-orange-500' },
                       { label: 'Capacity Match', weight: 15, color: 'bg-orange-500' },
-                      { label: 'Supplier Rating', weight: 15, color: 'bg-[#C94400]' },
+                      { label: 'Supplier Rating', weight: 15, color: 'bg-orange-500' },
                     ].map(w => (
                       <div key={w.label} className="bg-muted/40 border border-border rounded-lg p-3 text-center">
                         <p className="text-xs text-muted-foreground">{w.label}</p>
@@ -262,7 +262,7 @@ export default function AIMatchAnalyticsPage() {
                               </td>
                               <td className="px-4 py-2.5 text-right text-foreground">{r.quoted}</td>
                               <td className="px-4 py-2.5 text-right">
-                                <span className={r.count > 0 && Math.round((r.quoted / r.count) * 100) >= 50 ? 'text-[#FF7A2E]' : 'text-muted-foreground'}>
+                                <span className={r.count > 0 && Math.round((r.quoted / r.count) * 100) >= 50 ? 'text-orange-600' : 'text-muted-foreground'}>
                                   {r.count > 0 ? `${Math.round((r.quoted / r.count) * 100)}%` : '—'}
                                 </span>
                               </td>

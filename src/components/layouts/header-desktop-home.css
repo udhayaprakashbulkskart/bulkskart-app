@@ -1,0 +1,82 @@
+/*
+ * The site header on the home page for screens 768px wide and up: the same bar and the same controls,
+ * dressed like the new home design (deep purple-black, lavender search box, orange buttons).
+ * Every rule hangs off .dh-header, which is only set on the home page, so no other page changes.
+ */
+
+.dh-header {
+  background: #111111;
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow: none;
+}
+.dh-header .dh-nav {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+.dh-header .dh-nav a:not(.text-primary) {
+  color: rgba(255, 255, 255, 0.76);
+  font-weight: 600;
+}
+.dh-header .dh-nav a:not(.text-primary):hover {
+  color: #ff9a1c;
+}
+
+.dh-header .dh-search {
+  max-width: min(560px, 42vw);
+  padding-left: 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(239, 118, 53, 0.8);
+  background: linear-gradient(180deg, #3d3d3d, #323232);
+  box-shadow: 0 0 0 1px rgba(238, 117, 52, 0.16), 0 6px 18px rgba(179, 72, 15, 0.3);
+}
+.dh-header .dh-search:focus-within {
+  border-color: #ff955c;
+  box-shadow: 0 0 0 3px rgba(255, 149, 92, 0.25);
+}
+.dh-header .dh-search svg {
+  color: #fff;
+}
+.dh-header .dh-search input {
+  color: #fff;
+  font-size: 13px;
+}
+.dh-header .dh-search input::placeholder {
+  color: rgba(255, 255, 255, 0.8);
+}
+.dh-header .dh-search button {
+  height: 28px;
+  padding: 0 16px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #ff9a1c, #ee5c04);
+  box-shadow: 0 3px 10px rgba(255, 106, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dh-header .dh-region {
+  border: 1.5px solid rgba(255, 255, 255, 0.17);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+.dh-header .dh-register {
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ff9a1c, #ee5c04);
+  box-shadow: 0 4px 14px rgba(255, 106, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Tablets: the search box drops to its own full-width row so nothing is squeezed. */
+@media (max-width: 1023.98px) {
+  .dh-header > div:first-child {
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .dh-header .dh-search {
+    order: 3;
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: none;
+  }
+}

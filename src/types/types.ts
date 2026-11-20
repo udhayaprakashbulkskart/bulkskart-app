@@ -289,7 +289,7 @@ export interface OrderRow {
   requirements?: { title: string; quantity_unit: string } | null;
   companies?: { company_name: string; slug: string; logo_url: string | null; verification_status: string } | null;
   buyer?: { full_name: string | null; avatar_url: string | null } | null;
-  // payment and wallet (migration 00065)
+  // payment and wallet (migrations 00065 and 00066)
   order_status?: string | null;
   payment_status?: 'pending' | 'paid' | 'escrow' | 'released' | 'refunded' | null;
   payment_method?: 'online' | 'at_factory' | null;

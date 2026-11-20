@@ -20,10 +20,10 @@ export default function SupplierQuotesPage() {
   }, [user]);
 
   const statusColor = (s: string) => {
-    if (s === 'accepted') return 'text-[#FF7A2E] border-[#FF5A00]/30';
+    if (s === 'accepted') return 'text-orange-400 border-orange-400/30';
     if (s === 'rejected') return 'text-destructive border-destructive/30';
     if (s === 'revised') return 'text-[#FF5A00] border-[#FF5A00]/30/30';
-    return 'text-[#FF7A2E] border-[#FF5A00]/30';
+    return 'text-orange-400 border-orange-400/30';
   };
 
   const pending = quotations.filter(q => q.status === 'pending').length;
@@ -47,8 +47,8 @@ export default function SupplierQuotesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
             {[
               { label: 'Total Sent', value: quotations.length, icon: Package, color: 'text-primary' },
-              { label: 'Pending Response', value: pending, icon: TrendingUp, color: 'text-[#FF7A2E]' },
-              { label: 'Accepted', value: accepted, icon: MessageSquare, color: 'text-[#FF7A2E]' },
+              { label: 'Pending Response', value: pending, icon: TrendingUp, color: 'text-orange-400' },
+              { label: 'Accepted', value: accepted, icon: MessageSquare, color: 'text-orange-400' },
             ].map(s => {              const Icon = s.icon;
               return (
                 <div key={s.label} className="bg-card border border-border rounded-xl p-4">
@@ -72,7 +72,7 @@ export default function SupplierQuotesPage() {
                 <Package className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground mb-3">No quotations sent yet.</p>
                 <Link to="/dashboard/supplier/rfqs">
-                  <Button size="sm" className="bg-[#1A0C05] text-primary-foreground">Browse RFQ Leads</Button>
+                  <Button size="sm" className="bg-primary text-primary-foreground">Browse RFQ Leads</Button>
                 </Link>
               </div>
             ) : (

@@ -15,6 +15,7 @@ import {
   Truck, Plane, Ship, Train, Package, MapPin, Clock,
   Calculator, CheckCircle2, Send, ArrowRight, Info,
 } from 'lucide-react';
+import '@/components/formkit/formkit.css';
 
 const MODES = [
   { value: 'road', label: 'Road / Truck', icon: Truck, eta: '2–7 days', note: 'Best for domestic' },
@@ -144,7 +145,7 @@ export default function ShippingCalculatorPage() {
           <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto">
             Delivery is free on every order placed on BulkSkart. These estimates show the freight cost the platform covers, so you can compare routes before you order.
           </p>
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#FF5A00]/40 bg-[#FF5A00]/10 px-3 py-1.5 text-xs font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/10 px-3 py-1.5 text-xs font-bold text-orange-600 dark:text-orange-400">
             <Truck className="h-3.5 w-3.5" />
             Your delivery charge on every order: ₹0
           </div>
@@ -160,18 +161,18 @@ export default function ShippingCalculatorPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleCalculate} className="space-y-4">
+                <form onSubmit={handleCalculate} className="fk-skin space-y-4">
                   {/* Origin */}
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1"><MapPin className="w-3 h-3" /> Origin</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label className="text-xs text-muted-foreground">City / Port</Label>
-                        <Input value={form.originCity} onChange={e => set('originCity', e.target.value)} placeholder="Mumbai" required className="bg-input border-border mt-0.5" />
+                        <Label htmlFor="ship-city-port" className="text-xs text-muted-foreground">City / Port</Label>
+                        <Input id="ship-city-port" value={form.originCity} onChange={e => set('originCity', e.target.value)} placeholder="Mumbai" required className="bg-input border-border mt-0.5" />
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Country</Label>
-                        <Input value={form.originCountry} onChange={e => set('originCountry', e.target.value)} placeholder="India" className="bg-input border-border mt-0.5" />
+                        <Label htmlFor="ship-country" className="text-xs text-muted-foreground">Country</Label>
+                        <Input id="ship-country" value={form.originCountry} onChange={e => set('originCountry', e.target.value)} placeholder="India" className="bg-input border-border mt-0.5" />
                       </div>
                     </div>
                   </div>
@@ -180,29 +181,29 @@ export default function ShippingCalculatorPage() {
                     <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1"><MapPin className="w-3 h-3" /> Destination</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label className="text-xs text-muted-foreground">City / Port</Label>
-                        <Input value={form.destCity} onChange={e => set('destCity', e.target.value)} placeholder="Dubai" required className="bg-input border-border mt-0.5" />
+                        <Label htmlFor="ship-city-port-2" className="text-xs text-muted-foreground">City / Port</Label>
+                        <Input id="ship-city-port-2" value={form.destCity} onChange={e => set('destCity', e.target.value)} placeholder="Dubai" required className="bg-input border-border mt-0.5" />
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Country</Label>
-                        <Input value={form.destCountry} onChange={e => set('destCountry', e.target.value)} placeholder="UAE" required className="bg-input border-border mt-0.5" />
+                        <Label htmlFor="ship-country-2" className="text-xs text-muted-foreground">Country</Label>
+                        <Input id="ship-country-2" value={form.destCountry} onChange={e => set('destCountry', e.target.value)} placeholder="UAE" required className="bg-input border-border mt-0.5" />
                       </div>
                     </div>
                   </div>
                   {/* Cargo */}
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Weight (kg)</Label>
-                      <Input type="number" min="0" value={form.weightKg} onChange={e => set('weightKg', e.target.value)} placeholder="500" className="bg-input border-border mt-0.5" />
+                      <Label htmlFor="ship-weight" className="text-xs text-muted-foreground">Weight (kg)</Label>
+                      <Input id="ship-weight" type="number" min="0" value={form.weightKg} onChange={e => set('weightKg', e.target.value)} placeholder="500" className="bg-input border-border mt-0.5" />
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Volume (CBM)</Label>
-                      <Input type="number" min="0" value={form.volumeCbm} onChange={e => set('volumeCbm', e.target.value)} placeholder="2.5" className="bg-input border-border mt-0.5" />
+                      <Label htmlFor="ship-volume" className="text-xs text-muted-foreground">Volume (CBM)</Label>
+                      <Input id="ship-volume" type="number" min="0" value={form.volumeCbm} onChange={e => set('volumeCbm', e.target.value)} placeholder="2.5" className="bg-input border-border mt-0.5" />
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Incoterms</Label>
+                      <Label htmlFor="ship-incoterms" className="text-xs text-muted-foreground">Incoterms</Label>
                       <Select value={form.incoterms} onValueChange={v => set('incoterms', v)}>
-                        <SelectTrigger className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger id="ship-incoterms" className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent className="bg-card border-border">
                           {INCOTERMS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
                         </SelectContent>
@@ -211,18 +212,18 @@ export default function ShippingCalculatorPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Cargo Type</Label>
+                      <Label htmlFor="ship-cargo-type" className="text-xs text-muted-foreground">Cargo Type</Label>
                       <Select value={form.cargoType} onValueChange={v => set('cargoType', v)}>
-                        <SelectTrigger className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger id="ship-cargo-type" className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent className="bg-card border-border">
                           {CARGO_TYPES.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Preferred Mode</Label>
+                      <Label htmlFor="ship-preferred-mode" className="text-xs text-muted-foreground">Preferred Mode</Label>
                       <Select value={form.shipmentMode} onValueChange={v => set('shipmentMode', v)}>
-                        <SelectTrigger className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger id="ship-preferred-mode" className="bg-input border-border mt-0.5 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent className="bg-card border-border">
                           <SelectItem value="all" className="text-xs">All Modes</SelectItem>
                           {MODES.map(m => <SelectItem key={m.value} value={m.value} className="text-xs">{m.label}</SelectItem>)}
@@ -230,7 +231,7 @@ export default function ShippingCalculatorPage() {
                       </Select>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
+                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
                     <Calculator className="w-4 h-4" /> Calculate Estimates
                   </Button>
                 </form>
@@ -270,7 +271,7 @@ export default function ShippingCalculatorPage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-sm font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">You pay ₹0</p>
+                              <p className="text-sm font-bold text-orange-600 dark:text-orange-400">You pay ₹0</p>
                               <p className="text-[10px] text-muted-foreground line-through">Market ₹{r.costMin.toLocaleString()}–{r.costMax.toLocaleString()}</p>
                             </div>
                           </div>
@@ -284,9 +285,9 @@ export default function ShippingCalculatorPage() {
                   <span>Market ranges are the freight BulkSkart covers. Your delivery charge on an order placed here is ₹0. Carrier rates still vary by route and cargo.</span>
                 </div>
                 {rfqSent ? (
-                  <div className="flex items-center gap-2 bg-[#FF5A00]/10 dark:bg-[#B33D00]/20 border border-[#FF5A00]/50 rounded-xl p-3">
-                    <CheckCircle2 className="w-4 h-4 text-[#FF7A2E] shrink-0" />
-                    <p className="text-sm text-[#FF7A2E] dark:text-[#FF7A2E]">Freight RFQ sent! Logistics partners will contact you shortly.</p>
+                  <div className="flex items-center gap-2 bg-orange-50 dark:bg-orange-950/20 border border-orange-300/50 rounded-xl p-3">
+                    <CheckCircle2 className="w-4 h-4 text-orange-600 shrink-0" />
+                    <p className="text-sm text-orange-700 dark:text-orange-400">Freight RFQ sent! Logistics partners will contact you shortly.</p>
                   </div>
                 ) : (
                   <Button onClick={handleFreightRFQ} disabled={submitting} className="w-full bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 gap-2 text-sm" variant="ghost">

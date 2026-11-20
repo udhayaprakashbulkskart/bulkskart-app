@@ -2,16 +2,29 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProducts, createProduct, updateProduct, deleteProduct, getCategories } from '@/lib/api';
 import type { Product, Category } from '@/types/types';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Actions,
+  CountedTextArea,
+  Field,
+  FormDialog,
+  IconBox,
+  KitButton,
+  NativeSelect,
+  SectionTitle,
+  Stepper,
+  TextArea,
+  TextInput,
+  fk,
+  type FormPoint,
+} from '@/components/formkit';
+import { unitsWith } from '@/components/formkit/units';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { buildPlans } from '@/lib/subscriptionPlans';
 import { toast } from 'sonner';
-import { Plus, Edit2, Trash2, Package, Image, Star, Zap, Percent, Video, FileText, AlertCircle, Lock, CheckCircle, Sparkles } from 'lucide-react';
+import { AlertCircle, Box, Check, Coins, Edit2, FileDown, FileText, Image as ImageIcon, Layers, ListChecks, Loader2, Lock, Package, Percent, Plus, Sparkles, Star, Tag, Trash2, Video, Wallet, Zap } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
 import PromoteProductDialog from '@/components/common/PromoteProductDialog';
 import ProductPromotionsPanel from '@/components/common/ProductPromotionsPanel';
@@ -19,7 +32,23 @@ import BulkDiscountRulesPanel from '@/components/common/BulkDiscountRulesPanel';
 import MultiImageUploader from '@/components/common/MultiImageUploader';
 import SafeImage from '@/components/common/SafeImage';
 
-const UNITS = ['Pcs', 'Units', 'MT', 'KG', 'Tons', 'Boxes', 'Cartons', 'Liters', 'Meters', 'Pairs', 'Sets'];
+const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED'];
+
+const PRODUCT_POINTS: FormPoint[] = [
+  { icon: ImageIcon, title: 'Real product photos', detail: 'At least 1, up to 10' },
+  { icon: FileText, title: 'Clear details', detail: 'Name, category, description' },
+  { icon: Wallet, title: 'Price and MOQ', detail: 'What buyers can order' },
+];
+
+/** where each checked field lives, so the first problem can be focused */
+const FIELD_IDS = {
+  images: 'prod-images',
+  name: 'prod-name',
+  categoryId: 'prod-category',
+  description: 'prod-description',
+  moq: 'prod-moq',
+  priceMin: 'prod-price-min',
+} as const;
 
 function generateSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now().toString(36);
@@ -42,6 +71,8 @@ const emptyForm: ProductForm = {
 export default function SupplierProductsPage() {
   const navigate = useNavigate();
   const { user, company, isPaidSubscriber } = useAuth();
+  const { countryConfig, formatLocalPrice } = useCurrency();
+  const plans = buildPlans(countryConfig, formatLocalPrice);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,19 +87,12 @@ export default function SupplierProductsPage() {
   const [discountProduct, setDiscountProduct] = useState<Product | null>(null);
 
   const fetchProducts = () => {
-    // A new account (or one switching company) never keeps the previous list on screen.
-    if (!company) {
-      setProducts([]);
-      setLoading(false);
-      return;
-    }
-    const companyId = company.id;
-    setProducts([]);
+    if (!company) return;
     setLoading(true);
-    getProducts({ companyId }).then(data => {
+    getProducts({ companyId: company.id }).then(data => {
       const map = new Map<string, Product>();
+      const companyId = company.id;
       (data || []).forEach(p => {
-        // Only this company's own products.
         if (p.company_id === companyId && !map.has(p.id)) {
           map.set(p.id, p);
         }
@@ -109,13 +133,23 @@ export default function SupplierProductsPage() {
     }
 
     setValidationErrors(errors);
-    if (Object.keys(errors).length > 0) {
-      const firstError = Object.values(errors)[0];
-      toast.error(firstError);
+    const first = (['images', 'name', 'categoryId', 'description', 'moq', 'priceMin'] as const).find((key) => errors[key]);
+    if (first) {
+      const target = document.getElementById(FIELD_IDS[first]);
+      target?.focus();
+      target?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       return false;
     }
     return true;
   };
+
+  const clearError = (key: string) =>
+    setValidationErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +194,7 @@ export default function SupplierProductsPage() {
 
     setSaving(false);
     if (error) { toast.error(error); return; }
-    toast.success(editingId ? 'Product updated successfully!' : 'Product listed successfully with verified photos!');
+    toast.success(editingId ? 'Product updated.' : 'Product listed.');
     setDialogOpen(false);
     setEditingId(null);
     setForm(emptyForm);
@@ -220,173 +254,224 @@ export default function SupplierProductsPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-xl font-bold text-foreground">My Products</h1>
+              {!company && <h3 className="text-lg font-bold text-foreground mb-2">Finish your business profile first</h3>}
               <p className="text-sm text-muted-foreground">Manage your product listings</p>
             </div>
             <Button
               onClick={handleAddProductClick}
-              className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2 text-sm font-semibold"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 text-sm font-semibold"
             >
               <Plus className="w-4 h-4" /> Add Product
             </Button>
-            <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-              <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-xl bg-card border-border max-h-[90dvh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-foreground">{editingId ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSave} className="space-y-4 mt-2">
-                  {/* Multi-image uploader */}
-                  <div className="bg-muted/30 p-3 rounded-xl border border-border">
-                    <Label className="text-xs text-muted-foreground block mb-2">
-                      Product Images * <span className="text-muted-foreground/60">(min 1 required, max 10)</span>
-                    </Label>
-                    <MultiImageUploader
-                      images={form.images}
-                      onChange={imgs => setForm(p => ({ ...p, images: imgs }))}
-                      folder={`products/${company?.id || 'general'}`}
-                      maxImages={10}
-                    />
-                    {validationErrors.images && (
-                      <p className="text-xs text-destructive mt-2 flex items-center gap-1">
-                        <AlertCircle className="w-3.5 h-3.5" /> {validationErrors.images}
-                      </p>
-                    )}
-                  </div>
+            <FormDialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                if (!saving) handleDialogOpenChange(open);
+              }}
+              busy={saving}
+              title={
+                editingId ? (
+                  <>
+                    Edit <em>Product</em>
+                  </>
+                ) : (
+                  <>
+                    Add <em>Product</em>
+                  </>
+                )
+              }
+              description="Real photos and clear details help buyers find and trust your product."
+              points={PRODUCT_POINTS}
+              width={1080}
+            >
+              <form onSubmit={handleSave} noValidate className="fk-form fk-stack">
+                <SectionTitle>Photos</SectionTitle>
+                <div className="fk-field" id="prod-images" tabIndex={-1}>
+                  <span className={fk.label}>
+                    Product Images
+                    <span className="fk-req" aria-hidden="true">
+                      *
+                    </span>
+                  </span>
+                  <MultiImageUploader
+                    images={form.images}
+                    onChange={(imgs) => {
+                      setForm((p) => ({ ...p, images: imgs }));
+                      clearError('images');
+                    }}
+                    folder={`products/${company?.id || 'general'}`}
+                    maxImages={10}
+                  />
+                  {validationErrors.images ? (
+                    <p className="fk-error" role="alert">
+                      <AlertCircle aria-hidden="true" />
+                      {validationErrors.images}
+                    </p>
+                  ) : (
+                    <p className={fk.hint}>At least 1, up to 10. Clear photos of the real item.</p>
+                  )}
+                </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Product Name *</Label>
-                    <Input
+                <SectionTitle>Details</SectionTitle>
+                <Field htmlFor="prod-name" label="Product Name" required error={validationErrors.name}>
+                  <IconBox icon={Tag}>
+                    <TextInput
+                      id="prod-name"
                       value={form.name}
-                      onChange={e => set('name', e.target.value)}
-                      required
+                      onChange={(e) => {
+                        set('name', e.target.value);
+                        clearError('name');
+                      }}
                       placeholder="e.g. 100W Mono Solar Panels"
-                      className={`bg-input ${validationErrors.name ? 'border-destructive ring-1 ring-destructive' : 'border-border'}`}
+                      invalid={Boolean(validationErrors.name)}
+                      iconPadding
                     />
-                    {validationErrors.name && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {validationErrors.name}</p>}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Category *</Label>
-                    <Select value={form.categoryId} onValueChange={v => set('categoryId', v)}>
-                      <SelectTrigger className={`bg-input ${validationErrors.categoryId ? 'border-destructive ring-1 ring-destructive' : 'border-border'}`}>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border">
-                        {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    {validationErrors.categoryId && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {validationErrors.categoryId}</p>}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Description *</Label>
-                    <Textarea
-                      value={form.description}
-                      onChange={e => set('description', e.target.value)}
-                      rows={3}
-                      placeholder="Describe the product clearly, including materials, usage, and features..."
-                      className={`bg-input resize-none ${validationErrors.description ? 'border-destructive ring-1 ring-destructive' : 'border-border'}`}
-                    />
-                    {validationErrors.description && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {validationErrors.description}</p>}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Specifications</Label>
-                    <Textarea value={form.specifications} onChange={e => set('specifications', e.target.value)} rows={2} placeholder="Size, material, certification..." className="bg-input border-border resize-none" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">MOQ *</Label>
-                      <Input value={form.moq} onChange={e => set('moq', e.target.value)} type="number" required min="1" className={`bg-input ${validationErrors.moq ? 'border-destructive ring-1 ring-destructive' : 'border-border'}`} />
-                      {validationErrors.moq && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {validationErrors.moq}</p>}
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">MOQ Unit *</Label>
-                      <Select value={form.moqUnit} onValueChange={v => set('moqUnit', v)}>
-                        <SelectTrigger className="bg-input border-border"><SelectValue /></SelectTrigger>
-                        <SelectContent className="bg-card border-border">
-                          {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Currency</Label>
-                      <Select value={form.currency} onValueChange={v => set('currency', v)}>
-                        <SelectTrigger className="bg-input border-border"><SelectValue /></SelectTrigger>
-                        <SelectContent className="bg-card border-border">
-                          {['INR', 'USD', 'EUR', 'GBP', 'AED'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Price Min *</Label>
-                      <Input
-                        value={form.priceMin}
-                        onChange={e => set('priceMin', e.target.value)}
-                        type="number"
-                        placeholder="Min price"
-                        className={`bg-input ${validationErrors.priceMin ? 'border-destructive ring-1 ring-destructive' : 'border-border'}`}
-                      />
-                      {validationErrors.priceMin && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {validationErrors.priceMin}</p>}
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Price Max</Label>
-                      <Input value={form.priceMax} onChange={e => set('priceMax', e.target.value)} type="number" placeholder="Max" className="bg-input border-border" />
-                    </div>
-                  </div>
+                  </IconBox>
+                </Field>
+                <Field htmlFor="prod-category" label="Category" required error={validationErrors.categoryId}>
+                  <IconBox icon={Layers}>
+                    <NativeSelect
+                      id="prod-category"
+                      value={form.categoryId}
+                      onChange={(e) => {
+                        set('categoryId', e.target.value);
+                        clearError('categoryId');
+                      }}
+                      invalid={Boolean(validationErrors.categoryId)}
+                      iconPadding
+                    >
+                      <option value="">Select category…</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </IconBox>
+                </Field>
+                <Field htmlFor="prod-description" label="Description" required error={validationErrors.description} hint="At least 15 characters.">
+                  <CountedTextArea
+                    id="prod-description"
+                    icon={FileText}
+                    rows={4}
+                    maxLength={3000}
+                    value={form.description}
+                    onChange={(e) => {
+                      set('description', e.target.value);
+                      clearError('description');
+                    }}
+                    placeholder="Describe the product clearly, including materials, usage, and features..."
+                    invalid={Boolean(validationErrors.description)}
+                  />
+                </Field>
+                <Field htmlFor="prod-specs" label="Specifications" optional>
+                  <IconBox icon={ListChecks} area>
+                    <TextArea id="prod-specs" value={form.specifications} onChange={(e) => set('specifications', e.target.value)} rows={3} placeholder="Size, material, certification..." iconPadding />
+                  </IconBox>
+                </Field>
 
-                  {/* ── Media URLs ─────────────────────────────────────── */}
-                  <div className="border-t border-border pt-4 space-y-3">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Media &amp; Downloads</p>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <Video className="w-3.5 h-3.5 text-primary" /> Product Video URL
-                      </Label>
-                      <Input
-                        value={form.videoUrl}
-                        onChange={e => set('videoUrl', e.target.value)}
-                        type="url"
-                        placeholder="https://youtube.com/watch?v=... or direct .mp4 link"
-                        className="bg-input border-border"
+                <SectionTitle>Price &amp; MOQ</SectionTitle>
+                <div className="fk-grid">
+                  <Field htmlFor="prod-moq" label="Minimum Order (MOQ)" required error={validationErrors.moq}>
+                    <Stepper
+                      id="prod-moq"
+                      value={form.moq}
+                      onChange={(value) => {
+                        set('moq', value);
+                        clearError('moq');
+                      }}
+                      min={1}
+                      unitName={form.moqUnit}
+                      invalid={Boolean(validationErrors.moq)}
+                      required
+                    />
+                  </Field>
+                  <Field htmlFor="prod-unit" label="MOQ Unit" required>
+                    <IconBox icon={Box}>
+                      <NativeSelect id="prod-unit" value={form.moqUnit} onChange={(e) => set('moqUnit', e.target.value)} iconPadding>
+                        {unitsWith(form.moqUnit).map((u) => (
+                          <option key={u} value={u}>
+                            {u}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    </IconBox>
+                  </Field>
+                  <Field htmlFor="prod-price-min" label={`Price From (${form.currency})`} required error={validationErrors.priceMin}>
+                    <IconBox icon={Wallet} accent>
+                      <TextInput
+                        id="prod-price-min"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="any"
+                        value={form.priceMin}
+                        onChange={(e) => {
+                          set('priceMin', e.target.value);
+                          clearError('priceMin');
+                        }}
+                        placeholder="Lowest unit price"
+                        invalid={Boolean(validationErrors.priceMin)}
+                        iconPadding
                       />
-                      <p className="text-[11px] text-muted-foreground">YouTube, Vimeo or direct video link. Shown on the product detail page.</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-primary" /> Brochure / Datasheet URL
-                      </Label>
-                      <Input
-                        value={form.brochureUrl}
-                        onChange={e => set('brochureUrl', e.target.value)}
-                        type="url"
-                        placeholder="https://... (PDF link)"
-                        className="bg-input border-border"
+                    </IconBox>
+                  </Field>
+                  <Field htmlFor="prod-price-max" label={`Price Up To (${form.currency})`} optional>
+                    <IconBox icon={Wallet}>
+                      <TextInput
+                        id="prod-price-max"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="any"
+                        value={form.priceMax}
+                        onChange={(e) => set('priceMax', e.target.value)}
+                        placeholder="Highest unit price"
+                        iconPadding
                       />
-                      <p className="text-[11px] text-muted-foreground">Direct PDF link. Buyers can download it from your product page.</p>
-                    </div>
-                  </div>
-                  <Button type="submit" disabled={saving} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90">
-                    {saving ? 'Saving...' : editingId ? 'Update Product' : 'Add Product'}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+                    </IconBox>
+                  </Field>
+                  <Field htmlFor="prod-currency" label="Currency">
+                    <IconBox icon={Coins}>
+                      <NativeSelect id="prod-currency" value={form.currency} onChange={(e) => set('currency', e.target.value)} iconPadding>
+                        {CURRENCIES.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    </IconBox>
+                  </Field>
+                </div>
+
+                <SectionTitle>Media &amp; Downloads</SectionTitle>
+                <Field htmlFor="prod-video" label="Product Video URL" optional hint="YouTube, Vimeo or a direct video link. Shown on the product page.">
+                  <IconBox icon={Video}>
+                    <TextInput id="prod-video" type="url" inputMode="url" value={form.videoUrl} onChange={(e) => set('videoUrl', e.target.value)} placeholder="https://youtube.com/watch?v=..." iconPadding />
+                  </IconBox>
+                </Field>
+                <Field htmlFor="prod-brochure" label="Brochure / Datasheet URL" optional hint="A direct PDF link. Buyers can download it from your product page.">
+                  <IconBox icon={FileDown}>
+                    <TextInput id="prod-brochure" type="url" inputMode="url" value={form.brochureUrl} onChange={(e) => set('brochureUrl', e.target.value)} placeholder="https://... (PDF link)" iconPadding />
+                  </IconBox>
+                </Field>
+
+                <Actions>
+                  <KitButton type="submit" disabled={saving}>
+                    {saving ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Check aria-hidden="true" />}
+                    {saving ? 'Saving…' : editingId ? 'Update Product' : 'Add Product'}
+                  </KitButton>
+                  <KitButton variant="ghost" onClick={() => handleDialogOpenChange(false)} disabled={saving}>
+                    Cancel
+                  </KitButton>
+                </Actions>
+              </form>
+            </FormDialog>
           </div>
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[...Array(3)].map((_, i) => <div key={i} className="h-48 bg-muted rounded-xl animate-pulse" />)}
-            </div>
-          ) : !company ? (
-            <div className="bg-card border border-border rounded-2xl p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-sm my-4">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 border border-primary/20">
-                <Package className="w-8 h-8" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Finish your business profile first</h3>
-              <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto leading-relaxed">
-                Your products are listed under your company. Add your company details, then come back here to list your products.
-              </p>
-              <Button onClick={() => navigate('/business-setup')} className="bg-[#C94400] text-primary-foreground hover:bg-primary/90 gap-2 font-bold px-6">
-                Complete business profile
-              </Button>
             </div>
           ) : products.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-sm my-4">
@@ -400,7 +485,7 @@ export default function SupplierProductsPage() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Button
                   onClick={handleAddProductClick}
-                  className="w-full sm:w-auto bg-[#C94400] text-primary-foreground hover:bg-primary/90 gap-2 font-bold px-6"
+                  className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 gap-2 font-bold px-6"
                 >
                   <Plus className="w-4 h-4" /> Add Your First Product
                 </Button>
@@ -415,7 +500,7 @@ export default function SupplierProductsPage() {
                 )}
               </div>
               {!isPaidSubscriber && (
-                <div className="mt-6 pt-4 border-t border-border flex items-center justify-center gap-2 text-xs text-[#FF7A2E] font-medium">
+                <div className="mt-6 pt-4 border-t border-border flex items-center justify-center gap-2 text-xs text-orange-500 font-medium">
                   <Lock className="w-3.5 h-3.5" />
                   <span>Active supplier subscription required to upload &amp; publish product listings</span>
                 </div>
@@ -435,7 +520,7 @@ export default function SupplierProductsPage() {
                     />
                     {/* Multi-photo badge */}
                     {p.images && p.images.length > 1 && (
-                      <span className="absolute bottom-2 right-2 bg-[#0A0A0A]/75 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-md font-medium z-10 border border-white/10">
+                      <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-md font-medium z-10 border border-white/10">
                         +{p.images.length - 1} photos
                       </span>
                     )}
@@ -444,13 +529,13 @@ export default function SupplierProductsPage() {
                     {(p.is_featured || (p as Product & { is_sponsored?: boolean }).is_sponsored) && (
                       <div className="absolute top-2 left-2 flex gap-1.5 z-10 flex-wrap">
                         {p.is_featured && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-[#C94400] rounded-md px-2 py-0.5 shadow-sm">
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-[#FF5A00] rounded-md px-2 py-0.5 shadow-sm">
                             <Star className="w-2.5 h-2.5 fill-white" /> Featured
                           </span>
                         )}
                         {(p as Product & { is_sponsored?: boolean }).is_sponsored && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-[#FF7A2E] bg-[#C94400] rounded-md px-2 py-0.5 shadow-sm">
-                            <Zap className="w-2.5 h-2.5 fill-[#FF5A00]" /> Sponsored
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-orange-950 bg-orange-400 rounded-md px-2 py-0.5 shadow-sm">
+                            <Zap className="w-2.5 h-2.5 fill-orange-950" /> Sponsored
                           </span>
                         )}
                       </div>
@@ -506,7 +591,7 @@ export default function SupplierProductsPage() {
                       <Button
                         onClick={() => setPromoteProduct(p)}
                         size="sm"
-                        className="w-full text-xs h-8 bg-[#FF5A00]/15 text-[#FF5A00] border border-[#FF5A00]/30 hover:bg-[#B33D00]/25 gap-1.5 px-2 font-semibold justify-center"
+                        className="w-full text-xs h-8 bg-[#FF5A00]/15 text-[#FF5A00] border border-[#FF5A00]/30 hover:bg-[#FF5A00]/25 gap-1.5 px-2 font-semibold justify-center"
                         variant="ghost"
                       >
                         <Star className="w-3.5 h-3.5 shrink-0 text-[#FF5A00]" /> Promote
@@ -533,20 +618,21 @@ export default function SupplierProductsPage() {
       </div>
 
       {/* ── Bulk Discount Rules Dialog ── */}
-      <Dialog open={!!discountProduct} onOpenChange={open => { if (!open) setDiscountProduct(null); }}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg bg-card border-border max-h-[90dvh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-foreground text-base">Bulk Discount Rules — {discountProduct?.name}</DialogTitle>
-          </DialogHeader>
-          {discountProduct && company && (
-            <BulkDiscountRulesPanel
-              productId={discountProduct.id}
-              companyId={company.id}
-              moqUnit={discountProduct.moq_unit}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <FormDialog
+        open={!!discountProduct}
+        onOpenChange={(open) => {
+          if (!open) setDiscountProduct(null);
+        }}
+        title={
+          <>
+            Bulk <em>Discounts</em>
+          </>
+        }
+        description={discountProduct ? `Lower unit prices for larger orders of ${discountProduct.name}.` : undefined}
+        width={720}
+      >
+        {discountProduct && company && <BulkDiscountRulesPanel productId={discountProduct.id} companyId={company.id} moqUnit={discountProduct.moq_unit} />}
+      </FormDialog>
 
       {/* ── Promote Product Dialog (additive, zero changes to products page) ── */}
       {promoteProduct && company && (
@@ -560,62 +646,45 @@ export default function SupplierProductsPage() {
       )}
 
       {/* ── Subscription Paywall Dialog ── */}
-      <Dialog open={paywallOpen} onOpenChange={setPaywallOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md bg-card border-border text-foreground">
-          <DialogHeader>
-            <div className="w-12 h-12 rounded-xl bg-[#FF5A00]/15 text-[#FF5A00] flex items-center justify-center mb-2 mx-auto sm:mx-0">
-              <Lock className="w-6 h-6" />
-            </div>
-            <DialogTitle className="text-xl font-bold text-foreground">
-              Subscription Required to Upload Products
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground pt-1">
-              To maintain verified manufacturer authenticity and prevent unverified listings on BulkSkart, an active supplier subscription plan is required to publish products and catalogs.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2.5 my-3 bg-muted/40 p-3.5 rounded-xl border border-border">
-            <p className="text-xs font-semibold text-foreground uppercase tracking-wider">
-              Included with Active Supplier Plan:
-            </p>
-            <div className="space-y-2 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
-                <span>Upload unlimited product catalogs &amp; multiple high-res photos</span>
+      <FormDialog
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
+        title={
+          <>
+            Choose a <em>Plan</em>
+          </>
+        }
+        description="Listing products on BulkSkart needs an active supplier plan."
+        width={620}
+      >
+        <div className="fk-stack">
+          <dl className="fk-summary">
+            {plans.map((plan) => (
+              <div key={plan.tier}>
+                <dt>
+                  <b className="text-foreground">{plan.label}</b>
+                  {plan.priceInr !== null && <span> · {plan.priceDisplay}/month</span>}
+                </dt>
+                <dd>{plan.features.find((f) => /product listings/i.test(f)) ?? plan.tagline}</dd>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
-                <span>Verified Manufacturer badge &amp; priority search placement</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
-                <span>Unlock direct WhatsApp numbers &amp; buyer RFQ contact details</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setPaywallOpen(false)}
-              className="border-border hover:bg-muted font-medium"
-            >
-              Maybe Later
-            </Button>
-            <Button
-              type="button"
+            ))}
+          </dl>
+          <p className="fk-note">Monthly prices, before tax. Each plan&apos;s full list of features is on the plans page.</p>
+          <Actions>
+            <KitButton
               onClick={() => {
                 setPaywallOpen(false);
                 navigate('/dashboard/supplier/subscription');
               }}
-              className="flex-1 bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold gap-2"
             >
-              <Sparkles className="w-4 h-4" /> View Plans &amp; Subscribe
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              <Sparkles aria-hidden="true" /> View Plans &amp; Subscribe
+            </KitButton>
+            <KitButton variant="ghost" onClick={() => setPaywallOpen(false)}>
+              Maybe Later
+            </KitButton>
+          </Actions>
+        </div>
+      </FormDialog>
     </DashboardLayout>
   );
 }

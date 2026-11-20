@@ -1,4 +1,4 @@
-// Runs the wallet migrations (00064, 00065) in an in-memory Postgres (PGlite) on a minimal copy of the schema, then walks
+// Runs migrations 00064, 00065 and 00066 in an in-memory Postgres (PGlite) on a minimal copy of the schema, then walks
 // through every payment, payout and factory-visit step, including attempts to cheat. Run before deploying them:
 //   npm i --no-save @electric-sql/pglite@0.2.17 && node supabase/tests/payments_scenarios.mjs
 import { PGlite } from '@electric-sql/pglite';
@@ -9,6 +9,7 @@ const db = new PGlite();
 await db.exec(readFileSync(here + 'payments_fixture.sql', 'utf8'));
 await db.exec(readFileSync(repo + '00064_wallet_money_protections.sql', 'utf8'));
 await db.exec(readFileSync(repo + '00065_order_payments_wallet.sql', 'utf8'));
+await db.exec(readFileSync(repo + '00066_server_checked_payments_and_account_deletion.sql', 'utf8'));
 console.log('migrations applied');
 
 const U = { B: '00000000-0000-4000-8000-0000000000b1', S: '00000000-0000-4000-8000-0000000000c1', A: '00000000-0000-4000-8000-0000000000a1', O: '00000000-0000-4000-8000-0000000000d1' };
@@ -52,11 +53,14 @@ await expectError('buyer marks own order paid', `UPDATE orders SET payment_statu
 await expectError('buyer lowers the total', `UPDATE orders SET total_amount=10 WHERE id=$1`, [O1.id], 'payment steps');
 await expectOk('buyer edits a note', `UPDATE orders SET notes='call before dispatch' WHERE id=$1`, [O1.id]);
 
-// ── companies: wallet balances ──
+// ── companies: wallet balances and badges ──
 await as('S');
 await expectError('maker sets own balance', `UPDATE companies SET withdrawable_balance=99999 WHERE id=$1`, [C], 'payments and payouts');
 await expectError('maker adds to own revenue', `UPDATE companies SET total_revenue=1 WHERE id=$1`, [C], 'payments and payouts');
+await expectError('maker verifies self', `UPDATE companies SET verification_status='verified' WHERE id=$1`, [C], 'Verification');
+await expectError('maker features self', `UPDATE companies SET is_featured=true WHERE id=$1`, [C], 'is_featured');
 await expectOk('maker edits description', `UPDATE companies SET description='We make cartons' WHERE id=$1`, [C]);
+await expectOk('maker submits documents (pending)', `UPDATE companies SET verification_status='pending' WHERE id=$1`, [C]);
 await as('O');
 await expectError('new company with money in it', `INSERT INTO companies (owner_id, company_name, withdrawable_balance) VALUES ($1,'Fake',500)`, [U.O], 'starts with no');
 await expectOk('new company starting at zero', `INSERT INTO companies (owner_id, company_name) VALUES ($1,'Other Works')`, [U.O]);
@@ -151,6 +155,16 @@ await as('B');
 await expectOk('buyer cancels', `SELECT cancel_factory_visit($1)`, [V]);
 await as('S');
 await expectError('mark a cancelled visit done', `SELECT respond_factory_visit($1, 'complete', null, null)`, [V], 'confirmed');
+
+// ── 00066 protections still hold ──
+await as('sql');
+const SUB = (await one(`INSERT INTO subscriptions (company_id, tier, status, used_rfq_leads) VALUES ($1,'starter','active',1) RETURNING id`, [C])).id;
+await as('S');
+await expectOk('maker counts an RFQ response', `UPDATE subscriptions SET used_rfq_leads = used_rfq_leads + 1 WHERE id=$1`, [SUB]);
+await expectError('maker upgrades own plan', `UPDATE subscriptions SET tier='growth' WHERE id=$1`, [SUB], 'payment or an admin');
+await expectError('maker resets usage', `UPDATE subscriptions SET used_rfq_leads = 0 WHERE id=$1`, [SUB], 'cannot go down');
+await as('A');
+await expectOk('admin changes a plan', `UPDATE subscriptions SET tier='growth' WHERE id=$1`, [SUB]);
 
 console.log(failures ? `\n${failures} FAILED` : '\nALL PASSED');
 process.exit(failures ? 1 : 0);

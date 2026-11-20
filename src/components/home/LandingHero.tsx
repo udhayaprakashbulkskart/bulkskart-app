@@ -21,7 +21,7 @@ const CATEGORY_CHIPS = [
   { label: 'Textile', icon: Shirt, to: '/products?category=textiles-apparel', tint: 'from-[#C94400]/30' },
   { label: 'Chemicals', icon: FlaskConical, to: '/products?category=chemicals-raw-materials', tint: 'from-[#C94400]/30' },
   { label: 'Plastic', icon: Recycle, to: '/products?q=plastic', tint: 'from-[#C94400]/30' },
-  { label: 'Steel', icon: Layers, to: '/products?q=steel', tint: 'from-slate-400/30' },
+  { label: 'Steel', icon: Layers, to: '/products?q=steel', tint: 'from-neutral-400/30' },
   { label: 'More', icon: LayoutGrid, to: '/products', tint: 'from-[#C94400]/30' },
 ];
 

@@ -65,7 +65,7 @@ export default function Footer() {
                 <Mail className="w-3 h-3 text-primary shrink-0" /> info@bulkskart.com
               </a>
               <a href={WHATSAPP_CHAT_URL} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
-                <MessageSquare className="w-3 h-3 text-[#25D366] shrink-0" /> WhatsApp {WHATSAPP_DISPLAY}
+                <MessageSquare className="w-3 h-3 text-[#E55C13] shrink-0" /> WhatsApp {WHATSAPP_DISPLAY}
               </a>
             </div>
             <div className="flex gap-3">

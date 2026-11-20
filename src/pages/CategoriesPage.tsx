@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layouts/MainLayout';
 import PageMeta from '@/components/common/PageMeta';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,7 @@ export const ALL_CATEGORIES_DATA: CategoryCardData[] = [
     icon: Factory,
     productCount: '8,900+ Products',
     manufacturerCount: '280+ Steel Plants',
-    heroImage: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
+    heroImage: 'https://cdn.pixabay.com/photo/2016/11/29/09/32/welding-1868731_1280.jpg',
     subcategories: ['TMT Steel Bars', 'Hollow Sections', 'Stainless Steel Coils', 'Mild Steel Plates', 'Wire Rods', 'Pipes & Fittings'],
   },
   {
@@ -76,7 +76,7 @@ export const ALL_CATEGORIES_DATA: CategoryCardData[] = [
     icon: FlaskConical,
     productCount: '4,100+ Products',
     manufacturerCount: '160+ Chemical Plants',
-    heroImage: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
+    heroImage: 'https://cdn.pixabay.com/photo/2014/12/10/20/56/laboratory-563423_1280.jpg',
     subcategories: ['Ethanol & Solvents', 'Sulfuric & Nitric Acids', 'Caustic Soda Flakes', 'Dyes & Pigments', 'Water Treatment', 'Agro Chemicals'],
   },
   {
@@ -87,7 +87,7 @@ export const ALL_CATEGORIES_DATA: CategoryCardData[] = [
     icon: Package,
     productCount: '7,300+ Products',
     manufacturerCount: '310+ Packaging Units',
-    heroImage: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
+    heroImage: 'https://cdn.pixabay.com/photo/2016/11/21/14/53/boxes-1845814_1280.jpg',
     subcategories: ['Corrugated Boxes', 'Kraft Paper Reels', 'Stretch Film Rolls', 'Printed Poly Pouches', 'Wooden Pallets', 'Bubble Wrap Rolls'],
   },
   {
@@ -98,7 +98,7 @@ export const ALL_CATEGORIES_DATA: CategoryCardData[] = [
     icon: Sparkles,
     productCount: '9,500+ Products',
     manufacturerCount: '250+ Certified Factories',
-    heroImage: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
+    heroImage: 'https://cdn.pixabay.com/photo/2016/11/29/08/41/cable-1868478_1280.jpg',
     subcategories: ['Power Cables', 'Distribution Transformers', 'Solar PV Modules', 'Circuit Breakers', 'LED Industrial Lighting', 'Semiconductors'],
   },
   {
@@ -109,16 +109,14 @@ export const ALL_CATEGORIES_DATA: CategoryCardData[] = [
     icon: Globe,
     productCount: '11,200+ Products',
     manufacturerCount: '480+ Agro Processors',
-    heroImage: 'https://live.staticflickr.com/4092/5009413427_3d13b6b445_b.jpg',
+    heroImage: 'https://cdn.pixabay.com/photo/2016/09/10/11/42/wheat-1659021_1280.jpg',
     subcategories: ['Basmati Rice', 'Refined Sugar', 'Turmeric & Spices', 'Edible Soybean Oil', 'Wheat & Maize', 'Coffee Beans'],
   },
 ];
 
 export default function CategoriesPage() {
   const navigate = useNavigate();
-  const { slug } = useParams();
   const [search, setSearch] = useState('');
-  const current = slug ? ALL_CATEGORIES_DATA.find(cat => cat.slug === slug) : undefined;
 
   const filteredCategories = ALL_CATEGORIES_DATA.filter(cat =>
     cat.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -129,23 +127,12 @@ export default function CategoriesPage() {
   return (
     <MainLayout>
       <PageMeta
-        title={current ? `${current.name} — Wholesale & Bulk Supply | BulkSkart` : 'All B2B Product Categories & Industry Directory | BulkSkart'}
-        description={current?.description || 'Explore all industrial bulk product categories on BulkSkart. Browse verified manufacturers, wholesale catalogs, raw materials, and machinery across India and globally.'}
-        canonical={current ? `/category/${current.slug}` : 'https://www.bulkskart.com/categories'}
-        robots={slug && !current ? 'noindex, follow' : 'index, follow'}
-        breadcrumbs={current
-          ? [
-              { name: 'Home', item: '/' },
-              { name: 'Categories', item: '/categories' },
-              { name: current.name, item: `/category/${current.slug}` },
-            ]
-          : [
-              { name: 'Home', item: '/' },
-              { name: 'Categories', item: '/categories' },
-            ]}
+        title="All B2B Product Categories & Industry Directory | BulkSkart"
+        description="Explore all industrial bulk product categories on BulkSkart. Browse verified manufacturers, wholesale catalogs, raw materials, and machinery across India and globally."
+        canonical="https://www.bulkskart.com/categories"
       />
 
-      <div className="bg-[#0B0F19] min-h-screen text-slate-100 py-8 sm:py-12 px-3.5 sm:px-6 lg:px-8">
+      <div className="bg-[#121212] min-h-screen text-neutral-100 py-8 sm:py-12 px-3.5 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           
           {/* Header Banner */}
@@ -155,7 +142,7 @@ export default function CategoriesPage() {
               <span>Full B2B Taxonomy & Sourcing Directory</span>
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-              {current ? current.name : 'All Industrial Categories'}
+              All Industrial Categories
             </h1>
             <p className="text-neutral-400 text-sm sm:text-base mt-2 max-w-2xl mx-auto">
               Source bulk commodities, machinery, structural metals, and chemical polymers directly from verified global manufacturing plants.
@@ -169,7 +156,7 @@ export default function CategoriesPage() {
                 placeholder="Search categories, raw materials, or products..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-12 pr-4 py-3 bg-[#C94400] border-[#2A2A2A] text-white placeholder:text-neutral-400 rounded-xl focus:border-[#FF5A00] focus:ring-[#FF5A00]"
+                className="pl-12 pr-4 py-3 bg-[#1c1c1c] border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl focus:border-[#FF5A00] focus:ring-[#FF5A00]"
               />
             </div>
           </div>
@@ -181,30 +168,30 @@ export default function CategoriesPage() {
               return (
                 <div
                   key={cat.id}
-                  className="rounded-3xl bg-[#1A0C05] border border-[#2A2A2A] hover:border-[#FF5A00]/60 transition-all duration-300 overflow-hidden shadow-xl hover:-translate-y-1 group flex flex-col justify-between"
+                  className="rounded-3xl bg-[#1C1C1C]/90 border border-neutral-800 hover:border-[#FF5A00]/60 transition-all duration-300 overflow-hidden shadow-xl hover:-translate-y-1 group flex flex-col justify-between"
                 >
                   {/* Category Image */}
-                  <div className="relative h-44 w-full overflow-hidden bg-[#0A0A0A]">
+                  <div className="relative h-44 w-full overflow-hidden bg-neutral-900">
                     <img
                       src={cat.heroImage}
                       alt={cat.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#2A1205] via-[#C94400]/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1C] via-[#1C1C1C]/40 to-transparent" />
                     
                     {/* Floating Badge */}
                     <div className="absolute top-3 left-3 flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-xl bg-[#0A0A0A]/90 border border-[#2A2A2A]/80 flex items-center justify-center text-[#FF5A00]">
+                      <div className="w-9 h-9 rounded-xl bg-neutral-900/90 border border-neutral-700/80 flex items-center justify-center text-[#FF5A00]">
                         <Icon className="w-5 h-5" />
                       </div>
                     </div>
 
                     <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs">
-                      <span className="font-bold text-[#FF5A00] bg-[#0A0A0A]/80 px-2.5 py-1 rounded-full border border-[#FF5A00]/30">
+                      <span className="font-bold text-[#FF5A00] bg-neutral-950/80 px-2.5 py-1 rounded-full border border-[#FF5A00]/30">
                         {cat.productCount}
                       </span>
-                      <span className="text-slate-300 bg-[#0A0A0A]/80 px-2.5 py-1 rounded-full border border-[#2A2A2A]">
+                      <span className="text-neutral-300 bg-neutral-950/80 px-2.5 py-1 rounded-full border border-neutral-800">
                         {cat.manufacturerCount}
                       </span>
                     </div>
@@ -226,7 +213,7 @@ export default function CategoriesPage() {
                           <Link
                             key={sub}
                             to={`/products?q=${encodeURIComponent(sub)}`}
-                            className="text-[11px] px-2.5 py-1 rounded-lg bg-[#0A0A0A]/80 hover:bg-[#B33D00]/20 text-slate-300 hover:text-[#FF5A00] border border-[#2A2A2A]/60 transition-colors"
+                            className="text-[11px] px-2.5 py-1 rounded-lg bg-neutral-800/80 hover:bg-[#FF5A00]/20 text-neutral-300 hover:text-[#FF5A00] border border-neutral-700/60 transition-colors"
                           >
                             {sub}
                           </Link>
@@ -235,12 +222,12 @@ export default function CategoriesPage() {
                     </div>
 
                     {/* Action Links */}
-                    <div className="mt-6 pt-4 border-t border-[#2A2A2A]/80 flex items-center justify-between gap-3">
+                    <div className="mt-6 pt-4 border-t border-neutral-800/80 flex items-center justify-between gap-3">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => navigate(`/manufacturers?industry=${encodeURIComponent(cat.name)}`)}
-                        className="text-xs border-[#2A2A2A] text-slate-200 hover:bg-[#0A0A0A] hover:text-white"
+                        className="text-xs border-neutral-700 text-neutral-200 hover:bg-neutral-800 hover:text-white"
                       >
                         <Building2 className="w-3.5 h-3.5 mr-1 text-[#FF5A00]" />
                         Manufacturers
@@ -249,7 +236,7 @@ export default function CategoriesPage() {
                       <Button
                         size="sm"
                         onClick={() => navigate(`/products?category=${cat.slug}`)}
-                        className="text-xs bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold"
+                        className="text-xs bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold"
                       >
                         <span>Browse Catalog</span>
                         <ArrowRight className="w-3.5 h-3.5 ml-1" />

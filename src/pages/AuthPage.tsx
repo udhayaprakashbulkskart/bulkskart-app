@@ -9,11 +9,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BrandLogo from '@/components/common/BrandLogo';
 import { supabase } from '@/db/supabase';
 import { toast } from 'sonner';
-import { Globe, Shield, Eye, EyeOff, Upload, AlertCircle, CheckCircle, ArrowRight, BadgeCheck, Package, TrendingUp, Zap, Users } from 'lucide-react';
+import { Globe, Shield, Eye, EyeOff, Upload, AlertCircle, CheckCircle, ArrowRight, Package, Mail, Loader2, Send, Lock, User, Phone, Building2, MapPin, Receipt, Hash } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Actions, Done, Field, FormDialog, IconBox, KitButton, TextInput, fk } from '@/components/formkit';
+import { CITY_NAMES } from '@/lib/signup/places';
 import { Checkbox } from '@/components/ui/checkbox';
 import { trackSignUp } from '@/lib/analytics';
+import { getOpenRequirements } from '@/lib/api';
+import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
+
+function timeSince(iso: string): string {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hr${hrs === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
 
 // ── Industry mockup images (Optimized Unsplash CDN with auto-format) ────────────
 const INDUSTRY_SLIDES = [
@@ -43,58 +57,49 @@ const INDUSTRY_SLIDES = [
   },
 ];
 
-// Per-tab context shown on the left panel
+// Per-tab context shown on the left panel: what each kind of account can do, with no made-up counts.
 const TAB_CONTEXT: Record<string, { heading: string; sub: string; stats: { label: string; value: string }[]; pills: string[] }> = {
   login: {
     heading: 'Welcome Back to\nBulkSkart',
-    sub: 'Sign in to manage your requirements, track quotes, and connect with verified global suppliers.',
+    sub: 'Sign in to manage your requirements, track quotations and talk to suppliers and buyers.',
     stats: [
-      { label: 'Registered Businesses', value: '1,20,000+' },
-      { label: 'Verified Manufacturers', value: '75,000+' },
-      { label: 'Active Requirements', value: '50,000+' },
-      { label: 'Countries Connected', value: '180+' },
+      { value: 'Requirements', label: 'Post what you need and follow each one' },
+      { value: 'Quotations', label: 'Compare the quotes suppliers send you' },
+      { value: 'Messages', label: 'Chat with buyers and suppliers' },
+      { value: 'Auctions', label: 'Bid on, or sell, bulk lots live' },
     ],
     pills: ['Textiles', 'Machinery', 'Agriculture', 'Electronics', 'Pharma'],
   },
   buyer: {
-    heading: 'Source Bulk Products\nFrom Verified Factories',
-    sub: 'Post your requirements once — receive quotes from 50,000+ manufacturers across India and 180 countries.',
+    heading: 'Source Bulk Products\nFrom Manufacturers',
+    sub: 'Post your requirement once and receive quotations from suppliers on BulkSkart.',
     stats: [
-      { label: 'Free RFQs / Month', value: 'Unlimited' },
-      { label: 'Verified Suppliers', value: '75,000+' },
-      { label: 'Avg. Quotes per RFQ', value: '10+' },
-      { label: 'Avg. Response Time', value: '<24 hrs' },
+      { value: 'Post an RFQ', label: 'Product, quantity and where to deliver' },
+      { value: 'Get quotes', label: 'Suppliers send their price and terms' },
+      { value: 'Compare', label: 'Quotes side by side, in one place' },
+      { value: 'Chat', label: 'Message suppliers directly' },
     ],
-    pills: ['Free Registration', 'Post RFQ Free', 'Compare Quotes', 'Direct Chat'],
+    pills: ['Free Registration', 'Post RFQs', 'Compare Quotes', 'Direct Chat'],
   },
   supplier: {
-    heading: 'Reach 1,20,000+ Buyers\nGlobally',
-    sub: 'Get your business verified, list products, and receive qualified bulk-order RFQs from international buyers every day.',
+    heading: 'Reach Bulk Buyers\nOn BulkSkart',
+    sub: "Get your business verified, list your products, and quote on buyers' bulk requirements.",
     stats: [
-      { label: 'Active Buyer RFQs', value: '50,000+' },
-      { label: 'Avg. Order Value', value: '₹5L+' },
-      { label: 'Export Countries', value: '180+' },
-      { label: 'New RFQs Daily', value: '500+' },
+      { value: 'Buyer RFQs', label: 'Browse open requirements and quote' },
+      { value: 'Products', label: 'List products with your own photos' },
+      { value: 'Verification', label: 'Earn the verified badge with KYC' },
+      { value: 'Auctions', label: 'Sell bulk stock in a live auction' },
     ],
-    pills: ['KYC Verified Badge', 'Priority Visibility', 'RFQ Matching', 'Analytics'],
+    pills: ['Verification Badge', 'RFQ Leads', 'Product Listings', 'Live Auctions'],
   },
 };
-
-// Floating mock activity cards cycling on the panel
-const ACTIVITY_ITEMS = [
-  { icon: Package,    color: 'bg-[#C94400]',   text: 'New RFQ: 500 MT Basmati Rice — UAE Buyer' },
-  { icon: BadgeCheck, color: 'bg-[#C94400]',  text: 'Sunrise Machinery verified — Pune' },
-  { icon: TrendingUp, color: 'bg-[#C94400]',    text: '12 quotes received on Cotton Fabric RFQ' },
-  { icon: Zap,        color: 'bg-[#C94400]',  text: 'New RFQ: 10,000 Pcs LED Bulb — Germany' },
-  { icon: Users,      color: 'bg-[#C94400]', text: '3 new suppliers matched to your RFQ' },
-  { icon: Package,    color: 'bg-[#C94400]',   text: 'New RFQ: 50 Tons Groundnut Oil — Singapore' },
-];
 
 // ── Left panel component ───────────────────────────────────────────────────────
 function AuthLeftPanel({ tab }: { tab: string }) {
   const ctx = TAB_CONTEXT[tab] ?? TAB_CONTEXT.login;
   const [slideIdx, setSlideIdx] = useState(0);
   const [activityIdx, setActivityIdx] = useState(0);
+  const [latest, setLatest] = useState<{ id: string; text: string; when: string }[]>([]);
   const [fadeSlide, setFadeSlide] = useState(true);
   const [fadeActivity, setFadeActivity] = useState(true);
 
@@ -110,54 +115,69 @@ function AuthLeftPanel({ tab }: { tab: string }) {
     return () => clearInterval(t);
   }, []);
 
-  // Cycle activity card every 3s
+  // The newest open requirements, as posted (the ticker stays hidden when there are none)
   useEffect(() => {
+    let alive = true;
+    getOpenRequirements({ page: 1, pageSize: 6, sort: 'latest' }).then(({ rows }) => {
+      if (!alive) return;
+      setLatest(rows.map((r) => {
+        const place = placeLabel(r);
+        return { id: r.id, text: `New RFQ: ${quantityLabel(r)} ${r.title}${place ? ` — ${place}` : ''}`, when: timeSince(r.created_at) };
+      }));
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Cycle the ticker every 3s
+  useEffect(() => {
+    if (latest.length < 2) return;
     const t = setInterval(() => {
       setFadeActivity(false);
       setTimeout(() => {
-        setActivityIdx(i => (i + 1) % ACTIVITY_ITEMS.length);
+        setActivityIdx(i => (i + 1) % latest.length);
         setFadeActivity(true);
       }, 300);
     }, 3000);
     return () => clearInterval(t);
-  }, []);
+  }, [latest.length]);
 
   const slide = INDUSTRY_SLIDES[slideIdx];
-  const activity = ACTIVITY_ITEMS[activityIdx];
-  const ActivityIcon = activity.icon;
+  const activity = latest.length ? latest[activityIdx % latest.length] : null;
 
   return (
-    <div className="hidden md:flex md:w-[52%] relative flex-col justify-between overflow-hidden bg-[#0d1117]">
+    <div className="hidden md:flex md:w-[52%] relative flex-col justify-between overflow-hidden bg-[#121212]">
       {/* ── Cycling background image ── */}
       <div
         className="absolute inset-0 z-0 transition-opacity duration-500"
         style={{ opacity: fadeSlide ? 1 : 0 }}
       >
-        <img src={slide.img} alt={slide.label} className="w-full h-full object-cover" />
+        <img src={slide.img} alt="" className="w-full h-full object-cover" />
         {/* deep dark overlay — darker at top/bottom for legibility */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1117]/85 via-[#0d1117]/55 to-[#0d1117]/90" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0d1117]/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/85 via-[#121212]/55 to-[#121212]/90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#121212]/60 via-transparent to-transparent" />
       </div>
 
-      {/* ── Slide label chip ── */}
-      <div className="absolute bottom-[52%] left-6 z-20">
+      {/* ── Slide label chip and dots, out of the way of the text ── */}
+      <div className="absolute bottom-5 right-6 z-20 flex items-center gap-3">
         <span
           className="text-[10px] font-bold text-white/60 uppercase tracking-widest px-2.5 py-1 rounded-full border border-white/15 bg-white/5 backdrop-blur-sm transition-opacity duration-500"
           style={{ opacity: fadeSlide ? 1 : 0 }}
         >
           {slide.label}
         </span>
-      </div>
-
-      {/* ── Slide dots ── */}
-      <div className="absolute bottom-[49%] right-6 z-20 flex gap-1.5">
-        {INDUSTRY_SLIDES.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setSlideIdx(i)}
-            className={`rounded-full transition-all duration-300 ${i === slideIdx ? 'w-4 h-1.5 bg-[#C94400]' : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'}`}
-          />
-        ))}
+        <div className="flex gap-1.5">
+          {INDUSTRY_SLIDES.map((item, i) => (
+            <button
+              key={item.label}
+              type="button"
+              aria-label={`Show ${item.label}`}
+              onClick={() => setSlideIdx(i)}
+              className={`rounded-full transition-all duration-300 ${i === slideIdx ? 'w-4 h-1.5 bg-primary' : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'}`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* ── Top: logo ── */}
@@ -193,29 +213,27 @@ function AuthLeftPanel({ tab }: { tab: string }) {
           ))}
         </div>
 
-        {/* Live activity ticker */}
-        <div
-          className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 backdrop-blur-sm transition-opacity duration-300"
-          style={{ opacity: fadeActivity ? 1 : 0 }}
-        >
-          <div className={`w-7 h-7 rounded-lg ${activity.color} flex items-center justify-center shrink-0`}>
-            <ActivityIcon className="w-3.5 h-3.5 text-white" />
+        {/* Newest real requirement */}
+        {activity && (
+          <div
+            className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 backdrop-blur-sm transition-opacity duration-300"
+            style={{ opacity: fadeActivity ? 1 : 0 }}
+          >
+            <div className="w-7 h-7 rounded-lg bg-[#FF5A00] flex items-center justify-center shrink-0">
+              <Package className="w-3.5 h-3.5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-medium text-white/80 truncate">{activity.text}</p>
+              <p className="text-[9px] text-white/35 mt-0.5">{activity.when} · posted on BulkSkart</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-medium text-white/80 truncate">{activity.text}</p>
-            <p className="text-[9px] text-white/35 mt-0.5">Just now · BulkSkart Live</p>
-          </div>
-          <span className="relative flex h-2 w-2 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C94400] opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C94400]" />
-          </span>
-        </div>
+        )}
       </div>
 
       {/* ── Bottom: trust badge ── */}
       <div className="relative z-10 px-8 pb-6 flex items-center gap-2">
         <Shield className="w-4 h-4 text-primary shrink-0" />
-        <span className="text-[11px] text-white/40">Verified businesses only · Secure & compliant</span>
+        <span className="text-[11px] text-white/40">Secure sign-in · Your contact details stay private</span>
       </div>
     </div>
   );
@@ -249,6 +267,13 @@ export default function AuthPage() {
     setActiveTab(getResolvedTab());
   }, [location.pathname, searchParams]);
 
+  // Manufacturers register with the signup assistant (a minute, not a long form) unless they asked for the full form
+  useEffect(() => {
+    if (user || authLoading || activeTab !== 'supplier' || searchParams.get('form') === 'full') return;
+    const back = searchParams.get('redirect') || searchParams.get('returnUrl');
+    navigate(`/signup/manufacturer${back ? `?redirect=${encodeURIComponent(back)}` : ''}`, { replace: true });
+  }, [user, authLoading, activeTab, searchParams, navigate]);
+
   // Already signed in → return to the requested page, otherwise the role dashboard
   useEffect(() => {
     if (!user || authLoading) return;
@@ -274,23 +299,25 @@ export default function AuthPage() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState('');
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!forgotEmail.trim()) {
-      toast.error('Please enter your email address');
+    const email = forgotEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setForgotError(email ? 'Please enter a valid e-mail address.' : 'Please enter your e-mail address.');
+      document.getElementById('forgot-email')?.focus();
       return;
     }
     setForgotLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth?tab=login`,
       });
       if (error) {
         toast.error(error.message || 'Failed to send password reset email');
       } else {
         setForgotSent(true);
-        toast.success('Password reset link has been dispatched to your email address');
       }
     } catch (err: any) {
       toast.error(err?.message || 'Failed to send password reset email');
@@ -578,6 +605,15 @@ export default function AuthPage() {
     }
   };
 
+  // on its way to the signup assistant: no flash of the long form
+  if (!user && activeTab === 'supplier' && searchParams.get('form') !== 'full') {
+    return (
+      <div role="status" aria-label="Loading" className="grid min-h-screen place-items-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex">
       <PageMeta
@@ -599,9 +635,9 @@ export default function AuthPage() {
 
           <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'login' | 'buyer' | 'supplier')}>
             <TabsList className="w-full bg-muted border border-border mb-6 grid grid-cols-3">
-              <TabsTrigger value="login" className="text-xs data-[state=active]:bg-[#C94400] data-[state=active]:text-white">Login</TabsTrigger>
-              <TabsTrigger value="buyer" className="text-xs data-[state=active]:bg-[#C94400] data-[state=active]:text-white">Buyer</TabsTrigger>
-              <TabsTrigger value="supplier" className="text-xs data-[state=active]:bg-[#C94400] data-[state=active]:text-white">Supplier</TabsTrigger>
+              <TabsTrigger value="login" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Login</TabsTrigger>
+              <TabsTrigger value="buyer" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Buyer</TabsTrigger>
+              <TabsTrigger value="supplier" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Supplier</TabsTrigger>
             </TabsList>
 
             {/* ===== LOGIN ===== */}
@@ -610,10 +646,10 @@ export default function AuthPage() {
                 <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
                 <p className="text-sm text-muted-foreground">Sign in to your BulkSkart account</p>
               </div>
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="fk-form fk-stack">
                 {error && (
-                  <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3" role="alert">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                     <div className="flex-1">
                       <p>{error}</p>
                       {error.includes('already exists') && (
@@ -624,56 +660,52 @@ export default function AuthPage() {
                     </div>
                   </div>
                 )}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Email Address</Label>
-                  <Input
-                    value={loginEmail}
-                    onChange={e => setLoginEmail(e.target.value)}
-                    type="email"
-                    required
-                    placeholder="you@company.com"
-                    className="bg-card border-border"
-                  />
+                <div className="fk-field">
+                  <label htmlFor="login-email" className={fk.label}>
+                    Email Address
+                  </label>
+                  <IconBox icon={Mail}>
+                    <TextInput id="login-email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} type="email" required autoComplete="email" inputMode="email" placeholder="you@company.com" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">Password</Label>
+                <div className="fk-field">
+                  <div className="flex items-center justify-between gap-3">
+                    <label htmlFor="login-password" className={fk.label}>
+                      Password
+                    </label>
                     <button
                       type="button"
                       onClick={() => {
                         setForgotEmail(loginEmail.trim());
                         setForgotSent(false);
+                        setForgotError('');
                         setForgotOpen(true);
                       }}
-                      className="text-xs text-[#FF5A00] hover:underline"
+                      className="text-sm font-semibold text-[#FF5A00] hover:underline"
                     >
                       Forgot password?
                     </button>
                   </div>
-                  <div className="relative">
-                    <Input
-                      value={loginPw}
-                      onChange={e => setLoginPw(e.target.value)}
-                      type={showPw ? 'text' : 'password'}
-                      required
-                      placeholder="••••••••"
-                      className="bg-card border-border pr-10"
-                    />
+                  <IconBox icon={Lock}>
+                    <TextInput id="login-password" value={loginPw} onChange={e => setLoginPw(e.target.value)} type={showPw ? 'text' : 'password'} required autoComplete="current-password" placeholder="••••••••" iconPadding className="pr-12" />
                     <button
                       type="button"
                       onClick={() => setShowPw(!showPw)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label={showPw ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPw}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                     >
-                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPw ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                     </button>
-                  </div>
+                  </IconBox>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 font-bold">
-                  {loading ? 'Signing in...' : 'Sign In'}
-                </Button>
+                <button type="submit" disabled={loading} className="fk-btn is-primary w-full">
+                  {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+                  {loading ? 'Signing in…' : 'Sign In'}
+                </button>
 
-                <p className="text-xs text-center text-muted-foreground">
+                <p className="text-sm text-center text-muted-foreground">
                   Don't have an account?{' '}
                   <button type="button" onClick={() => setActiveTab('buyer')} className="text-primary font-semibold hover:underline">
                     Register free as Buyer
@@ -692,49 +724,80 @@ export default function AuthPage() {
                 <h1 className="text-2xl font-bold text-foreground">Register as Buyer</h1>
                 <p className="text-sm text-muted-foreground">Free registration — Post requirements &amp; get quotes</p>
               </div>
-              <form onSubmit={handleBuyerRegister} className="space-y-3">
+              <form onSubmit={handleBuyerRegister} className="fk-form fk-stack">
                 {error && (
-                  <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3" role="alert">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>{error}</span>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Full Name *</Label>
-                    <Input value={buyerData.fullName} onChange={e => setBuyerData(p => ({ ...p, fullName: e.target.value }))} required placeholder="John Doe" className="bg-card border-border" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Phone</Label>
-                    <Input value={buyerData.phone} onChange={e => setBuyerData(p => ({ ...p, phone: e.target.value }))} placeholder="+91 98765..." className="bg-card border-border" />
-                  </div>
+                <div className="fk-grid">
+                  <div className="fk-field">
+                  <label htmlFor="buyer-name" className={fk.label}>
+                    Full Name<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={User}>
+                    <TextInput id="buyer-name" value={buyerData.fullName} onChange={e => setBuyerData(p => ({ ...p, fullName: e.target.value }))} required autoComplete="name" placeholder="John Doe" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Company / Organisation Name</Label>
-                  <Input value={buyerData.companyName} onChange={e => setBuyerData(p => ({ ...p, companyName: e.target.value }))} placeholder="Acme Corp Ltd (optional)" className="bg-card border-border" />
+                  <div className="fk-field">
+                  <label htmlFor="buyer-phone" className={fk.label}>
+                    Phone
+                  </label>
+                  <IconBox icon={Phone}>
+                    <TextInput id="buyer-phone" value={buyerData.phone} onChange={e => setBuyerData(p => ({ ...p, phone: e.target.value }))} type="tel" autoComplete="tel" inputMode="tel" placeholder="+91 98765…" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">City</Label>
-                    <Input value={buyerData.city} onChange={e => setBuyerData(p => ({ ...p, city: e.target.value }))} placeholder="Mumbai" className="bg-card border-border" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Country</Label>
-                    <Input value={buyerData.country} onChange={e => setBuyerData(p => ({ ...p, country: e.target.value }))} placeholder="India" className="bg-card border-border" />
-                  </div>
+                  <div className="fk-field is-wide">
+                  <label htmlFor="buyer-company" className={fk.label}>
+                    Company / Organisation
+                  </label>
+                  <IconBox icon={Building2}>
+                    <TextInput id="buyer-company" value={buyerData.companyName} onChange={e => setBuyerData(p => ({ ...p, companyName: e.target.value }))} autoComplete="organization" placeholder="Acme Corp Ltd (optional)" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Email *</Label>
-                  <Input value={buyerData.email} onChange={e => setBuyerData(p => ({ ...p, email: e.target.value }))} type="email" required placeholder="you@company.com" className="bg-card border-border" />
+                  <div className="fk-field">
+                  <label htmlFor="buyer-city" className={fk.label}>
+                    City
+                  </label>
+                  <IconBox icon={MapPin}>
+                    <TextInput id="buyer-city" value={buyerData.city} onChange={e => setBuyerData(p => ({ ...p, city: e.target.value }))} list="auth-city-list" autoComplete="address-level2" placeholder="Mumbai" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Password * (min 8 chars)</Label>
-                  <div className="relative">
-                    <Input value={buyerData.password} onChange={e => setBuyerData(p => ({ ...p, password: e.target.value }))} type={showPw ? 'text' : 'password'} required placeholder="••••••••" className="bg-card border-border pr-10" />
-                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  <div className="fk-field">
+                  <label htmlFor="buyer-country" className={fk.label}>
+                    Country
+                  </label>
+                  <IconBox icon={Globe}>
+                    <TextInput id="buyer-country" value={buyerData.country} onChange={e => setBuyerData(p => ({ ...p, country: e.target.value }))} autoComplete="country-name" placeholder="India" iconPadding />
+                  </IconBox>
+                </div>
+                </div>
+                <div className="fk-field">
+                  <label htmlFor="buyer-email" className={fk.label}>
+                    Email<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={Mail}>
+                    <TextInput id="buyer-email" value={buyerData.email} onChange={e => setBuyerData(p => ({ ...p, email: e.target.value }))} type="email" required autoComplete="email" inputMode="email" placeholder="you@company.com" iconPadding />
+                  </IconBox>
+                </div>
+                <div className="fk-field">
+                  <label htmlFor="buyer-password" className={fk.label}>
+                    Password<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={Lock}>
+                    <TextInput id="buyer-password" value={buyerData.password} onChange={e => setBuyerData(p => ({ ...p, password: e.target.value }))} type={showPw ? 'text' : 'password'} required autoComplete="new-password" placeholder="••••••••" iconPadding className="pr-12" />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw(!showPw)}
+                      aria-label={showPw ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPw}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    >
+                      {showPw ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                     </button>
-                  </div>
+                  </IconBox>
+                  <p className={fk.hint}>At least 8 characters.</p>
                 </div>
 
                 {/* User Agreement & Privacy Policy Checkbox */}
@@ -745,7 +808,7 @@ export default function AuthPage() {
                     onCheckedChange={(checked) => setBuyerAgreed(!!checked)}
                     className="mt-0.5 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
-                  <label htmlFor="buyer-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
+                  <label htmlFor="buyer-terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer select-none">
                     I agree to the BulkSkart{' '}
                     <button
                       type="button"
@@ -766,10 +829,11 @@ export default function AuthPage() {
                   </label>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 mt-2 font-bold">
-                  {loading ? 'Creating account...' : 'Create Buyer Account — Free'}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
+                <button type="submit" disabled={loading} className="fk-btn is-primary w-full">
+                  {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+                  {loading ? 'Creating account…' : 'Create Buyer Account — Free'}
+                </button>
+                <p className="text-sm text-center text-muted-foreground">
                   Already have an account?{' '}
                   <button type="button" onClick={() => setActiveTab('login')} className="text-primary font-semibold hover:underline">Sign in</button>
                 </p>
@@ -782,50 +846,74 @@ export default function AuthPage() {
                 <h1 className="text-2xl font-bold text-foreground">Register as Supplier</h1>
                 <p className="text-sm text-muted-foreground">Get verified & start receiving bulk order enquiries</p>
               </div>
-              <form onSubmit={handleSupplierRegister} className="space-y-3">
+              <form onSubmit={handleSupplierRegister} className="fk-form fk-stack">
                 {error && (
-                  <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3" role="alert">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>{error}</span>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Full Name *</Label>
-                    <Input value={supplierData.fullName} onChange={e => setSupplierData(p => ({ ...p, fullName: e.target.value }))} required placeholder="John Doe" className="bg-card border-border" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Phone</Label>
-                    <Input value={supplierData.phone} onChange={e => setSupplierData(p => ({ ...p, phone: e.target.value }))} placeholder="+91 98765..." className="bg-card border-border" />
-                  </div>
+                <div className="fk-grid">
+                  <div className="fk-field">
+                  <label htmlFor="supplier-name" className={fk.label}>
+                    Full Name<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={User}>
+                    <TextInput id="supplier-name" value={supplierData.fullName} onChange={e => setSupplierData(p => ({ ...p, fullName: e.target.value }))} required autoComplete="name" placeholder="John Doe" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Company Name *</Label>
-                  <Input value={supplierData.companyName} onChange={e => setSupplierData(p => ({ ...p, companyName: e.target.value }))} required placeholder="Your Manufacturing Co." className="bg-card border-border" />
+                  <div className="fk-field">
+                  <label htmlFor="supplier-phone" className={fk.label}>
+                    Phone
+                  </label>
+                  <IconBox icon={Phone}>
+                    <TextInput id="supplier-phone" value={supplierData.phone} onChange={e => setSupplierData(p => ({ ...p, phone: e.target.value }))} type="tel" autoComplete="tel" inputMode="tel" placeholder="+91 98765…" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">GST Number</Label>
-                    <Input value={supplierData.gst} onChange={e => setSupplierData(p => ({ ...p, gst: e.target.value }))} placeholder="22AAAAA..." className="bg-card border-border" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">IEC Number</Label>
-                    <Input value={supplierData.iec} onChange={e => setSupplierData(p => ({ ...p, iec: e.target.value }))} placeholder="IEC No." className="bg-card border-border" />
-                  </div>
+                  <div className="fk-field is-wide">
+                  <label htmlFor="supplier-company" className={fk.label}>
+                    Company Name<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={Building2}>
+                    <TextInput id="supplier-company" value={supplierData.companyName} onChange={e => setSupplierData(p => ({ ...p, companyName: e.target.value }))} required autoComplete="organization" placeholder="Your Manufacturing Co." iconPadding />
+                  </IconBox>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">City</Label>
-                    <Input value={supplierData.city} onChange={e => setSupplierData(p => ({ ...p, city: e.target.value }))} placeholder="Mumbai" className="bg-card border-border" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Country</Label>
-                    <Input value={supplierData.country} onChange={e => setSupplierData(p => ({ ...p, country: e.target.value }))} placeholder="India" className="bg-card border-border" />
-                  </div>
+                  <div className="fk-field">
+                  <label htmlFor="supplier-gst" className={fk.label}>
+                    GST Number
+                  </label>
+                  <IconBox icon={Receipt}>
+                    <TextInput id="supplier-gst" value={supplierData.gst} onChange={e => setSupplierData(p => ({ ...p, gst: e.target.value }))} placeholder="22AAAAA…" iconPadding />
+                  </IconBox>
+                </div>
+                  <div className="fk-field">
+                  <label htmlFor="supplier-iec" className={fk.label}>
+                    IEC Number
+                  </label>
+                  <IconBox icon={Hash}>
+                    <TextInput id="supplier-iec" value={supplierData.iec} onChange={e => setSupplierData(p => ({ ...p, iec: e.target.value }))} placeholder="IEC No." iconPadding />
+                  </IconBox>
+                </div>
+                  <div className="fk-field">
+                  <label htmlFor="supplier-city" className={fk.label}>
+                    City
+                  </label>
+                  <IconBox icon={MapPin}>
+                    <TextInput id="supplier-city" value={supplierData.city} onChange={e => setSupplierData(p => ({ ...p, city: e.target.value }))} list="auth-city-list" autoComplete="address-level2" placeholder="Mumbai" iconPadding />
+                  </IconBox>
+                </div>
+                  <div className="fk-field">
+                  <label htmlFor="supplier-country" className={fk.label}>
+                    Country
+                  </label>
+                  <IconBox icon={Globe}>
+                    <TextInput id="supplier-country" value={supplierData.country} onChange={e => setSupplierData(p => ({ ...p, country: e.target.value }))} autoComplete="country-name" placeholder="India" iconPadding />
+                  </IconBox>
+                </div>
                 </div>
                 {/* Document uploads */}
-                <div className="bg-muted/50 border border-border rounded-lg p-3 space-y-2">
-                  <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Upload className="w-3.5 h-3.5" /> Business Documents (for verification)</p>
+                <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-2">
+                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5"><Upload className="w-4 h-4" aria-hidden="true" /> Business Documents (for verification)</p>
                   {[
                     { label: 'GST Certificate', key: 'gst', state: gstDoc, setter: setGstDoc },
                     { label: 'IEC Certificate', key: 'iec', state: iecDoc, setter: setIecDoc },
@@ -833,7 +921,7 @@ export default function AuthPage() {
                   ].map(({ label, key, state, setter }) => (
                     <div key={key} className="flex items-center gap-2">
                       <label className="flex-1 flex items-center gap-2 cursor-pointer">
-                        <div className={`flex-1 border border-dashed rounded-md px-3 py-2 text-xs transition-colors ${state ? 'border-primary/40 text-primary bg-primary/5' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
+                        <div className={`flex-1 border-[1.5px] border-dashed rounded-xl px-3 py-3 text-sm transition-colors ${state ? 'border-primary/40 text-primary bg-primary/5' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
                           {state ? <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" />{state.name}</span> : `Upload ${label}`}
                         </div>
                         <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setter(e.target.files?.[0] ?? null)} />
@@ -841,18 +929,31 @@ export default function AuthPage() {
                     </div>
                   ))}
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Business Email *</Label>
-                  <Input value={supplierData.email} onChange={e => setSupplierData(p => ({ ...p, email: e.target.value }))} type="email" required placeholder="you@company.com" className="bg-card border-border" />
+                <div className="fk-field">
+                  <label htmlFor="supplier-email" className={fk.label}>
+                    Business Email<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={Mail}>
+                    <TextInput id="supplier-email" value={supplierData.email} onChange={e => setSupplierData(p => ({ ...p, email: e.target.value }))} type="email" required autoComplete="email" inputMode="email" placeholder="you@company.com" iconPadding />
+                  </IconBox>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Password * (min 8 chars)</Label>
-                  <div className="relative">
-                    <Input value={supplierData.password} onChange={e => setSupplierData(p => ({ ...p, password: e.target.value }))} type={showPw ? 'text' : 'password'} required placeholder="••••••••" className="bg-card border-border pr-10" />
-                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <div className="fk-field">
+                  <label htmlFor="supplier-password" className={fk.label}>
+                    Password<span className="fk-req" aria-hidden="true">*</span>
+                  </label>
+                  <IconBox icon={Lock}>
+                    <TextInput id="supplier-password" value={supplierData.password} onChange={e => setSupplierData(p => ({ ...p, password: e.target.value }))} type={showPw ? 'text' : 'password'} required autoComplete="new-password" placeholder="••••••••" iconPadding className="pr-12" />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw(!showPw)}
+                      aria-label={showPw ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPw}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    >
+                      {showPw ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                     </button>
-                  </div>
+                  </IconBox>
+                  <p className={fk.hint}>At least 8 characters.</p>
                 </div>
 
                 {/* User Agreement & Privacy Policy Checkbox */}
@@ -863,7 +964,7 @@ export default function AuthPage() {
                     onCheckedChange={(checked) => setSupplierAgreed(!!checked)}
                     className="mt-0.5 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
-                  <label htmlFor="supplier-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
+                  <label htmlFor="supplier-terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer select-none">
                     I agree to the BulkSkart{' '}
                     <button
                       type="button"
@@ -884,16 +985,22 @@ export default function AuthPage() {
                   </label>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 mt-2 font-bold">
-                  {loading ? 'Creating account...' : 'Register as Supplier'}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
+                <button type="submit" disabled={loading} className="fk-btn is-primary w-full">
+                  {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+                  {loading ? 'Creating account…' : 'Register as Supplier'}
+                </button>
+                <p className="text-sm text-center text-muted-foreground">
                   Already have an account?{' '}
                   <button type="button" onClick={() => setActiveTab('login')} className="text-primary font-semibold hover:underline">Sign in</button>
                 </p>
               </form>
             </TabsContent>
           </Tabs>
+          <datalist id="auth-city-list">
+            {CITY_NAMES.map((city) => (
+              <option key={city} value={city} />
+            ))}
+          </datalist>
         </div>
       </div>
 
@@ -910,7 +1017,7 @@ export default function AuthPage() {
               type="button"
               onClick={() => setPolicyTab('terms')}
               className={`text-xs px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                policyTab === 'terms' ? 'bg-[#C94400] text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+                policyTab === 'terms' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               User Agreement
@@ -919,7 +1026,7 @@ export default function AuthPage() {
               type="button"
               onClick={() => setPolicyTab('privacy')}
               className={`text-xs px-3 py-1.5 rounded-md font-semibold transition-colors ${
-                policyTab === 'privacy' ? 'bg-[#C94400] text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+                policyTab === 'privacy' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               Privacy Policy
@@ -969,7 +1076,7 @@ export default function AuthPage() {
                 if (activeTab === 'supplier') setSupplierAgreed(true);
                 setPolicyOpen(false);
               }}
-              className="bg-[#C94400] text-primary-foreground font-semibold text-xs h-9 px-4"
+              className="bg-primary text-primary-foreground font-semibold text-xs h-9 px-4"
             >
               Accept &amp; Close
             </Button>
@@ -978,65 +1085,64 @@ export default function AuthPage() {
       </Dialog>
 
       {/* Forgot Password Dialog */}
-      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md bg-[#12141E] border-border text-white">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-white">Reset Password</DialogTitle>
-          </DialogHeader>
-          {forgotSent ? (
-            <div className="py-4 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-[#FF5A00]/20 text-[#FF7A2E] flex items-center justify-center mx-auto">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-              <p className="text-sm font-semibold text-white">Reset Link Dispatched</p>
-              <p className="text-xs text-muted-foreground">
-                We've sent a password recovery email to <span className="text-white font-medium">{forgotEmail}</span>. Please check your inbox and follow the instructions.
-              </p>
-              <Button
-                type="button"
-                onClick={() => setForgotOpen(false)}
-                className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 rounded-xl mt-2"
-              >
-                Back to Sign In
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={handleForgotPassword} className="space-y-4 pt-2">
-              <p className="text-xs text-muted-foreground">
-                Enter your registered BulkSkart account email and we'll send you a secure link to reset your password.
-              </p>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Registered Email</Label>
-                <Input
+      <FormDialog
+        open={forgotOpen}
+        onOpenChange={setForgotOpen}
+        busy={forgotLoading}
+        title={
+          <>
+            Reset <em>Password</em>
+          </>
+        }
+        description="Enter the e-mail you use for BulkSkart and we will send you a link to choose a new password."
+        width={560}
+      >
+        {forgotSent ? (
+          <Done
+            title="Check your inbox"
+            actions={
+              <Actions single>
+                <KitButton onClick={() => setForgotOpen(false)}>Back to Log In</KitButton>
+              </Actions>
+            }
+          >
+            <p>
+              If an account uses <b>{forgotEmail.trim()}</b>, a reset link is on its way. Open it on this device to set a new password.
+            </p>
+          </Done>
+        ) : (
+          <form onSubmit={handleForgotPassword} noValidate className="fk-form fk-stack">
+            <Field htmlFor="forgot-email" label="E-mail address" required error={forgotError}>
+              <IconBox icon={Mail}>
+                <TextInput
+                  id="forgot-email"
                   type="email"
-                  required
+                  inputMode="email"
+                  autoComplete="email"
                   value={forgotEmail}
-                  onChange={(e) => setForgotEmail(e.target.value)}
+                  onChange={(e) => {
+                    setForgotEmail(e.target.value);
+                    if (forgotError) setForgotError('');
+                  }}
                   placeholder="you@company.com"
-                  className="bg-[#0A0A0F] border-border text-white"
+                  invalid={Boolean(forgotError)}
+                  aria-describedby={forgotError ? 'forgot-email-error' : undefined}
+                  iconPadding
                 />
-              </div>
-              <div className="flex gap-2 justify-end pt-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setForgotOpen(false)}
-                  className="border border-border text-white hover:bg-white/10"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={forgotLoading}
-                  className="bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold"
-                >
-                  {forgotLoading ? 'Sending...' : 'Send Reset Link'}
-                </Button>
-              </div>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+              </IconBox>
+            </Field>
+            <Actions>
+              <KitButton type="submit" disabled={forgotLoading}>
+                {forgotLoading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+                {forgotLoading ? 'Sending…' : 'Send Reset Link'}
+              </KitButton>
+              <KitButton variant="ghost" onClick={() => setForgotOpen(false)} disabled={forgotLoading}>
+                Cancel
+              </KitButton>
+            </Actions>
+          </form>
+        )}
+      </FormDialog>
     </div>
   );
 }

@@ -10,8 +10,6 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import SafeImage from '@/components/common/SafeImage';
-import { getRequirementVisualInfo } from '@/lib/requirementVisuals';
-import { RFQ_LICENSED_IMAGES } from '@/lib/rfqLicensedImages';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -57,7 +55,7 @@ function DealStatusBar({ status, isBuyer, onAdvance }: { status: string; isBuyer
           const active = i === idx;
           return (
             <React.Fragment key={step.key}>
-              <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold transition-colors ${active ? 'bg-[#C94400] text-white' : done ? 'bg-[#FF5A00]/15 text-[#FF5A00]' : 'bg-background border border-border text-muted-foreground/50'}`}>
+              <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold transition-colors ${active ? 'bg-[#FF5A00] text-white' : done ? 'bg-[#FF5A00]/15 text-[#FF5A00]' : 'bg-background border border-border text-muted-foreground/50'}`}>
                 <Icon className="w-3 h-3" />
                 {step.label}
               </div>
@@ -85,7 +83,7 @@ function QuoteCard({ q, isBuyer, onAccept, onReject, onChat }: {
   onReject: (q: Quotation) => void;
   onChat: (q: Quotation) => void;
 }) {
-  const statusColor = q.status === 'accepted' ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30 text-[#FF7A2E]'
+  const statusColor = q.status === 'accepted' ? 'bg-orange-500/10 border-orange-500/30 text-orange-500'
     : q.status === 'rejected' ? 'bg-destructive/10 border-destructive/30 text-destructive'
     : 'bg-primary/10 border-primary/30 text-primary';
 
@@ -153,14 +151,14 @@ function QuoteCard({ q, isBuyer, onAccept, onReject, onChat }: {
         <Button
           size="sm"
           onClick={() => onChat(q)}
-          className="flex-1 bg-[#C94400] hover:bg-primary/90 text-primary-foreground text-[11px] h-8 gap-1"
+          className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] h-8 gap-1"
         >
           <MessageSquare className="w-3 h-3" /> Chat / Negotiate
         </Button>
         {isBuyer && q.status === 'pending' && (
           <>
             <Button size="sm" onClick={() => onAccept(q)}
-              className="bg-[#B33D00] hover:bg-[#B33D00] text-white text-[11px] h-8 px-3 gap-1">
+              className="bg-orange-600 hover:bg-orange-700 text-white text-[11px] h-8 px-3 gap-1">
               <CheckCircle className="w-3 h-3" /> Accept
             </Button>
             <Button size="sm" onClick={() => onReject(q)} variant="ghost"
@@ -250,7 +248,7 @@ function ChatPanel({ conversationId, currentUserId }: { conversationId: string; 
           const isFile = msg.content.startsWith('📎 [File]');
           return (
             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-[12px] ${isMe ? 'bg-[#C94400] text-white rounded-br-none' : 'bg-card border border-border text-foreground rounded-bl-none'}`}>
+              <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-[12px] ${isMe ? 'bg-[#FF5A00] text-white rounded-br-none' : 'bg-card border border-border text-foreground rounded-bl-none'}`}>
                 {isFile ? (
                   <a href={msg.content.match(/\((.+)\)/)?.[1]} target="_blank" rel="noreferrer"
                     className={`underline ${isMe ? 'text-white' : 'text-[#FF5A00]'}`}>
@@ -284,7 +282,7 @@ function ChatPanel({ conversationId, currentUserId }: { conversationId: string; 
           disabled={sending || uploading}
         />
         <Button size="sm" onClick={handleSend} disabled={sending || uploading || !text.trim()}
-          className="bg-[#C94400] hover:bg-[#B33D00] text-white h-9 px-3 gap-1">
+          className="bg-[#FF5A00] hover:bg-[#e04e00] text-white h-9 px-3 gap-1">
           {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
         </Button>
       </div>
@@ -415,7 +413,7 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
             )}
             {/* @ts-expect-error */}
             {requirement.is_urgent && (
-              <span className="text-[10px] font-bold text-[#FF7A2E] flex items-center gap-1">
+              <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
                 <Zap className="w-3 h-3" /> URGENT
               </span>
             )}
@@ -424,25 +422,25 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
           <TabsList className="shrink-0 mx-4 mt-3 bg-card border border-border rounded-xl h-9 p-0.5">
-            <TabsTrigger value="overview" className="flex-1 text-[12px] h-8 rounded-lg data-[state=active]:bg-[#C94400] data-[state=active]:text-white">
+            <TabsTrigger value="overview" className="flex-1 text-[12px] h-8 rounded-lg data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white">
               Overview
             </TabsTrigger>
-            <TabsTrigger value="quotes" className="flex-1 text-[12px] h-8 rounded-lg data-[state=active]:bg-[#C94400] data-[state=active]:text-white">
+            <TabsTrigger value="quotes" className="flex-1 text-[12px] h-8 rounded-lg data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white">
               Quotes {quotes.length > 0 && <span className="ml-1 bg-[#FF5A00]/15 text-[#FF5A00] rounded-full px-1.5 text-[10px]">{quotes.length}</span>}
             </TabsTrigger>
-            <TabsTrigger value="chat" className="flex-1 text-[12px] h-8 rounded-lg data-[state=active]:bg-[#C94400] data-[state=active]:text-white">
+            <TabsTrigger value="chat" className="flex-1 text-[12px] h-8 rounded-lg data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white">
               Chat
             </TabsTrigger>
           </TabsList>
 
           {/* Overview tab */}
-          <TabsContent value="overview" className="h-[calc(100dvh-160px)] min-h-0 overflow-y-auto p-4 space-y-4 mt-0 pb-10">
+          <TabsContent value="overview" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
             <DealStatusBar status={dealStatus} isBuyer={!!isBuyer} onAdvance={handleAdvanceDealStatus} />
 
             {/* Requirement Reference Visual */}
             <div className="rounded-xl overflow-hidden border border-border bg-muted/40 relative aspect-video max-h-48">
               <SafeImage
-                src={getRequirementVisualInfo(requirement, 0).image}
+                src={requirement.attachment_url}
                 alt={requirement.title}
                 type="rfq"
                 className="w-full h-full object-cover"
@@ -480,8 +478,8 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                   </div>
                 )}
                 <div>
-                  <p className="text-[#FF7A2E] text-[10px] mb-0.5 flex items-center gap-1 font-bold"><Zap className="w-3 h-3 fill-current" /> Priority</p>
-                  <p className="font-extrabold text-[#FF7A2E] uppercase tracking-wider text-xs">Urgent RFQ</p>
+                  <p className="text-orange-400 text-[10px] mb-0.5 flex items-center gap-1 font-bold"><Zap className="w-3 h-3 fill-current" /> Priority</p>
+                  <p className="font-extrabold text-orange-500 uppercase tracking-wider text-xs">Urgent RFQ</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-[10px] mb-0.5 flex items-center gap-1"><Package className="w-3 h-3" /> Quotes</p>
@@ -501,7 +499,7 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                   <p className="text-[12px] text-foreground leading-relaxed whitespace-pre-wrap">{requirement.specifications}</p>
                 </div>
               )}
-              {requirement.attachment_url && !Object.prototype.hasOwnProperty.call(RFQ_LICENSED_IMAGES, requirement.id) && (
+              {requirement.attachment_url && (
                 <a href={requirement.attachment_url} target="_blank" rel="noreferrer"
                   className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#FF5A00] hover:underline">
                   <Upload className="w-3.5 h-3.5" /> View Attachment
@@ -516,8 +514,8 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
               {/* Paid Subscription Companies Only Notice & Direct Message / Quote CTA */}
               {!isBuyer && (
                 <div className="pt-2 border-t border-border flex flex-col gap-2">
-                  <div className="bg-[#FF5A00]/10 border border-[#FF5A00]/20 rounded-xl p-3 flex items-start gap-2.5">
-                    <Lock className="w-4 h-4 text-[#FF7A2E] shrink-0 mt-0.5" />
+                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 flex items-start gap-2.5">
+                    <Lock className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs font-bold text-foreground">Paid Subscription Companies Only</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
@@ -551,7 +549,7 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                       }
                       setRespondDialogOpen(true);
                     }}
-                    className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 rounded-xl shadow-md gap-2"
+                    className="w-full bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-10 rounded-xl shadow-md gap-2"
                   >
                     <Send className="w-4 h-4" /> Send Direct Quote / Message Buyer
                   </Button>

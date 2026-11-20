@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import PageMeta from '@/components/common/PageMeta';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Actions, Field, FormDialog, IconBox, KitButton, SectionTitle, Stepper, TextInput } from '@/components/formkit';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
 import { getProducts } from '@/lib/api';
@@ -15,7 +13,7 @@ import type { Product } from '@/types/types';
 import { toast } from 'sonner';
 import {
   Package, AlertTriangle, CheckCircle2, RefreshCw,
-  TrendingUp, Edit2, ArrowUp, ArrowDown, Warehouse, Plus,
+  TrendingUp, Edit2, ArrowUp, ArrowDown, Warehouse, Plus, Check, Hash, Loader2,
 } from 'lucide-react';
 
 interface InventoryRow {
@@ -126,7 +124,11 @@ export default function SupplierInventoryPage() {
   const handleAdjust = async () => {
     if (!company || !editing?.inventory) return;
     const delta = parseInt(adjustQty);
-    if (!delta || delta < 0) { toast.error('Enter a valid adjustment qty'); return; }
+    if (!delta || delta < 0) {
+      toast.error('Enter the quantity to adjust by.');
+      document.getElementById('stock-adjust')?.focus();
+      return;
+    }
     const newQty = adjustMode === 'add'
       ? editing.inventory.stock_qty + delta
       : Math.max(0, editing.inventory.stock_qty - delta);
@@ -178,7 +180,7 @@ export default function SupplierInventoryPage() {
             <Card>
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle2 className="w-4 h-4 text-[#FF7A2E]" />
+                  <CheckCircle2 className="w-4 h-4 text-orange-500" />
                   <span className="text-xs text-muted-foreground">Available</span>
                 </div>
                 <p className="text-2xl font-bold text-foreground">{totalAvailable.toLocaleString()}</p>
@@ -187,23 +189,23 @@ export default function SupplierInventoryPage() {
             <Card>
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="w-4 h-4 text-[#FF7A2E]" />
+                  <AlertTriangle className="w-4 h-4 text-orange-500" />
                   <span className="text-xs text-muted-foreground">Low Stock</span>
                 </div>
-                <p className="text-2xl font-bold text-[#FF7A2E]">{lowStockItems.length}</p>
+                <p className="text-2xl font-bold text-orange-500">{lowStockItems.length}</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Low stock alert */}
           {lowStockItems.length > 0 && (
-            <div className="mb-4 flex items-start gap-3 bg-[#FF5A00]/10 dark:bg-[#B33D00]/20 border border-[#FF5A00]/50 rounded-xl p-3 text-sm">
-              <AlertTriangle className="w-4 h-4 text-[#FF7A2E] shrink-0 mt-0.5" />
+            <div className="mb-4 flex items-start gap-3 bg-orange-50 dark:bg-orange-950/20 border border-orange-300/50 rounded-xl p-3 text-sm">
+              <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-[#FF7A2E] dark:text-[#FF7A2E]">
+                <p className="font-semibold text-orange-700 dark:text-orange-400">
                   {lowStockItems.length} product{lowStockItems.length > 1 ? 's' : ''} running low on stock
                 </p>
-                <p className="text-xs text-[#FF7A2E] dark:text-[#FF7A2E] truncate">
+                <p className="text-xs text-orange-600 dark:text-orange-500 truncate">
                   {lowStockItems.map(p => p.name).join(', ')}
                 </p>
               </div>
@@ -227,7 +229,7 @@ export default function SupplierInventoryPage() {
                 </p>
                 <Button
                   onClick={() => navigate('/dashboard/supplier/products')}
-                  className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 font-semibold text-xs gap-1.5"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs gap-1.5"
                 >
                   <Plus className="w-4 h-4" /> Go to My Products
                 </Button>
@@ -240,7 +242,7 @@ export default function SupplierInventoryPage() {
                 const isLow = inv && inv.available_qty <= inv.low_stock_threshold;
                 const stockPct = inv ? Math.min((inv.available_qty / Math.max(inv.stock_qty, 1)) * 100, 100) : 0;
                 return (
-                  <Card key={p.id} className={isLow ? 'border-[#FF5A00]/50' : ''}>
+                  <Card key={p.id} className={isLow ? 'border-orange-300/50' : ''}>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-muted shrink-0 overflow-hidden">
@@ -260,18 +262,18 @@ export default function SupplierInventoryPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
                             {inv?.sku && <span className="text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">{inv.sku}</span>}
-                            {isLow && <Badge className="text-[10px] bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40">Low Stock</Badge>}
+                            {isLow && <Badge className="text-[10px] bg-orange-100 text-orange-700 border-orange-300">Low Stock</Badge>}
                           </div>
                           <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
                             <span>Stock: <span className="text-foreground font-medium">{inv?.stock_qty ?? '—'}</span></span>
-                            <span>Available: <span className="text-[#FF7A2E] font-medium">{inv?.available_qty ?? '—'}</span></span>
+                            <span>Available: <span className="text-orange-600 font-medium">{inv?.available_qty ?? '—'}</span></span>
                             <span>Reserved: <span className="text-foreground">{inv?.reserved_qty ?? 0}</span></span>
                             {inv?.warehouse_location && <span className="flex items-center gap-0.5"><Warehouse className="w-3 h-3" /> {inv.warehouse_location}</span>}
                           </div>
                           {inv && (
                             <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all ${stockPct > 50 ? 'bg-[#C94400]' : stockPct > 20 ? 'bg-[#C94400]' : 'bg-destructive'}`}
+                                className={`h-full rounded-full transition-all ${stockPct > 50 ? 'bg-orange-500' : stockPct > 20 ? 'bg-orange-500' : 'bg-destructive'}`}
                                 style={{ width: `${stockPct}%` }}
                               />
                             </div>
@@ -291,76 +293,78 @@ export default function SupplierInventoryPage() {
       </div>
 
       {/* Edit dialog */}
-      <Dialog open={!!editing} onOpenChange={open => { if (!open) setEditing(null); }}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md bg-card border-border max-h-[90dvh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-foreground text-base">Update Stock — {editing?.name}</DialogTitle>
-          </DialogHeader>
+      <FormDialog
+        open={!!editing}
+        onOpenChange={(open) => {
+          if (!open && !saving) setEditing(null);
+        }}
+        busy={saving}
+        title={
+          <>
+            Update <em>Stock</em>
+          </>
+        }
+        description={editing?.name}
+        width={640}
+      >
+        <div className="fk-stack">
           {editing?.inventory && (
-            <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-2 font-medium">Quick Adjustment</p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant={adjustMode === 'add' ? 'default' : 'outline'}
-                  onClick={() => setAdjustMode('add')}
-                  className={`flex-1 text-xs gap-1 ${adjustMode === 'add' ? 'bg-[#1A0C05] text-primary-foreground' : ''}`}
-                >
-                  <ArrowUp className="w-3 h-3" /> Add Stock
-                </Button>
-                <Button
-                  size="sm"
-                  variant={adjustMode === 'subtract' ? 'default' : 'outline'}
-                  onClick={() => setAdjustMode('subtract')}
-                  className={`flex-1 text-xs gap-1 ${adjustMode === 'subtract' ? 'bg-destructive text-white' : ''}`}
-                >
-                  <ArrowDown className="w-3 h-3" /> Remove
-                </Button>
+            <div className="fk-form fk-stack">
+              <SectionTitle>Quick Adjustment</SectionTitle>
+              <div className="fk-segment" role="group" aria-label="Adjustment type">
+                <button type="button" className="is-add" aria-pressed={adjustMode === 'add'} onClick={() => setAdjustMode('add')}>
+                  <ArrowUp aria-hidden="true" /> Add Stock
+                </button>
+                <button type="button" className="is-remove" aria-pressed={adjustMode === 'subtract'} onClick={() => setAdjustMode('subtract')}>
+                  <ArrowDown aria-hidden="true" /> Remove
+                </button>
               </div>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  type="number"
-                  min="1"
-                  placeholder="Quantity"
-                  value={adjustQty}
-                  onChange={e => setAdjustQty(e.target.value)}
-                  className="bg-input border-border text-sm"
-                />
-                <Button onClick={handleAdjust} size="sm" className="bg-[#1A0C05] text-primary-foreground text-xs shrink-0">
-                  Apply
-                </Button>
-              </div>
+              <Field htmlFor="stock-adjust" label={adjustMode === 'add' ? 'Quantity to add' : 'Quantity to remove'} hint={`In stock now: ${editing.inventory.stock_qty.toLocaleString('en-IN')}`}>
+                <div className="fk-inline-row">
+                  <Stepper id="stock-adjust" value={adjustQty} onChange={setAdjustQty} min={1} unitName="units" describedBy="stock-adjust-hint" />
+                  <KitButton variant="ghost" onClick={handleAdjust}>
+                    Apply
+                  </KitButton>
+                </div>
+              </Field>
             </div>
           )}
-          <form onSubmit={handleSave} className="space-y-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Total Stock Quantity</Label>
-              <Input type="number" min="0" value={form.stock_qty} onChange={e => setForm(p => ({ ...p, stock_qty: e.target.value }))} className="bg-input border-border" />
+
+          <form onSubmit={handleSave} noValidate className="fk-form fk-stack">
+            <SectionTitle>Stock Settings</SectionTitle>
+            <Field htmlFor="stock-total" label="Total Stock Quantity">
+              <Stepper id="stock-total" value={form.stock_qty} onChange={(value) => setForm((p) => ({ ...p, stock_qty: value }))} min={0} unitName="units in stock" />
+            </Field>
+            <div className="fk-grid">
+              <Field htmlFor="stock-low" label="Low Stock Alert" hint="Warn me at or below this.">
+                <Stepper id="stock-low" value={form.low_stock_threshold} onChange={(value) => setForm((p) => ({ ...p, low_stock_threshold: value }))} min={0} unitName="alert level" describedBy="stock-low-hint" />
+              </Field>
+              <Field htmlFor="stock-reorder" label="Reorder Quantity">
+                <Stepper id="stock-reorder" value={form.reorder_qty} onChange={(value) => setForm((p) => ({ ...p, reorder_qty: value }))} min={0} unitName="reorder quantity" />
+              </Field>
+              <Field htmlFor="stock-sku" label="SKU / Part Number" optional>
+                <IconBox icon={Hash}>
+                  <TextInput id="stock-sku" value={form.sku} onChange={(e) => setForm((p) => ({ ...p, sku: e.target.value }))} placeholder="e.g. SKU-001" iconPadding />
+                </IconBox>
+              </Field>
+              <Field htmlFor="stock-location" label="Warehouse / Location" optional>
+                <IconBox icon={Warehouse}>
+                  <TextInput id="stock-location" value={form.warehouse_location} onChange={(e) => setForm((p) => ({ ...p, warehouse_location: e.target.value }))} placeholder="e.g. Mumbai Warehouse A" iconPadding />
+                </IconBox>
+              </Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Low Stock Alert</Label>
-                <Input type="number" min="0" value={form.low_stock_threshold} onChange={e => setForm(p => ({ ...p, low_stock_threshold: e.target.value }))} className="bg-input border-border" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Reorder Qty</Label>
-                <Input type="number" min="0" value={form.reorder_qty} onChange={e => setForm(p => ({ ...p, reorder_qty: e.target.value }))} className="bg-input border-border" />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">SKU / Part Number</Label>
-              <Input value={form.sku} onChange={e => setForm(p => ({ ...p, sku: e.target.value }))} placeholder="e.g. SKU-001" className="bg-input border-border" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Warehouse / Location</Label>
-              <Input value={form.warehouse_location} onChange={e => setForm(p => ({ ...p, warehouse_location: e.target.value }))} placeholder="e.g. Mumbai Warehouse A" className="bg-input border-border" />
-            </div>
-            <Button type="submit" disabled={saving} className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 text-sm">
-              {saving ? <><RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Saving…</> : 'Save Inventory'}
-            </Button>
+            <Actions>
+              <KitButton type="submit" disabled={saving}>
+                {saving ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Check aria-hidden="true" />}
+                {saving ? 'Saving…' : 'Save Inventory'}
+              </KitButton>
+              <KitButton variant="ghost" onClick={() => setEditing(null)} disabled={saving}>
+                Cancel
+              </KitButton>
+            </Actions>
           </form>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </FormDialog>
     </DashboardLayout>
   );
 }

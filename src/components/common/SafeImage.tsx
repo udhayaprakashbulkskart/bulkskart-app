@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Package, Building2, ImageIcon } from 'lucide-react';
 import { resolveCompanyBranding, resolveRfqImage, resolveProductImage, generateIsolatedProductFallback, isGenericImage } from '@/lib/contentImages';
 import { resolveProductImageBackend } from '@/lib/pixabay';
@@ -107,19 +107,16 @@ export default function SafeImage({
   const isProduct = effectiveFallbackType === 'product';
 
   // For products: ensure we always have an authentic commodity photo (never empty, never blank placeholder)
-  const usable = (url?: string | null) => (url && !isGenericImage(url) ? url : '');
-
   const getInitialUrl = () => {
-    const direct = usable(src);
     if (isProduct) {
-      if (direct) return toWebPUrl(direct);
-      const matched = usable(resolveProductImage({ name: alt, title: alt, category, image: src }));
+      if (src && !isGenericImage(src)) {
+        return toWebPUrl(src);
+      }
+      const matched = resolveProductImage({ name: alt, title: alt, category, image: src });
       return toWebPUrl(matched) || generateIsolatedProductFallback(alt, category || undefined);
     }
-    const nonProduct = direct
-      || usable(fallbackSrc)
-      || usable(getCategoryFallbackImage(category, alt, effectiveFallbackType));
-    return toWebPUrl(nonProduct) || generateIsolatedProductFallback(alt, category || undefined);
+    const nonProduct = src || fallbackSrc || getCategoryFallbackImage(category, alt, effectiveFallbackType);
+    return toWebPUrl(nonProduct) || getCategoryFallbackImage(category, alt, effectiveFallbackType);
   };
 
   const initialUrl = getInitialUrl();
@@ -127,6 +124,7 @@ export default function SafeImage({
   const [hasError, setHasError] = useState(false);
   const [errorCount, setErrorCount] = useState(0);
   const [loading, setLoading] = useState(Boolean(initialUrl));
+  const imgRef = useRef<HTMLImageElement>(null);
   const [isStockResolved, setIsStockResolved] = useState<boolean>(
     Boolean(isRepresentativeImage || (!hasSellerImages && isFallbackOrStock(initialUrl)))
   );
@@ -177,27 +175,34 @@ export default function SafeImage({
     setIsStockResolved(Boolean(isRepresentativeImage || (!hasSellerImages && isFallbackOrStock(nextUrl))));
   }, [src, fallbackSrc, isRepresentativeImage, hasSellerImages, isProduct, category, alt, effectiveFallbackType]);
 
+  // A picture that comes out of the browser cache can finish loading before the effect above has run,
+  // and that effect switches the loading cover back on. Look at the picture again so the cover never gets stuck.
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth > 0) setLoading(false);
+  }, [imgSrc]);
+
   const handleError = () => {
     if (errorCount === 0) {
       // First error fallback: try commodity match or category branding
       setErrorCount(1);
       if (isProduct) {
         const fallback = resolveProductImage({ name: alt, title: alt, category });
-        if (fallback && fallback !== imgSrc && !isGenericImage(fallback)) {
+        if (fallback && fallback !== imgSrc) {
           setImgSrc(fallback);
           setLoading(false);
           return;
         }
       } else if (effectiveFallbackType === 'company') {
         const brandLogo = resolveCompanyBranding({ company_name: alt, industry: category || undefined }).logo;
-        if (brandLogo && brandLogo !== imgSrc && !isGenericImage(brandLogo)) {
+        if (brandLogo && brandLogo !== imgSrc) {
           setImgSrc(brandLogo);
           setLoading(false);
           return;
         }
       } else if (effectiveFallbackType === 'rfq') {
         const rfqImg = resolveRfqImage({ title: alt, category });
-        if (rfqImg && rfqImg !== imgSrc && !isGenericImage(rfqImg)) {
+        if (rfqImg && rfqImg !== imgSrc) {
           setImgSrc(rfqImg);
           setLoading(false);
           return;
@@ -211,12 +216,11 @@ export default function SafeImage({
       setHasError(false);
     } else {
       const fallbackCat = getCategoryFallbackImage(category, alt, effectiveFallbackType);
-      if (fallbackCat && fallbackCat !== imgSrc && !isGenericImage(fallbackCat)) {
+      if (fallbackCat && fallbackCat !== imgSrc) {
         setImgSrc(fallbackCat);
         setHasError(false);
       } else {
-        setImgSrc(generateIsolatedProductFallback(alt, category || undefined));
-        setHasError(false);
+        setHasError(true);
       }
     }
     setLoading(false);
@@ -228,13 +232,13 @@ export default function SafeImage({
 
   if (hasError && !imgSrc) {
     return (
-      <div className={`bg-[#0A0A0A] border border-[#2A2A2A] flex flex-col items-center justify-center text-neutral-400 p-2 text-center text-xs ${className}`}>
+      <div className={`bg-neutral-900 border border-neutral-800 flex flex-col items-center justify-center text-neutral-400 p-2 text-center text-xs ${className}`}>
         {effectiveFallbackType === 'company' ? (
           <Building2 className="w-6 h-6 mb-1 text-[#FF5A00]" />
         ) : (
           <ImageIcon className="w-6 h-6 mb-1 text-[#FF5A00]" />
         )}
-        <span className="text-[10px] font-semibold text-slate-300 line-clamp-1">{alt}</span>
+        <span className="text-[10px] font-semibold text-neutral-300 line-clamp-1">{alt}</span>
       </div>
     );
   }
@@ -247,6 +251,7 @@ export default function SafeImage({
         </div>
       )}
       <img
+        ref={imgRef}
         src={imgSrc}
         alt={alt}
         loading={priority ? 'eager' : 'lazy'}

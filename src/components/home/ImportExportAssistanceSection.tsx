@@ -83,14 +83,14 @@ export default function ImportExportAssistanceSection() {
   return (
     <section className="relative z-20 max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 my-8 sm:my-14">
       {/* Container with Dark Navy Card & Glowing Orange/Blue Accents */}
-      <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-r from-[#C94400]/80 via-orange-500/40 to-[#FF5A00]/30 shadow-[0_0_50px_rgba(255,90,0,0.18)]">
+      <div className="relative rounded-3xl p-[1.5px] bg-gradient-to-r from-[#FF5A00]/80 via-orange-500/40 to-[#FF5A00]/30 shadow-[0_0_50px_rgba(255,90,0,0.18)]">
         <div className="relative rounded-[22.5px] bg-[#070B13] p-5 sm:p-8 md:p-10 text-white overflow-hidden border border-white/5">
           {/* Subtle background ambient lights */}
           <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-[#FF5A00]/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full bg-[#FF5A00]/10 blur-3xl pointer-events-none" />
 
           {/* Section Header */}
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-6 sm:pb-8 border-b border-[#2A2A2A]/80">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-6 sm:pb-8 border-b border-neutral-800/80">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF5A00]/15 border border-[#FF5A00]/30 text-[#FF8A3D] text-xs font-bold uppercase tracking-wider mb-3">
                 <Sparkles className="w-3.5 h-3.5 fill-[#FF5A00]" />
@@ -99,7 +99,7 @@ export default function ImportExportAssistanceSection() {
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-tight">
                 AI Import & Export <span className="text-[#FF5A00]">Assistance</span>
               </h2>
-              <p className="text-sm sm:text-base text-slate-300 mt-2 leading-relaxed">
+              <p className="text-sm sm:text-base text-neutral-300 mt-2 leading-relaxed">
                 Seamless international sourcing, landed cost estimates, compliance checklists, and end-to-end shipment coordination for global buyers and manufacturers.
               </p>
             </div>
@@ -107,7 +107,7 @@ export default function ImportExportAssistanceSection() {
             <div className="shrink-0 flex items-center gap-3">
               <Button
                 onClick={() => navigate('/trade-assistant')}
-                className="bg-gradient-to-r from-[#C94400] to-[#FF7700] hover:brightness-110 text-white font-bold text-sm px-6 py-5 rounded-xl shadow-lg shadow-orange-950/40 flex items-center gap-2"
+                className="bg-gradient-to-r from-[#FF5A00] to-[#FF7700] hover:brightness-110 text-white font-bold text-sm px-6 py-5 rounded-xl shadow-lg shadow-orange-950/40 flex items-center gap-2"
               >
                 <span>Launch Trade Assistant</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -116,14 +116,14 @@ export default function ImportExportAssistanceSection() {
           </div>
 
           {/* Live Real-Time Forex Rate Ticker Strip */}
-          <div className="mb-6 p-2.5 sm:p-3 rounded-2xl bg-[#0A0A0A]/90 border border-[#2A2A2A] flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div className="mb-6 p-2.5 sm:p-3 rounded-2xl bg-neutral-900/90 border border-neutral-800 flex flex-wrap items-center justify-between gap-2.5 text-xs">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C94400] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C94400]"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
               </span>
               <span className="font-bold uppercase tracking-wider text-white text-[11px] flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-[#FF7A2E]" />
+                <TrendingUp className="w-3.5 h-3.5 text-orange-400" />
                 <span>Live FX Market Rates:</span>
               </span>
             </div>
@@ -136,9 +136,9 @@ export default function ImportExportAssistanceSection() {
                 { label: 'GBP/USD', val: (1 / (liveRates.GBP || 0.79)).toFixed(3) },
                 { label: 'USD/CNY', val: (liveRates.CNY || 7.24).toFixed(2) },
               ].map((fx, i) => (
-                <div key={i} className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#0A0A0A] border border-[#2A2A2A] text-slate-300">
+                <div key={i} className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-neutral-950 border border-neutral-800 text-neutral-300">
                   <span className="text-neutral-400 font-medium">{fx.label}:</span>
-                  <span className="font-mono font-bold text-[#FF7A2E]">{fx.val}</span>
+                  <span className="font-mono font-bold text-orange-400">{fx.val}</span>
                 </div>
               ))}
             </div>
@@ -147,7 +147,7 @@ export default function ImportExportAssistanceSection() {
               onClick={() => navigate('/trade-assistant?tab=calculator')}
               variant="ghost"
               size="sm"
-              className="h-6 px-2 text-[11px] text-[#FF8A3D] hover:text-white hover:bg-[#B33D00]/20 font-semibold"
+              className="h-6 px-2 text-[11px] text-[#FF8A3D] hover:text-white hover:bg-[#FF5A00]/20 font-semibold"
             >
               <span>Full Currency Matrix →</span>
             </Button>
@@ -164,7 +164,7 @@ export default function ImportExportAssistanceSection() {
                     <div
                       key={idx}
                       onClick={() => navigate('/trade-assistant')}
-                      className="group p-4 rounded-2xl bg-[#0A0A0A]/80 border border-[#2A2A2A]/90 hover:border-[#FF5A00]/60 transition-all cursor-pointer hover:bg-[#0A0A0A] shadow-sm"
+                      className="group p-4 rounded-2xl bg-neutral-900/80 border border-neutral-800/90 hover:border-[#FF5A00]/60 transition-all cursor-pointer hover:bg-neutral-900 shadow-sm"
                     >
                       <div className="w-9 h-9 rounded-xl bg-[#FF5A00]/15 text-[#FF5A00] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                         <Icon className="w-5 h-5" />
@@ -172,7 +172,7 @@ export default function ImportExportAssistanceSection() {
                       <h4 className="text-sm font-bold text-white group-hover:text-[#FF5A00] transition-colors">
                         {feat.title}
                       </h4>
-                      <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
                         {feat.desc}
                       </p>
                     </div>
@@ -181,8 +181,8 @@ export default function ImportExportAssistanceSection() {
               </div>
 
               {/* Partner Demarcation Badge */}
-              <div className="rounded-xl bg-[#0A0A0A]/60 border border-[#2A2A2A]/80 p-3 sm:p-3.5 flex items-start gap-3 text-xs text-slate-300">
-                <ShieldCheck className="w-5 h-5 text-[#FF7A2E] shrink-0 mt-0.5" />
+              <div className="rounded-xl bg-neutral-900/60 border border-neutral-800/80 p-3 sm:p-3.5 flex items-start gap-3 text-xs text-neutral-300">
+                <ShieldCheck className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-white">Certified External Partner Network: </span>
                   Physical container booking, Bill of Lading clearance, and customs brokerage are executed via licensed logistics partners (e.g. DHL Global Forwarding, Maersk Logistics, CMA CGM, and certified customs agents).
@@ -191,16 +191,16 @@ export default function ImportExportAssistanceSection() {
             </div>
 
             {/* Right Column: Live Quick Duty & Landed Cost Estimator Card (5 cols) */}
-            <div className="lg:col-span-5 rounded-2xl bg-[#0B101D] border border-[#2A2A2A] p-4 sm:p-5 flex flex-col justify-between shadow-xl">
+            <div className="lg:col-span-5 rounded-2xl bg-[#141414] border border-neutral-800 p-4 sm:p-5 flex flex-col justify-between shadow-xl">
               <div>
-                <div className="flex items-center justify-between pb-3 border-b border-[#2A2A2A]/80">
+                <div className="flex items-center justify-between pb-3 border-b border-neutral-800/80">
                   <div className="flex items-center gap-2">
                     <Calculator className="w-4 h-4 text-[#FF5A00]" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
                       Quick Landed Cost Calculator
                     </span>
                   </div>
-                  <Badge variant="outline" className="border-[#FF5A00]/30 text-[#FF7A2E] bg-[#FF5A00]/10 text-[10px] font-semibold">
+                  <Badge variant="outline" className="border-orange-500/30 text-orange-400 bg-orange-500/10 text-[10px] font-semibold">
                     Live Demo
                   </Badge>
                 </div>
@@ -212,7 +212,7 @@ export default function ImportExportAssistanceSection() {
                     <select
                       value={origin}
                       onChange={(e) => setOrigin(e.target.value)}
-                      className="w-full bg-[#0A0A0A] border border-[#2A2A2A]/80 rounded-lg px-2.5 py-1.5 text-white text-xs font-semibold focus:outline-none focus:border-[#FF5A00]"
+                      className="w-full bg-neutral-900 border border-neutral-700/80 rounded-lg px-2.5 py-1.5 text-white text-xs font-semibold focus:outline-none focus:border-[#FF5A00]"
                     >
                       <option value="India">India (Nhava Sheva)</option>
                       <option value="China">China (Shanghai / Ningbo)</option>
@@ -227,7 +227,7 @@ export default function ImportExportAssistanceSection() {
                     <select
                       value={destination}
                       onChange={(e) => setDestination(e.target.value)}
-                      className="w-full bg-[#0A0A0A] border border-[#2A2A2A]/80 rounded-lg px-2.5 py-1.5 text-white text-xs font-semibold focus:outline-none focus:border-[#FF5A00]"
+                      className="w-full bg-neutral-900 border border-neutral-700/80 rounded-lg px-2.5 py-1.5 text-white text-xs font-semibold focus:outline-none focus:border-[#FF5A00]"
                     >
                       <option value="USA">USA (New York / NJ)</option>
                       <option value="India">India (Chennai / Mumbai)</option>
@@ -242,7 +242,7 @@ export default function ImportExportAssistanceSection() {
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full bg-[#0A0A0A] border border-[#2A2A2A]/80 rounded-lg px-2.5 py-1.5 text-white text-xs font-semibold focus:outline-none focus:border-[#FF5A00]"
+                      className="w-full bg-neutral-900 border border-neutral-700/80 rounded-lg px-2.5 py-1.5 text-white text-xs font-semibold focus:outline-none focus:border-[#FF5A00]"
                     >
                       <option value="Machinery">Industrial Machinery</option>
                       <option value="Steel">Structural Steel & Coils</option>
@@ -257,7 +257,7 @@ export default function ImportExportAssistanceSection() {
                       <select
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value)}
-                        className="bg-[#0A0A0A] border border-[#2A2A2A] rounded px-1 text-[10px] text-[#FF8A3D] font-bold focus:outline-none"
+                        className="bg-neutral-950 border border-neutral-700 rounded px-1 text-[10px] text-[#FF8A3D] font-bold focus:outline-none"
                       >
                         <option value="USD">USD ($)</option>
                         <option value="INR">INR (₹)</option>
@@ -271,22 +271,22 @@ export default function ImportExportAssistanceSection() {
                       type="number"
                       value={estValue}
                       onChange={(e) => setEstValue(e.target.value)}
-                      className="w-full bg-[#0A0A0A] border border-[#2A2A2A]/80 rounded-lg px-2.5 py-1.5 text-white text-xs font-semibold focus:outline-none focus:border-[#FF5A00]"
+                      className="w-full bg-neutral-900 border border-neutral-700/80 rounded-lg px-2.5 py-1.5 text-white text-xs font-semibold focus:outline-none focus:border-[#FF5A00]"
                       placeholder="e.g. 25000"
                     />
                   </div>
                 </div>
 
                 {/* Freight Toggle */}
-                <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[#2A2A2A]/80">
+                <div className="flex items-center gap-2 mt-3 pt-2 border-t border-neutral-800/80">
                   <span className="text-[11px] text-neutral-400">Mode:</span>
-                  <div className="flex items-center gap-1.5 bg-[#0A0A0A] p-0.5 rounded-lg border border-[#2A2A2A]">
+                  <div className="flex items-center gap-1.5 bg-neutral-900 p-0.5 rounded-lg border border-neutral-800">
                     <button
                       type="button"
                       onClick={() => setFreightType('sea')}
                       className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all ${
                         freightType === 'sea'
-                          ? 'bg-[#C94400] text-white shadow-xs'
+                          ? 'bg-[#FF5A00] text-white shadow-xs'
                           : 'text-neutral-400 hover:text-white'
                       }`}
                     >
@@ -298,7 +298,7 @@ export default function ImportExportAssistanceSection() {
                       onClick={() => setFreightType('air')}
                       className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all ${
                         freightType === 'air'
-                          ? 'bg-[#C94400] text-white shadow-xs'
+                          ? 'bg-[#FF5A00] text-white shadow-xs'
                           : 'text-neutral-400 hover:text-white'
                       }`}
                     >
@@ -309,20 +309,20 @@ export default function ImportExportAssistanceSection() {
                 </div>
 
                 {/* Calculation Output Box */}
-                <div className="mt-3.5 p-3 rounded-xl bg-[#0A0A0A]/90 border border-[#2A2A2A] space-y-1.5 text-xs">
-                  <div className="flex justify-between text-slate-300 text-[11px]">
+                <div className="mt-3.5 p-3 rounded-xl bg-neutral-900/90 border border-neutral-800 space-y-1.5 text-xs">
+                  <div className="flex justify-between text-neutral-300 text-[11px]">
                     <span>FOB Commercial Value:</span>
                     <span className="font-semibold text-white">{formatCurrencyValue(rawVal, currency)}</span>
                   </div>
-                  <div className="flex justify-between text-slate-300 text-[11px]">
+                  <div className="flex justify-between text-neutral-300 text-[11px]">
                     <span>Est. Customs Tariff & BCD:</span>
-                    <span className="font-semibold text-[#FF7A2E]">+{formatCurrencyValue(estDutyInSelected, currency)}</span>
+                    <span className="font-semibold text-orange-400">+{formatCurrencyValue(estDutyInSelected, currency)}</span>
                   </div>
-                  <div className="flex justify-between text-slate-300 text-[11px]">
+                  <div className="flex justify-between text-neutral-300 text-[11px]">
                     <span>Est. International Freight:</span>
-                    <span className="font-semibold text-[#FF7A2E]">+{formatCurrencyValue(estFreightInSelected, currency)}</span>
+                    <span className="font-semibold text-orange-400">+{formatCurrencyValue(estFreightInSelected, currency)}</span>
                   </div>
-                  <div className="pt-2 border-t border-[#2A2A2A] flex justify-between items-center text-sm font-bold">
+                  <div className="pt-2 border-t border-neutral-800 flex justify-between items-center text-sm font-bold">
                     <span className="text-white">Est. Total Landed Cost:</span>
                     <span className="text-base font-extrabold text-[#FF5A00]">
                       {formatCurrencyValue(estLandedInSelected, currency)}
@@ -334,7 +334,7 @@ export default function ImportExportAssistanceSection() {
               <div className="pt-3">
                 <Button
                   onClick={() => navigate('/trade-assistant?tab=calculator')}
-                  className="w-full bg-[#FF5A00]/20 hover:bg-[#C94400] text-[#FF8A3D] hover:text-white border border-[#FF5A00]/40 font-bold text-xs h-9 rounded-xl transition-all flex items-center justify-center gap-1.5"
+                  className="w-full bg-[#FF5A00]/20 hover:bg-[#FF5A00] text-[#FF8A3D] hover:text-white border border-[#FF5A00]/40 font-bold text-xs h-9 rounded-xl transition-all flex items-center justify-center gap-1.5"
                 >
                   <span>Open Full Calculation & Documentation Guide</span>
                   <ChevronRight className="w-3.5 h-3.5" />

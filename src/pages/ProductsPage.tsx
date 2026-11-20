@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
 import LoanEligibleTag from '@/components/common/LoanEligibleTag';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import type { Product, Category } from '@/types/types';
 import SafeImage from '@/components/common/SafeImage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCountry } from '@/contexts/CurrencyContext';
+import { formatMoney, priceInCurrency } from '@/lib/productPrice';
 import { CURATED_INDUSTRIAL_PRODUCTS } from '@/data/curatedIndustrialProducts';
 import { matchProductImage } from '@/lib/productImageMatchingEngine';
 
@@ -63,55 +64,36 @@ function getProductFallback(product: Product, index: number): string {
   return matched.primaryImage || matched.categoryPlaceholder;
 }
 
-function formatProductPrice(val: number, isIndia: boolean, cur: string, rate: number): string {
-  // Prices are in the currency the supplier saved (rupees when none is given).
-  // Only a US-dollar price is converted for visitors in India; nothing is guessed from the size of the number.
-  const code = (cur || 'INR').toUpperCase();
-  const isUsd = code === 'USD' || code === '$';
-  const converted = isIndia && isUsd ? val * (rate || 83.5) : val;
-  const inRupees = code === 'INR' || code === '₹' || (isIndia && isUsd);
-  const symbol = inRupees ? '₹' : isUsd ? '$' : `${code} `;
-
-  if (converted >= 10000000) {
-    return `${symbol}${(converted / 10000000).toFixed(1)}Cr`;
-  }
-  if (converted >= 100000) {
-    return `${symbol}${(converted / 100000).toFixed(1)}L`;
-  }
-  if (converted >= 1000) {
-    return `${symbol}${(converted / 1000).toFixed(converted % 1000 === 0 ? 0 : 1)}K`;
-  }
-  // Keep paise and cents on small prices (₹6.50 is not ₹7).
-  return `${symbol}${converted.toLocaleString(inRupees ? 'en-IN' : 'en-US', { maximumFractionDigits: converted < 100 ? 2 : 0 })}`;
-}
-
 function PriceRange({
   min,
   max,
   currency,
-  isIndia,
-  rate,
+  visitorCurrency,
+  rates,
 }: {
   min: number | null;
   max: number | null;
-  currency: string;
-  isIndia: boolean;
-  rate: number;
+  /** the currency the price was saved in */
+  currency: string | null | undefined;
+  visitorCurrency: string;
+  rates?: Record<string, number>;
 }) {
-  if (!min) return null;
+  const low = priceInCurrency(min, currency, visitorCurrency, rates);
+  if (!low) return null;
+  const high = priceInCurrency(max, currency, visitorCurrency, rates);
   return (
     <div className="flex items-center gap-1.5">
       <TrendingUp className="w-3 h-3 text-[#FF5A00] shrink-0" />
       <span className="text-sm font-bold text-foreground">
-        {formatProductPrice(min, isIndia, currency, rate)}
-        {max && max !== min ? (
+        {formatMoney(low, { compact: true })}
+        {high && Math.round(high.amount) !== Math.round(low.amount) ? (
           <span className="font-medium text-muted-foreground">
-            {' '}– {formatProductPrice(max, isIndia, currency, rate)}
+            {' '}– {formatMoney({ ...high, approximate: false }, { compact: true })}
           </span>
         ) : null}
       </span>
-      {isIndia && (
-        <span className="text-[10px] font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 px-1.5 py-0.2 rounded ml-1">
+      {low.currency === 'INR' && (
+        <span className="text-[10px] font-semibold text-orange-600 bg-orange-500/10 px-1.5 py-0.2 rounded ml-1">
           INR
         </span>
       )}
@@ -141,14 +123,9 @@ function ProductCard({
   activeCountry: string;
   isDuplicate?: boolean;
 }) {
-  const { countryConfig, currencyInfo } = useCountry();
+  const { countryConfig, currencyInfo, rates } = useCountry();
   const isVerified = product.companies?.verification_status === 'verified';
-  const isIndia =
-    activeCountry === 'India' ||
-    product.companies?.country === 'India' ||
-    countryConfig.code === 'IN' ||
-    currencyInfo.currency === 'INR';
-  const rate = currencyInfo.rate || 83.5;
+  const visitorCurrency = currencyInfo.currency || countryConfig.currency || 'INR';
   return (
     <Link
       to={`/products/${product.slug}`}
@@ -170,18 +147,18 @@ function ProductCard({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu"
         />
         {product.categories && (
-          <span className="absolute top-2 left-2 bg-[#0A0A0A]/60 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-full z-10">
+          <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-full z-10">
             {product.categories.name}
           </span>
         )}
         <div className="absolute top-2 right-2 flex flex-col gap-1 items-end z-10">
           {product.is_featured && (
-            <span className="bg-[#C94400] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+            <span className="bg-primary/90 text-primary-foreground text-[10px] font-semibold px-2 py-0.5 rounded-full">
               Featured
             </span>
           )}
           {(product as typeof product & { is_sponsored?: boolean }).is_sponsored && (
-            <span className="bg-[#C94400]/95 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+            <span className="bg-orange-500/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
               Sponsored
             </span>
           )}
@@ -195,8 +172,9 @@ function ProductCard({
           <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 flex-1 min-w-0">
             {product.name}
           </h3>
+          <LoanEligibleTag size="sm" />
           {isVerified && (
-            <span className="verified-badge shrink-0 mt-0.5"><Shield className="w-2.5 h-2.5" />V</span>
+            <span className="shrink-0 mt-0.5 inline-flex items-center gap-0.5 rounded-full border border-primary/25 bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary" title="Verified supplier"><Shield className="w-2.5 h-2.5" />Verified</span>
           )}
         </div>
 
@@ -221,14 +199,11 @@ function ProductCard({
           <PriceRange
             min={product.price_min}
             max={product.price_max}
-            currency={product.price_currency || 'INR'}
-            isIndia={isIndia}
-            rate={rate}
+            currency={product.price_currency}
+            visitorCurrency={visitorCurrency}
+            rates={rates}
           />
-          <div className="flex flex-wrap items-center justify-between gap-1.5">
-            <MoqBadge moq={product.moq} unit={product.moq_unit} />
-            <LoanEligibleTag size="sm" />
-          </div>
+          <MoqBadge moq={product.moq} unit={product.moq_unit} />
         </div>
       </div>
     </Link>
@@ -368,7 +343,7 @@ export default function ProductsPage() {
               <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border font-medium">
                 OEM / ODM Available
               </span>
-              <span className="px-2.5 py-1 rounded-full bg-[#FF5A00]/10 text-[#FF7A2E] dark:text-[#FF7A2E] border border-[#FF5A00]/20 font-medium">
+              <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
                 Verified Global Exporters
               </span>
             </div>
@@ -424,7 +399,7 @@ export default function ProductsPage() {
               onClick={() => handleCountryChange('all')}
               className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
                 selectedCountry === 'all'
-                  ? 'bg-[#C94400] text-white'
+                  ? 'bg-[#FF5A00] text-white'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
@@ -437,7 +412,7 @@ export default function ProductsPage() {
                 onClick={() => handleCountryChange(c)}
                 className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors flex items-center gap-1 ${
                   selectedCountry === c
-                    ? 'bg-[#C94400] text-white'
+                    ? 'bg-[#FF5A00] text-white'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
@@ -457,7 +432,7 @@ export default function ProductsPage() {
               onClick={() => handleCategoryChange('all')}
               className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
                 selectedCat === 'all'
-                  ? 'bg-[#C94400] text-white shadow-sm'
+                  ? 'bg-[#FF5A00] text-white shadow-sm'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
@@ -470,7 +445,7 @@ export default function ProductsPage() {
                 onClick={() => handleCategoryChange(c.slug)}
                 className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
                   selectedCat === c.slug
-                    ? 'bg-[#C94400] text-white shadow-sm'
+                    ? 'bg-[#FF5A00] text-white shadow-sm'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
@@ -499,7 +474,7 @@ export default function ProductsPage() {
                 Reset Filters
               </Button>
               <Link to="/auth?tab=supplier">
-                <Button className="bg-[#1A0C05] text-primary-foreground">List Your Products</Button>
+                <Button className="bg-primary text-primary-foreground">List Your Products</Button>
               </Link>
             </div>
           </div>

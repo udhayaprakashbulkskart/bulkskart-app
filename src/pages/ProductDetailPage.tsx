@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { getProductBySlug, getSimilarProducts } from '@/lib/api';
 import type { Product } from '@/types/types';
 import SafeImage from '@/components/common/SafeImage';
-import ProductImageCredit from '@/components/common/ProductImageCredit';
 import { resolveCompanyBranding, resolveProductImage } from '@/lib/contentImages';
 import {
   matchProductImage,
@@ -25,10 +23,11 @@ import {
 import ProductReviewsAndRatingSection from '@/components/common/ProductReviewsAndRatingSection';
 import CountryChargesFeesModal from '@/components/common/CountryChargesFeesModal';
 import ReportItemModal from '@/components/common/ReportItemModal';
-import InteractiveStarRating from '@/components/common/InteractiveStarRating';
+import { formatPriceRange, priceInCurrency, productCurrency } from '@/lib/productPrice';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountry } from '@/contexts/CurrencyContext';
 import PageMeta from '@/components/common/PageMeta';
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import MaskedPhone from '@/components/common/MaskedPhone';
 import { getCompanyDisplayPhone, getCountryTimezone } from '@/lib/countryPhoneCodes';
@@ -39,7 +38,6 @@ import LiveChatModal from '@/components/common/LiveChatModal';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const TABS = ['Overview', 'Specifications', 'Applications', 'Company', 'Reviews'];
-const CATEGORIES = ['Industrial Equipment', 'Electronics', 'Machinery', 'Raw Materials', 'View All'];
 
 // ── Skeleton ────────────────────────────────────────────────────────────────
 function Skeleton() {
@@ -77,73 +75,16 @@ function parseSpecifications(raw: string | null): [string, string][] {
     .map(parts => [parts[0], parts.slice(1).join(': ')] as [string, string]);
 }
 
-/** Format a price display string from the product */
-function formatPrice(product: Product, isIndia: boolean, rate: number): string {
-  if (!product.price_min) return 'Price on request';
-  // In the currency the supplier saved (rupees when none is given); only US-dollar prices are converted.
-  const cur = (product.price_currency || 'INR').toUpperCase();
-  const isUsd = cur === 'USD' || cur === '$';
-  const convertedMin = isIndia && isUsd ? product.price_min * (rate || 83.5) : product.price_min;
-  const convertedMax = product.price_max
-    ? (isIndia && isUsd ? product.price_max * (rate || 83.5) : product.price_max)
-    : null;
-  const symbol = cur === 'INR' || (isIndia && isUsd) ? '₹' : isUsd ? '$' : cur;
-  const locale = symbol === '₹' ? 'en-IN' : 'en-US';
-  const show = (v: number) => v.toLocaleString(locale, { maximumFractionDigits: v < 100 ? 2 : 0 });
-  const minStr = show(convertedMin);
-
-  if (convertedMax && convertedMax !== convertedMin) {
-    const maxStr = show(convertedMax);
-    return `${symbol} ${minStr} – ${maxStr}`;
-  }
-  return `${symbol} ${minStr}+`;
+/** The product's price as the visitor sees it ("Price on request" when the supplier gave none). */
+function formatPrice(product: Product, visitorCurrency: string, rates?: Record<string, number>): string {
+  return formatPriceRange(product.price_min, product.price_max, product.price_currency, visitorCurrency, rates);
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
-function productJsonLd(product: Product): Record<string, unknown> {
-  const price = Number(product.price_min ?? product.price_max);
-  const hasPrice = Number.isFinite(price) && price > 0;
-  const rating = Number(product.companies?.rating_avg);
-  const reviewCount = Number(product.companies?.review_count);
-  const hasRating = Number.isFinite(rating) && rating > 0 && Number.isFinite(reviewCount) && reviewCount > 0;
-  const currency = product.price_currency === '₹' || product.price_currency === 'INR' ? 'INR' : product.price_currency;
-  const schema: Record<string, unknown> = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: product.name,
-    sku: product.id,
-  };
-  if (product.images?.[0]) schema.image = product.images[0];
-  if (product.description) schema.description = product.description;
-  if (product.categories?.name) schema.category = product.categories.name;
-  if (product.companies?.company_name) {
-    schema.brand = { '@type': 'Brand', name: product.companies.company_name };
-  }
-  if (hasPrice && currency) {
-    schema.offers = {
-      '@type': 'Offer',
-      price: String(price),
-      priceCurrency: currency,
-      url: `https://www.bulkskart.com/products/${product.slug || product.id}`,
-      ...(product.companies?.company_name
-        ? { seller: { '@type': 'Organization', name: product.companies.company_name } }
-        : {}),
-    };
-  }
-  if (hasRating) {
-    schema.aggregateRating = {
-      '@type': 'AggregateRating',
-      ratingValue: String(rating),
-      reviewCount: String(reviewCount),
-    };
-  }
-  return schema;
-}
-
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { profile } = useAuth();
-  const { countryConfig, currencyInfo } = useCountry();
+  const { countryConfig, currencyInfo, rates } = useCountry();
   const navigate = useNavigate();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -197,7 +138,7 @@ export default function ProductDetailPage() {
         <h2 className="text-xl font-bold text-foreground">Product Not Found</h2>
         <p className="text-sm text-muted-foreground">The product listing you are looking for may have been removed or updated.</p>
         <Link to="/products">
-          <Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 px-5 rounded-xl">
+          <Button className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-10 px-5 rounded-xl">
             Browse All Products
           </Button>
         </Link>
@@ -223,19 +164,12 @@ export default function ProductDetailPage() {
 
   const hasImages = images.length > 0;
   const isVerified = product.companies?.verification_status === 'verified';
-  const isIndia =
-    countryConfig.code === 'IN' ||
-    currencyInfo.currency === 'INR' ||
-    product.companies?.country === 'India';
-  const rate = currencyInfo.rate || 83.5;
-  const priceDisplay = formatPrice(product, isIndia, rate);
-  // The supplier's real rating from buyer reviews (none until buyers have reviewed them).
-  const supplierRating = Number(product.companies?.rating_avg) || 0;
-  // Bulk calculator: the supplier's own currency (rupees when none is given); only US-dollar prices are converted for India.
-  const savedCurrency = (product.price_currency || 'INR').toUpperCase();
-  const convertUsd = isIndia && savedCurrency === 'USD';
-  const calcCurrency = convertUsd ? 'INR' : savedCurrency;
-  const calcPrice = (v: number | null | undefined) => (v == null ? null : convertUsd ? v * rate : v);
+  const visitorCurrency = currencyInfo.currency || countryConfig.currency || 'INR';
+  const priceDisplay = formatPrice(product, visitorCurrency, rates);
+  // the calculator and the fee breakdown work in the shown currency; both need a real price
+  const shownMin = priceInCurrency(product.price_min, product.price_currency, visitorCurrency, rates);
+  const shownMax = priceInCurrency(product.price_max, product.price_currency, visitorCurrency, rates);
+  const priceInRupees = priceInCurrency(product.price_min ?? product.price_max, product.price_currency, 'INR', rates);
   const companyName = product.companies?.company_name ?? 'Supplier';
   const companySlug = product.companies?.slug ?? '#';
   const city = product.companies?.city ?? '';
@@ -318,7 +252,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
           <div className="flex gap-3 mt-4">
-            <Button type="button" onClick={() => setShowCallModal(false)} className="flex-1 bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 rounded-xl shadow-[0_2px_0_#922f00]">Close</Button>
+            <Button type="button" onClick={() => setShowCallModal(false)} className="flex-1 bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-10 rounded-xl shadow-[0_2px_0_#922f00]">Close</Button>
           </div>
         </div>
       </DialogContent>
@@ -342,28 +276,38 @@ export default function ProductDetailPage() {
             ...(product.categories?.name ? [{ name: product.categories.name, item: `/products?category=${encodeURIComponent(product.categories.name)}` }] : []),
             { name: product.name, item: `/products/${product.slug || product.id}` },
           ]}
-          jsonLd={productJsonLd(product)}
+          jsonLd={{
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: product.name,
+            image: product.images?.[0],
+            description: product.description || `Wholesale ${product.name} with bulk MOQ of ${product.moq ?? 1} ${product.moq_unit ?? 'units'}.`,
+            sku: product.id,
+            category: product.categories?.name,
+            brand: {
+              '@type': 'Brand',
+              name: product.companies?.company_name || 'BulkSkart Verified Manufacturer',
+            },
+            offers: (product.price_min || product.price_max) ? {
+              '@type': 'Offer',
+              price: product.price_min || product.price_max,
+              priceCurrency: productCurrency(product.price_currency),
+              availability: 'https://schema.org/InStock',
+              url: `https://www.bulkskart.com/products/${product.slug || product.id}`,
+              seller: {
+                '@type': 'Organization',
+                name: product.companies?.company_name || 'Supplier',
+              },
+            } : undefined,
+            aggregateRating: product.companies?.rating_avg && product.companies?.review_count ? {
+              '@type': 'AggregateRating',
+              ratingValue: String(product.companies.rating_avg),
+              reviewCount: String(product.companies.review_count),
+              bestRating: '5',
+              worstRating: '1',
+            } : undefined,
+          }}
         />
-
-        {/* ── Mobile search bar ──────────────────────────────────────── */}
-        <div className="md:hidden bg-card border-b border-border px-3 py-2 sticky top-[56px] z-30">
-          <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2">
-            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-            <input className="flex-1 min-w-0 text-sm outline-none bg-transparent text-foreground placeholder:text-muted-foreground" placeholder="Search products, suppliers, categories..." />
-            <button className="bg-[#1A0C05] p-1 rounded shrink-0">
-              <Search className="w-3.5 h-3.5 text-white" />
-            </button>
-          </div>
-        </div>
-
-        {/* ── Category nav (mobile horizontal scroll) ───────────────── */}
-        <div className="bg-background border-b border-border overflow-x-auto whitespace-nowrap px-3 py-2 md:hidden">
-          {CATEGORIES.map(c => (
-            <button key={c} className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full mr-2 shrink-0 transition-colors ${c === (categoryName ?? 'Industrial Equipment') ? 'bg-primary/10 text-primary border border-primary/30' : 'text-muted-foreground border border-border hover:border-primary/30'}`}>
-              {c}
-            </button>
-          ))}
-        </div>
 
         <div className="max-w-[1400px] mx-auto px-3 md:px-6 pb-20 md:pb-8">
 
@@ -386,7 +330,7 @@ export default function ProductDetailPage() {
               {/* Badges row (desktop only) */}
               <div className="hidden md:flex items-center gap-2 mb-3">
                 {isVerified && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-full px-2.5 py-1">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1">
                     <CheckCircle className="w-3.5 h-3.5" /> Verified Supplier
                   </span>
                 )}
@@ -408,23 +352,22 @@ export default function ProductDetailPage() {
                       type="product"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute bottom-3 right-3 bg-[#0A0A0A]/60 text-white text-xs rounded px-2 py-0.5 z-10">
+                    <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs rounded px-2 py-0.5 z-10">
                       {imgIdx + 1} / {images.length}
                     </div>
                     {images.length > 1 && (
                       <>
                         <button onClick={() => setImgIdx(i => (i - 1 + images.length) % images.length)}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-[#0A0A0A]/50 hover:bg-[#0A0A0A]/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
                           <ChevronRight className="w-4 h-4 rotate-180" />
                         </button>
                         <button onClick={() => setImgIdx(i => (i + 1) % images.length)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#0A0A0A]/50 hover:bg-[#0A0A0A]/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
                           <ChevronRight className="w-4 h-4" />
                         </button>
                       </>
                     )}
                   </div>
-                  <ProductImageCredit productId={product.id} imageUrl={images[imgIdx]} />
                   {images.length > 1 && (
                     <div className="flex gap-2 overflow-x-auto pb-1 mb-4">
                       {images.map((img, i) => (
@@ -432,7 +375,7 @@ export default function ProductDetailPage() {
                           className={`relative w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${imgIdx === i ? 'border-primary ring-2 ring-primary/40 shadow-md' : 'border-border opacity-70 hover:opacity-100'}`}>
                           <SafeImage src={img} alt={`${product.name} thumbnail ${i + 1}`} category={product.categories?.name} type="product" className="w-full h-full object-cover" />
                           {i === 0 && (
-                            <span className="absolute bottom-0 inset-x-0 bg-[#C94400] text-[9px] font-bold text-white text-center py-0.5 uppercase tracking-wider">
+                            <span className="absolute bottom-0 inset-x-0 bg-primary/90 text-[9px] font-bold text-white text-center py-0.5 uppercase tracking-wider">
                               Primary
                             </span>
                           )}
@@ -480,36 +423,45 @@ export default function ProductDetailPage() {
               {/* ── Product Info (mobile only — shown below gallery) ── */}
               <div className="md:hidden mb-5">
                 <h2 className="text-xl font-black text-foreground mb-2 leading-tight">{product.name}</h2>
+                <LoanEligibleTag size="sm" />
 
                 {isVerified && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-full px-2.5 py-1 mb-3">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1 mb-3">
                     <CheckCircle className="w-3.5 h-3.5" /> Verified Supplier
                   </span>
                 )}
 
                 {/* Interactive rating & Report trigger */}
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  {/* the supplier's real rating; reviews on BulkSkart are kept per supplier */}
                   <button
                     type="button"
                     onClick={() => setActiveTab('Reviews')}
-                    className="flex items-center gap-1 text-xs hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {supplierRating > 0 ? (
-                      <InteractiveStarRating value={supplierRating} readOnly size="sm" showNumber />
+                    <Star
+                      className={`w-3.5 h-3.5 ${Number(product.companies?.rating_avg) > 0 ? 'text-orange-500 fill-orange-500' : 'text-muted-foreground'}`}
+                      aria-hidden="true"
+                    />
+                    {Number(product.companies?.rating_avg) > 0 && Number(product.companies?.review_count) > 0 ? (
+                      <span>
+                        <b className="text-foreground">{Number(product.companies?.rating_avg).toFixed(1)}</b> supplier rating · {Number(product.companies?.review_count)}{' '}
+                        {Number(product.companies?.review_count) === 1 ? 'review' : 'reviews'}
+                      </span>
                     ) : (
-                      <span className="text-[11px] text-muted-foreground">No reviews yet</span>
+                      <span>No ratings yet</span>
                     )}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowReportModal(true)}
-                    className="ml-auto inline-flex items-center gap-1 text-[11px] text-[#FF7A2E] hover:text-[#FF7A2E] transition-colors px-2 py-0.5 rounded-lg hover:bg-[#B33D00]/10"
+                    className="ml-auto inline-flex items-center gap-1 text-[11px] text-red-500 hover:text-red-600 transition-colors px-2 py-0.5 rounded-lg hover:bg-red-500/10"
                     title="Report this Product"
                   >
                     <Flag className="w-3 h-3" /> Report
                   </button>
                   <button onClick={() => setWishlist(w => !w)} className="p-1">
-                    <Heart className={`w-4 h-4 transition-colors ${wishlist ? 'text-[#FF7A2E] fill-[#FF5A00]' : 'text-muted-foreground'}`} />
+                    <Heart className={`w-4 h-4 transition-colors ${wishlist ? 'text-red-500 fill-red-500' : 'text-muted-foreground'}`} />
                   </button>
                   <button className="p-1"><Share2 className="w-4 h-4 text-muted-foreground" /></button>
                 </div>
@@ -524,14 +476,15 @@ export default function ProductDetailPage() {
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Price Range</p>
                     <p className="text-base font-black text-primary leading-tight">{priceDisplay}</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">Excl. GST</p>
-                    <LoanEligibleTag size="sm" link className="mt-1.5" />
-                    <button
-                      type="button"
-                      onClick={() => setShowCountryTaxesModal(true)}
-                      className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-[#00D2FF] hover:underline"
-                    >
-                      <Calculator className="w-3 h-3" /> Country Taxes &amp; Fees
-                    </button>
+                    {priceInRupees && (
+                      <button
+                        type="button"
+                        onClick={() => setShowCountryTaxesModal(true)}
+                        className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-orange-700 dark:text-[#FF5900] hover:underline"
+                      >
+                        <Calculator className="w-3 h-3" /> Country Taxes &amp; Fees
+                      </button>
+                    )}
                   </div>
                   <div className="bg-muted border border-border rounded-xl p-3">
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Min. Order Qty</p>
@@ -565,7 +518,7 @@ export default function ProductDetailPage() {
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {isVerified && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#FF7A2E] dark:text-[#FF7A2E] bg-[#FF5A00]/10 dark:bg-[#B33D00]/50 border border-[#FF5A00]/40 dark:border-[#FF5A00]/40 rounded px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 border border-primary/25 rounded px-2 py-0.5">
                         <CheckCircle className="w-3 h-3" /> Verified
                       </span>
                     )}
@@ -585,7 +538,7 @@ export default function ProductDetailPage() {
                 {/* CTA buttons mobile */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <Link to={profile?.role === 'buyer' ? '/post-requirement' : '/auth'} className="col-span-2">
-                    <Button className="w-full bg-[#C94400] hover:bg-primary/90 text-white font-bold h-12 text-base gap-2 rounded-xl shadow-lg">
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-12 text-base gap-2 rounded-xl shadow-lg">
                       <Mail className="w-5 h-5" /> Get Quotes
                     </Button>
                   </Link>
@@ -702,8 +655,8 @@ export default function ProductDetailPage() {
                           url ? (
                             <a key={label} href={url} target="_blank" rel="noreferrer"
                               className="flex items-center gap-2 bg-card border border-border hover:border-primary/40 rounded-xl p-3 text-left transition-colors group">
-                              <div className="w-8 h-8 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-lg flex items-center justify-center shrink-0">
-                                <FileText className="w-4 h-4 text-[#FF7A2E]" />
+                              <div className="w-8 h-8 bg-red-50 border border-red-100 rounded-lg flex items-center justify-center shrink-0">
+                                <FileText className="w-4 h-4 text-red-500" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-semibold text-foreground truncate">{label}</p>
@@ -850,7 +803,9 @@ export default function ProductDetailPage() {
                     <ProductReviewsAndRatingSection
                       productId={product.id}
                       productName={product.name}
-                      initialRating={4.8}
+                      companyId={product.company_id}
+                      companyName={product.companies?.company_name}
+                      companyRating={product.companies?.rating_avg}
                     />
                   </div>
                 )}
@@ -869,9 +824,7 @@ export default function ProductDetailPage() {
                   </div>
                   <div className="flex gap-3 overflow-x-auto pb-2">
                     {similar.map(p => {
-                      const simPrice = p.price_min
-                        ? formatPrice(p, isIndia, rate)
-                        : 'Price on request';
+                      const simPrice = formatPrice(p, visitorCurrency, rates);
                       const simImg = p.images?.[0] ?? null;
                       return (
                         <Link key={p.id} to={`/products/${p.slug}`}
@@ -883,7 +836,6 @@ export default function ProductDetailPage() {
                             <p className="text-xs font-bold text-foreground leading-tight mb-1 line-clamp-2">{p.name}</p>
                             <p className="text-xs font-black text-primary mb-0.5">{simPrice}</p>
                             <p className="text-[10px] text-muted-foreground">MOQ: {p.moq ?? 1} {p.moq_unit ?? 'pcs'}</p>
-                            <LoanEligibleTag size="xs" className="mt-1" />
                             {p.companies?.company_name && (
                               <p className="text-[10px] text-muted-foreground/60 truncate mt-0.5">{p.companies.company_name}</p>
                             )}
@@ -896,7 +848,7 @@ export default function ProductDetailPage() {
                       <p className="text-sm font-black leading-snug mb-2">Powering Industries<br /><span className="text-primary">Worldwide</span></p>
                       <p className="text-[10px] text-muted-foreground mb-3">Reliable · Efficient · Scalable</p>
                       <Link to="/post-requirement">
-                        <button className="text-[10px] font-bold bg-[#C94400] text-white rounded-lg px-3 py-1.5 flex items-center gap-1">
+                        <button className="text-[10px] font-bold bg-primary text-white rounded-lg px-3 py-1.5 flex items-center gap-1">
                           Request a Custom Quote <ChevronRight className="w-3 h-3" />
                         </button>
                       </Link>
@@ -960,7 +912,7 @@ export default function ProductDetailPage() {
                     <p className="text-sm text-muted-foreground">Get the best price for your requirements.</p>
                   </div>
                   <Link to={profile?.role === 'buyer' ? '/post-requirement' : '/auth'} className="shrink-0 w-full md:w-auto">
-                    <Button className="w-full md:w-auto bg-[#C94400] hover:bg-primary/90 text-white font-bold px-6 h-11 gap-2 rounded-xl">
+                    <Button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white font-bold px-6 h-11 gap-2 rounded-xl">
                       <Mail className="w-4 h-4" /> Request Bulk Quote
                     </Button>
                   </Link>
@@ -976,7 +928,7 @@ export default function ProductDetailPage() {
                 <div className="bg-card border border-border rounded-xl p-3 md:p-4">
                   <div className="flex items-start gap-2 mb-2">
                     {isVerified && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-full px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 border border-primary/25 rounded-full px-2 py-0.5">
                         <CheckCircle className="w-3 h-3" /> Verified Supplier
                       </span>
                     )}
@@ -998,24 +950,28 @@ export default function ProductDetailPage() {
                       onClick={() => setActiveTab('Reviews')}
                       className="flex items-center gap-1 text-xs hover:opacity-80 transition-opacity cursor-pointer"
                     >
-                      {supplierRating > 0 ? (
-                      <InteractiveStarRating value={supplierRating} readOnly size="sm" showNumber />
-                    ) : (
-                      <span className="text-[11px] text-muted-foreground">No reviews yet</span>
-                    )}
+                      <Star
+                        className={`w-3.5 h-3.5 ${Number(product.companies?.rating_avg) > 0 ? 'text-orange-500 fill-orange-500' : 'text-muted-foreground'}`}
+                        aria-hidden="true"
+                      />
+                      <span className="text-muted-foreground">
+                        {Number(product.companies?.rating_avg) > 0 && Number(product.companies?.review_count) > 0
+                          ? `${Number(product.companies?.rating_avg).toFixed(1)} supplier rating`
+                          : 'No ratings yet'}
+                      </span>
                       <span className="text-[11px] text-primary hover:underline ml-1">Write Review</span>
                     </button>
                     <div className="ml-auto flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => setShowReportModal(true)}
-                        className="inline-flex items-center gap-1 text-xs text-[#FF7A2E] hover:text-[#FF7A2E] transition-colors px-2 py-1 rounded-lg hover:bg-[#B33D00]/10"
+                        className="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-600 transition-colors px-2 py-1 rounded-lg hover:bg-red-500/10"
                         title="Report this Product"
                       >
                         <Flag className="w-3 h-3" /> Report
                       </button>
                       <button onClick={() => setWishlist(w => !w)} className="p-1">
-                        <Heart className={`w-4 h-4 ${wishlist ? 'text-[#FF7A2E] fill-[#FF5A00]' : 'text-muted-foreground'}`} />
+                        <Heart className={`w-4 h-4 ${wishlist ? 'text-red-500 fill-red-500' : 'text-muted-foreground'}`} />
                       </button>
                       <button className="p-1"><Share2 className="w-4 h-4 text-muted-foreground" /></button>
                     </div>
@@ -1027,17 +983,18 @@ export default function ProductDetailPage() {
                     <p className="text-xl font-black text-primary">{priceDisplay}</p>
                     <div className="flex items-center justify-between mt-0.5">
                       <p className="text-[10px] text-muted-foreground">(Excl. GST)</p>
-                      <button
-                        type="button"
-                        onClick={() => setShowCountryTaxesModal(true)}
-                        className="flex items-center gap-1 text-[11px] font-semibold text-[#00D2FF] hover:underline"
-                      >
-                        <Calculator className="w-3.5 h-3.5" />
-                        Country Taxes, GST &amp; Fees
-                      </button>
+                      {priceInRupees && (
+                        <button
+                          type="button"
+                          onClick={() => setShowCountryTaxesModal(true)}
+                          className="flex items-center gap-1 text-[11px] font-semibold text-orange-700 dark:text-[#FF5900] hover:underline"
+                        >
+                          <Calculator className="w-3.5 h-3.5" />
+                          Country Taxes, GST &amp; Fees
+                        </button>
+                      )}
                     </div>
                     <p className="text-xs text-primary mt-1 font-medium">Better pricing for bulk orders</p>
-                    <LoanEligibleTag size="md" link className="mt-2" />
                   </div>
 
                   {/* MOQ */}
@@ -1051,7 +1008,7 @@ export default function ProductDetailPage() {
 
                   {/* CTA */}
                   <Link to={profile?.role === 'buyer' ? '/post-requirement' : '/auth'} className="block mb-2">
-                    <Button className="w-full bg-[#C94400] hover:bg-primary/90 text-white font-bold h-12 text-base gap-2 rounded-xl shadow-lg">
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-12 text-base gap-2 rounded-xl shadow-lg">
                       <Mail className="w-5 h-5" /> Get Quotes
                     </Button>
                   </Link>
@@ -1079,11 +1036,11 @@ export default function ProductDetailPage() {
                 {/* Bulk Price Calculator — uses current product's actual price */}
                 <BulkPriceCalculator
                   productId={product.id}
-                  priceMin={calcPrice(product.price_min)}
-                  priceMax={product.price_max ? calcPrice(product.price_max) : null}
+                  priceMin={shownMin?.amount ?? null}
+                  priceMax={shownMax && shownMin && shownMax.currency === shownMin.currency ? shownMax.amount : null}
                   moq={product.moq ?? 1}
                   moqUnit={product.moq_unit ?? 'Pcs'}
-                  currency={calcCurrency}
+                  currency={shownMin?.currency ?? productCurrency(product.price_currency)}
                 />
 
                 {/* Supplier card — from product.companies */}
@@ -1101,7 +1058,7 @@ export default function ProductDetailPage() {
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {isVerified && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 border border-primary/25 rounded px-2 py-0.5">
                         <CheckCircle className="w-3 h-3" /> Verified
                       </span>
                     )}
@@ -1141,7 +1098,7 @@ export default function ProductDetailPage() {
                       View Company Profile
                     </Button>
                   </Link>
-                  <Button onClick={handleCallClick} className="w-full bg-[#C94400] hover:bg-primary/90 text-white font-bold h-9 text-xs rounded-lg">
+                  <Button onClick={handleCallClick} className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-9 text-xs rounded-lg">
                     Contact Supplier
                   </Button>
                 </div>
@@ -1154,7 +1111,7 @@ export default function ProductDetailPage() {
                   </div>
                   <p className="text-xs text-muted-foreground mb-3">Get best price for your requirements.</p>
                   <Link to={profile?.role === 'buyer' ? '/post-requirement' : '/auth'}>
-                    <Button className="w-full bg-[#C94400] hover:bg-primary/90 text-white font-bold h-9 text-xs gap-2 rounded-lg">
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-9 text-xs gap-2 rounded-lg">
                       <Mail className="w-3.5 h-3.5" /> Request Bulk Quote
                     </Button>
                   </Link>
@@ -1194,7 +1151,7 @@ export default function ProductDetailPage() {
             <p className="text-[10px] text-primary font-semibold truncate">{priceDisplay}</p>
           </div>
           <Link to={profile?.role === 'buyer' ? '/post-requirement' : '/auth'}>
-            <Button className="bg-[#C94400] hover:bg-primary/90 text-white font-bold h-10 px-5 gap-1.5 rounded-xl text-sm shrink-0">
+            <Button className="bg-primary hover:bg-primary/90 text-white font-bold h-10 px-5 gap-1.5 rounded-xl text-sm shrink-0">
               <Mail className="w-4 h-4" /> Get Quote
             </Button>
           </Link>
@@ -1231,7 +1188,7 @@ export default function ProductDetailPage() {
       <CountryChargesFeesModal
         open={showCountryTaxesModal}
         onOpenChange={setShowCountryTaxesModal}
-        baseAmount={product.price_min || 1000}
+        baseAmount={priceInRupees?.amount ?? 0}
         itemTitle={product.name}
       />
       <ReportItemModal

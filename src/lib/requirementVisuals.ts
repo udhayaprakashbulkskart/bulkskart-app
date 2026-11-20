@@ -1,113 +1,127 @@
 import type { Requirement } from '@/types/types';
-import { resolveRfqImage } from '@/lib/contentImages';
 
 /**
- * Visual metadata and image resolver for requirements
- * Matches the layout and aesthetic of the reference screenshots:
- * - Image 1: Live Feed on Home Page
- * - Image 2: Active Buying Requirements on /requirements
+ * What a requirement card shows, taken only from what the buyer saved. Nothing is guessed from the
+ * title: no stock photo, no made-up place, no random "urgent" tag and no "verified" badge the buyer
+ * has not earned. Where the buyer left something out, the card says so or leaves it out.
  */
 
+export type RequirementTagType = 'urgent' | 'new' | 'expiring' | 'open';
+
 export interface RequirementVisualInfo {
-  image: string;
+  /** the buyer's own photo, or null (cards then show a plain tile, never a stock photo) */
+  image: string | null;
+  /** delivery city and country as the buyer typed them, or "Location not stated" */
   locationDisplay: string;
+  hasLocation: boolean;
   tag: {
     label: string;
-    type: 'urgent' | 'new' | 'expiring' | 'live' | 'bulk' | 'regular' | 'export';
+    type: RequirementTagType;
     bgClass: string;
     textClass: string;
   };
+  /** "Verified buyer" only when the buyer is verified, otherwise empty */
   verifiedStatus: string;
+  /** the buyer's deadline ("Needed by 12 Dec") or how many quotes it has, otherwise empty */
   orderAttribute: string;
-  attributeIcon: 'building' | 'truck' | 'ship' | 'box';
+  attributeIcon: 'calendar' | 'quotes' | 'none';
+  /** first line of the description or specifications, otherwise empty */
   subtitle: string;
   cleanTitle: string;
   quantityDisplay: string;
 }
 
-export function getRequirementVisualInfo(req: Requirement, _index = 0): RequirementVisualInfo {
-  const catSlug = req.categories?.slug?.toLowerCase() || '';
-  const catName = req.categories?.name?.toLowerCase() || '';
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+/** How long a requirement counts as new, and how close a deadline counts as closing soon. */
+export const NEW_REQUIREMENT_HOURS = 48;
+export const CLOSING_SOON_DAYS = 7;
 
-  // 1. Resolve requirement-specific image (uploaded reference photo or exact commodity photo)
-  const image = resolveRfqImage({
-    id: req.id,
-    title: req.title,
-    attachment_url: req.attachment_url,
-    imageUrl: (req as any).imageUrl,
-    category: catName || catSlug,
-    categories: req.categories,
-  });
+const IMAGE_FILE = /\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i;
 
-  // 2. Resolve clean title and quantity
-  let cleanTitle = req.title;
-  let quantityDisplay = `${req.quantity.toLocaleString()} ${req.quantity_unit || 'Pieces'}`;
-  
-  if (req.title.includes(' - ')) {
-    const parts = req.title.split(' - ');
-    cleanTitle = parts[0];
-    if (parts[1] && (parts[1].toLowerCase().includes('piece') || parts[1].toLowerCase().includes('mt') || parts[1].toLowerCase().includes('kg') || parts[1].toLowerCase().includes('pcs'))) {
-      quantityDisplay = parts[1];
-    }
+/** The buyer's attachment when it is a picture. */
+export function buyerImage(req: Pick<Requirement, 'attachment_url'>): string | null {
+  const url = (req.attachment_url ?? '').trim();
+  if (!url) return null;
+  return IMAGE_FILE.test(url) || url.startsWith('data:image/') ? url : null;
+}
+
+/** "5,000 kg"; a quantity of zero or less reads "Quantity not stated". */
+export function quantityLabel(req: Pick<Requirement, 'quantity' | 'quantity_unit'>): string {
+  const amount = Number(req.quantity);
+  if (!Number.isFinite(amount) || amount <= 0) return 'Quantity not stated';
+  return `${amount.toLocaleString('en-IN')} ${(req.quantity_unit ?? '').trim()}`.trim();
+}
+
+/** "Chennai, India", "India", or null when the buyer named no place. */
+export function placeLabel(req: Pick<Requirement, 'destination_city' | 'destination_country'>): string | null {
+  const parts = [req.destination_city, req.destination_country].map((part) => (part ?? '').trim()).filter(Boolean);
+  const unique = parts.filter((part, i) => parts.findIndex((other) => other.toLowerCase() === part.toLowerCase()) === i);
+  return unique.length ? unique.join(', ') : null;
+}
+
+/** Midnight at the end of the deadline day, so a requirement stays open through its last day. */
+function deadlineEnd(deadline: string | null | undefined): number | null {
+  if (!deadline) return null;
+  const day = new Date(`${deadline.slice(0, 10)}T23:59:59`);
+  return Number.isNaN(day.getTime()) ? null : day.getTime();
+}
+
+export function requirementTag(
+  req: Pick<Requirement, 'created_at' | 'deadline'> & { is_urgent?: boolean | null },
+  now = Date.now(),
+): RequirementVisualInfo['tag'] {
+  if (req.is_urgent) return { label: 'URGENT', type: 'urgent', bgClass: 'bg-[#ff3b30]', textClass: 'text-white' };
+  const end = deadlineEnd(req.deadline);
+  if (end !== null && end >= now && end - now <= CLOSING_SOON_DAYS * DAY) {
+    return { label: 'CLOSING SOON', type: 'expiring', bgClass: 'bg-[#e55000]', textClass: 'text-white' };
   }
-
-  // 3. Location as the buyer gave it (never guessed from the title)
-  const locationDisplay =
-    (req as any).delivery_location ||
-    [req.destination_city, req.destination_country].filter(Boolean).join(', ') ||
-    'Location not given';
-
-  // 4. Resolve subtitle / specifications
-  let subtitle = req.specifications || (req as any).specs || req.description?.slice(0, 85) || req.categories?.name || 'Buyer requirement';
-  if (subtitle.length > 85) {
-    subtitle = subtitle.slice(0, 82) + '...';
+  const posted = new Date(req.created_at).getTime();
+  if (Number.isFinite(posted) && now - posted <= NEW_REQUIREMENT_HOURS * HOUR) {
+    return { label: 'NEW', type: 'new', bgClass: 'bg-[#FF5A00]', textClass: 'text-white' };
   }
+  return { label: 'OPEN', type: 'open', bgClass: 'bg-muted', textClass: 'text-foreground' };
+}
 
-  // 5. Tag from real facts only: the deadline, when it was posted and where it goes.
-  const DAY = 864e5;
-  const now = Date.now();
-  const deadlineMs = req.deadline ? new Date(`${req.deadline}`.length === 10 ? `${req.deadline}T23:59:59` : req.deadline).getTime() : NaN;
-  const daysLeft = Number.isFinite(deadlineMs) ? (deadlineMs - now) / DAY : Infinity;
-  const ageDays = req.created_at ? (now - new Date(req.created_at).getTime()) / DAY : Infinity;
-  const country = (req.destination_country || '').trim().toLowerCase();
-  const isExport = Boolean(country) && country !== 'india';
-  let tag: RequirementVisualInfo['tag'];
-  if (daysLeft >= 0 && daysLeft <= 3) {
-    tag = { label: 'EXPIRING', type: 'expiring', bgClass: 'bg-[#B33D00]', textClass: 'text-white' };
-  } else if (daysLeft >= 0 && daysLeft <= 7) {
-    tag = { label: 'URGENT', type: 'urgent', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
-  } else if (ageDays <= 1) {
-    tag = { label: 'LIVE', type: 'live', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
-  } else if (ageDays <= 3) {
-    tag = { label: 'NEW', type: 'new', bgClass: 'bg-[#C94400]', textClass: 'text-white' };
-  } else if (isExport) {
-    tag = { label: 'EXPORT', type: 'export', bgClass: 'bg-[#1E1E1E]', textClass: 'text-[#FF7A2E]' };
-  } else {
-    tag = { label: 'OPEN', type: 'regular', bgClass: 'bg-[#1E1E1E]', textClass: 'text-[#FF7A2E]' };
-  }
+function firstLine(text?: string | null, max = 90): string {
+  const line = (text ?? '')
+    .split('\n')
+    .map((part) => part.trim())
+    .find(Boolean);
+  if (!line) return '';
+  return line.length > max ? `${line.slice(0, max - 1).trimEnd()}…` : line;
+}
 
-  // 6. Only say "verified" when the buyer is verified.
-  const verifiedStatus = req.is_verified_buyer ? 'Verified Buyer' : '';
+export function getRequirementVisualInfo(
+  req: Requirement & { is_urgent?: boolean | null },
+  _index = 0,
+  now = Date.now(),
+): RequirementVisualInfo {
+  const place = placeLabel(req);
+  const deadline = deadlineEnd(req.deadline);
+  const quotes = Number(req.quote_count) || 0;
 
-  let orderAttribute = 'Direct Sourcing';
-  let attributeIcon: RequirementVisualInfo['attributeIcon'] = 'building';
-  if (isExport) {
-    orderAttribute = 'Export Requirement';
-    attributeIcon = 'ship';
-  } else if (Number.isFinite(deadlineMs) && daysLeft >= 0) {
-    orderAttribute = `Needed by ${new Date(deadlineMs).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`;
-    attributeIcon = 'truck';
+  let orderAttribute = '';
+  let attributeIcon: RequirementVisualInfo['attributeIcon'] = 'none';
+  if (deadline !== null) {
+    const day = new Date(deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    orderAttribute = deadline >= now ? `Needed by ${day}` : `Deadline was ${day}`;
+    attributeIcon = 'calendar';
+  } else if (quotes > 0) {
+    orderAttribute = `${quotes} quote${quotes === 1 ? '' : 's'} received`;
+    attributeIcon = 'quotes';
   }
 
   return {
-    image,
-    locationDisplay,
-    tag,
-    verifiedStatus,
+    image: buyerImage(req),
+    locationDisplay: place ?? 'Location not stated',
+    hasLocation: place !== null,
+    tag: requirementTag(req, now),
+    verifiedStatus: req.is_verified_buyer ? 'Verified buyer' : '',
     orderAttribute,
     attributeIcon,
-    subtitle,
-    cleanTitle,
-    quantityDisplay,
+    subtitle: firstLine(req.description) || firstLine(req.specifications),
+    cleanTitle: (req.title ?? '').trim() || 'Untitled requirement',
+    quantityDisplay: quantityLabel(req),
   };
 }

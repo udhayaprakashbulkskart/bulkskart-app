@@ -11,6 +11,9 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useCurrency, useCountry } from '@/contexts/CurrencyContext';
 import { usePrefetch } from '@/hooks/usePrefetch';
 import NotificationBell from '@/components/common/NotificationBell';
+import MobileHomeHeader from '@/components/home/mobile/MobileHomeHeader';
+import { MOBILE_QUERY, useMediaQuery } from '@/hooks/use-media-query';
+import './header-desktop-home.css';
 import CopyPublicProfileButton from '@/components/common/CopyPublicProfileButton';
 import { toast } from 'sonner';
 import {
@@ -57,8 +60,9 @@ const navLinks = [
 
 import BrandLogo from '@/components/common/BrandLogo';
 
-function LogoMark({ className }: { className?: string }) {
-  return <BrandLogo size="responsive" linkTo={null} className={className} />;
+function LogoMark({ className, onDark = false }: { className?: string; onDark?: boolean }) {
+  // onDark: the header is dark whatever the theme (home page, wide screens), so use the white-lettered logo.
+  return <BrandLogo size="responsive" variant={onDark ? 'dark' : 'auto'} linkTo={null} className={className} />;
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -138,19 +142,208 @@ export default function Header() {
     return '/dashboard/buyer';
   };
   const isActive = (href: string) => location.pathname === href;
+  const isPhone = useMediaQuery(MOBILE_QUERY);
+  const mobileHome = isPhone && location.pathname === '/';
+  // Home page on a wide screen: the same header, dressed like the new design (see header-desktop-home.css).
+  const desktopHome = !isPhone && location.pathname === '/';
+
+  // The slide-in menu, shared by the old mobile header and the mobile home header.
+  const drawer = (
+    <SheetContent side="left" className="w-[min(300px,85vw)] max-w-[calc(100%-2rem)] bg-background border-border p-0 z-50 overflow-hidden flex flex-col">
+      <div className="flex flex-col h-full w-full min-w-0 overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
+          <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center min-w-0" aria-label="BulkSkart Homepage">
+            <LogoMark />
+          </Link>
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); handleSearch(); setMobileOpen(false); }}
+          className="flex items-center gap-2 px-3 py-3 border-b border-border w-full box-border shrink-0">
+          <div className="flex flex-1 min-w-0 items-center bg-muted border border-border rounded-lg h-9 px-2.5 gap-2 focus-within:border-primary/60">
+            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search products, suppliers…"
+              className="flex-1 min-w-0 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
+            />
+          </div>
+          <Button type="submit" size="sm" aria-label="Search products and suppliers" className="h-9 px-3 bg-primary text-white shrink-0">
+            <Search className="w-4 h-4" />
+          </Button>
+        </form>
+        <div className="flex flex-col gap-2 px-4 py-3 border-b border-border">
+          {/* Country, Currency & Tax Selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" aria-label="Select Region and Currency" className="h-9 w-full gap-2 text-xs font-semibold justify-between">
+                <span className="flex items-center gap-1.5 truncate">
+                  <span className="text-base">{countryConfig.flag}</span>
+                  <span className="truncate">{countryConfig.name}</span>
+                  <span className="text-muted-foreground font-mono">({countryConfig.currency})</span>
+                </span>
+                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold shrink-0">
+                  {countryConfig.taxLabel}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-64 bg-popover border-border max-h-72 overflow-y-auto">
+              <div className="px-2 py-1.5 text-[11px] font-bold text-muted-foreground border-b border-border flex items-center justify-between">
+                <span>Select Region & Currency</span>
+                {autoDetectedSource === 'login' && (
+                  <span className="text-[10px] text-primary">Login Synced</span>
+                )}
+              </div>
+              {availableCountries.map(c => (
+                <DropdownMenuItem key={c.code} onClick={() => setCountry(c.code)}
+                  className={`text-xs gap-2 py-2 cursor-pointer ${c.code === countryConfig.code ? 'bg-primary/10 text-primary font-bold' : ''}`}>
+                  <span className="text-base">{c.flag}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="truncate">{c.name}</span>
+                      <span className="text-[11px] font-mono font-bold">{c.symbol} {c.currency}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <span>Tax: {c.taxLabel}</span> · <span>Fee: {(c.feePercent * 100).toFixed(1)}%</span>
+                    </div>
+                  </div>
+                  {c.code === countryConfig.code && <Check className="w-3.5 h-3.5 text-primary shrink-0 ml-1" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={toggleTheme} className="h-8 w-full gap-1.5 text-xs font-semibold justify-center">
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5 shrink-0" /> : <Moon className="w-3.5 h-3.5 shrink-0" />}
+              {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            </Button>
+          </div>
+        </div>
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {navLinks.map(link => {
+            const isAiAssistant = link.href === '/trade-assistant';
+            return (
+              <Link
+                key={link.href}
+                to={link.href}
+                onClick={() => setMobileOpen(false)}
+                {...getPrefetchHandlers(link.href)}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium transition-colors min-h-12 ${
+                  isActive(link.href)
+                    ? 'bg-primary/10 text-primary font-bold'
+                    : isAiAssistant
+                    ? 'text-[#FF5A00] bg-[#FF5A00]/10 hover:bg-[#FF5A00]/20 font-semibold'
+                    : 'text-foreground hover:bg-muted'
+                }`}
+              >
+                {isAiAssistant && <Sparkles className="w-4 h-4 text-[#FF5A00] shrink-0" />}
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
+          {user && (
+            <>
+              <div className="h-px bg-border my-2" />
+              <div className="px-3 py-2 bg-muted/40 rounded-lg mb-1 border border-border">
+                <p className="text-xs font-semibold text-foreground truncate">{displayName || profile?.full_name || 'My Account'}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                <span className="inline-block mt-1 text-[10px] font-bold px-1.5 py-0.2 rounded bg-primary/10 text-primary uppercase">
+                  {resolvedRole === 'supplier' || profile?.role === 'supplier' ? 'Supplier' : resolvedRole === 'admin' ? 'Admin' : 'Buyer'}
+                </span>
+              </div>
+              <Link to={getDashboardLink()} onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm text-foreground hover:bg-muted min-h-12">
+                <LayoutDashboard className="w-4 h-4" /> Dashboard
+              </Link>
+              <Link to={(resolvedRole === 'supplier' || profile?.role === 'supplier') ? '/dashboard/supplier/profile' : '/dashboard/buyer/profile'} onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm text-foreground hover:bg-muted min-h-12">
+                <User className="w-4 h-4" /> Profile & Settings
+              </Link>
+              <div className="px-1 py-1">
+                <CopyPublicProfileButton />
+              </div>
+              <Link to="/settings/delete-account" onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm text-destructive hover:bg-destructive/10 min-h-12">
+                <AlertCircle className="w-4 h-4" /> Delete Account
+              </Link>
+            </>
+          )}
+        </nav>
+        <div className="p-4 border-t border-border bg-card/60 space-y-3">
+          {user ? (
+            <Button onClick={() => { handleSignOut(); setMobileOpen(false); }} variant="outline"
+              className="w-full justify-center gap-2 text-destructive border-destructive/30 hover:bg-destructive/10 font-bold min-h-12 rounded-xl">
+              <LogOut className="w-4 h-4" /> Sign Out
+            </Button>
+          ) : (
+            <div className="space-y-2.5">
+              <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-0.5">
+                Account Access
+              </div>
+              
+              {/* Sign In for existing users */}
+              <Link to="/login" onClick={() => setMobileOpen(false)} className="block w-full">
+                <Button
+                  variant="secondary"
+                  className="w-full bg-muted/80 hover:bg-muted border border-border text-foreground hover:text-foreground font-bold h-12 rounded-xl text-sm flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.99]"
+                >
+                  <LogIn className="w-4 h-4 text-[#FF5A00] shrink-0" />
+                  <span>Sign In</span>
+                  <span className="text-[11px] font-normal text-muted-foreground ml-auto hidden min-[360px]:inline">Existing user</span>
+                </Button>
+              </Link>
+
+              {/* Create Free Account for new users */}
+              <Link to="/register" onClick={() => setMobileOpen(false)} className="block w-full">
+                <Button
+                  className="w-full bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-12 rounded-xl text-sm flex items-center justify-center gap-2 shadow-[0_2px_0_#922f00] transition-all active:scale-[0.99]"
+                >
+                  <UserPlus className="w-4 h-4 text-white shrink-0" />
+                  <span>Create Free Account</span>
+                </Button>
+              </Link>
+
+              <p className="text-[11px] text-center text-muted-foreground/90 font-medium pt-0.5">
+                No payment required to create an account
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </SheetContent>
+  );
+
+  // Home page on a phone: the new header. Everything else keeps the header below.
+  if (mobileHome) {
+    return (
+      <header className="relative z-30 w-full bg-[#111111]">
+        <MobileHomeHeader dashboardHref={getDashboardLink()} onMenu={() => setMobileOpen(true)} />
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          {drawer}
+        </Sheet>
+      </header>
+    );
+  }
 
   return (
-    <header className="relative z-30 w-full bg-background border-b border-border shadow-sm transition-colors">
+    <header
+      className={
+        desktopHome
+          ? 'dh-header dark relative z-30 w-full border-b transition-colors'
+          : 'relative z-30 w-full bg-background border-b border-border shadow-sm transition-colors'
+      }
+    >
       {/* ── Main row ── */}
       <div className="max-w-[1400px] mx-auto px-2.5 sm:px-4 md:px-6 h-[56px] flex items-center gap-1 sm:gap-2 md:gap-4 justify-between md:justify-start">
 
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0 group py-1 min-w-0" aria-label="BulkSkart Homepage">
-          <LogoMark />
+          <LogoMark onDark={desktopHome} />
         </Link>
 
         {/* Search bar — desktop */}
-        <form onSubmit={handleSearch} className="hidden md:flex flex-1 min-w-[140px] max-w-[420px] lg:max-w-[500px] items-center bg-muted border border-border rounded-lg h-9 px-3 gap-2 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/30 transition-all">
+        <form onSubmit={handleSearch} className="dh-search hidden md:flex flex-1 min-w-[140px] max-w-[420px] lg:max-w-[500px] items-center bg-muted border border-border rounded-lg h-9 px-3 gap-2 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/30 transition-all">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input
             ref={searchInputRef}
@@ -160,7 +353,7 @@ export default function Header() {
             placeholder="Search products, suppliers, categories…"
             className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
           />
-          <Button type="submit" size="sm" className="h-7 px-3 text-[12px] bg-[#C94400] text-white rounded-md shrink-0">
+          <Button type="submit" size="sm" className="h-7 px-3 text-[12px] bg-primary text-white rounded-md shrink-0">
             Search
           </Button>
         </form>
@@ -173,12 +366,12 @@ export default function Header() {
           <CopyPublicProfileButton compact />
           <NotificationBell />
           {user && profile ? (
-            <Link to={getDashboardLink()} className="w-7 h-7 rounded-full bg-[#C94400] flex items-center justify-center text-white text-xs font-bold shrink-0">
+            <Link to={getDashboardLink()} className="w-7 h-7 rounded-full bg-[#FF5A00] flex items-center justify-center text-white text-xs font-bold shrink-0">
               {(displayName || profile?.full_name || 'U')[0]?.toUpperCase() ?? 'U'}
             </Link>
           ) : (
             <Link to="/auth">
-              <Button size="sm" className="h-7 px-2 min-[360px]:px-2.5 text-[10.5px] min-[360px]:text-[11px] font-bold bg-[#C94400] hover:bg-[#B33D00] text-white rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Sign In</Button>
+              <Button size="sm" className="h-7 px-2 min-[360px]:px-2.5 text-[10.5px] min-[360px]:text-[11px] font-bold bg-[#FF5A00] hover:bg-[#e04e00] text-white rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Sign In</Button>
             </Link>
           )}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -187,169 +380,7 @@ export default function Header() {
                 <Menu className="w-4.5 h-4.5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[min(300px,85vw)] max-w-[calc(100%-2rem)] bg-background border-border p-0 z-50 overflow-hidden flex flex-col">
-              <div className="flex flex-col h-full w-full min-w-0 overflow-hidden">
-                <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
-                  <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center min-w-0" aria-label="BulkSkart Homepage">
-                    <LogoMark />
-                  </Link>
-                </div>
-                <form onSubmit={(e) => { e.preventDefault(); handleSearch(); setMobileOpen(false); }}
-                  className="flex items-center gap-2 px-3 py-3 border-b border-border w-full box-border shrink-0">
-                  <div className="flex flex-1 min-w-0 items-center bg-muted border border-border rounded-lg h-9 px-2.5 gap-2 focus-within:border-primary/60">
-                    <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      placeholder="Search products, suppliers…"
-                      className="flex-1 min-w-0 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
-                    />
-                  </div>
-                  <Button type="submit" size="sm" aria-label="Search products and suppliers" className="h-9 px-3 bg-[#C94400] text-white shrink-0">
-                    <Search className="w-4 h-4" />
-                  </Button>
-                </form>
-                <div className="flex flex-col gap-2 px-4 py-3 border-b border-border">
-                  {/* Country, Currency & Tax Selector */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" aria-label="Select Region and Currency" className="h-9 w-full gap-2 text-xs font-semibold justify-between">
-                        <span className="flex items-center gap-1.5 truncate">
-                          <span className="text-base">{countryConfig.flag}</span>
-                          <span className="truncate">{countryConfig.name}</span>
-                          <span className="text-muted-foreground font-mono">({countryConfig.currency})</span>
-                        </span>
-                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold shrink-0">
-                          {countryConfig.taxLabel}
-                        </span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-64 bg-popover border-border max-h-72 overflow-y-auto">
-                      <div className="px-2 py-1.5 text-[11px] font-bold text-muted-foreground border-b border-border flex items-center justify-between">
-                        <span>Select Region & Currency</span>
-                        {autoDetectedSource === 'login' && (
-                          <span className="text-[10px] text-primary">Login Synced</span>
-                        )}
-                      </div>
-                      {availableCountries.map(c => (
-                        <DropdownMenuItem key={c.code} onClick={() => setCountry(c.code)}
-                          className={`text-xs gap-2 py-2 cursor-pointer ${c.code === countryConfig.code ? 'bg-primary/10 text-primary font-bold' : ''}`}>
-                          <span className="text-base">{c.flag}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <span className="truncate">{c.name}</span>
-                              <span className="text-[11px] font-mono font-bold">{c.symbol} {c.currency}</span>
-                            </div>
-                            <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <span>Tax: {c.taxLabel}</span> · <span>Fee: {(c.feePercent * 100).toFixed(1)}%</span>
-                            </div>
-                          </div>
-                          {c.code === countryConfig.code && <Check className="w-3.5 h-3.5 text-primary shrink-0 ml-1" />}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={toggleTheme} className="h-8 w-full gap-1.5 text-xs font-semibold justify-center">
-                      {theme === 'dark' ? <Sun className="w-3.5 h-3.5 shrink-0" /> : <Moon className="w-3.5 h-3.5 shrink-0" />}
-                      {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                    </Button>
-                  </div>
-                </div>
-                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                  {navLinks.map(link => {
-                    const isAiAssistant = link.href === '/trade-assistant';
-                    return (
-                      <Link
-                        key={link.href}
-                        to={link.href}
-                        onClick={() => setMobileOpen(false)}
-                        {...getPrefetchHandlers(link.href)}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium transition-colors min-h-12 ${
-                          isActive(link.href)
-                            ? 'bg-primary/10 text-primary font-bold'
-                            : isAiAssistant
-                            ? 'text-[#FF5A00] bg-[#FF5A00]/10 hover:bg-[#B33D00]/20 font-semibold'
-                            : 'text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        {isAiAssistant && <Sparkles className="w-4 h-4 text-[#FF5A00] shrink-0" />}
-                        <span>{link.label}</span>
-                      </Link>
-                    );
-                  })}
-                  {user && (
-                    <>
-                      <div className="h-px bg-border my-2" />
-                      <div className="px-3 py-2 bg-muted/40 rounded-lg mb-1 border border-border">
-                        <p className="text-xs font-semibold text-foreground truncate">{displayName || profile?.full_name || 'My Account'}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
-                        <span className="inline-block mt-1 text-[10px] font-bold px-1.5 py-0.2 rounded bg-primary/10 text-primary uppercase">
-                          {resolvedRole === 'supplier' || profile?.role === 'supplier' ? 'Supplier' : resolvedRole === 'admin' ? 'Admin' : 'Buyer'}
-                        </span>
-                      </div>
-                      <Link to={getDashboardLink()} onClick={() => setMobileOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm text-foreground hover:bg-muted min-h-12">
-                        <LayoutDashboard className="w-4 h-4" /> Dashboard
-                      </Link>
-                      <Link to={(resolvedRole === 'supplier' || profile?.role === 'supplier') ? '/dashboard/supplier/profile' : '/dashboard/buyer/profile'} onClick={() => setMobileOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm text-foreground hover:bg-muted min-h-12">
-                        <User className="w-4 h-4" /> Profile & Settings
-                      </Link>
-                      <div className="px-1 py-1">
-                        <CopyPublicProfileButton />
-                      </div>
-                      <Link to="/settings/delete-account" onClick={() => setMobileOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm text-destructive hover:bg-destructive/10 min-h-12">
-                        <AlertCircle className="w-4 h-4" /> Delete Account
-                      </Link>
-                    </>
-                  )}
-                </nav>
-                <div className="p-4 border-t border-border bg-card/60 space-y-3">
-                  {user ? (
-                    <Button onClick={() => { handleSignOut(); setMobileOpen(false); }} variant="outline"
-                      className="w-full justify-center gap-2 text-destructive border-destructive/30 hover:bg-destructive/10 font-bold min-h-12 rounded-xl">
-                      <LogOut className="w-4 h-4" /> Sign Out
-                    </Button>
-                  ) : (
-                    <div className="space-y-2.5">
-                      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-0.5">
-                        Account Access
-                      </div>
-                      
-                      {/* Sign In for existing users */}
-                      <Link to="/login" onClick={() => setMobileOpen(false)} className="block w-full">
-                        <Button
-                          variant="secondary"
-                          className="w-full bg-muted/80 hover:bg-muted border border-border text-foreground hover:text-foreground font-bold h-12 rounded-xl text-sm flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.99]"
-                        >
-                          <LogIn className="w-4 h-4 text-[#FF5A00] shrink-0" />
-                          <span>Sign In</span>
-                          <span className="text-[11px] font-normal text-muted-foreground ml-auto hidden min-[360px]:inline">Existing user</span>
-                        </Button>
-                      </Link>
-
-                      {/* Create Free Account for new users */}
-                      <Link to="/register" onClick={() => setMobileOpen(false)} className="block w-full">
-                        <Button
-                          className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-12 rounded-xl text-sm flex items-center justify-center gap-2 shadow-[0_2px_0_#922f00] transition-all active:scale-[0.99]"
-                        >
-                          <UserPlus className="w-4 h-4 text-white shrink-0" />
-                          <span>Create Free Account</span>
-                        </Button>
-                      </Link>
-
-                      <p className="text-[11px] text-center text-muted-foreground/90 font-medium pt-0.5">
-                        No payment required to create an account
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </SheetContent>
+            {drawer}
           </Sheet>
         </div>
 
@@ -359,7 +390,7 @@ export default function Header() {
             <Link to="/pricing">
               <Button
                 size="sm"
-                className="h-8 px-3 text-[12px] font-bold bg-[#C94400] text-white hover:bg-primary/90 gap-1.5 rounded shadow-[0_2px_0_hsl(20_100%_30%)] animate-in fade-in slide-in-from-top-1 duration-300"
+                className="h-8 px-3 text-[12px] font-bold bg-primary text-white hover:bg-primary/90 gap-1.5 rounded shadow-[0_2px_0_hsl(20_100%_30%)] animate-in fade-in slide-in-from-top-1 duration-300"
               >
                 <Zap className="w-3 h-3" /> View Plans
               </Button>
@@ -371,7 +402,7 @@ export default function Header() {
           {/* Country, Currency & Tax Selector (Desktop) */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" aria-label="Select Country and Currency" className="h-9 px-2 gap-1.5 text-[13px] text-muted-foreground hover:text-foreground font-semibold">
+              <Button variant="ghost" size="sm" aria-label="Select Country and Currency" className="dh-region h-9 px-2 gap-1.5 text-[13px] text-muted-foreground hover:text-foreground font-semibold">
                 <span className="text-base leading-none">{countryConfig.flag}</span>
                 <span className="font-bold text-foreground">{countryConfig.code}</span>
                 <span className="text-xs font-mono text-muted-foreground">({countryConfig.symbol})</span>
@@ -427,7 +458,7 @@ export default function Header() {
             <DropdownMenu open={userMenuOpen} onOpenChange={setUserMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" aria-label="My Account Menu" className="h-9 px-2 gap-2 text-[13px] font-medium text-foreground hover:bg-muted">
-                  <div className="w-7 h-7 rounded-full bg-[#C94400] flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
                     {(displayName || profile?.full_name || user.email || 'U')[0]?.toUpperCase() ?? 'U'}
                   </div>
                   <span className="max-w-[80px] truncate">{(displayName || profile?.full_name || 'Account').split(' ')[0]}</span>
@@ -477,7 +508,7 @@ export default function Header() {
                 <Button size="sm" variant="ghost" className="text-[13px] font-bold text-foreground hover:text-primary hover:bg-muted h-8 px-3 rounded whitespace-nowrap">Sign In</Button>
               </Link>
               <Link to="/register" className="shrink-0">
-                <Button size="sm" className="bg-[#C94400] text-white hover:bg-[#B33D00] h-8 px-3 text-[13px] font-bold rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Create Free Account</Button>
+                <Button size="sm" className="dh-register bg-[#FF5A00] text-white hover:bg-[#e04e00] h-8 px-3 text-[13px] font-bold rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Create Free Account</Button>
               </Link>
             </>
           )}
@@ -496,7 +527,7 @@ export default function Header() {
             placeholder="Search products, suppliers, categories..."
             className="flex-1 min-w-0 px-2 py-1.5 text-[12px] outline-none bg-transparent text-foreground placeholder:text-muted-foreground"
           />
-          <button type="submit" aria-label="Search" className="bg-[#C94400] hover:bg-[#B33D00] px-3 min-[360px]:px-3.5 h-full text-white text-[11px] font-bold shrink-0 transition-colors">
+          <button type="submit" aria-label="Search" className="bg-[#FF5A00] hover:bg-[#e04e00] px-3 min-[360px]:px-3.5 h-full text-white text-[11px] font-bold shrink-0 transition-colors">
             Search
           </button>
         </form>
@@ -521,7 +552,7 @@ export default function Header() {
       </div>
 
       {/* ── Desktop Category Nav ── */}
-      <nav className="hidden md:block border-t border-border">
+      <nav className="dh-nav hidden md:block border-t border-border">
         <div className="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center overflow-x-auto scrollbar-none whitespace-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {navLinks.map((link, i) => (

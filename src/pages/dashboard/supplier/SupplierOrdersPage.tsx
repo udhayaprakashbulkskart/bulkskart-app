@@ -17,11 +17,11 @@ import ProtectedContact from '@/components/common/ProtectedContact';
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   pending:    { label: 'Pending',    cls: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30' },
-  confirmed:  { label: 'Confirmed',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
-  processing: { label: 'Processing', cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
-  shipped:    { label: 'Shipped',    cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
-  delivered:  { label: 'Delivered',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
-  cancelled:  { label: 'Cancelled',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  confirmed:  { label: 'Confirmed',  cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  processing: { label: 'Processing', cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  shipped:    { label: 'Shipped',    cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  delivered:  { label: 'Delivered',  cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  cancelled:  { label: 'Cancelled',  cls: 'bg-red-100 text-red-700 border-red-300' },
 };
 
 function pipelineStatus(o: OrderRow): PipelineStatus {
@@ -74,20 +74,20 @@ export default function SupplierOrdersPage() {
             <p className="text-sm text-muted-foreground">Manage and update orders from confirmation to delivery</p>
           </div>
 
-          {/* Buyers' online payments that BulkSkart holds until the order is delivered */}
+          {/* Buyers' online payments held until they confirm delivery */}
           {(() => {
             const held = orders.filter(o => o.payment_status === 'escrow' && o.order_status !== 'cancelled');
             if (!held.length) return null;
             const total = held.reduce((sum, o) => sum + Number(o.paid_amount ?? o.total_amount), 0);
             return (
-              <div className="mb-5 rounded-xl border border-[#FF5A00]/35 bg-[#FF5A00]/5 p-4 text-sm flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-5 rounded-xl border border-orange-500/30 bg-orange-500/5 p-4 text-sm flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="font-semibold text-foreground">Paid by buyers, held by BulkSkart: {money(total)}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Complete and ship each order. When the buyer confirms delivery, the money moves to your wallet (less 2% commission).
+                    It comes to your payout balance (less 2% commission) when each buyer confirms delivery.
                   </p>
                 </div>
-                <Link to="/dashboard/supplier/wallet" className="text-xs font-semibold text-primary hover:underline">Open wallet</Link>
+                <Link to="/dashboard/supplier/payouts" className="text-xs font-semibold text-primary hover:underline">Payouts</Link>
               </div>
             );
           })()}
@@ -96,7 +96,7 @@ export default function SupplierOrdersPage() {
             {(['all', 'active', 'delivered', 'cancelled'] as const).map(f => (
               <button key={f} onClick={() => setFilter(f)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  filter === f ? 'bg-[#C94400] text-primary-foreground border-primary'
+                  filter === f ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-card text-muted-foreground border-border hover:border-primary/40'}`}>
                 {FILTER_LABELS[f]}
                 <span className="ml-1.5 opacity-70">({counts[f]})</span>
@@ -114,7 +114,7 @@ export default function SupplierOrdersPage() {
               </p>
               <p className="text-sm text-muted-foreground mb-4">Orders are created automatically when a buyer accepts your quote.</p>
               <Link to="/dashboard/supplier/rfqs">
-                <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
                   <ArrowRight className="w-4 h-4" /> View RFQ Leads
                 </Button>
               </Link>

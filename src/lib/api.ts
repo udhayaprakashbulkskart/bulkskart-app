@@ -10,6 +10,8 @@ import {
   findMockupCompany,
 } from '@/data/mockupVerifiedSuppliers';
 import type { Category, Company, CompanyCertification, CompanyReview, Product, Requirement, Quotation, Conversation, Message, Notification, Profile, OrderRow, SupplierInquiry, InquiryReply } from '@/types/types';
+import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
+import { CLOSING_SOON_DAYS, NEW_REQUIREMENT_HOURS } from '@/lib/requirementVisuals';
 
 function mapGlobalToProduct(gp: GlobalCatalogProduct): Product {
   return {
@@ -779,6 +781,8 @@ export async function getRequirements(options?: {
   // 'all' = no status filter (buyer dashboard). Default public listings stay active-only.
   if (options?.status && options.status !== 'all') query = query.eq('status', options.status);
   else if (options?.status !== 'all' && !options?.buyerId) query = query.eq('status', 'active');
+  // Public listings leave out the generated demonstration requirements from the seed migration.
+  if (!options?.buyerId && !INCLUDE_TEMPLATE_SEED_DATA) query = query.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
   if (options?.categoryId) query = query.eq('category_id', options.categoryId);
   if (options?.search) query = query.ilike('title', `%${options.search}%`);
   if (options?.buyerId) query = query.eq('buyer_id', options.buyerId);
@@ -809,8 +813,9 @@ export async function getRequirements(options?: {
     if (item.req_number && excludeReqNumSet.has(item.req_number)) continue;
 
     const normTitle = (item.title || '').trim().toLowerCase();
-    // Never surface test/debug RFQs in production listings
+    // Never surface test/debug RFQs or generated demonstration rows in public listings
     if (isTestTitle(item.title || '') && !options?.buyerId) continue;
+    if (!options?.buyerId && isSeededRequirement(item)) continue;
     if (seenIds.has(item.id)) continue;
     if (item.req_number && seenReqNums.has(item.req_number)) continue;
     if (normTitle && seenTitles.has(normTitle)) continue;
@@ -833,30 +838,140 @@ export async function getRequirements(options?: {
   return uniqueItems;
 }
 
+/**
+ * One requirement by its id or its RFQ number ("RFQ-001234", any letter case). Nothing else matches:
+ * an address that names no requirement gets null, never a near match or a made-up one. The generated
+ * demonstration rows from the seed migration count as not found.
+ */
 export async function getRequirementById(id: string): Promise<Requirement | null> {
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-  
+  const key = (id ?? '').trim();
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);
+  if (!isUuid && !/^[A-Za-z0-9-]{3,40}$/.test(key)) return null;
+
+  const query = supabase.from('requirements').select('*, profiles!buyer_id(*), categories!category_id(*)');
+  const { data } = await (isUuid ? query.eq('id', key) : query.ilike('req_number', key)).limit(1).maybeSingle();
+  if (!data || isSeededRequirement(data)) return null;
+  return data as Requirement;
+}
+
+export type OpenRequirementTab = 'all' | 'urgent' | 'new' | 'expiring';
+export type OpenRequirementSort = 'latest' | 'quotes_high' | 'qty_high' | 'deadline';
+
+export interface OpenRequirementFilters {
+  /** a category and, usually, its sub-categories */
+  categoryIds?: string[];
+  search?: string;
+  /** a city or country, matched against where the buyer wants delivery */
+  location?: string;
+  tab?: OpenRequirementTab;
+}
+
+/** Text safe to put inside a PostgREST filter: no separators, quotes or wildcards. */
+function filterTerm(raw?: string): string {
+  return (raw ?? '')
+    .replace(/[,()"'\\%*:;]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60);
+}
+
+function isoDay(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Open requirements, as stored: status active, deadline not passed, and not one of the generated
+ * demonstration rows. `tab` narrows to urgent ones (the buyer ticked "urgent"), new ones (posted in the
+ * last 48 hours) or ones closing soon (deadline within 7 days).
+ */
+function openRequirementsQuery(columns: string, filters: OpenRequirementFilters, head = false) {
+  const now = new Date();
   let query = supabase
     .from('requirements')
-    .select('*, profiles!buyer_id(*), categories!category_id(*)');
-
-  if (isUuid) {
-    query = query.eq('id', id);
-  } else {
-    query = query.or(`req_number.eq.${id},req_number.ilike.%${id}%,title.ilike.%${id}%`);
+    .select(columns, { count: 'exact', head })
+    .eq('status', 'active')
+    .or(`deadline.is.null,deadline.gte.${isoDay(now)}`);
+  if (!INCLUDE_TEMPLATE_SEED_DATA) query = query.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
+  if (filters.categoryIds?.length) query = query.in('category_id', filters.categoryIds);
+  const term = filterTerm(filters.search);
+  if (term) query = query.or(`title.ilike.%${term}%,description.ilike.%${term}%,specifications.ilike.%${term}%`);
+  const place = filterTerm(filters.location);
+  if (place) query = query.or(`destination_city.ilike.%${place}%,destination_country.ilike.%${place}%`);
+  if (filters.tab === 'urgent') query = query.eq('is_urgent', true);
+  if (filters.tab === 'new') query = query.gte('created_at', new Date(now.getTime() - NEW_REQUIREMENT_HOURS * 3_600_000).toISOString());
+  if (filters.tab === 'expiring') {
+    query = query.not('deadline', 'is', null).lte('deadline', isoDay(new Date(now.getTime() + CLOSING_SOON_DAYS * 86_400_000)));
   }
+  return query;
+}
 
-  const { data } = await query.maybeSingle();
-  if (data) return data;
+/** One page of open requirements and how many match in all. `page` starts at 1. */
+export async function getOpenRequirements(
+  filters: OpenRequirementFilters & { page: number; pageSize: number; sort?: OpenRequirementSort },
+): Promise<{ rows: Requirement[]; total: number; error: string | null }> {
+  try {
+    const from = Math.max(0, (filters.page - 1) * filters.pageSize);
+    let query = openRequirementsQuery('*, profiles!buyer_id(id,full_name,company_name,phone), categories!category_id(id,name,slug)', filters);
+    if (filters.sort === 'quotes_high') query = query.order('quote_count', { ascending: false });
+    else if (filters.sort === 'qty_high') query = query.order('quantity', { ascending: false });
+    else if (filters.sort === 'deadline') query = query.order('deadline', { ascending: true, nullsFirst: false });
+    query = query.order('created_at', { ascending: false }).range(from, from + filters.pageSize - 1);
 
-  // If not found with exact/pattern match and not UUID, try fallback lookup by req_number directly
-  const { data: byReqNum } = await supabase
-    .from('requirements')
-    .select('*, profiles!buyer_id(*), categories!category_id(*)')
-    .eq('req_number', id)
-    .maybeSingle();
+    const { data, count, error } = await query;
+    if (error) return { rows: [], total: 0, error: error.message };
+    const rows = ((data ?? []) as unknown as Requirement[]).filter((row) => !isSeededRequirement(row));
+    return { rows, total: count ?? rows.length, error: null };
+  } catch (e) {
+    return { rows: [], total: 0, error: (e as Error)?.message || 'Requirements could not be loaded' };
+  }
+}
 
-  return byReqNum || null;
+/** How many open requirements each tab holds under the other filters (null where a count failed or was not asked for). */
+export async function countOpenRequirements(
+  filters: Omit<OpenRequirementFilters, 'tab'>,
+  tabs: OpenRequirementTab[] = ['all', 'urgent', 'new', 'expiring'],
+): Promise<Record<OpenRequirementTab, number | null>> {
+  const result: Record<OpenRequirementTab, number | null> = { all: null, urgent: null, new: null, expiring: null };
+  await Promise.all(
+    tabs.map(async (tab) => {
+      try {
+        const { count, error } = await openRequirementsQuery('id', { ...filters, tab }, true);
+        result[tab] = error ? null : (count ?? 0);
+      } catch {
+        result[tab] = null;
+      }
+    }),
+  );
+  return result;
+}
+
+/** Delivery places named on open requirements, most common first, for the location filter. */
+export async function getOpenRequirementPlaces(limit = 20): Promise<{ value: string; label: string; count: number }[]> {
+  let data: unknown;
+  try {
+    const result = await openRequirementsQuery('destination_city,destination_country', {}).limit(1000);
+    if (result.error) return [];
+    data = result.data;
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(data)) return [];
+  const tally = new Map<string, { label: string; count: number }>();
+  for (const row of data as unknown as { destination_city: string | null; destination_country: string | null }[]) {
+    const city = (row.destination_city ?? '').trim();
+    const country = (row.destination_country ?? '').trim();
+    const value = city || country;
+    if (!value) continue;
+    const key = value.toLowerCase();
+    const label = city && country ? `${city}, ${country}` : value;
+    const entry = tally.get(key);
+    if (entry) entry.count += 1;
+    else tally.set(key, { label, count: 1 });
+  }
+  return [...tally.entries()]
+    .map(([key, entry]) => ({ value: key, label: entry.label, count: entry.count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+    .slice(0, limit);
 }
 
 export async function incrementRequirementViewCount(id: string): Promise<void> {
@@ -1245,111 +1360,23 @@ export async function getOrCreateConversation(buyerId: string, supplierId: strin
 
 const INQUIRIES_STORAGE_KEY = 'bulkskart_supplier_inquiries_store';
 
-const DEFAULT_MOCK_INQUIRIES: SupplierInquiry[] = [
-  {
-    id: 'inq-seed-001',
-    conversation_id: 'conv-inq-seed-001',
-    supplier_company_id: 'ref-mfr-abc',
-    supplier_name: 'ABC Precision Engineering Ltd',
-    sender_name: 'Vikram Malhotra',
-    sender_email: 'v.malhotra@indotech-solutions.in',
-    sender_phone: '+91 98201 44892',
-    sender_company: 'IndoTech Global Solutions Pvt Ltd',
-    subject: 'RFQ: 2,500 Units Industrial Microcontroller & CNC Assemblies',
-    message: 'Hello team, we are expanding our smart IoT meter production line and need 2,500 units by Q3. Could you share technical datasheet, MOQ tier pricing, and estimated FOB sea freight transit time to Mumbai Port? Also confirm IEC 60730 standard compliance.',
-    product_id: 'prod-abc-1',
-    product_name: 'Industrial 32-Bit ARM Cortex-M4 Microcontroller LQFP-64',
-    product_slug: 'industrial-arm-cortex-m4-microcontroller-lqfp64',
-    target_quantity: 2500,
-    quantity_unit: 'Pieces',
-    created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    status: 'replied',
-    replies: [
-      {
-        id: 'rep-seed-001-1',
-        sender: 'supplier',
-        sender_name: 'Rajesh Sharma (Key Account Mgr)',
-        content: 'Dear Vikram, thank you for reaching out! Yes, all our MCUs are IEC 60730 Class B certified. For 2,500 units, our FOB unit price is $2.15/pc with a 14-day lead time. I will email the full calibration report shortly.',
-        created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-      }
-    ]
-  },
-  {
-    id: 'inq-seed-002',
-    conversation_id: 'conv-inq-seed-002',
-    supplier_company_id: 'ref-mfr-shenzhen',
-    supplier_name: 'Shenzhen MicroTech Semiconductor Co., Ltd.',
-    sender_name: 'Elena Rostova',
-    sender_email: 'e.rostova@nordic-embedded.eu',
-    sender_phone: '+49 89 2345 6789',
-    sender_company: 'Nordic Embedded Systems GmbH',
-    subject: 'Custom 8-Layer Rigid-Flex SMT PCB Production Quotation',
-    message: 'We are looking for turnkey assembly of 1,200 rigid-flex boards with automated optical inspection and flying probe test. We have the Gerber and BOM files ready. Can you sign our NDA and share your current factory lead time?',
-    product_id: 'prod-semi-002',
-    product_name: 'Custom High-Density 8-Layer Rigid-Flex SMT PCB Assembly',
-    product_slug: 'custom-high-density-rigid-flex-pcb-assembly',
-    target_quantity: 1200,
-    quantity_unit: 'Boards',
-    created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    status: 'new',
-    replies: []
-  },
-  {
-    id: 'inq-seed-003',
-    conversation_id: 'conv-inq-seed-003',
-    supplier_company_id: 'ref-mfr-milan',
-    supplier_name: 'Milan Luxury BioPackaging S.r.l.',
-    sender_name: 'Claire Dubois',
-    sender_email: 'c.dubois@parfum-elysees.fr',
-    sender_phone: '+33 1 42 68 55 00',
-    sender_company: "Maison d'Élysées Parfumerie",
-    subject: 'Bespoke Rigid Gift Boxes with Gold Foil Stamping',
-    message: 'Bonjour, we require 8,000 luxury magnetic boxes with velvet inserts for our holiday fragrance launch. Need FSC certification verification and sample proofing dispatched to Paris within 7 days.',
-    product_id: 'prod-milan-001',
-    product_name: 'Luxury Rigid Cosmetic Gift Box with Magnetic Flap',
-    product_slug: 'luxury-rigid-cosmetic-gift-box-magnetic-flap',
-    target_quantity: 8000,
-    quantity_unit: 'Pieces',
-    created_at: new Date(Date.now() - 1000 * 60 * 300).toISOString(),
-    status: 'new',
-    replies: []
-  },
-  {
-    id: 'inq-seed-004',
-    conversation_id: 'conv-inq-seed-004',
-    supplier_company_id: 'ref-mfr-zurich',
-    supplier_name: 'Zurich MedTech Precision Instruments AG',
-    sender_name: 'Dr. Marcus Vance',
-    sender_email: 'm.vance@apex-implants.com',
-    sender_phone: '+1 (617) 555-0199',
-    sender_company: 'Apex Orthopedic Implants USA',
-    subject: 'Titanium Grade 5 Trauma Plate OEM Supply Agreement',
-    message: 'We would like to inspect your ISO 13485 cleanroom audit records and discuss an initial batch of 200 pediatric locking plate sets. Are cleanroom lot certificates provided with each shipment?',
-    product_id: 'prod-zurich-001',
-    product_name: 'Titanium Grade 5 Orthopedic Trauma Locking Plates & Screws',
-    product_slug: 'titanium-grade-5-orthopedic-trauma-locking-plates',
-    target_quantity: 200,
-    quantity_unit: 'Sets',
-    created_at: new Date(Date.now() - 1000 * 60 * 720).toISOString(),
-    status: 'replied',
-    replies: [
-      {
-        id: 'rep-seed-004-1',
-        sender: 'supplier',
-        sender_name: 'Dr. Beatrix Meier (Quality Assurance)',
-        content: 'Dear Dr. Vance, ISO 13485 and CE MDR Class IIb certificates are attached to our supplier dossier. Every lot comes with full 3.1 chemical & mechanical mill certificates and particle count inspection.',
-        created_at: new Date(Date.now() - 1000 * 60 * 600).toISOString(),
-      }
-    ]
-  }
-];
+/** Sample "buyer leads" that earlier versions planted in new manufacturers' inboxes. */
+function isPlantedSampleInquiry(item: { id?: string } | null | undefined): boolean {
+  const id = item?.id ?? '';
+  return id.startsWith('welcome-lead-') || id.startsWith('inq-seed-');
+}
 
 function getLocalInquiries(): SupplierInquiry[] {
   try {
     const raw = localStorage.getItem(INQUIRIES_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        const real = parsed.filter((item) => !isPlantedSampleInquiry(item));
+        // Clear the planted samples out of this browser for good.
+        if (real.length !== parsed.length) localStorage.setItem(INQUIRIES_STORAGE_KEY, JSON.stringify(real));
+        return real;
+      }
     }
     return [];
   } catch {
@@ -1456,148 +1483,6 @@ export function getSupplierInquiries(companyId?: string, userId?: string): Suppl
     }
     return false;
   });
-}
-
-/** One-time welcome seed flag per manufacturer company */
-function welcomeLeadsFlagKey(companyId: string) {
-  return `bulkskart_mfr_welcome_leads_v1_${companyId}`;
-}
-
-export function hasManufacturerWelcomeLeads(companyId: string): boolean {
-  if (!companyId) return false;
-  try {
-    if (localStorage.getItem(welcomeLeadsFlagKey(companyId)) === '1') return true;
-  } catch {
-    /* ignore */
-  }
-  return getLocalInquiries().some((i) => i.id.startsWith(`welcome-lead-${companyId}-`));
-}
-
-/**
- * Simulation: when a manufacturer joins, auto-deliver 5 sample buyer lead
- * messages into their Messages inbox (inquiries tab). Idempotent per company.
- */
-export function ensureManufacturerWelcomeLeads(
-  companyId: string,
-  companyName = 'Your Factory',
-  options?: { force?: boolean }
-): { seeded: boolean; inquiries: SupplierInquiry[] } {
-  if (!companyId) return { seeded: false, inquiries: [] };
-
-  if (!options?.force && hasManufacturerWelcomeLeads(companyId)) {
-    return { seeded: false, inquiries: getSupplierInquiries(companyId) };
-  }
-
-  const now = Date.now();
-  const leads: SupplierInquiry[] = [
-    {
-      id: `welcome-lead-${companyId}-1`,
-      conversation_id: `welcome-conv-${companyId}-1`,
-      supplier_company_id: companyId,
-      supplier_name: companyName,
-      sender_name: 'Verified Buyer Desk',
-      sender_email: 'procurement@sample-buyer.bulkskart',
-      sender_phone: '+91 90000 10001',
-      sender_company: 'Sample Trading House · West Zone',
-      subject: 'RFQ: Bulk raw material supply — urgent quote',
-      message:
-        'Welcome to BulkSkart. We are simulating a live buyer lead: please share MOQ, FOB/CIF pricing, lead time, and GST invoice terms for a trial bulk order. Reply in this thread to practice the manufacturer inbox.',
-      product_name: 'Industrial Bulk Lot (Sample Lead)',
-      target_quantity: 5000,
-      quantity_unit: 'Units',
-      created_at: new Date(now - 45_000).toISOString(),
-      status: 'new',
-      replies: [],
-    },
-    {
-      id: `welcome-lead-${companyId}-2`,
-      conversation_id: `welcome-conv-${companyId}-2`,
-      supplier_company_id: companyId,
-      supplier_name: companyName,
-      sender_name: 'OEM Procurement Cell',
-      sender_email: 'oem.sourcing@sample-buyer.bulkskart',
-      sender_phone: '+91 90000 10002',
-      sender_company: 'Sample OEM Works · South Zone',
-      subject: 'Need factory datasheet + tier pricing',
-      message:
-        'Simulated lead #2: Looking for manufacturer-direct rates with export packaging. Can you confirm capacity for the next 30 days and share a sample quotation template?',
-      product_name: 'OEM Component Pack (Sample Lead)',
-      target_quantity: 1200,
-      quantity_unit: 'Pieces',
-      created_at: new Date(now - 3 * 60_000).toISOString(),
-      status: 'new',
-      replies: [],
-    },
-    {
-      id: `welcome-lead-${companyId}-3`,
-      conversation_id: `welcome-conv-${companyId}-3`,
-      supplier_company_id: companyId,
-      supplier_name: companyName,
-      sender_name: 'Export House Desk',
-      sender_email: 'exports@sample-buyer.bulkskart',
-      sender_phone: '+91 90000 10003',
-      sender_company: 'Sample Export Consortium · North Zone',
-      subject: 'Container load inquiry — HS code & COA',
-      message:
-        'Simulated lead #3: Preparing a container booking. Please advise HS code, certificate of analysis availability, and earliest dispatch window from your plant.',
-      product_name: 'Export-Ready Commodity (Sample Lead)',
-      target_quantity: 18,
-      quantity_unit: 'Metric Tons',
-      created_at: new Date(now - 8 * 60_000).toISOString(),
-      status: 'new',
-      replies: [],
-    },
-    {
-      id: `welcome-lead-${companyId}-4`,
-      conversation_id: `welcome-conv-${companyId}-4`,
-      supplier_company_id: companyId,
-      supplier_name: companyName,
-      sender_name: 'Distributor Network',
-      sender_email: 'distro@sample-buyer.bulkskart',
-      sender_phone: '+91 90000 10004',
-      sender_company: 'Sample Distribution Hub · Central Zone',
-      subject: 'Repeat monthly PO — lock rate for 90 days',
-      message:
-        'Simulated lead #4: We want a rolling monthly PO. Share volume break discounts and whether you support scheduled deliveries to multiple warehouses.',
-      product_name: 'Recurring Supply Contract (Sample Lead)',
-      target_quantity: 800,
-      quantity_unit: 'Cartons',
-      created_at: new Date(now - 18 * 60_000).toISOString(),
-      status: 'new',
-      replies: [],
-    },
-    {
-      id: `welcome-lead-${companyId}-5`,
-      conversation_id: `welcome-conv-${companyId}-5`,
-      supplier_company_id: companyId,
-      supplier_name: companyName,
-      sender_name: 'Project Sourcing Desk',
-      sender_email: 'projects@sample-buyer.bulkskart',
-      sender_phone: '+91 90000 10005',
-      sender_company: 'Sample Projects Pvt · East Zone',
-      subject: 'Project tender — submit commercial + technical bid',
-      message:
-        'Simulated lead #5: Project tender simulation. Kindly reply with commercial offer, standard lead time, payment terms (LC/TT), and any plant visit slots this week.',
-      product_name: 'Project Tender Lot (Sample Lead)',
-      target_quantity: 25000,
-      quantity_unit: 'Units',
-      created_at: new Date(now - 32 * 60_000).toISOString(),
-      status: 'new',
-      replies: [],
-    },
-  ];
-
-  const withoutOldWelcome = getLocalInquiries().filter(
-    (i) => !i.id.startsWith(`welcome-lead-${companyId}-`)
-  );
-  saveLocalInquiries([...leads, ...withoutOldWelcome]);
-  try {
-    localStorage.setItem(welcomeLeadsFlagKey(companyId), '1');
-  } catch {
-    /* ignore */
-  }
-
-  return { seeded: true, inquiries: getSupplierInquiries(companyId) };
 }
 
 export function replyToSupplierInquiry(

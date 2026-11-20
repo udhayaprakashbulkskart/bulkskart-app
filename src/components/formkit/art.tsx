@@ -36,8 +36,8 @@ function RackBay({ x, w, dim }: { x: number; w: number; dim?: boolean }) {
           <rect x={x} y={y} width={w} height={4.5} fill="#ff6a13" />
         </g>
       ))}
-      <rect x={x - 2.5} y={34} width={5} height={236} fill="#2f5d8f" />
-      <rect x={x + w - 2.5} y={34} width={5} height={236} fill="#2f5d8f" />
+      <rect x={x - 2.5} y={34} width={5} height={236} fill="#b3480f" />
+      <rect x={x + w - 2.5} y={34} width={5} height={236} fill="#b3480f" />
     </g>
   );
 }
@@ -47,18 +47,18 @@ export function WarehouseArt({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 340 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
       <defs>
         <linearGradient id="fk-wa-wall" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#12151b" />
-          <stop offset="1" stopColor="#262b35" />
+          <stop offset="0" stopColor="#161616" />
+          <stop offset="1" stopColor="#2e2e2e" />
         </linearGradient>
         <linearGradient id="fk-wa-floor" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#4a505b" />
           <stop offset="1" stopColor="#8b919c" />
         </linearGradient>
         <linearGradient id="fk-wa-fade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#0e1014" />
-          <stop offset="0.3" stopColor="#0e1014" stopOpacity="0.72" />
-          <stop offset="0.72" stopColor="#0e1014" stopOpacity="0.05" />
-          <stop offset="1" stopColor="#0e1014" stopOpacity="0" />
+          <stop offset="0" stopColor="#111111" />
+          <stop offset="0.3" stopColor="#111111" stopOpacity="0.72" />
+          <stop offset="0.72" stopColor="#111111" stopOpacity="0.05" />
+          <stop offset="1" stopColor="#111111" stopOpacity="0" />
         </linearGradient>
         <linearGradient id="fk-wa-truck" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#ff8a2b" />
@@ -116,7 +116,7 @@ export function WarehouseArt({ className }: { className?: string }) {
         <Carton x={168} y={220} w={23} h={24} />
         <Carton x={132} y={196} w={23} h={24} />
         <Carton x={156} y={196} w={23} h={24} />
-        <rect x="118" y="194" width="76" height="74" rx="2" fill="#e8f4ff" opacity="0.13" />
+        <rect x="118" y="194" width="76" height="74" rx="2" fill="#fff0e8" opacity="0.13" />
         {/* forks and mast */}
         <rect x="112" y="274" width="92" height="4" rx="1.5" fill="#1b1e24" />
         <rect x="196" y="150" width="6" height="130" rx="1.5" fill="#23272e" />
@@ -128,8 +128,8 @@ export function WarehouseArt({ className }: { className?: string }) {
         {/* driver */}
         <circle cx="256" cy="186" r="8.5" fill="#e2b48c" />
         <path d="M246.5 184 a9.5 9.5 0 0 1 19 0 l2 1.6 h-23 Z" fill="#ff7a1a" />
-        <path d="M244 200 q12 -8 24 0 l4 30 h-32 Z" fill="#27303f" />
-        <rect x="238" y="212" width="16" height="4" rx="2" fill="#27303f" transform="rotate(-20 238 212)" />
+        <path d="M244 200 q12 -8 24 0 l4 30 h-32 Z" fill="#333333" />
+        <rect x="238" y="212" width="16" height="4" rx="2" fill="#333333" transform="rotate(-20 238 212)" />
         <circle cx="234" cy="214" r="6" fill="none" stroke="#1b1e24" strokeWidth="2.5" />
         <rect x="262" y="214" width="14" height="18" rx="3" fill="#1b1e24" />
         {/* body */}
@@ -167,17 +167,17 @@ export function ClipboardArt({ className }: { className?: string }) {
       <g transform="rotate(-7 66 66)">
         <rect x="20" y="16" width="92" height="104" rx="9" fill="url(#fk-cb-board)" />
         <rect x="28" y="26" width="76" height="86" rx="4" fill="#fff" />
-        <rect x="48" y="8" width="36" height="18" rx="5" fill="#3d4654" />
-        <circle cx="66" cy="10" r="5" fill="none" stroke="#3d4654" strokeWidth="3" />
-        <text x="66" y="47" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontSize="13" fontWeight="800" fontStyle="italic" fill="#3d4654">
+        <rect x="48" y="8" width="36" height="18" rx="5" fill="#b3480f" />
+        <circle cx="66" cy="10" r="5" fill="none" stroke="#b3480f" strokeWidth="3" />
+        <text x="66" y="47" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontSize="13" fontWeight="800" fontStyle="italic" fill="#b3480f">
           QUOTE
         </text>
         {[58, 78].map((y) => (
           <g key={y}>
             <rect x="36" y={y} width="13" height="13" rx="3" fill="#ff5a00" />
             <path d={`M39 ${y + 6.5} l3 3 l5 -6`} fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            <rect x="55" y={y + 2} width="40" height="3" rx="1.5" fill="#d7dbe2" />
-            <rect x="55" y={y + 8} width="26" height="3" rx="1.5" fill="#e6e9ee" />
+            <rect x="55" y={y + 2} width="40" height="3" rx="1.5" fill="#f1d6c8" />
+            <rect x="55" y={y + 8} width="26" height="3" rx="1.5" fill="#f7e6dd" />
           </g>
         ))}
       </g>

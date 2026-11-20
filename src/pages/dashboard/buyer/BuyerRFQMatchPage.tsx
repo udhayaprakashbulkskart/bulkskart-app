@@ -24,12 +24,6 @@ import { supabase } from '@/db/supabase';
 import { getQuotationsForRequirement } from '@/lib/api';
 import type { Quotation } from '@/types/types';
 
-/** A number for display, or a dash when the value is missing. */
-const num = (n: unknown) => {
-  const v = typeof n === 'string' && n.trim() !== '' ? Number(n) : n;
-  return typeof v === 'number' && Number.isFinite(v) ? v.toLocaleString() : '—';
-};
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Requirement {
@@ -80,17 +74,17 @@ interface MatchRow {
 // ─── Score helpers ────────────────────────────────────────────────────────────
 
 function scoreGrade(score: number): { label: string; color: string; bg: string; bar: string } {
-  if (score >= 90) return { label: 'Excellent', color: 'text-[#FF7A2E]', bg: 'bg-[#FF5A00]/10 border-[#FF5A00]/40 dark:bg-[#B33D00]/30 dark:border-[#FF5A00]/40', bar: 'bg-[#C94400]' };
-  if (score >= 75) return { label: 'Good',      color: 'text-[#FF5A00]',  bg: 'bg-orange-500/10 border-[#FF5A00]/30 dark:bg-orange-950/30 dark:border-[#FF5A00]/30', bar: 'bg-[#C94400]' };
-  if (score >= 60) return { label: 'Moderate',  color: 'text-[#FF7A2E]',bg: 'bg-[#FF5A00]/10 border-[#FF5A00]/40 dark:bg-[#B33D00]/30 dark:border-[#FF5A00]/40', bar: 'bg-[#C94400]' };
-  return                   { label: 'Low',       color: 'text-[#FF7A2E]',   bg: 'bg-[#FF5A00]/10 border-[#FF5A00]/40 dark:bg-[#B33D00]/30 dark:border-[#FF5A00]/40', bar: 'bg-[#C94400]' };
+  if (score >= 90) return { label: 'Excellent', color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800', bar: 'bg-orange-500' };
+  if (score >= 75) return { label: 'Good',      color: 'text-[#FF5A00]',  bg: 'bg-orange-500/10 border-[#FF5A00]/30 dark:bg-orange-950/30 dark:border-[#FF5A00]/30', bar: 'bg-[#FF5A00]' };
+  if (score >= 60) return { label: 'Moderate',  color: 'text-orange-600',bg: 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800', bar: 'bg-orange-500' };
+  return                   { label: 'Low',       color: 'text-red-500',   bg: 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800', bar: 'bg-red-400' };
 }
 
 function pctColor(pct: number) {
-  if (pct >= 90) return 'bg-[#C94400]';
-  if (pct >= 70) return 'bg-[#C94400]';
-  if (pct >= 50) return 'bg-[#C94400]';
-  return 'bg-[#C94400]';
+  if (pct >= 90) return 'bg-orange-500';
+  if (pct >= 70) return 'bg-[#FF5A00]';
+  if (pct >= 50) return 'bg-orange-500';
+  return 'bg-red-400';
 }
 
 const SUB_SCORES = [
@@ -116,7 +110,7 @@ function ScoreRing({ score }: { score: number }) {
           strokeDasharray={circ} strokeDashoffset={offset}
           strokeLinecap="round"
           className={`transition-all duration-700 ${
-            score >= 90 ? 'stroke-[#FF5A00]' : score >= 75 ? 'stroke-[#FF5A00]' : score >= 60 ? 'stroke-[#FF5A00]' : 'stroke-[#FF5A00]'
+            score >= 90 ? 'stroke-orange-500' : score >= 75 ? 'stroke-orange-500' : score >= 60 ? 'stroke-orange-500' : 'stroke-red-400'
           }`}
         />
       </svg>
@@ -304,7 +298,7 @@ export default function BuyerRFQMatchPage() {
                   <div className="flex items-center gap-2 flex-wrap mb-1.5">
                     <h1 className="text-lg font-bold text-foreground">{requirement.title}</h1>
                     <Badge variant="outline" className={`text-xs capitalize shrink-0 ${
-                      requirement.status === 'active' ? 'text-[#FF7A2E] border-[#FF5A00]/30 bg-[#FF5A00]/10'
+                      requirement.status === 'active' ? 'text-orange-500 border-orange-500/30 bg-orange-500/10'
                         : 'text-muted-foreground border-border'
                     }`}>
                       {requirement.status}
@@ -317,7 +311,7 @@ export default function BuyerRFQMatchPage() {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                     {[
-                      { label: 'Quantity', value: `${num(requirement.quantity)} ${requirement.quantity_unit ?? ''}` },
+                      { label: 'Quantity', value: `${requirement.quantity.toLocaleString()} ${requirement.quantity_unit}` },
                       { label: 'Destination', value: requirement.destination_country ?? '—' },
                       {
                         label: 'Deadline',
@@ -357,7 +351,7 @@ export default function BuyerRFQMatchPage() {
             <div className="bg-card border border-border rounded-xl p-8 text-center">
               <p className="text-sm text-muted-foreground">Requirement not found</p>
               <Link to="/dashboard/buyer/requirements">
-                <Button size="sm" className="mt-3 bg-[#1A0C05] text-primary-foreground">Back to Requirements</Button>
+                <Button size="sm" className="mt-3 bg-primary text-primary-foreground">Back to Requirements</Button>
               </Link>
             </div>
           )}
@@ -367,9 +361,9 @@ export default function BuyerRFQMatchPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: 'Matched Suppliers', value: stats.total, icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-                { label: 'Top Match Score', value: stats.top, icon: TrendingUp, color: 'text-[#FF7A2E]', bg: 'bg-[#FF5A00]/10', suffix: '/100' },
+                { label: 'Top Match Score', value: stats.top, icon: TrendingUp, color: 'text-orange-500', bg: 'bg-orange-500/10', suffix: '/100' },
                 { label: 'Average Score', value: stats.avg, icon: BarChart3, color: 'text-[#FF5A00]', bg: 'bg-orange-500/10', suffix: '/100' },
-                { label: 'Quoted Suppliers', value: stats.quoted, icon: CheckCircle, color: 'text-[#FF7A2E]', bg: 'bg-[#FF5A00]/10' },
+                { label: 'Quoted Suppliers', value: stats.quoted, icon: CheckCircle, color: 'text-orange-500', bg: 'bg-orange-500/10' },
               ].map(s => {
                 const Icon = s.icon;
                 return (
@@ -392,12 +386,12 @@ export default function BuyerRFQMatchPage() {
             <TabsList className="h-9 mb-4">
               <TabsTrigger value="matches" className="text-xs gap-1.5">
                 <Zap className="w-3.5 h-3.5" /> Matched Suppliers
-                {!loadingMatch && <span className="ml-1 bg-[#C94400] text-primary-foreground rounded-full px-1.5 py-px text-[10px] font-semibold">{filtered.length}</span>}
+                {!loadingMatch && <span className="ml-1 bg-primary text-primary-foreground rounded-full px-1.5 py-px text-[10px] font-semibold">{filtered.length}</span>}
               </TabsTrigger>
               <TabsTrigger value="quotes" className="text-xs gap-1.5">
                 <Package className="w-3.5 h-3.5" /> Quotation Comparison
                 {!loadingQuotes && quotations.length > 0 && (
-                  <span className="ml-1 bg-[#C94400] text-primary-foreground rounded-full px-1.5 py-px text-[10px] font-semibold">{quotations.length}</span>
+                  <span className="ml-1 bg-primary text-primary-foreground rounded-full px-1.5 py-px text-[10px] font-semibold">{quotations.length}</span>
                 )}
               </TabsTrigger>
             </TabsList>
@@ -496,9 +490,9 @@ export default function BuyerRFQMatchPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-sm font-semibold text-foreground truncate">{c?.company_name}</span>
-                              {c?.is_verified && <Shield className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />}
+                              {c?.is_verified && <Shield className="w-3.5 h-3.5 text-primary shrink-0" />}
                               {m.response_status === 'quoted' && (
-                                <Badge className="text-[10px] px-1.5 py-0 bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40 shrink-0">Quoted</Badge>
+                                <Badge className="text-[10px] px-1.5 py-0 bg-orange-100 text-orange-700 border-orange-300 shrink-0">Quoted</Badge>
                               )}
                               <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-semibold shrink-0 border ${grade.bg} ${grade.color}`}>
                                 {grade.label}
@@ -512,7 +506,7 @@ export default function BuyerRFQMatchPage() {
                               )}
                               {(c?.rating_avg ?? 0) > 0 && (
                                 <span className="flex items-center gap-1">
-                                  <Star className="w-3 h-3 fill-[#FF5A00] text-[#FF7A2E] shrink-0" />
+                                  <Star className="w-3 h-3 fill-orange-400 text-orange-400 shrink-0" />
                                   {c?.rating_avg.toFixed(1)}
                                 </span>
                               )}
@@ -608,7 +602,7 @@ export default function BuyerRFQMatchPage() {
                                   {SUB_SCORES.map((s, i) => {
                                     const score = m[s.key as keyof MatchRow] as number;
                                     const widthPct = (score / 100) * 100;
-                                    const colors = ['bg-[#C94400]', 'bg-[#C94400]', 'bg-[#C94400]', 'bg-[#C94400]', 'bg-[#C94400]'];
+                                    const colors = ['bg-[#FF5A00]', 'bg-orange-500', 'bg-orange-500', 'bg-orange-500', 'bg-primary'];
                                     return (
                                       <TooltipProvider key={s.key} delayDuration={100}>
                                         <Tooltip>
@@ -736,7 +730,7 @@ export default function BuyerRFQMatchPage() {
                                       {q.companies?.company_name ?? '—'}
                                     </Link>
                                     <div className="flex items-center gap-1 mt-0.5">
-                                      {q.companies?.is_verified && <Shield className="w-3 h-3 text-[#FF7A2E]" />}
+                                      {q.companies?.is_verified && <Shield className="w-3 h-3 text-primary" />}
                                       {matchForQ && (
                                         <span className={`text-[9px] font-bold px-1 rounded ${scoreGrade(matchForQ.match_score).color}`}>
                                           {matchForQ.match_score}% Match
@@ -748,11 +742,11 @@ export default function BuyerRFQMatchPage() {
                               </td>
                               <td className="py-3 pr-4">
                                 <span className="text-sm font-black text-foreground whitespace-nowrap">
-                                  {num(q.unit_price)}
+                                  {Number(q.unit_price ?? 0).toLocaleString()}
                                 </span>
                               </td>
                               <td className="py-3 pr-4 text-xs text-foreground whitespace-nowrap">
-                                {num(q.moq)} {q.moq_unit ?? ''}
+                                {Number(q.moq ?? 1).toLocaleString()} {q.moq_unit}
                               </td>
                               <td className="py-3 pr-4 text-xs text-muted-foreground">{q.currency}</td>
                               <td className="py-3 pr-4 text-xs text-foreground whitespace-nowrap">
@@ -770,7 +764,7 @@ export default function BuyerRFQMatchPage() {
                               </td>
                               <td className="py-3 pr-4">
                                 <Badge variant="outline" className={`text-[10px] capitalize whitespace-nowrap ${
-                                  q.status === 'accepted' ? 'text-[#FF7A2E] border-[#FF5A00]/30 bg-[#FF5A00]/10'
+                                  q.status === 'accepted' ? 'text-orange-500 border-orange-500/30 bg-orange-500/10'
                                     : q.status === 'rejected' ? 'text-destructive border-destructive/30 bg-destructive/10'
                                     : 'text-muted-foreground border-border'
                                 }`}>
@@ -781,7 +775,7 @@ export default function BuyerRFQMatchPage() {
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   {q.status === 'pending' && (
                                     <>
-                                      <Button size="sm" className="h-6 text-[10px] px-2 bg-[#B33D00] hover:bg-[#B33D00] text-white gap-1" onClick={async () => {
+                                      <Button size="sm" className="h-6 text-[10px] px-2 bg-orange-600 hover:bg-orange-700 text-white gap-1" onClick={async () => {
                                         const { updateQuotationStatus } = await import('@/lib/api');
                                         await updateQuotationStatus(q.id, 'accepted');
                                         const updated = await getQuotationsForRequirement(id!);
@@ -815,16 +809,16 @@ export default function BuyerRFQMatchPage() {
 
                   {/* Best price highlight */}
                   {quotations.length >= 2 && (() => {
-                    const sorted = [...quotations].sort((a, b) => (Number(a.unit_price) || 0) - (Number(b.unit_price) || 0));
+                    const sorted = [...quotations].sort((a, b) => a.unit_price - b.unit_price);
                     const best = sorted[0];
-                    const savings = (Number(sorted[sorted.length - 1].unit_price) || 0) - (Number(best.unit_price) || 0);
+                    const savings = sorted[sorted.length - 1].unit_price - best.unit_price;
                     return (
-                      <div className="bg-[#FF5A00]/10 border border-[#FF5A00]/30 rounded-xl px-4 py-3 flex items-start gap-2.5 text-sm">
-                        <TrendingUp className="w-4 h-4 text-[#FF7A2E] shrink-0 mt-0.5" />
+                      <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3 flex items-start gap-2.5 text-sm">
+                        <TrendingUp className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
                         <div>
-                          <span className="font-semibold text-[#FF7A2E]">Lowest Quote: </span>
+                          <span className="font-semibold text-orange-600">Lowest Quote: </span>
                           <span className="text-foreground">
-                            {best.companies?.company_name} · {best.currency} {num(best.unit_price)}/unit
+                            {best.companies?.company_name} · {best.currency} {best.unit_price.toLocaleString()}/unit
                           </span>
                           {savings > 0 && (
                             <span className="text-muted-foreground text-xs ml-2">

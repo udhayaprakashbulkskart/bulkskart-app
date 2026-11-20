@@ -1,17 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  CheckCircle2, Clock, UploadCloud, FileText, Check, AlertCircle,
-  Pencil, ChevronRight, ArrowLeft, ArrowRight, ShieldCheck, Download,
-  Package, Calendar, CheckSquare, Sparkles, Send
-} from 'lucide-react';
+import React, { useEffect, useId, useState } from 'react';
+import { BadgeIndianRupee, Box, Calendar, Clock, Edit3, Eye, FileText, Handshake, IndianRupee, Loader2, MapPin, Package, Paperclip, Percent, Send, ShieldCheck, Target, Truck, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/db/supabase';
 import { createQuotation } from '@/lib/api';
+import type { Quotation } from '@/types/types';
+import {
+  Actions,
+  Callout,
+  CountedTextArea,
+  Done,
+  EntityCard,
+  Field,
+  FormDialog,
+  IconBox,
+  KitButton,
+  NativeSelect,
+  PAYMENT_TERMS,
+  SectionTitle,
+  Stepper,
+  TextInput,
+  type EntityMeta,
+  type FormPoint,
+} from '@/components/formkit';
 
 export interface SubmitQuotationWizardProps {
   open: boolean;
@@ -22,649 +33,472 @@ export interface SubmitQuotationWizardProps {
     title: string;
     quantity: number;
     quantityUnit: string;
-    targetPriceMin?: number;
-    targetPriceMax?: number;
+    /** the buyer's budget per unit, when they gave one */
+    targetPriceMin?: number | null;
+    targetPriceMax?: number | null;
     deliveryLocation?: string;
-    deliveryTimeText?: string;
-    paymentTerms?: string;
-    endSecondsRemaining?: number;
+    /** the date the buyer needs it by */
+    deadline?: string | null;
+    image?: string | null;
   };
   onSuccess?: () => void;
 }
 
-export default function SubmitQuotationWizard({
-  open,
-  onOpenChange,
-  rfq,
-  onSuccess
-}: SubmitQuotationWizardProps) {
-  const { user, profile } = useAuth();
-  const navigate = useNavigate();
+const GST_RATES = [0, 5, 12, 18, 28];
+
+const POINTS: FormPoint[] = [
+  { icon: BadgeIndianRupee, title: 'Your price and costs', detail: 'Freight, packing and GST shown apart' },
+  { icon: Eye, title: 'Check it before it goes', detail: 'A full read-back first' },
+  { icon: Send, title: 'Straight to the buyer', detail: 'As a quotation on this RFQ' },
+];
+
+const rupees = (value: number) => `₹${Math.round(value).toLocaleString('en-IN')}`;
+const amount = (value: string) => {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
+/**
+ * A supplier's quotation on a buyer's RFQ: price, quantity and costs, then a read-back, then it is sent. Nothing is
+ * filled in for the supplier except the buyer's quantity and the usual 18% GST, which they can change.
+ */
+export default function SubmitQuotationWizard({ open, onOpenChange, rfq, onSuccess }: SubmitQuotationWizardProps) {
+  const { user, profile, company } = useAuth();
+  const ids = useId();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  // Step 1 Form States matching Screen 3
-  const [unitPrice, setUnitPrice] = useState<number>(66);
-  const [totalQuantity, setTotalQuantity] = useState<number>(rfq.quantity || 10000);
-  const [deliveryLeadDays, setDeliveryLeadDays] = useState<number>(7);
-  const [freightCharges, setFreightCharges] = useState<number>(20000);
-  const [packagingCharges, setPackagingCharges] = useState<number>(5000);
-  const [taxRate, setTaxRate] = useState<number>(18);
+  const [unitPrice, setUnitPrice] = useState('');
+  const [quantity, setQuantity] = useState(String(rfq.quantity || ''));
+  const [moq, setMoq] = useState('');
+  const [leadDays, setLeadDays] = useState('');
+  const [freight, setFreight] = useState('');
+  const [packaging, setPackaging] = useState('');
+  const [taxRate, setTaxRate] = useState('18');
+  const [paymentTerms, setPaymentTerms] = useState('');
+  const [validity, setValidity] = useState('14');
+  const [notes, setNotes] = useState('');
+  const [attachments, setAttachments] = useState<Array<{ name: string; url: string }>>([]);
+  const [uploading, setUploading] = useState(false);
+  const [errors, setErrors] = useState<{ price?: string; quantity?: string; days?: string }>({});
+  const [submitting, setSubmitting] = useState(false);
 
-  // Uploaded documents state
-  const [documents, setDocuments] = useState<Array<{ name: string; size: string; type: string }>>([
-    { name: 'product_catalog.pdf', size: '2.4 MB', type: 'Product Catalog' },
-    { name: 'quality_certificate.pdf', size: '1.1 MB', type: 'Quality Certificate' },
-    { name: 'test_report.pdf', size: '3.2 MB', type: 'Test Report' },
-  ]);
-
-  // Step 2 Agreement Checkbox
-  const [termsAgreed, setTermsAgreed] = useState<boolean>(true);
-  const [submitting, setSubmitting] = useState<boolean>(false);
-
-  // Countdown timer for Step 3
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(rfq.endSecondsRemaining || 26 * 60 + 51);
-
+  // a fresh start each time it opens
   useEffect(() => {
-    if (!open) {
+    if (open) {
       setStep(1);
+      setQuantity(String(rfq.quantity || ''));
+      setErrors({});
     }
-  }, [open]);
+  }, [open, rfq.id, rfq.quantity]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSecondsRemaining(prev => Math.max(0, prev - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const unit = rfq.quantityUnit || 'Pcs';
+  const price = amount(unitPrice);
+  const qty = amount(quantity);
+  const productSubtotal = price * qty;
+  const freightCost = amount(freight);
+  const packagingCost = amount(packaging);
+  const subtotal = productSubtotal + freightCost + packagingCost;
+  const rate = Number(taxRate) || 0;
+  const gst = Math.round((subtotal * rate) / 100);
+  const total = subtotal + gst;
 
-  // Financial Calculations matching Screen 3 & 4
-  const productSubtotal = unitPrice * totalQuantity;
-  const subtotalBeforeTax = productSubtotal + (freightCharges || 0) + (packagingCharges || 0);
-  const gstAmount = Math.round((subtotalBeforeTax * taxRate) / 100);
-  const totalQuotationValue = subtotalBeforeTax + gstAmount;
+  const targetMin = Number(rfq.targetPriceMin) || 0;
+  const targetMax = Number(rfq.targetPriceMax) || 0;
+  const hasTarget = targetMin > 0 || targetMax > 0;
+  const targetText = targetMin > 0 && targetMax > 0 ? `${rupees(targetMin)} – ${rupees(targetMax)}` : rupees(targetMax || targetMin);
+  const priceHint = !hasTarget
+    ? `Your price for one ${unit.toLowerCase()}, before GST.`
+    : price <= 0
+      ? `The buyer's budget: ${targetText} per unit.`
+      : (targetMax > 0 && price > targetMax)
+        ? `Above the buyer's budget (${targetText}).`
+        : (targetMin > 0 && price < targetMin)
+          ? `Below the buyer's budget (${targetText}).`
+          : `Within the buyer's budget (${targetText}).`;
 
-  const targetMin = rfq.targetPriceMin ?? 60;
-  const targetMax = rfq.targetPriceMax ?? 75;
-  const isWithinTarget = unitPrice >= targetMin && unitPrice <= targetMax;
+  const meta: EntityMeta[] = [];
+  if (rfq.quantity) meta.push({ icon: Box, children: `Needs ${Number(rfq.quantity).toLocaleString('en-IN')} ${unit}` });
+  if (rfq.deliveryLocation) meta.push({ icon: MapPin, children: rfq.deliveryLocation });
+  if (rfq.deadline) meta.push({ icon: Calendar, children: `By ${new Date(rfq.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}` });
+  if (hasTarget) meta.push({ icon: Target, children: `Budget ${targetText}` });
 
-  const handleNextToReview = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!unitPrice || unitPrice <= 0) {
-      toast.error('Please enter a valid unit price');
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (!files.length) return;
+    if (!company?.id) {
+      toast.error('Files can be added from a supplier account.');
       return;
     }
-    if (!deliveryLeadDays || deliveryLeadDays <= 0) {
-      toast.error('Please specify delivery lead time');
+    setUploading(true);
+    const added: Array<{ name: string; url: string }> = [];
+    for (const file of files.slice(0, Math.max(0, 5 - attachments.length))) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} is larger than 10 MB`);
+        continue;
+      }
+      const ext = file.name.split('.').pop();
+      const path = `supplier-quotes/${company.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { data, error } = await supabase.storage.from('attachments').upload(path, file);
+      if (error || !data) {
+        toast.error(`${file.name} could not be uploaded`);
+        continue;
+      }
+      added.push({ name: file.name, url: supabase.storage.from('attachments').getPublicUrl(data.path).data.publicUrl });
+    }
+    setAttachments((prev) => [...prev, ...added]);
+    setUploading(false);
+  };
+
+  const handleReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    const found: typeof errors = {};
+    if (price <= 0) found.price = 'Please enter a unit price greater than 0.';
+    if (qty <= 0) found.quantity = 'Please enter the quantity you are quoting for.';
+    if (!(amount(leadDays) > 0)) found.days = 'Please enter how many days delivery takes.';
+    setErrors(found);
+    const first = found.price ? 'price' : found.quantity ? 'qty' : found.days ? 'days' : null;
+    if (first) {
+      document.getElementById(`${ids}-${first}`)?.focus();
       return;
     }
     setStep(2);
   };
 
-  const handleFinalSubmit = async () => {
-    if (!termsAgreed) {
-      toast.error('Please agree to the RFQ terms and conditions');
+  const handleSubmit = async () => {
+    if (!user || !company?.id) {
+      toast.error('Please log in with your supplier account to send quotations.');
       return;
     }
-
-    if (!user) {
-      toast.error('Authentication Required', {
-        description: 'Please sign in to your supplier account to submit quotations.'
-      });
-      navigate('/login');
+    if (profile?.role !== 'supplier' && (profile?.role as string) !== 'manufacturer' && profile?.role !== 'admin') {
+      toast.error('Only supplier accounts can send quotations.');
       return;
     }
-
-    if (profile?.role !== 'supplier' && (profile?.role as any) !== 'manufacturer' && profile?.role !== 'admin') {
-      toast.error('Supplier Account Required', {
-        description: 'Only registered suppliers can submit quotations for buyer RFQs.'
-      });
-      return;
-    }
-
     setSubmitting(true);
-    try {
-      await createQuotation({
-        requirement_id: rfq.id,
-        unit_price: unitPrice,
-        currency: 'INR',
-        moq: Math.min(100, totalQuantity),
-        moq_unit: rfq.quantityUnit || 'Metre (m)',
-        delivery_days: deliveryLeadDays,
-        validity_days: 14,
-        payment_terms: rfq.paymentTerms || '50% advance, 50% before dispatch',
-        notes: `Total quotation value: ₹${totalQuotationValue.toLocaleString('en-IN')}. Freight: ₹${freightCharges}, Packaging: ₹${packagingCharges}, GST: ${taxRate}%. Qty: ${totalQuantity}`,
-        is_draft: false
-      });
-
-      toast.success('Quotation submitted successfully!');
-      setStep(3);
-      if (onSuccess) onSuccess();
-    } catch (err: any) {
-      console.error('Failed to submit quotation:', err);
-      toast.error(err.message || 'Failed to submit quotation. Please try again.');
-    } finally {
+    // the buyer comes from the saved requirement itself: a quotation can only go to a real, open buyer request
+    const { data: saved } = await supabase.from('requirements').select('id, buyer_id').eq('id', rfq.id).maybeSingle();
+    const buyerId = (saved as { buyer_id?: string } | null)?.buyer_id ?? null;
+    if (!buyerId) {
       setSubmitting(false);
+      toast.error('Quotations cannot be sent on this RFQ: it is not an open buyer request on BulkSkart.');
+      return;
     }
+
+    const payload = {
+      requirement_id: rfq.id,
+      supplier_id: user.id,
+      supplier_company_id: company.id,
+      buyer_id: buyerId,
+      unit_price: price,
+      currency: 'INR',
+      quantity: Math.round(qty),
+      moq: Math.round(amount(moq)) || 1,
+      moq_unit: unit,
+      delivery_days: Math.round(amount(leadDays)),
+      validity_days: Math.round(amount(validity)) || 14,
+      payment_terms: paymentTerms.trim() || null,
+      notes: notes.trim() || null,
+      freight_charges: freightCost,
+      packaging_charges: packagingCost,
+      tax_rate: rate,
+      tax_amount: gst,
+      subtotal,
+      total_price: total,
+      total_quotation_value: total,
+      attachment_urls: attachments.map((file) => file.url),
+      status: 'pending',
+      is_draft: false,
+    } as unknown as Partial<Quotation>;
+
+    const { error } = await createQuotation(payload);
+    setSubmitting(false);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    setStep(3);
+    onSuccess?.();
   };
 
-  const hours = Math.floor(secondsRemaining / 3600);
-  const minutes = Math.floor((secondsRemaining % 3600) / 60);
-  const seconds = secondsRemaining % 60;
+  const summary = (
+    <dl className="fk-summary">
+      <div>
+        <dt>
+          Product ({qty.toLocaleString('en-IN')} × {rupees(price)})
+        </dt>
+        <dd>{rupees(productSubtotal)}</dd>
+      </div>
+      {freightCost > 0 && (
+        <div>
+          <dt>Freight</dt>
+          <dd>{rupees(freightCost)}</dd>
+        </div>
+      )}
+      {packagingCost > 0 && (
+        <div>
+          <dt>Packaging</dt>
+          <dd>{rupees(packagingCost)}</dd>
+        </div>
+      )}
+      <div>
+        <dt>GST ({rate}%)</dt>
+        <dd>{rupees(gst)}</dd>
+      </div>
+      <div className="is-total">
+        <dt>Total</dt>
+        <dd>{rupees(total)}</dd>
+      </div>
+    </dl>
+  );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100%-1.5rem)] md:max-w-xl bg-card border border-border text-foreground p-0 rounded-3xl overflow-hidden max-h-[92dvh] flex flex-col shadow-2xl">
-        
-        {/* ── Top App Bar & Stepper Indicator ── */}
-        <div className="bg-background border-b border-border p-4 shrink-0">
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => {
-                if (step === 2) setStep(1);
-                else onOpenChange(false);
-              }}
-              className="p-1 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h2 className="text-sm font-bold text-foreground">
-              {step === 1 ? 'Submit Quotation' : step === 2 ? 'Review Quotation' : 'Confirmation'}
-            </h2>
-            <div className="w-5" /> {/* spacer */}
-          </div>
+    <FormDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!submitting && !uploading) onOpenChange(next);
+      }}
+      busy={submitting || uploading}
+      title={
+        step === 1 ? (
+          <>
+            Submit <em>Quotation</em>
+          </>
+        ) : step === 2 ? (
+          <>
+            Check & <em>Send</em>
+          </>
+        ) : (
+          <>
+            Quotation <em>Sent</em>
+          </>
+        )
+      }
+      description={
+        step === 1
+          ? 'Step 1 of 2: your price, quantity and costs for this RFQ.'
+          : step === 2
+            ? 'Step 2 of 2: this is exactly what the buyer will receive.'
+            : undefined
+      }
+      points={POINTS}
+      sheetArt="quote"
+      width={1080}
+    >
+      {step === 3 ? (
+        <Done
+          title="Your quotation is with the buyer"
+          actions={
+            <Actions single>
+              <KitButton onClick={() => onOpenChange(false)}>Done</KitButton>
+            </Actions>
+          }
+        >
+          <p>
+            {rupees(total)} for {qty.toLocaleString('en-IN')} {unit} of <b>{rfq.title}</b>.
+          </p>
+        </Done>
+      ) : (
+        <div className="fk-stack">
+          <EntityCard image={rfq.image} fallbackIcon={Package} name={rfq.title} byLabel="RFQ:" by={rfq.reqNumber} meta={meta} />
 
-          {/* Stepper Pills */}
-          <div className="flex items-center justify-center gap-6 text-xs font-bold">
-            {/* Step 1 */}
-            <div className={`flex items-center gap-1.5 ${step === 1 ? 'text-[#FF5A1F]' : step > 1 ? 'text-[#FF7A2E]' : 'text-muted-foreground'}`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                step === 1 ? 'bg-[#C94400] text-white' : step > 1 ? 'bg-[#B33D00] text-white' : 'bg-muted text-muted-foreground'
-              }`}>
-                {step > 1 ? <Check className="w-3.5 h-3.5" /> : '1'}
-              </div>
-              <span>Quotation</span>
-            </div>
-
-            <div className="w-8 h-0.5 bg-border" />
-
-            {/* Step 2 */}
-            <div className={`flex items-center gap-1.5 ${step === 2 ? 'text-[#FF5A1F]' : step > 2 ? 'text-[#FF7A2E]' : 'text-muted-foreground'}`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                step === 2 ? 'bg-[#C94400] text-white' : step > 2 ? 'bg-[#B33D00] text-white' : 'bg-muted text-muted-foreground'
-              }`}>
-                {step > 2 ? <Check className="w-3.5 h-3.5" /> : '2'}
-              </div>
-              <span>Review</span>
-            </div>
-
-            <div className="w-8 h-0.5 bg-border" />
-
-            {/* Step 3 */}
-            <div className={`flex items-center gap-1.5 ${step === 3 ? 'text-[#FF7A2E]' : 'text-muted-foreground'}`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                step === 3 ? 'bg-[#B33D00] text-white' : 'bg-muted text-muted-foreground'
-              }`}>
-                3
-              </div>
-              <span>Confirm</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Scrollable Body ── */}
-        <div className="overflow-y-auto flex-1 p-4 sm:p-5 space-y-4">
-          
-          {/* ═════════════════════════════════════════════════════════
-              STEP 1: QUOTATION ENTRY (Exact UI matching Screen 3)
-          ═════════════════════════════════════════════════════════ */}
-          {step === 1 && (
-            <form onSubmit={handleNextToReview} className="space-y-4">
-              
-              {/* Unit Price */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <span className="text-[#FF5A1F]">●</span> Unit Price (₹ per metre) *
-                  </label>
-                </div>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sm text-foreground">₹</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="1"
-                    required
-                    value={unitPrice}
-                    onChange={e => setUnitPrice(Number(e.target.value))}
-                    className="pl-8 bg-background border-border text-foreground font-bold text-base h-12 rounded-xl focus:border-[#FF5A1F]"
-                    placeholder="66.00"
-                  />
-                </div>
-                {/* Target Range feedback */}
-                {isWithinTarget ? (
-                  <p className="text-[11px] font-bold text-[#FF7A2E] dark:text-[#FF7A2E] flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                    Within buyer's target range (₹{targetMin} – ₹{targetMax})
-                  </p>
-                ) : (
-                  <p className="text-[11px] font-semibold text-[#FF7A2E] dark:text-[#FF7A2E] flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    Buyer's target range is ₹{targetMin} – ₹{targetMax}
-                  </p>
-                )}
-              </div>
-
-              {/* Total Quantity */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-foreground">Total Quantity</label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={totalQuantity}
-                    onChange={e => setTotalQuantity(Number(e.target.value))}
-                    className="bg-background border-border text-foreground font-bold text-base h-12 rounded-xl focus:border-[#FF5A1F]"
-                  />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground pointer-events-none">
-                    {rfq.quantityUnit || 'm'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Delivery Lead Time (Days) */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-foreground">Delivery Lead Time (Days) *</label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    min="1"
-                    required
-                    value={deliveryLeadDays}
-                    onChange={e => setDeliveryLeadDays(Number(e.target.value))}
-                    className="bg-background border-border text-foreground font-bold text-base h-12 rounded-xl focus:border-[#FF5A1F]"
-                  />
-                  <Calendar className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                </div>
-                <p className="text-[11px] font-bold text-[#FF7A2E] dark:text-[#FF7A2E] flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                  Delivery within {deliveryLeadDays} days
-                </p>
-              </div>
-
-              {/* Additional Charges (Freight + Packaging) */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-foreground flex items-center gap-1">
-                  Additional Charges <span className="text-[10px] text-muted-foreground font-normal">(Optional)</span>
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-medium text-muted-foreground block mb-1">
-                      Freight Charges (₹)
-                    </label>
-                    <Input
+          {step === 1 ? (
+            <form onSubmit={handleReview} noValidate className="fk-form fk-stack">
+              <SectionTitle>Your Quote</SectionTitle>
+              <div className="fk-grid">
+                <Field htmlFor={`${ids}-price`} label={`Unit Price (₹ per ${unit})`} required error={errors.price} hint={priceHint}>
+                  <IconBox icon={IndianRupee} accent>
+                    <TextInput
+                      id={`${ids}-price`}
                       type="number"
+                      inputMode="decimal"
                       min="0"
-                      value={freightCharges}
-                      onChange={e => setFreightCharges(Number(e.target.value))}
-                      className="bg-background border-border text-foreground h-11 rounded-xl text-xs focus:border-[#FF5A1F]"
-                      placeholder="20000"
+                      step="any"
+                      value={unitPrice}
+                      onChange={(e) => {
+                        setUnitPrice(e.target.value);
+                        setErrors((p) => ({ ...p, price: undefined }));
+                      }}
+                      placeholder="Price before GST"
+                      invalid={Boolean(errors.price)}
+                      aria-describedby={errors.price ? `${ids}-price-error` : `${ids}-price-hint`}
+                      iconPadding
                     />
-                    <span className="text-[10px] text-muted-foreground mt-0.5 block">Optional</span>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-medium text-muted-foreground block mb-1">
-                      Packaging Charges (₹)
-                    </label>
-                    <Input
+                  </IconBox>
+                </Field>
+                <Field htmlFor={`${ids}-qty`} label={`Quantity (${unit})`} required error={errors.quantity}>
+                  <Stepper
+                    id={`${ids}-qty`}
+                    value={quantity}
+                    onChange={(value) => {
+                      setQuantity(value);
+                      setErrors((p) => ({ ...p, quantity: undefined }));
+                    }}
+                    min={1}
+                    unitName={unit}
+                    invalid={Boolean(errors.quantity)}
+                    required
+                  />
+                </Field>
+                <Field htmlFor={`${ids}-days`} label="Delivery Time (days)" required error={errors.days}>
+                  <IconBox icon={Clock}>
+                    <TextInput
+                      id={`${ids}-days`}
                       type="number"
-                      min="0"
-                      value={packagingCharges}
-                      onChange={e => setPackagingCharges(Number(e.target.value))}
-                      className="bg-background border-border text-foreground h-11 rounded-xl text-xs focus:border-[#FF5A1F]"
-                      placeholder="5000"
+                      inputMode="numeric"
+                      min="1"
+                      value={leadDays}
+                      onChange={(e) => {
+                        setLeadDays(e.target.value);
+                        setErrors((p) => ({ ...p, days: undefined }));
+                      }}
+                      placeholder="e.g. 10"
+                      invalid={Boolean(errors.days)}
+                      iconPadding
                     />
-                    <span className="text-[10px] text-muted-foreground mt-0.5 block">Optional</span>
-                  </div>
-                </div>
+                  </IconBox>
+                </Field>
+                <Field htmlFor={`${ids}-moq`} label="Minimum Order (MOQ)" optional>
+                  <Stepper id={`${ids}-moq`} value={moq} onChange={setMoq} min={1} unitName={`MOQ ${unit}`} />
+                </Field>
+                <Field htmlFor={`${ids}-freight`} label="Freight (₹)" optional>
+                  <IconBox icon={Truck}>
+                    <TextInput id={`${ids}-freight`} type="number" inputMode="decimal" min="0" step="any" value={freight} onChange={(e) => setFreight(e.target.value)} placeholder="0" iconPadding />
+                  </IconBox>
+                </Field>
+                <Field htmlFor={`${ids}-packaging`} label="Packaging (₹)" optional>
+                  <IconBox icon={Package}>
+                    <TextInput id={`${ids}-packaging`} type="number" inputMode="decimal" min="0" step="any" value={packaging} onChange={(e) => setPackaging(e.target.value)} placeholder="0" iconPadding />
+                  </IconBox>
+                </Field>
+                <Field htmlFor={`${ids}-gst`} label="GST Rate">
+                  <IconBox icon={Percent}>
+                    <NativeSelect id={`${ids}-gst`} value={taxRate} onChange={(e) => setTaxRate(e.target.value)} iconPadding>
+                      {GST_RATES.map((r) => (
+                        <option key={r} value={String(r)}>
+                          {r}%
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </IconBox>
+                </Field>
+                <Field htmlFor={`${ids}-valid`} label="Quote Valid For (days)">
+                  <IconBox icon={Calendar}>
+                    <TextInput id={`${ids}-valid`} type="number" inputMode="numeric" min="1" value={validity} onChange={(e) => setValidity(e.target.value)} iconPadding />
+                  </IconBox>
+                </Field>
+                <Field htmlFor={`${ids}-payment`} label="Payment Terms" optional wide>
+                  <IconBox icon={Handshake}>
+                    <TextInput id={`${ids}-payment`} list={`${ids}-payment-list`} value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} placeholder="e.g. 50% Advance" iconPadding />
+                  </IconBox>
+                  <datalist id={`${ids}-payment-list`}>
+                    {PAYMENT_TERMS.map((t) => (
+                      <option key={t} value={t} />
+                    ))}
+                  </datalist>
+                </Field>
               </div>
 
-              {/* GST (Tax) Dropdown */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-foreground">GST (Tax)</label>
-                <select
-                  value={taxRate}
-                  onChange={e => setTaxRate(Number(e.target.value))}
-                  className="w-full bg-background border border-border text-foreground font-bold text-xs h-11 rounded-xl px-3 focus:outline-none focus:border-[#FF5A1F]"
-                >
-                  <option value={18}>18% (Standard GST)</option>
-                  <option value={12}>12% (Reduced Rate)</option>
-                  <option value={5}>5% (Essential Goods)</option>
-                  <option value={28}>28% (Luxury / Special)</option>
-                  <option value={0}>0% (Zero Rated / SEZ / Export)</option>
-                </select>
-              </div>
-
-              {/* Total Quotation Value Highlight Box */}
-              <div className="p-4 rounded-2xl bg-[#FF5A00]/70 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 text-center">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
-                  Total Quotation Value
-                </span>
-                <div className="text-2xl sm:text-3xl font-bold text-[#FF5A1F] mt-1">
-                  ₹{totalQuotationValue.toLocaleString('en-IN')}
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-1 font-medium">
-                  (Inclusive of product + freight + packaging + GST)
-                </p>
-              </div>
-
-              {/* Product Compliance & Documents Upload */}
-              <div className="space-y-2 pt-1">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-[#FF5A1F]" />
-                    Product Compliance & Documents
-                  </label>
-                  <span className="text-[10px] text-muted-foreground">Upload files (Max 10 MB each)</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="p-2.5 rounded-xl border border-dashed border-border bg-background/50 hover:bg-muted/50 transition-colors flex items-center gap-2 cursor-pointer">
-                    <FileText className="w-4 h-4 text-[#FF7A2E] shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-bold text-foreground truncate">Product Catalog</div>
-                      <div className="text-[9px] text-muted-foreground">PDF, JPG, PNG</div>
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl border border-dashed border-border bg-background/50 hover:bg-muted/50 transition-colors flex items-center gap-2 cursor-pointer">
-                    <ShieldCheck className="w-4 h-4 text-[#FF7A2E] shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-bold text-foreground truncate">Quality Certificate</div>
-                      <div className="text-[9px] text-muted-foreground">PDF, JPG, PNG</div>
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl border border-dashed border-border bg-background/50 hover:bg-muted/50 transition-colors flex items-center gap-2 cursor-pointer">
-                    <FileText className="w-4 h-4 text-[#FF5A00] shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-bold text-foreground truncate">Test Report</div>
-                      <div className="text-[9px] text-muted-foreground">PDF, JPG, PNG</div>
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl border border-dashed border-[#FF5A1F]/50 bg-[#FF5A1F]/5 hover:bg-[#B33D00]/10 transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-[#FF5A1F]">
-                    <span className="text-xs font-bold">+ Upload More</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit CTA for Step 1 */}
-              <Button
-                type="submit"
-                className="w-full bg-[#C94400] hover:bg-[#e04e17] text-white font-bold text-sm h-12 rounded-xl shadow-lg transition-transform active:scale-[0.98] mt-2"
-              >
-                Next: Review Quotation <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Button>
-            </form>
-          )}
-
-          {/* ═════════════════════════════════════════════════════════
-              STEP 2: REVIEW QUOTATION (Exact UI matching Screen 4)
-          ═════════════════════════════════════════════════════════ */}
-          {step === 2 && (
-            <div className="space-y-4">
-              
-              {/* Card 1: Quotation Summary */}
-              <div className="p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-sm">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-border/60">
-                  <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <span className="text-[#FF5A1F]">●</span> Quotation Summary
-                  </h3>
-                  <button
-                    onClick={() => setStep(1)}
-                    className="p-1 text-muted-foreground hover:text-[#FF5A1F] transition-colors"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between py-0.5">
-                    <span className="text-muted-foreground">Unit Price</span>
-                    <span className="font-bold text-foreground">₹{unitPrice.toFixed(2)} / metre</span>
-                  </div>
-                  <div className="flex justify-between py-0.5">
-                    <span className="text-muted-foreground">Total Quantity</span>
-                    <span className="font-bold text-foreground">{totalQuantity.toLocaleString()} metres</span>
-                  </div>
-                  <div className="flex justify-between py-0.5">
-                    <span className="text-muted-foreground">Lead Time</span>
-                    <span className="font-bold text-foreground">{deliveryLeadDays} days</span>
-                  </div>
-                  <div className="flex justify-between py-0.5">
-                    <span className="text-muted-foreground">Freight Charges</span>
-                    <span className="font-bold text-foreground">₹{freightCharges.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between py-0.5">
-                    <span className="text-muted-foreground">Packaging Charges</span>
-                    <span className="font-bold text-foreground">₹{packagingCharges.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-t border-border/40 font-semibold">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="text-foreground">₹{subtotalBeforeTax.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between py-0.5 text-muted-foreground">
-                    <span>GST ({taxRate}%)</span>
-                    <span>₹{gstAmount.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t border-border font-bold text-sm">
-                    <span className="text-foreground">Total Quotation Value</span>
-                    <span className="text-[#FF5A1F] text-base">₹{totalQuotationValue.toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2: Delivery & Payment Terms */}
-              <div className="p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-sm">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-border/60">
-                  <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <span className="text-[#FF5A1F]">●</span> Delivery & Payment Terms
-                  </h3>
-                  <button
-                    onClick={() => setStep(1)}
-                    className="p-1 text-muted-foreground hover:text-[#FF5A1F] transition-colors"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between py-0.5">
-                    <span className="text-muted-foreground">Delivery Location</span>
-                    <span className="font-bold text-foreground text-right">{rfq.deliveryLocation || 'Tiruppur, Tamil Nadu'}</span>
-                  </div>
-                  <div className="flex justify-between py-0.5">
-                    <span className="text-muted-foreground">Delivery Time</span>
-                    <span className="font-bold text-foreground">Within {deliveryLeadDays} days</span>
-                  </div>
-                  <div className="flex justify-between py-0.5">
-                    <span className="text-muted-foreground">Payment Terms</span>
-                    <span className="font-bold text-foreground text-right">{rfq.paymentTerms || '50% advance, 50% before dispatch'}</span>
-                  </div>
-                  <div className="flex justify-between py-0.5">
-                    <span className="text-muted-foreground">Quotation Validity</span>
-                    <span className="font-bold text-foreground">7 days after auction close</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: Uploaded Documents */}
-              <div className="p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-sm">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-border/60">
-                  <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <span className="text-[#FF5A1F]">●</span> Uploaded Documents ({documents.length})
-                  </h3>
-                  <button
-                    onClick={() => setStep(1)}
-                    className="p-1 text-muted-foreground hover:text-[#FF5A1F] transition-colors"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  {documents.map((doc, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-muted/40 border border-border/50 text-xs">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FileText className="w-4 h-4 text-[#FF7A2E] shrink-0" />
-                        <span className="font-bold text-foreground truncate">{doc.name}</span>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground shrink-0">{doc.size}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Binding Agreement Checkbox */}
-              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-[#FF5A00]/50 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={termsAgreed}
-                  onChange={e => setTermsAgreed(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded text-[#FF5A1F] focus:ring-[#FF5A1F] accent-[#FF5A1F]"
+              <Field htmlFor={`${ids}-notes`} label="Notes for the Buyer" optional>
+                <CountedTextArea
+                  id={`${ids}-notes`}
+                  icon={FileText}
+                  rows={3}
+                  maxLength={1000}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Specifications, certifications, what the price includes…"
                 />
-                <span className="text-xs text-foreground leading-snug">
-                  I agree to the RFQ terms and conditions and confirm that my quotation is binding and valid until the auction closes.
-                </span>
-              </label>
+              </Field>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep(1)}
-                  className="w-1/3 h-12 rounded-xl text-xs font-bold"
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={handleFinalSubmit}
-                  disabled={submitting || !termsAgreed}
-                  className="flex-1 bg-[#C94400] hover:bg-[#e04e17] text-white font-bold text-sm h-12 rounded-xl shadow-lg transition-transform active:scale-[0.98]"
-                >
-                  {submitting ? 'Submitting...' : 'Submit Quotation'} <ArrowRight className="w-4 h-4 ml-1.5" />
-                </Button>
-              </div>
-            </div>
+              <Field label="Documents" optional hint="Catalogue, certificates or test reports. Up to 5 files, 10 MB each.">
+                {attachments.length > 0 && (
+                  <ul className="fk-files">
+                    {attachments.map((file) => (
+                      <li key={file.url}>
+                        <FileText aria-hidden="true" />
+                        <span>{file.name}</span>
+                        <button type="button" onClick={() => setAttachments((prev) => prev.filter((f) => f.url !== file.url))} aria-label={`Remove ${file.name}`}>
+                          <X aria-hidden="true" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {attachments.length < 5 && (
+                  <label className="fk-upload">
+                    {uploading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Paperclip aria-hidden="true" />}
+                    <span>{uploading ? 'Uploading…' : 'Add files'}</span>
+                    <input type="file" className="sr-only" multiple accept="image/*,.pdf,.doc,.docx" onChange={handleUpload} disabled={uploading} />
+                  </label>
+                )}
+              </Field>
+
+              <SectionTitle>Quotation Value</SectionTitle>
+              {summary}
+
+              <Actions>
+                <KitButton type="submit" disabled={uploading}>
+                  <Eye aria-hidden="true" /> Review Quotation
+                </KitButton>
+                <KitButton variant="ghost" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </KitButton>
+              </Actions>
+            </form>
+          ) : (
+            <>
+              <SectionTitle>Your Quotation</SectionTitle>
+              {summary}
+              <dl className="fk-summary">
+                <div>
+                  <dt>Delivery time</dt>
+                  <dd>{Math.round(amount(leadDays))} days</dd>
+                </div>
+                {amount(moq) > 0 && (
+                  <div>
+                    <dt>MOQ</dt>
+                    <dd>
+                      {Math.round(amount(moq)).toLocaleString('en-IN')} {unit}
+                    </dd>
+                  </div>
+                )}
+                {paymentTerms.trim() && (
+                  <div>
+                    <dt>Payment terms</dt>
+                    <dd>{paymentTerms.trim()}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>Valid for</dt>
+                  <dd>{Math.round(amount(validity)) || 14} days</dd>
+                </div>
+                {attachments.length > 0 && (
+                  <div>
+                    <dt>Documents</dt>
+                    <dd>{attachments.length}</dd>
+                  </div>
+                )}
+                {notes.trim() && (
+                  <div className="is-block">
+                    <dt>Notes</dt>
+                    <dd>{notes.trim()}</dd>
+                  </div>
+                )}
+              </dl>
+              <Callout icon={ShieldCheck}>When you press Submit, this quotation goes to the buyer.</Callout>
+              <Actions>
+                <KitButton onClick={handleSubmit} disabled={submitting}>
+                  {submitting ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+                  {submitting ? 'Sending…' : 'Submit Quotation'}
+                </KitButton>
+                <KitButton variant="ghost" onClick={() => setStep(1)} disabled={submitting}>
+                  <Edit3 aria-hidden="true" /> Edit
+                </KitButton>
+              </Actions>
+            </>
           )}
-
-          {/* ═════════════════════════════════════════════════════════
-              STEP 3: CONFIRMATION SCREEN (Exact UI matching Screen 5)
-          ═════════════════════════════════════════════════════════ */}
-          {step === 3 && (
-            <div className="space-y-4 py-2 text-center">
-              
-              {/* Graphic Icon (Green Checkmark with Paper Plane) */}
-              <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full bg-[#FF5A00]/15 animate-ping" />
-                <div className="w-16 h-16 rounded-full bg-[#C94400] flex items-center justify-center text-white shadow-lg relative z-10">
-                  <Check className="w-9 h-9 stroke-[3]" />
-                </div>
-                <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-[#C94400] text-white shadow">
-                  <Send className="w-3.5 h-3.5" />
-                </div>
-              </div>
-
-              {/* Headline */}
-              <div>
-                <h3 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-                  Quotation Submitted Successfully!
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Your quotation has been submitted for RFQ ID: <strong className="text-foreground font-mono">{rfq.reqNumber || 'BS-RFQ-1042'}</strong>
-                </p>
-              </div>
-
-              {/* Quotation Details Card */}
-              <div className="p-4 rounded-2xl bg-card border border-border text-left space-y-2 text-xs shadow-sm">
-                <h4 className="text-xs font-bold text-foreground pb-1.5 border-b border-border flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-[#FF5A1F]" />
-                  Quotation Details
-                </h4>
-                <div className="flex justify-between py-1">
-                  <span className="text-muted-foreground">Unit Price</span>
-                  <span className="font-bold text-foreground">₹{unitPrice.toFixed(2)} / metre</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-muted-foreground">Total Quantity</span>
-                  <span className="font-bold text-foreground">{totalQuantity.toLocaleString()} metres</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-muted-foreground">Total Value</span>
-                  <span className="font-bold text-[#FF5A1F] text-sm">₹{totalQuotationValue.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-muted-foreground">Lead Time</span>
-                  <span className="font-bold text-foreground">{deliveryLeadDays} days</span>
-                </div>
-              </div>
-
-              {/* Informational note */}
-              <div className="p-2.5 rounded-xl bg-muted/50 border border-border/60 text-xs text-muted-foreground flex items-center justify-center gap-2">
-                <Clock className="w-4 h-4 text-[#FF5A1F] shrink-0" />
-                <span>You can revise your quotation anytime before the auction closes.</span>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-2 pt-1">
-                <Button
-                  onClick={() => {
-                    onOpenChange(false);
-                    window.location.href = '/my-quotations';
-                  }}
-                  className="w-full bg-[#C94400] hover:bg-[#e04e17] text-white font-bold text-sm h-12 rounded-xl shadow-lg"
-                >
-                  View Quotation
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  className="w-full h-11 rounded-xl text-xs font-bold"
-                >
-                  Back to RFQ Details
-                </Button>
-              </div>
-
-              {/* Live Closing Countdown Footer matching Screen 5 */}
-              <div className="p-3.5 rounded-2xl bg-[#FF5A00]/10 dark:bg-[#B33D00]/20 border border-[#FF5A00]/40 dark:border-[#FF5A00]/40 mt-3">
-                <span className="text-[11px] font-bold text-[#FF7A2E] dark:text-[#FF7A2E] uppercase tracking-wider flex items-center justify-center gap-1.5 mb-2">
-                  <Clock className="w-3.5 h-3.5 animate-spin" />
-                  Auction Closes In
-                </span>
-                <div className="flex items-center justify-center gap-2 font-mono">
-                  <div className="bg-[#161616] dark:bg-[#0A0A0A]/60 px-3 py-1.5 rounded-xl border border-[#FF5A00]/40 dark:border-[#FF5A00]/40 shadow-sm">
-                    <span className="text-lg font-bold text-foreground">{hours.toString().padStart(2, '0')}</span>
-                    <span className="block text-[9px] text-muted-foreground font-sans font-semibold">Hours</span>
-                  </div>
-                  <span className="font-bold text-[#FF7A2E] text-lg">:</span>
-                  <div className="bg-[#161616] dark:bg-[#0A0A0A]/60 px-3 py-1.5 rounded-xl border border-[#FF5A00]/40 dark:border-[#FF5A00]/40 shadow-sm">
-                    <span className="text-lg font-bold text-foreground">{minutes.toString().padStart(2, '0')}</span>
-                    <span className="block text-[9px] text-muted-foreground font-sans font-semibold">Minutes</span>
-                  </div>
-                  <span className="font-bold text-[#FF7A2E] text-lg">:</span>
-                  <div className="bg-[#161616] dark:bg-[#0A0A0A]/60 px-3 py-1.5 rounded-xl border border-[#FF5A00]/40 dark:border-[#FF5A00]/40 shadow-sm">
-                    <span className="text-lg font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">{seconds.toString().padStart(2, '0')}</span>
-                    <span className="block text-[9px] text-muted-foreground font-sans font-semibold">Seconds</span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          )}
-
         </div>
-
-      </DialogContent>
-    </Dialog>
+      )}
+    </FormDialog>
   );
 }

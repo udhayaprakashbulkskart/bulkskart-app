@@ -35,16 +35,16 @@ interface MatchRow {
 }
 
 function scoreColor(score: number) {
-  if (score >= 90) return 'bg-[#C94400]';
-  if (score >= 70) return 'bg-[#C94400]';
+  if (score >= 90) return 'bg-orange-500';
+  if (score >= 70) return 'bg-orange-500';
   if (score >= 50) return 'bg-orange-500';
-  return 'bg-[#C94400]';
+  return 'bg-red-500';
 }
 
 function scoreBadgeVariant(score: number): string {
-  if (score >= 90) return 'border-[#FF5A00]/40 text-[#FF7A2E] bg-[#FF5A00]/10 dark:bg-[#B33D00]/30';
-  if (score >= 70) return 'border-[#FF5A00]/40 text-[#FF7A2E] bg-[#FF5A00]/10 dark:bg-[#B33D00]/30';
-  return 'border-orange-500 text-orange-600 bg-[#FF5A00]/10 dark:bg-orange-950/30';
+  if (score >= 90) return 'border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950/30';
+  if (score >= 70) return 'border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950/30';
+  return 'border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950/30';
 }
 
 interface Props { rfqId: string; rfqTitle?: string; }
@@ -159,7 +159,7 @@ export default function RFQMatchResultsPanel({ rfqId, rfqTitle }: Props) {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-sm font-semibold text-foreground truncate">{c?.company_name}</span>
                     {c?.is_verified && (
-                      <Shield className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
+                      <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
                     )}
                     <Badge
                       variant="outline"
@@ -168,7 +168,7 @@ export default function RFQMatchResultsPanel({ rfqId, rfqTitle }: Props) {
                       {m.match_score}/100
                     </Badge>
                     {m.response_status === 'quoted' && (
-                      <Badge className="text-[10px] bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40 shrink-0">Quoted</Badge>
+                      <Badge className="text-[10px] bg-orange-100 text-orange-700 border-orange-300 shrink-0">Quoted</Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
@@ -180,7 +180,7 @@ export default function RFQMatchResultsPanel({ rfqId, rfqTitle }: Props) {
                     )}
                     {c?.rating_avg > 0 && (
                       <span className="flex items-center gap-1">
-                        <Star className="w-3 h-3 shrink-0 fill-[#FF5A00] text-[#FF7A2E]" />
+                        <Star className="w-3 h-3 shrink-0 fill-orange-400 text-orange-400" />
                         {c.rating_avg.toFixed(1)}
                       </span>
                     )}

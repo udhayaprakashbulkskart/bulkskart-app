@@ -192,15 +192,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       compData = data;
       setCompany(compData);
       await fetchSubscription(compData?.id, effectiveRole || undefined);
-
-      if (compData?.id && effectiveRole === 'supplier') {
-        try {
-          const { ensureManufacturerWelcomeLeads } = await import('@/lib/api');
-          ensureManufacturerWelcomeLeads(compData.id, compData.company_name || 'Your Factory');
-        } catch {
-          /* non-blocking */
-        }
-      }
     } else {
       setCompany(null);
       setSubscription(null);

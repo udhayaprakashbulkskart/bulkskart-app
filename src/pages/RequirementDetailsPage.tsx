@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertCircle,
@@ -26,6 +25,7 @@ import {
 import { toast } from 'sonner';
 import MainLayout from '@/components/layouts/MainLayout';
 import PageMeta from '@/components/common/PageMeta';
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
 import AIQuotationModal from '@/components/common/AIQuotationModal';
@@ -49,6 +49,7 @@ import {
 import { calculateProductMatchScore, catalogueInr, generateAIQuotationDraft, type AIQuotationDraft, type MatchedProduct } from '@/lib/aiSalesAssistant';
 import { formatPriceRange } from '@/lib/productPrice';
 import type { Product, Quotation, Requirement } from '@/types/types';
+import '@/components/formkit/formkit.css';
 
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -313,18 +314,18 @@ export default function RequirementDetailsPage() {
       <MainLayout>
         <PageMeta title="Requirement not found | BulkSkart" description="This buyer requirement is not available." robots="noindex, nofollow" />
         <div className="bg-background min-h-[70vh] flex items-center justify-center p-4">
-          <div className="bg-card border border-border p-8 rounded-2xl max-w-md w-full text-center space-y-4">
+          <div className="fk-skin bg-card border border-border p-8 rounded-2xl max-w-md w-full text-center space-y-4">
             <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto text-destructive">
               <AlertCircle className="w-6 h-6" aria-hidden="true" />
             </div>
             <h1 className="text-xl font-bold text-foreground">Requirement not found</h1>
             <p className="text-sm text-muted-foreground">{loadError || 'This requirement may have been closed or removed by the buyer.'}</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              <Link to="/requirements" className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-[#C94400] hover:bg-[#B33D00] text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:pointer-events-none">
+            <div className="fk-actions">
+              <Link to="/requirements" className="fk-btn is-primary">
                 Browse open requirements
               </Link>
               {loadError && (
-                <button type="button" onClick={loadData} className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl border border-border bg-card hover:border-[#FF5A00]/50 text-foreground text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none">
+                <button type="button" onClick={loadData} className="fk-btn is-ghost">
                   Try again
                 </button>
               )}
@@ -356,11 +357,11 @@ export default function RequirementDetailsPage() {
 
   const supplierActions = (
     <div className="flex flex-col sm:flex-row gap-2">
-      <button type="button" onClick={handleSendQuote} disabled={!isOpen || busy === 'quote'} className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-[#C94400] hover:bg-[#B33D00] text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:pointer-events-none sm:min-w-[220px]">
+      <button type="button" onClick={handleSendQuote} disabled={!isOpen || busy === 'quote'} className="fk-btn is-primary sm:min-w-[220px]">
         {busy === 'quote' ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
         {myQuotes.length > 0 ? 'Send a New Quote' : 'Send Quote'}
       </button>
-      <button type="button" onClick={handleMessageBuyer} disabled={busy === 'message'} className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl border border-border bg-card hover:border-[#FF5A00]/50 text-foreground text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none">
+      <button type="button" onClick={handleMessageBuyer} disabled={busy === 'message'} className="fk-btn is-ghost">
         {busy === 'message' ? <Loader2 className="animate-spin" aria-hidden="true" /> : <MessageSquare aria-hidden="true" />}
         Message Buyer
       </button>
@@ -397,7 +398,7 @@ export default function RequirementDetailsPage() {
         }}
       />
 
-      <div className="bg-background text-foreground min-h-screen pb-28 md:pb-16">
+      <div className="fk-skin bg-background text-foreground min-h-screen pb-28 md:pb-16">
         <div className="max-w-6xl mx-auto px-3 sm:px-5 pt-4 md:pt-6 space-y-4 md:space-y-5">
           <Breadcrumbs
             items={[
@@ -411,7 +412,7 @@ export default function RequirementDetailsPage() {
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span
                 className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${
-                  isOpen ? 'text-[#FF7A2E] bg-[#FF5A00]/10 border-[#FF5A00]/30' : 'text-muted-foreground bg-muted border-border'
+                  isOpen ? 'text-orange-600 dark:text-orange-400 bg-orange-500/10 border-orange-500/30' : 'text-muted-foreground bg-muted border-border'
                 }`}
               >
                 {isOpen ? 'Open for quotes' : deadlinePassed ? 'Deadline passed' : 'Closed'}
@@ -423,6 +424,7 @@ export default function RequirementDetailsPage() {
               {req.created_at && <span className="text-xs text-muted-foreground">{postedLabel(req.created_at)}</span>}
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground leading-tight">{req.title}</h1>
+            <LoanEligibleTag size="sm" />
             <ul className="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-sm text-muted-foreground">
               <li className="flex items-center gap-1.5">
                 <Package className="w-4 h-4 text-primary" aria-hidden="true" />
@@ -455,19 +457,19 @@ export default function RequirementDetailsPage() {
             <div className="mt-5">
               {isPoster ? (
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Link to={`/dashboard/buyer/quotes?req=${req.id}`} className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-[#C94400] hover:bg-[#B33D00] text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:pointer-events-none sm:min-w-[220px]">
+                  <Link to={`/dashboard/buyer/quotes?req=${req.id}`} className="fk-btn is-primary sm:min-w-[220px]">
                     <ClipboardList aria-hidden="true" /> Review Quotations
                   </Link>
-                  <Link to="/dashboard/buyer/requirements" className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl border border-border bg-card hover:border-[#FF5A00]/50 text-foreground text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none">
+                  <Link to="/dashboard/buyer/requirements" className="fk-btn is-ghost">
                     My Requirements
                   </Link>
                 </div>
               ) : !user ? (
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Link to={`/login?returnUrl=${encodeURIComponent(`/requirements/${req.id}`)}`} className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-[#C94400] hover:bg-[#B33D00] text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:pointer-events-none sm:min-w-[220px]">
+                  <Link to={`/login?returnUrl=${encodeURIComponent(`/requirements/${req.id}`)}`} className="fk-btn is-primary sm:min-w-[220px]">
                     <LogIn aria-hidden="true" /> Log In to Quote
                   </Link>
-                  <Link to="/signup" className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl border border-border bg-card hover:border-[#FF5A00]/50 text-foreground text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none">
+                  <Link to="/signup/manufacturer" className="fk-btn is-ghost">
                     Join as a Supplier
                   </Link>
                 </div>
@@ -632,8 +634,8 @@ export default function RequirementDetailsPage() {
                 ) : myQuotes.length > 0 ? (
                   <div className="space-y-2">
                     {myQuotes.map((q) => (
-                      <div key={q.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#FF5A00]/30 bg-[#FF5A00]/5 p-3">
-                        <span className="flex items-center gap-1.5 text-sm font-semibold text-[#FF7A2E]">
+                      <div key={q.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-500/30 bg-orange-500/5 p-3">
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-orange-700 dark:text-orange-400">
                           <CheckCircle className="w-4 h-4" aria-hidden="true" /> Your quotation, {dateLabel(q.created_at)}
                         </span>
                         <span className="text-sm font-bold text-foreground">
@@ -670,7 +672,6 @@ export default function RequirementDetailsPage() {
                                 : 'Price not set'}
                             {product.moq > 0 && ` · MOQ ${product.moq.toLocaleString('en-IN')}`} · {product.matchScore}% match
                           </p>
-                          <LoanEligibleTag size="xs" className="mt-1" />
                         </div>
                         <button
                           type="button"
@@ -773,9 +774,11 @@ export default function RequirementDetailsPage() {
           title: req.title,
           quantity: req.quantity,
           quantityUnit: req.quantity_unit,
-          targetPriceMin: req.budget_min ?? undefined,
-          targetPriceMax: req.budget_max ?? undefined,
+          targetPriceMin: req.budget_min ?? null,
+          targetPriceMax: req.budget_max ?? null,
           deliveryLocation: place || undefined,
+          deadline: req.deadline ?? null,
+          image: req.attachment_url ?? null,
         }}
         onSuccess={loadData}
       />

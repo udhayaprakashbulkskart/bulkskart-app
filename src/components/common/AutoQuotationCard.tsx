@@ -8,16 +8,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog';
+import { Actions, CountedTextArea, Field, FormDialog, IconBox, KitButton, TextInput } from '@/components/formkit';
 import {
   CheckCircle, XCircle, MessageSquare, RefreshCw, Download,
   Building2, Calendar, Package, ShieldCheck, Clock, Zap,
-  FileText, TrendingUp, AlertCircle, ArrowLeftRight, DollarSign,
+  FileText, TrendingUp, AlertCircle, ArrowLeftRight, DollarSign, Loader2, Send, Wallet,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -69,11 +64,11 @@ interface Props {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   sent:              { label: 'Quote Received',     color: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',     icon: <FileText className="w-3 h-3" /> },
-  accepted:          { label: 'Accepted',           color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',  icon: <CheckCircle className="w-3 h-3" /> },
-  rejected:          { label: 'Rejected',           color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',        icon: <XCircle className="w-3 h-3" /> },
-  revised_requested: { label: 'Counter Offer Sent', color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40', icon: <ArrowLeftRight className="w-3 h-3" /> },
+  accepted:          { label: 'Accepted',           color: 'bg-orange-100 text-orange-700 border-orange-200',  icon: <CheckCircle className="w-3 h-3" /> },
+  rejected:          { label: 'Rejected',           color: 'bg-red-100 text-red-700 border-red-200',        icon: <XCircle className="w-3 h-3" /> },
+  revised_requested: { label: 'Counter Offer Sent', color: 'bg-orange-100 text-orange-700 border-orange-200', icon: <ArrowLeftRight className="w-3 h-3" /> },
   expired:           { label: 'Expired',            color: 'bg-muted text-muted-foreground border-border',  icon: <Clock className="w-3 h-3" /> },
-  pending_approval:  { label: 'Pending Approval',   color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40', icon: <Clock className="w-3 h-3" /> },
+  pending_approval:  { label: 'Pending Approval',   color: 'bg-orange-100 text-orange-700 border-orange-200', icon: <Clock className="w-3 h-3" /> },
   draft:             { label: 'Draft',              color: 'bg-muted text-muted-foreground border-border',  icon: <FileText className="w-3 h-3" /> },
 };
 
@@ -95,6 +90,9 @@ export default function AutoQuotationCard({
   const [reviseOpen, setReviseOpen] = useState(false);
   const [reviseNotes, setReviseNotes] = useState('');
   const [busy, setBusy] = useState<'accept' | 'reject' | 'revise' | 'counter' | null>(null);
+  const [counterError, setCounterError] = useState('');
+  const [reviseError, setReviseError] = useState('');
+  const counterValue = Number(counterPrice) || 0;
 
   const statusCfg = STATUS_CONFIG[quote.status] ?? STATUS_CONFIG.sent;
   const isFinal = ['accepted', 'rejected', 'expired'].includes(quote.status);
@@ -108,18 +106,26 @@ export default function AutoQuotationCard({
     setBusy('reject'); await onReject(quote.id); setBusy(null);
   };
   const handleRevise = async () => {
-    if (!reviseNotes.trim()) { toast.error('Please describe what changes you need'); return; }
+    if (!reviseNotes.trim()) {
+      setReviseError('Please describe the changes you need.');
+      document.getElementById(`revise-${quote.id}`)?.focus();
+      return;
+    }
     setBusy('revise');
     await onRevise(quote.id, reviseNotes.trim());
     setBusy(null); setReviseOpen(false); setReviseNotes('');
   };
   const handleCounterOffer = async () => {
     const price = parseFloat(counterPrice);
-    if (!counterPrice || isNaN(price) || price <= 0) {
-      toast.error('Enter a valid counter-offer total amount'); return;
-    }
-    if (price >= quote.total_amount) {
-      toast.error('Counter-offer should be lower than the quoted total'); return;
+    const problem = !counterPrice || isNaN(price) || price <= 0
+      ? 'Please enter your counter-offer total.'
+      : price >= quote.total_amount
+        ? 'Your counter offer must be lower than the supplier’s total.'
+        : '';
+    if (problem) {
+      setCounterError(problem);
+      document.getElementById(`counter-${quote.id}`)?.focus();
+      return;
     }
     setBusy('counter');
     await onCounterOffer(quote.id, price, counterMsg.trim());
@@ -169,9 +175,9 @@ export default function AutoQuotationCard({
 
   return (
     <div className={`bg-card border rounded-xl overflow-hidden transition-shadow hover:shadow-md ${
-      quote.status === 'accepted' ? 'border-[#FF5A00]/50' :
-      quote.status === 'rejected' ? 'border-[#FF5A00]/50' :
-      quote.status === 'revised_requested' ? 'border-[#FF5A00]/50' :
+      quote.status === 'accepted' ? 'border-orange-400/50' :
+      quote.status === 'rejected' ? 'border-red-300/50' :
+      quote.status === 'revised_requested' ? 'border-orange-300/50' :
       'border-border'
     }`}>
       {/* Header */}
@@ -250,11 +256,11 @@ export default function AutoQuotationCard({
           </div>
           {/* Counter offer highlight */}
           {quote.counter_offer_price && (
-            <div className="flex justify-between font-bold text-sm bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-md px-2 py-1.5 mt-1">
-              <span className="flex items-center gap-1.5 text-[#FF7A2E]">
+            <div className="flex justify-between font-bold text-sm bg-orange-50 border border-orange-200 rounded-md px-2 py-1.5 mt-1">
+              <span className="flex items-center gap-1.5 text-orange-700">
                 <ArrowLeftRight className="w-3.5 h-3.5" /> Your Counter Offer
               </span>
-              <span className="text-[#FF7A2E]">{fmt(quote.counter_offer_price, quote.currency)}</span>
+              <span className="text-orange-700">{fmt(quote.counter_offer_price, quote.currency)}</span>
             </div>
           )}
         </div>
@@ -288,7 +294,7 @@ export default function AutoQuotationCard({
 
         {/* Counter offer message */}
         {quote.counter_offer_message && (
-          <div className="mt-2 flex items-start gap-1.5 text-xs text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded px-2 py-1.5">
+          <div className="mt-2 flex items-start gap-1.5 text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-1.5">
             <MessageSquare className="w-3 h-3 shrink-0 mt-0.5" />
             <span>{quote.counter_offer_message}</span>
           </div>
@@ -296,7 +302,7 @@ export default function AutoQuotationCard({
 
         {/* Buyer notes (revision requests) */}
         {quote.buyer_notes && !quote.counter_offer_message && (
-          <div className="mt-2 flex items-start gap-1.5 text-xs text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded px-2 py-1.5">
+          <div className="mt-2 flex items-start gap-1.5 text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-1.5">
             <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
             <span>{quote.buyer_notes}</span>
           </div>
@@ -307,18 +313,18 @@ export default function AutoQuotationCard({
       {!isFinal && quote.status === 'sent' && (
         <div className="px-4 pb-4 flex flex-wrap gap-2">
           <Button size="sm" onClick={handleAccept} disabled={!!busy}
-            className="h-8 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white gap-1.5">
+            className="h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white gap-1.5">
             {busy === 'accept' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
             Accept
           </Button>
           <Button size="sm" onClick={handleReject} disabled={!!busy} variant="outline"
-            className="h-8 text-xs border-[#FF5A00]/40 text-[#FF7A2E] hover:bg-[#B33D00]/10 gap-1.5">
+            className="h-8 text-xs border-red-300 text-red-600 hover:bg-red-50 gap-1.5">
             {busy === 'reject' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
             Reject
           </Button>
           {/* Counter Offer — primary negotiate action */}
           <Button size="sm" onClick={() => setCounterOpen(true)} disabled={!!busy}
-            className="h-8 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white gap-1.5">
+            className="h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white gap-1.5">
             <ArrowLeftRight className="w-3 h-3" /> Counter Offer
           </Button>
           <Button size="sm" onClick={() => setReviseOpen(true)} disabled={!!busy} variant="outline"
@@ -335,7 +341,7 @@ export default function AutoQuotationCard({
       {/* Actions — counter offer sent, waiting supplier */}
       {quote.status === 'revised_requested' && (
         <div className="px-4 pb-4 flex flex-wrap gap-2 items-center">
-          <span className="flex items-center gap-1.5 text-xs text-[#FF7A2E] bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-full px-3 py-1">
+          <span className="flex items-center gap-1.5 text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded-full px-3 py-1">
             <ArrowLeftRight className="w-3 h-3" /> Counter offer sent — awaiting supplier response
           </span>
           <Button size="sm" onClick={handleDownload} variant="ghost"
@@ -355,117 +361,155 @@ export default function AutoQuotationCard({
       )}
 
       {/* ── Counter Offer Dialog ─────────────────────────────────────── */}
-      <Dialog open={counterOpen} onOpenChange={setCounterOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="text-foreground text-sm flex items-center gap-2">
-              <ArrowLeftRight className="w-4 h-4 text-[#FF7A2E]" />
-              Make a Counter Offer
-            </DialogTitle>
-          </DialogHeader>
-
-          {/* Original quote summary */}
-          <div className="bg-muted/30 border border-border rounded-lg p-3 text-xs space-y-1 mb-1">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Supplier quoted total</span>
-              <span className="font-bold text-foreground">{fmt(quote.total_amount, quote.currency)}</span>
+      <FormDialog
+        open={counterOpen}
+        onOpenChange={(open) => {
+          if (busy !== 'counter') setCounterOpen(open);
+        }}
+        busy={busy === 'counter'}
+        title={
+          <>
+            Make a <em>Counter Offer</em>
+          </>
+        }
+        description={`Offer ${supplierName} a lower total for this quote.`}
+        width={620}
+      >
+        <form
+          noValidate
+          className="fk-form fk-stack"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCounterOffer();
+          }}
+        >
+          <dl className="fk-summary">
+            <div>
+              <dt>Unit price</dt>
+              <dd>{fmt(quote.unit_price, quote.currency)}</dd>
             </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Unit price</span>
-              <span>{fmt(quote.unit_price, quote.currency)}</span>
+            <div>
+              <dt>Quantity</dt>
+              <dd>
+                {quote.quantity} {quote.quantity_unit}
+              </dd>
             </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Quantity</span>
-              <span>{quote.quantity} {quote.quantity_unit}</span>
+            <div className="is-total">
+              <dt>Supplier&apos;s total</dt>
+              <dd>{fmt(quote.total_amount, quote.currency)}</dd>
             </div>
-          </div>
-
-          {/* Counter price input */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <DollarSign className="w-3.5 h-3.5" />
-              Your Counter-Offer Total ({quote.currency}) <span className="text-destructive">*</span>
-            </Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">₹</span>
-              <Input
+          </dl>
+          <Field
+            htmlFor={`counter-${quote.id}`}
+            label={`Your counter-offer total (${quote.currency})`}
+            required
+            error={counterError}
+            hint={
+              counterValue > 0 && counterValue < quote.total_amount
+                ? `${fmt(quote.total_amount - counterValue, quote.currency)} less (${((1 - counterValue / quote.total_amount) * 100).toFixed(1)}% off)`
+                : 'It must be lower than the supplier’s total.'
+            }
+          >
+            <IconBox icon={Wallet} accent>
+              <TextInput
+                id={`counter-${quote.id}`}
                 type="number"
-                min={1}
-                step="0.01"
+                inputMode="decimal"
+                min="1"
+                step="any"
                 value={counterPrice}
-                onChange={e => setCounterPrice(e.target.value)}
+                onChange={(e) => {
+                  setCounterPrice(e.target.value);
+                  if (counterError) setCounterError('');
+                }}
                 placeholder={`e.g. ${Math.round(quote.total_amount * 0.9).toLocaleString('en-IN')}`}
-                className="bg-input border-border h-10 text-sm pl-7"
-                autoFocus
+                invalid={Boolean(counterError)}
+                aria-describedby={counterError ? `counter-${quote.id}-error` : `counter-${quote.id}-hint`}
+                iconPadding
               />
-            </div>
-            {counterPrice && !isNaN(parseFloat(counterPrice)) && parseFloat(counterPrice) > 0 && (
-              <p className={`text-xs font-medium ${parseFloat(counterPrice) < quote.total_amount ? 'text-[#FF7A2E]' : 'text-destructive'}`}>
-                {parseFloat(counterPrice) < quote.total_amount
-                  ? `${fmt(quote.total_amount - parseFloat(counterPrice), quote.currency)} savings (${((1 - parseFloat(counterPrice) / quote.total_amount) * 100).toFixed(1)}% off)`
-                  : 'Counter offer must be lower than the quoted total'}
-              </p>
-            )}
-          </div>
-
-          {/* Optional message */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5" />
-              Message to supplier <span className="text-muted-foreground/60">(optional)</span>
-            </Label>
-            <Textarea
-              value={counterMsg}
-              onChange={e => setCounterMsg(e.target.value)}
-              placeholder="e.g. We can offer this price for a long-term contract. Please consider our order volume."
+            </IconBox>
+          </Field>
+          <Field htmlFor={`counter-msg-${quote.id}`} label="Message to the supplier" optional>
+            <CountedTextArea
+              id={`counter-msg-${quote.id}`}
+              icon={MessageSquare}
               rows={3}
-              className="bg-input border-border text-sm resize-none"
+              maxLength={500}
+              value={counterMsg}
+              onChange={(e) => setCounterMsg(e.target.value)}
+              placeholder="e.g. We can offer this price for a long-term contract."
             />
-          </div>
-
-          <div className="flex gap-2 mt-1">
-            <Button variant="outline" className="flex-1 h-9 text-xs" onClick={() => { setCounterOpen(false); setCounterPrice(''); setCounterMsg(''); }}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCounterOffer}
-              disabled={busy === 'counter' || !counterPrice || parseFloat(counterPrice) >= quote.total_amount}
-              className="flex-1 h-9 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white gap-1.5"
+          </Field>
+          <Actions>
+            <KitButton type="submit" disabled={busy === 'counter'}>
+              {busy === 'counter' ? <Loader2 className="animate-spin" aria-hidden="true" /> : <ArrowLeftRight aria-hidden="true" />}
+              {busy === 'counter' ? 'Sending…' : 'Send Counter Offer'}
+            </KitButton>
+            <KitButton
+              variant="ghost"
+              onClick={() => {
+                setCounterOpen(false);
+                setCounterPrice('');
+                setCounterMsg('');
+                setCounterError('');
+              }}
+              disabled={busy === 'counter'}
             >
-              {busy === 'counter'
-                ? <><RefreshCw className="w-3 h-3 animate-spin" /> Sending…</>
-                : <><ArrowLeftRight className="w-3 h-3" /> Send Counter Offer</>}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              Cancel
+            </KitButton>
+          </Actions>
+        </form>
+      </FormDialog>
 
       {/* ── Revision request dialog ──────────────────────────────────── */}
-      <Dialog open={reviseOpen} onOpenChange={setReviseOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="text-foreground text-sm">Request Revised Quotation</DialogTitle>
-          </DialogHeader>
-          <p className="text-xs text-muted-foreground mb-3">
-            Describe what changes you need — the supplier will be notified.
-          </p>
-          <Textarea
-            value={reviseNotes}
-            onChange={e => setReviseNotes(e.target.value)}
-            placeholder="e.g. Please reduce the unit price, increase delivery window, or adjust payment terms…"
-            rows={4}
-            className="bg-input border-border text-sm resize-none"
-          />
-          <div className="flex gap-2 mt-2">
-            <Button variant="outline" className="flex-1 h-9 text-xs" onClick={() => setReviseOpen(false)}>Cancel</Button>
-            <Button onClick={handleRevise} disabled={busy === 'revise'}
-              className="flex-1 h-9 text-xs bg-[#C94400] text-primary-foreground">
-              {busy === 'revise' ? <RefreshCw className="w-3 h-3 animate-spin mr-1" /> : null}
-              Send Request
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <FormDialog
+        open={reviseOpen}
+        onOpenChange={(open) => {
+          if (busy !== 'revise') setReviseOpen(open);
+        }}
+        busy={busy === 'revise'}
+        title={
+          <>
+            Request a <em>Revised Quote</em>
+          </>
+        }
+        description={`Tell ${supplierName} what to change. They are notified.`}
+        width={600}
+      >
+        <form
+          noValidate
+          className="fk-form fk-stack"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleRevise();
+          }}
+        >
+          <Field htmlFor={`revise-${quote.id}`} label="What should change?" required error={reviseError}>
+            <CountedTextArea
+              id={`revise-${quote.id}`}
+              icon={FileText}
+              rows={4}
+              maxLength={1000}
+              value={reviseNotes}
+              onChange={(e) => {
+                setReviseNotes(e.target.value);
+                if (reviseError) setReviseError('');
+              }}
+              placeholder="e.g. Please reduce the unit price, widen the delivery window or adjust payment terms…"
+              invalid={Boolean(reviseError)}
+            />
+          </Field>
+          <Actions>
+            <KitButton type="submit" disabled={busy === 'revise'}>
+              {busy === 'revise' ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+              {busy === 'revise' ? 'Sending…' : 'Send Request'}
+            </KitButton>
+            <KitButton variant="ghost" onClick={() => setReviseOpen(false)} disabled={busy === 'revise'}>
+              Cancel
+            </KitButton>
+          </Actions>
+        </form>
+      </FormDialog>
     </div>
   );
 }

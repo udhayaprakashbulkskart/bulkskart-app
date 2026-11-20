@@ -17,11 +17,11 @@ import OrderStatusTimeline from '@/components/common/OrderStatusTimeline';
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   pending:    { label: 'Pending',    cls: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30' },
-  confirmed:  { label: 'Confirmed',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
-  processing: { label: 'Processing', cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
-  shipped:    { label: 'Shipped',    cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
-  delivered:  { label: 'Delivered',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
-  cancelled:  { label: 'Cancelled',  cls: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' },
+  confirmed:  { label: 'Confirmed',  cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  processing: { label: 'Processing', cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  shipped:    { label: 'Shipped',    cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  delivered:  { label: 'Delivered',  cls: 'bg-orange-100 text-orange-700 border-orange-300' },
+  cancelled:  { label: 'Cancelled',  cls: 'bg-red-100 text-red-700 border-red-300' },
 };
 
 function pipelineStatus(o: OrderRow): PipelineStatus {
@@ -79,10 +79,10 @@ export default function BuyerOrdersPage() {
             if (!held.length) return null;
             const total = held.reduce((sum, o) => sum + Number(o.paid_amount ?? o.total_amount), 0);
             return (
-              <div className="mb-5 rounded-xl border border-[#FF5A00]/35 bg-[#FF5A00]/5 p-4 text-sm">
-                <p className="font-semibold text-foreground">Held safely by BulkSkart: {money(total)}</p>
+              <div className="mb-5 rounded-xl border border-orange-500/30 bg-orange-500/5 p-4 text-sm">
+                <p className="font-semibold text-foreground">Held by BulkSkart for you: {money(total)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Across {held.length} order{held.length === 1 ? '' : 's'}. The manufacturer is paid only after the goods arrive and you release the payment on the order.
+                  Across {held.length} order{held.length === 1 ? '' : 's'}. The manufacturer is paid only when you open the order and release it after the goods arrive.
                 </p>
               </div>
             );
@@ -92,7 +92,7 @@ export default function BuyerOrdersPage() {
             {(['all', 'active', 'delivered', 'cancelled'] as const).map(f => (
               <button key={f} onClick={() => setFilter(f)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  filter === f ? 'bg-[#C94400] text-primary-foreground border-primary'
+                  filter === f ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-card text-muted-foreground border-border hover:border-primary/40'}`}>
                 {f.charAt(0).toUpperCase() + f.slice(1)}
                 <span className="ml-1.5 opacity-70">({counts[f]})</span>
@@ -108,7 +108,7 @@ export default function BuyerOrdersPage() {
               <p className="font-semibold text-foreground mb-1">No orders yet</p>
               <p className="text-sm text-muted-foreground mb-4">Accept a supplier quote to create your first order.</p>
               <Link to="/dashboard/buyer/quotes">
-                <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
                   <ArrowRight className="w-4 h-4" /> Browse Received Quotes
                 </Button>
               </Link>
@@ -138,7 +138,7 @@ export default function BuyerOrdersPage() {
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-foreground">{order.requirements?.title ?? 'Order'}</p>
-                            {order.companies?.verification_status === 'verified' && <ShieldCheck className="w-3.5 h-3.5 text-[#FF7A2E]" />}
+                            {order.companies?.verification_status === 'verified' && <ShieldCheck className="w-3.5 h-3.5 text-primary" />}
                           </div>
                           <p className="text-xs text-muted-foreground">{order.companies?.company_name ?? '—'}</p>
                         </div>

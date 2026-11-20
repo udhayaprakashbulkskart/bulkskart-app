@@ -1,17 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
 import { toast } from 'sonner';
-import { AlertTriangle, Upload, FileText, RefreshCw, Plus, ChevronRight } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertTriangle, Upload, FileText, RefreshCw, Plus, ChevronRight, Package, Loader2, Send, X, Bell, ShieldCheck } from 'lucide-react';
+import { Actions, CountedTextArea, Field, FormDialog, IconBox, KitButton, NativeSelect, SectionTitle, type FormPoint } from '@/components/formkit';
 import { Link } from 'react-router-dom';
 import PageMeta from '@/components/common/PageMeta';
 
@@ -23,10 +19,17 @@ type Dispute = {
 
 type OrderOption = { id: string; order_number: string };
 
+const DISPUTE_POINTS: FormPoint[] = [
+  { icon: Package, title: 'Pick the order' },
+  { icon: FileText, title: 'Say what went wrong', detail: 'Add photos or documents' },
+  { icon: Bell, title: 'The team is notified' },
+  { icon: ShieldCheck, title: 'Track it here', detail: 'The status shows on this page' },
+];
+
 const STATUS_COLORS: Record<string, string> = {
-  open: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  open: 'bg-orange-100 text-orange-700 border-orange-300',
   under_review: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
-  resolved: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  resolved: 'bg-orange-100 text-orange-700 border-orange-300',
   closed: 'bg-muted text-muted-foreground',
 };
 
@@ -42,6 +45,7 @@ export default function DisputeCenterPage() {
   const [orders, setOrders] = useState<OrderOption[]>([]);
   const [form, setForm] = useState({ order_id: '', reason: 'quality_issue', description: '' });
   const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
+  const [formErrors, setFormErrors] = useState<{ order?: string; description?: string }>({});
   const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchDisputes = async () => {
@@ -75,16 +79,24 @@ export default function DisputeCenterPage() {
     const valid = files.filter(f => f.size <= 10 * 1024 * 1024);
     if (valid.length < files.length) toast.error('Some files exceed 10MB limit');
     setEvidenceFiles(prev => [...prev, ...valid].slice(0, 5));
+    e.target.value = '';
   };
 
   const handleSubmit = async () => {
     if (!user) return;
-    if (!form.order_id) { toast.error('Select an order'); return; }
-    if (!form.description.trim()) { toast.error('Describe the dispute'); return; }
+    const found: { order?: string; description?: string } = {};
+    if (!form.order_id) found.order = 'Please select the order this is about.';
+    if (!form.description.trim()) found.description = 'Please describe what went wrong.';
+    setFormErrors(found);
+    if (found.order || found.description) {
+      document.getElementById(found.order ? 'dispute-order' : 'dispute-description')?.focus();
+      return;
+    }
 
     setSaving(true);
     try {
       const evidenceUrls: string[] = [];
+      let failedUploads = 0;
       for (const file of evidenceFiles) {
         const dot = file.name.lastIndexOf('.');
         const stem = dot > 0 ? file.name.slice(0, dot) : file.name;
@@ -94,6 +106,8 @@ export default function DisputeCenterPage() {
         if (!error && data) {
           const { data: urlData } = supabase.storage.from('dispute-evidence').getPublicUrl(data.path);
           evidenceUrls.push(urlData.publicUrl);
+        } else {
+          failedUploads += 1;
         }
       }
 
@@ -133,7 +147,8 @@ export default function DisputeCenterPage() {
         });
       }
 
-      toast.success('Dispute submitted. Admin will review within 2–3 business days.');
+      toast.success('Dispute submitted. The BulkSkart team will look into it.');
+      if (failedUploads > 0) toast.warning(`${failedUploads} evidence file(s) could not be uploaded. You can send them when the team contacts you.`);
       setDialogOpen(false);
       setForm({ order_id: '', reason: 'quality_issue', description: '' });
       setEvidenceFiles([]);
@@ -161,7 +176,7 @@ export default function DisputeCenterPage() {
               <p className="text-sm text-muted-foreground">Raise and track disputes for your orders</p>
             </div>
           </div>
-          <Button onClick={() => { fetchOrders(); setDialogOpen(true); }} className="bg-[#1A0C05] hover:bg-primary/90 text-primary-foreground gap-2">
+          <Button onClick={() => { fetchOrders(); setDialogOpen(true); }} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
             <Plus className="w-4 h-4" /> Raise Dispute
           </Button>
         </div>
@@ -205,74 +220,112 @@ export default function DisputeCenterPage() {
         )}
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg max-h-[90dvh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Raise a Dispute</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Order *</Label>
-              <Select value={form.order_id} onValueChange={v => setForm(p => ({ ...p, order_id: v }))}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="-- Select order --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {orders.length === 0
-                    ? <SelectItem value="none" disabled>No orders available</SelectItem>
-                    : orders.map(o => (
-                        <SelectItem key={o.id} value={o.id}>#{o.order_number}</SelectItem>
-                      ))
-                  }
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Dispute Reason *</Label>
-              <Select value={form.reason} onValueChange={v => setForm(p => ({ ...p, reason: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="quality_issue">Product Quality Issue</SelectItem>
-                  <SelectItem value="delivery_delay">Delivery Delay</SelectItem>
-                  <SelectItem value="payment_issue">Payment Issue</SelectItem>
-                  <SelectItem value="communication_issue">Communication Issue</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Describe the Issue *</Label>
-              <Textarea
-                value={form.description}
-                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                rows={4}
-                placeholder="Provide a detailed description of the issue..."
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Evidence Files (max 5, 10MB each)</Label>
-              <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
-                <Upload className="w-3.5 h-3.5 mr-1" /> Upload Evidence
-              </Button>
-              <input ref={fileRef} type="file" multiple accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleAddFile} />
-              {evidenceFiles.length > 0 && (
-                <div className="space-y-1">
-                  {evidenceFiles.map((f, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <FileText className="w-3 h-3" /> {f.name}
-                    </div>
+      <FormDialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          if (!saving) setDialogOpen(open);
+        }}
+        busy={saving}
+        title={
+          <>
+            Raise a <em>Dispute</em>
+          </>
+        }
+        description="Tell us what went wrong with an order. The BulkSkart team is notified."
+        points={DISPUTE_POINTS}
+        width={980}
+      >
+        <form
+          noValidate
+          className="fk-form fk-stack"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <SectionTitle>The Order</SectionTitle>
+          <div className="fk-grid">
+            <Field htmlFor="dispute-order" label="Order" required error={formErrors.order}>
+              <IconBox icon={Package}>
+                <NativeSelect
+                  id="dispute-order"
+                  value={form.order_id}
+                  onChange={(e) => {
+                    setForm((p) => ({ ...p, order_id: e.target.value }));
+                    setFormErrors((p) => ({ ...p, order: undefined }));
+                  }}
+                  invalid={Boolean(formErrors.order)}
+                  iconPadding
+                >
+                  <option value="">{orders.length ? 'Select an order…' : 'No orders to dispute'}</option>
+                  {orders.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      #{o.order_number}
+                    </option>
                   ))}
-                </div>
-              )}
-            </div>
+                </NativeSelect>
+              </IconBox>
+            </Field>
+            <Field htmlFor="dispute-reason" label="Reason" required>
+              <IconBox icon={AlertTriangle}>
+                <NativeSelect id="dispute-reason" value={form.reason} onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))} iconPadding>
+                  <option value="quality_issue">Product quality issue</option>
+                  <option value="delivery_delay">Delivery delay</option>
+                  <option value="payment_issue">Payment issue</option>
+                  <option value="communication_issue">Communication issue</option>
+                  <option value="other">Other</option>
+                </NativeSelect>
+              </IconBox>
+            </Field>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={saving} className="bg-[#1A0C05] hover:bg-primary/90 text-primary-foreground">
-              {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Submit Dispute
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <Field htmlFor="dispute-description" label="Describe the issue" required error={formErrors.description}>
+            <CountedTextArea
+              id="dispute-description"
+              icon={FileText}
+              rows={4}
+              maxLength={2000}
+              value={form.description}
+              onChange={(e) => {
+                setForm((p) => ({ ...p, description: e.target.value }));
+                setFormErrors((p) => ({ ...p, description: undefined }));
+              }}
+              placeholder="What happened, when, and what you expected instead…"
+              invalid={Boolean(formErrors.description)}
+            />
+          </Field>
+          <Field label="Evidence" optional hint="Photos, invoices or documents. Up to 5 files, 10 MB each.">
+            {evidenceFiles.length > 0 && (
+              <ul className="fk-files">
+                {evidenceFiles.map((f, i) => (
+                  <li key={`${f.name}-${i}`}>
+                    <FileText aria-hidden="true" />
+                    <span>{f.name}</span>
+                    <button type="button" onClick={() => setEvidenceFiles((prev) => prev.filter((_, j) => j !== i))} aria-label={`Remove ${f.name}`}>
+                      <X aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {evidenceFiles.length < 5 && (
+              <label className="fk-upload">
+                <Upload aria-hidden="true" />
+                <span>Add files</span>
+                <input ref={fileRef} type="file" multiple accept="image/*,.pdf,.doc,.docx" className="sr-only" onChange={handleAddFile} />
+              </label>
+            )}
+          </Field>
+          <Actions>
+            <KitButton type="submit" disabled={saving}>
+              {saving ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+              {saving ? 'Submitting…' : 'Submit Dispute'}
+            </KitButton>
+            <KitButton variant="ghost" onClick={() => setDialogOpen(false)} disabled={saving}>
+              Cancel
+            </KitButton>
+          </Actions>
+        </form>
+      </FormDialog>
     </DashboardLayout>
   );
 }

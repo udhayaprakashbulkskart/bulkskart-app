@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,9 @@ import {
 import PageMeta from '@/components/common/PageMeta';
 import AdminLoanRequests from '@/components/dashboard/AdminLoanRequests';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { BarsChart, Gauge, Kpi, Mini, PageHeader, Panel, Segmented } from '@/components/dashboard/parts';
+import type { KpiTone } from '@/components/dashboard/parts';
+import { bucketByMonth, fetchMonthly, lastMonths, percentChange, sum } from '@/components/dashboard/series';
 
 // ─── Types ───────────────────────────────────────────────────
 type CompanyRow = {
@@ -55,19 +58,19 @@ type AdminStats = {
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  high: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
-  medium: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+  high: 'bg-red-100 text-red-700 border-red-300',
+  medium: 'bg-orange-100 text-orange-700 border-orange-300',
   low: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  verified: 'bg-[#FF5A00]/10 text-[#FF7A2E]',
-  pending: 'bg-[#FF5A00]/10 text-[#FF7A2E]',
+  verified: 'bg-primary/10 text-primary',
+  pending: 'bg-orange-100 text-orange-700',
   unverified: 'bg-muted text-muted-foreground',
-  rejected: 'bg-[#FF5A00]/10 text-[#FF7A2E]',
-  open: 'bg-[#FF5A00]/10 text-[#FF7A2E]',
+  rejected: 'bg-red-100 text-red-700',
+  open: 'bg-orange-100 text-orange-700',
   under_review: 'bg-orange-500/10 text-[#FF5A00]',
-  resolved: 'bg-[#FF5A00]/10 text-[#FF7A2E]',
+  resolved: 'bg-orange-100 text-orange-700',
   closed: 'bg-muted text-muted-foreground',
 };
 
@@ -89,6 +92,11 @@ export default function AdminDashboardFull() {
     pendingWithdrawals: 0, totalRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
+  // The twelve months the growth chart covers: companies that joined and people who signed up in each
+  const slots = useMemo(() => lastMonths(12), []);
+  const [companiesByMonth, setCompaniesByMonth] = useState<number[]>(() => slots.map(() => 0));
+  const [usersByMonth, setUsersByMonth] = useState<number[]>(() => slots.map(() => 0));
+  const [series, setSeries] = useState<'companies' | 'users'>('companies');
   const [search, setSearch] = useState('');
   const [verFilter, setVerFilter] = useState('all');
   const [saving, setSaving] = useState<string | null>(null);
@@ -109,6 +117,8 @@ export default function AdminDashboardFull() {
 
     const allComp = (compRes.data ?? []) as unknown as CompanyRow[];
     setCompanies(allComp);
+    setCompaniesByMonth(bucketByMonth(allComp.map(c => c.created_at), slots));
+    fetchMonthly(slots, (since) => supabase.from('profiles').select('created_at').gte('created_at', since).limit(5000)).then(setUsersByMonth);
     setDisputes((dispRes.data ?? []) as unknown as DisputeRow[]);
     setFraudAlerts((fraudRes.data ?? []) as unknown as FraudRow[]);
     setWithdrawals((wdRes.data ?? []) as unknown as WithdrawalRow[]);
@@ -128,7 +138,7 @@ export default function AdminDashboardFull() {
       totalRevenue: 0,
     });
     setLoading(false);
-  }, []);
+  }, [slots]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -198,46 +208,93 @@ export default function AdminDashboardFull() {
     return matchSearch && matchFilter;
   });
 
-  const statCards = [
-    { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-primary' },
-    { label: 'Companies', value: stats.totalCompanies, icon: Building2, color: 'text-[#FF5A00]' },
-    { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, color: 'text-[#FF7A2E]' },
-    { label: 'Active RFQs', value: stats.activeReqs, icon: FileText, color: 'text-[#FF7A2E]' },
-    { label: 'Total Orders', value: stats.totalOrders, icon: Package, color: 'text-[#FF7A2E]' },
-    { label: 'Open Disputes', value: stats.openDisputes, icon: AlertTriangle, color: 'text-[#FF7A2E]' },
-    { label: 'Pending Withdrawals', value: stats.pendingWithdrawals, icon: Wallet, color: 'text-[#FF7A2E]' },
+  const verifiedCompanies = companies.filter(c => c.verification_status === 'verified').length;
+  const verifiedRate = companies.length > 0 ? Math.round((verifiedCompanies / companies.length) * 1000) / 10 : null;
+  const last = slots.length - 1;
+  const companiesDelta = percentChange(companiesByMonth[last], companiesByMonth[last - 1]);
+  const usersDelta = percentChange(usersByMonth[last], usersByMonth[last - 1]);
+
+  const statCards: Array<{ label: string; value: number; icon: React.ElementType; tone: KpiTone; tab?: string }> = [
+    { label: 'Total Users', value: stats.totalUsers, icon: Users, tone: 'orange' },
+    { label: 'Companies', value: stats.totalCompanies, icon: Building2, tone: 'purple', tab: 'companies' },
+    { label: 'Pending Verifications', value: stats.pendingVerifications, icon: Shield, tone: 'yellow', tab: 'verifications' },
+    { label: 'Active RFQs', value: stats.activeReqs, icon: FileText, tone: 'green' },
+    { label: 'Total Orders', value: stats.totalOrders, icon: Package, tone: 'blue' },
+    { label: 'Open Disputes', value: stats.openDisputes, icon: AlertTriangle, tone: 'rose', tab: 'disputes' },
+    { label: 'Pending Withdrawals', value: stats.pendingWithdrawals, icon: Wallet, tone: 'teal', tab: 'withdrawals' },
+    { label: 'Verified Companies', value: verifiedCompanies, icon: ShieldCheck, tone: 'green', tab: 'companies' },
   ];
+  const shown = series === 'companies' ? companiesByMonth : usersByMonth;
 
   return (
     <DashboardLayout>
-      <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Admin Control Panel</h1>
-              <p className="text-sm text-muted-foreground">Platform management — verifications, disputes, analytics</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={fetchAll} className="gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh
-            </Button>
-          </div>
+      <div className="dpage">
+        <div className="min-w-0 space-y-3.5">
+          <PageHeader
+            title="Admin Control Panel"
+            subtitle="Platform management — verifications, disputes, analytics"
+            actions={
+              <button type="button" onClick={fetchAll} className="dbtn is-ghost">
+                <RefreshCw aria-hidden="true" /> Refresh
+              </button>
+            }
+          />
 
           {/* Stats row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            {statCards.map(s => {
-              const Icon = s.icon;
-              return (
-                <div key={s.label} className="bg-card border border-border rounded-xl p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                      <Icon className={`w-5 h-5 ${s.color}`} />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold text-foreground">{loading ? '—' : s.value}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
-                </div>
-              );
-            })}
+          <div className="dgrid-kpi">
+            {statCards.map((card) => (
+              <Kpi
+                key={card.label}
+                title={card.label}
+                value={card.value}
+                loading={loading}
+                icon={card.icon}
+                tone={card.tone}
+                onClick={card.tab ? () => setTab(card.tab as string) : undefined}
+                hint={card.tab ? 'Open the list' : undefined}
+              />
+            ))}
+          </div>
+
+          {/* Growth chart and verification ring */}
+          <div className="dgrid-main">
+            <Panel
+              title="Platform growth"
+              subtitle="By month, for the last 12 months"
+              right={
+                <Segmented
+                  label="Chart shows"
+                  value={series}
+                  onChange={setSeries}
+                  options={[
+                    { value: 'companies', label: 'New companies' },
+                    { value: 'users', label: 'New sign-ups' },
+                  ]}
+                />
+              }
+            >
+              <BarsChart
+                months={slots.map((slot) => slot.label)}
+                bars={shown}
+                barLabel={series === 'companies' ? 'companies' : 'sign-ups'}
+                emptyText={series === 'companies' ? 'No new companies in the last 12 months.' : 'No new sign-ups in the last 12 months.'}
+                ariaLabel={series === 'companies' ? 'New companies in each of the last 12 months' : 'New sign-ups in each of the last 12 months'}
+              />
+              <div className="dminis">
+                <Mini label="New companies this month" value={companiesByMonth[last]} pct={companiesDelta} />
+                <Mini label="New sign-ups this month" value={usersByMonth[last]} pct={usersDelta} />
+                <Mini dark label="Last 12 months" value={sum(shown)} />
+              </div>
+            </Panel>
+            <Panel title="Verification rate" subtitle="Companies that are verified">
+              <Gauge
+                variant="ring"
+                value={loading ? null : verifiedRate}
+                label="Verified companies"
+                emptyText="No companies yet"
+                footer={companies.length > 0 ? `${verifiedCompanies} of ${companies.length} companies are verified` : undefined}
+              />
+            </Panel>
           </div>
 
           <Tabs value={tab} onValueChange={setTab}>
@@ -247,20 +304,20 @@ export default function AdminDashboardFull() {
                 <TabsTrigger value="verifications">
                   Verifications
                   {stats.pendingVerifications > 0 && (
-                    <span className="ml-1.5 bg-[#C94400] text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingVerifications}</span>
+                    <span className="ml-1.5 bg-orange-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingVerifications}</span>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="disputes">
                   Disputes
                   {stats.openDisputes > 0 && (
-                    <span className="ml-1.5 bg-[#C94400] text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.openDisputes}</span>
+                    <span className="ml-1.5 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.openDisputes}</span>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="fraud">Fraud &amp; Abuse</TabsTrigger>
                 <TabsTrigger value="withdrawals">
                   Withdrawals
                   {stats.pendingWithdrawals > 0 && (
-                    <span className="ml-1.5 bg-[#C94400] text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingWithdrawals}</span>
+                    <span className="ml-1.5 bg-orange-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{stats.pendingWithdrawals}</span>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="companies">All Companies</TabsTrigger>
@@ -279,7 +336,7 @@ export default function AdminDashboardFull() {
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-[#FF7A2E]" /> Pending Verifications
+                      <Shield className="w-4 h-4 text-orange-500" /> Pending Verifications
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -290,10 +347,10 @@ export default function AdminDashboardFull() {
                           <p className="text-xs text-muted-foreground">{c.profiles?.email}</p>
                         </div>
                         <div className="flex gap-1 shrink-0">
-                          <Button size="sm" className="h-7 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white" onClick={() => approveVerification(c.id)} disabled={saving === c.id}>
+                          <Button size="sm" className="h-7 text-xs bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => approveVerification(c.id)} disabled={saving === c.id}>
                             <CheckCircle className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="outline" className="h-7 text-xs border-[#FF5A00]/40 text-[#FF7A2E]" onClick={() => setRejectId(c.id)}>
+                          <Button size="sm" variant="outline" className="h-7 text-xs border-red-300 text-red-600" onClick={() => setRejectId(c.id)}>
                             <XCircle className="w-3 h-3" />
                           </Button>
                         </div>
@@ -312,7 +369,7 @@ export default function AdminDashboardFull() {
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-[#FF7A2E]" /> Open Disputes
+                      <AlertTriangle className="w-4 h-4 text-red-500" /> Open Disputes
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -364,7 +421,7 @@ export default function AdminDashboardFull() {
                   <p className="text-sm font-medium text-destructive">Rejection reason for {companies.find(c => c.id === rejectId)?.company_name}</p>
                   <Input value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Enter rejection reason…" className="bg-background" />
                   <div className="flex gap-2">
-                    <Button size="sm" className="bg-[#B33D00] hover:bg-[#1A0C05] text-white" onClick={() => rejectVerification(rejectId, rejectReason)} disabled={!rejectReason.trim() || saving === rejectId}>
+                    <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => rejectVerification(rejectId, rejectReason)} disabled={!rejectReason.trim() || saving === rejectId}>
                       Confirm Reject
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => { setRejectId(null); setRejectReason(''); }}>Cancel</Button>
@@ -405,11 +462,11 @@ export default function AdminDashboardFull() {
                         <td className="px-3 py-3 text-xs">{c.gst_number || '—'}</td>
                         <td className="px-3 py-3">
                           <div className="flex gap-1 flex-wrap">
-                            {c.gst_doc_url && <a href={c.gst_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-[#FF5A00]/10 text-[#FF7A2E] rounded">GST</a>}
+                            {c.gst_doc_url && <a href={c.gst_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">GST</a>}
                             {c.pan_doc_url && <a href={c.pan_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-500/10 text-[#FF5A00] rounded">PAN</a>}
-                            {c.reg_doc_url && <a href={c.reg_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-[#FF5A00]/10 text-[#FF7A2E] rounded">REG</a>}
-                            {c.factory_doc_url && <a href={c.factory_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-[#FF5A00]/10 text-orange-700 rounded">Factory</a>}
-                            {c.bank_doc_url && <a href={c.bank_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-[#FF5A00]/10 text-[#FF7A2E] rounded">Bank</a>}
+                            {c.reg_doc_url && <a href={c.reg_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">REG</a>}
+                            {c.factory_doc_url && <a href={c.factory_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">Factory</a>}
+                            {c.bank_doc_url && <a href={c.bank_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">Bank</a>}
                             {!c.gst_doc_url && !c.pan_doc_url && <span className="text-xs text-muted-foreground">None uploaded</span>}
                           </div>
                           {c.bank_account_name && <p className="text-xs text-muted-foreground mt-0.5">{c.bank_account_name} · {c.bank_ifsc}</p>}
@@ -418,16 +475,16 @@ export default function AdminDashboardFull() {
                           <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[c.verification_status] || 'bg-muted text-muted-foreground'}`}>
                             {c.verification_status}
                           </span>
-                          {c.rejection_reason && <p className="text-xs text-[#FF7A2E] mt-0.5 max-w-[120px] truncate">{c.rejection_reason}</p>}
+                          {c.rejection_reason && <p className="text-xs text-red-600 mt-0.5 max-w-[120px] truncate">{c.rejection_reason}</p>}
                         </td>
                         <td className="px-3 py-3">
                           {c.verification_status === 'pending' && (
                             <div className="flex gap-1">
-                              <Button size="sm" className="h-7 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white px-2"
+                              <Button size="sm" className="h-7 text-xs bg-primary hover:bg-primary/90 text-primary-foreground px-2"
                                 onClick={() => approveVerification(c.id)} disabled={saving === c.id}>
                                 {saving === c.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
                               </Button>
-                              <Button size="sm" variant="outline" className="h-7 text-xs border-[#FF5A00]/40 text-[#FF7A2E] px-2"
+                              <Button size="sm" variant="outline" className="h-7 text-xs border-red-300 text-red-600 px-2"
                                 onClick={() => setRejectId(c.id)}>
                                 <XCircle className="w-3 h-3" />
                               </Button>
@@ -481,13 +538,13 @@ export default function AdminDashboardFull() {
                             }}>
                               Start Review
                             </Button>
-                            <Button size="sm" className="h-7 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
+                            <Button size="sm" className="h-7 text-xs bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
                               Resolve
                             </Button>
                           </div>
                         )}
                         {d.status === 'under_review' && (
-                          <Button size="sm" className="h-7 text-xs bg-[#B33D00] hover:bg-[#B33D00] text-white shrink-0" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
+                          <Button size="sm" className="h-7 text-xs bg-orange-600 hover:bg-orange-700 text-white shrink-0" onClick={() => resolveDispute(d.id, 'Resolved by admin')}>
                             Mark Resolved
                           </Button>
                         )}
@@ -516,7 +573,7 @@ export default function AdminDashboardFull() {
                             <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${SEVERITY_COLORS[f.severity]}`}>
                               {f.severity.toUpperCase()}
                             </span>
-                            {f.is_resolved && <span className="text-xs text-[#FF7A2E]">✓ Resolved</span>}
+                            {f.is_resolved && <span className="text-xs text-orange-600">✓ Resolved</span>}
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">{f.description}</p>
                           <p className="text-xs text-muted-foreground mt-1">{f.profiles?.full_name} · {f.profiles?.email}</p>
@@ -566,7 +623,6 @@ export default function AdminDashboardFull() {
                         <td className="px-3 py-3 text-xs text-muted-foreground">{new Date(w.created_at).toLocaleDateString()}</td>
                         <td className="px-3 py-3">
                           {w.status === 'pending' && (
-                            // Paying out needs the bank reference, and a rejection must return the amount to the wallet
                             <Link to="/dashboard/admin/payments" className="text-xs font-semibold text-primary hover:underline">
                               Settle in Payments
                             </Link>

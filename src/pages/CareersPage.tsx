@@ -24,11 +24,11 @@ const OPENINGS = [
 
 const DEPT_COLORS: Record<string, string> = {
   Engineering: 'bg-orange-500/10 text-[#FF5A00] dark:text-[#FF5A00] border-[#FF5A00]/30 dark:border-[#FF5A00]/30',
-  Product:     'bg-[#FF5A00]/10 text-[#FF7A2E] dark:text-[#FF7A2E] border-[#FF5A00]/40 dark:border-[#FF5A00]/40',
-  Marketing:   'bg-[#FF5A00]/10 text-[#FF7A2E] dark:text-[#FF7A2E] border-[#FF5A00]/40 dark:border-[#FF5A00]/40',
-  Sales:       'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-[#FF5A00]/30 dark:border-orange-800',
-  Design:      'bg-[#FF5A00]/10 text-[#FF7A2E] dark:text-[#FF7A2E] border-[#FF5A00]/40 dark:border-[#FF5A00]/40',
-  Analytics:   'bg-[#FF5A00]/10 text-[#FF7A2E] dark:text-[#FF7A2E] border-[#FF5A00]/40 dark:border-[#FF5A00]/40',
+  Product:     'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+  Marketing:   'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+  Sales:       'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+  Design:      'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+  Analytics:   'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
 };
 
 export default function CareersPage() {
@@ -42,14 +42,14 @@ export default function CareersPage() {
       <Header />
 
       {/* Hero */}
-      <section className="bg-[#C94400] text-white py-14 px-4 text-center">
+      <section className="bg-[#242424] text-white py-14 px-4 text-center">
         <div className="max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-5">
-            <Briefcase className="w-3.5 h-3.5 text-white" />
+            <Briefcase className="w-3.5 h-3.5 text-primary" />
             <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">We're Hiring</span>
           </div>
           <h1 className="text-[28px] md:text-[40px] font-black leading-tight mb-4">
-            Build the Future of <span className="text-black">B2B Trade</span>
+            Build the Future of <span className="text-primary">B2B Trade</span>
           </h1>
           <p className="text-white/70 text-[14px] md:text-[16px] leading-relaxed">
             BulkSkart is a fast-growing B2B marketplace on a mission to connect India's manufacturers with the world. We're looking for curious, driven people who want to build things that matter.
@@ -91,7 +91,7 @@ export default function CareersPage() {
                 </div>
               </div>
               <a href={`mailto:info@bulkskart.com?subject=Application: ${encodeURIComponent(job.title)}`}>
-                <Button size="sm" className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 shrink-0 gap-1.5">
+                <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 gap-1.5">
                   Apply <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               </a>
@@ -104,7 +104,7 @@ export default function CareersPage() {
           <h3 className="text-[16px] font-black text-foreground mb-2">Don't see your role?</h3>
           <p className="text-sm text-muted-foreground mb-4">We're always looking for exceptional people. Send us your resume and we'll be in touch.</p>
           <a href="mailto:info@bulkskart.com">
-            <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
               Send Open Application <ArrowRight className="w-4 h-4" />
             </Button>
           </a>

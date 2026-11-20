@@ -16,6 +16,7 @@ const MyQuotationsPage        = lazy(() => import('./pages/MyQuotationsPage'));
 const HowItWorksPage          = lazy(() => import('./pages/HowItWorksPage'));
 const PricingPage             = lazy(() => import('./pages/PricingPage'));
 const AuthPage                = lazy(() => import('./pages/AuthPage'));
+const ManufacturerSignupPage  = lazy(() => import('./pages/ManufacturerSignupPage'));
 const ProductDetailPage       = lazy(() => import('./pages/ProductDetailPage'));
 const CompanyProfilePage      = lazy(() => import('./pages/CompanyProfilePage'));
 const BuyerPublicProfilePage  = lazy(() => import('./pages/BuyerPublicProfilePage'));
@@ -74,6 +75,7 @@ const AdminPaymentsPage     = lazy(() => import('./pages/dashboard/admin/AdminPa
 const SupplierWalletPage    = lazy(() => import('./pages/dashboard/supplier/SupplierWalletPage'));
 const FactoryVisitsPage     = lazy(() => import('./pages/dashboard/shared/FactoryVisitsPage'));
 const AIMatchAnalyticsPage  = lazy(() => import('./pages/dashboard/admin/AIMatchAnalyticsPage'));
+const SupplierPayoutsPage   = lazy(() => import('./pages/dashboard/supplier/SupplierPayoutsPage'));
 
 // ─── Lazy: footer / company pages ─────────────────────────────────────────────
 const AboutPage         = lazy(() => import('./pages/AboutPage'));
@@ -105,6 +107,8 @@ export const routes: RouteConfig[] = [
   { name: 'Login', path: '/login', element: <AuthPage />, public: true },
   { name: 'Register', path: '/register', element: <AuthPage />, public: true },
   { name: 'Signup', path: '/signup', element: <AuthPage />, public: true },
+  { name: 'Manufacturer Signup', path: '/signup/manufacturer', element: <ManufacturerSignupPage />, public: true },
+  { name: 'Manufacturer Register', path: '/register/manufacturer', element: <ManufacturerSignupPage />, public: true },
 
   // ── Public Canonical SEO Landing Pages ───────────────────────
   { name: 'B2B Marketplace Hub', path: '/b2b-marketplace', element: <SEOHubPage forcedSlug="b2b-marketplace" />, public: true },
@@ -192,7 +196,7 @@ export const routes: RouteConfig[] = [
   { name: 'Supplier Orders', path: '/dashboard/supplier/orders', element: <SupplierOrdersPage /> },
   { name: 'Supplier Order Tracking', path: '/dashboard/supplier/orders/:orderId', element: <OrderTrackingPage /> },
   { name: 'Supplier Wallet', path: '/dashboard/supplier/wallet', element: <SupplierWalletPage /> },
-  { name: 'Supplier Payouts Alias', path: '/dashboard/supplier/payouts', element: <SupplierWalletPage /> },
+  { name: 'Supplier Payouts', path: '/dashboard/supplier/payouts', element: <SupplierPayoutsPage /> },
   { name: 'Supplier Factory Visits', path: '/dashboard/supplier/visits', element: <FactoryVisitsPage /> },
   { name: 'Supplier Negotiation', path: '/dashboard/supplier/negotiation/:conversationId', element: <NegotiationRoomPage /> },
   { name: 'Supplier Analytics', path: '/dashboard/supplier/analytics', element: <SupplierAnalyticsPage /> },
