@@ -1,36 +1,19 @@
-/* Landing hero: curved 3D product carousel. Black and orange only; cards move with transforms. */
+/* Product scroll under the landing hero: curved 3D product carousel. Black and orange only; cards move with transforms. */
 
 .pc-hero {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: #050505;
   color: #fff;
 }
 
-/* Soft orange light behind the heading and a glowing floor under the ring */
+/* A glowing floor under the ring */
 .pc-hero::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
-  background:
-    radial-gradient(ellipse 46% 34% at 50% 0%, rgba(255, 90, 0, 0.26), transparent 70%),
-    radial-gradient(ellipse 60% 20% at 50% 86%, rgba(255, 90, 0, 0.14), transparent 72%),
-    linear-gradient(180deg, #0a0806 0%, #050505 45%, #050505 100%);
-}
-
-.pc-title {
-  font-weight: 300;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-}
-.pc-title em {
-  font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
-  font-style: italic;
-  font-weight: 400;
-  color: #ff5a00;
-  text-shadow: 0 0 34px rgba(255, 90, 0, 0.45);
+  background: radial-gradient(ellipse 60% 26% at 50% 70%, rgba(255, 90, 0, 0.16), transparent 72%);
 }
 
 /* The 3D stage */
@@ -112,8 +95,52 @@
 .pc-card-badge {
   position: absolute;
   top: 10px;
-  left: 10px;
+  right: 10px;
   z-index: 1;
+}
+
+/* Free Delivery and Loan Eligible on every card, drawn like small buttons */
+.pc-card-perks {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.pc-perk {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: #fff;
+  background: rgba(5, 5, 5, 0.78);
+  border: 1px solid rgba(255, 90, 0, 0.85);
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.8);
+}
+.pc-perk svg {
+  color: #ff7a2e;
+}
+.pc-perk-loan {
+  color: #1a0a00;
+  border-color: transparent;
+  background: linear-gradient(90deg, #ff8a3d, #ff6a14, #ff5a00);
+}
+.pc-perk-loan svg {
+  color: #1a0a00;
+}
+@media (min-width: 768px) {
+  .pc-perk {
+    font-size: 10.5px;
+    padding: 4px 9px;
+  }
 }
 
 .pc-skeleton {

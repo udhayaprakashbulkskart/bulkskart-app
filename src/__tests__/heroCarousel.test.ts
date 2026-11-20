@@ -28,15 +28,24 @@ describe('landing hero product carousel', () => {
     expect(new Set(featured.map((p) => p.name)).size).toBe(featured.length);
   });
 
-  it('replaces the old hero block on the landing page and keeps one heading', () => {
+  it('adds only the product scroll under the hero and keeps the hero content as it was', () => {
     const landing = src('src/components/home/LandingHero.tsx');
     expect(landing).toContain('<ProductCarouselHero />');
-    // the invented live counters and RFQ card of the old hero are gone
-    expect(landing).not.toContain('52,000+ active RFQs');
-    expect(landing).not.toContain('Protected: 86% of buyer funds');
-    const hero = src('src/components/home/hero/ProductCarouselHero.tsx');
-    expect(hero.match(/<h1/g)).toHaveLength(1);
-    expect(hero).toContain("aria-roledescription=\"carousel\"");
-    expect(hero).toContain('prefers-reduced-motion');
+    expect(landing).toContain("const HEADLINE = ['The', 'Global', 'B2B', 'Marketplace', 'for'];");
+    expect(landing).toContain('Search products, suppliers, categories…');
+    expect(landing.indexOf('<ProductCarouselHero />')).toBeLessThan(landing.indexOf('CATEGORY CHIPS ═'));
+    const scroll = src('src/components/home/hero/ProductCarouselHero.tsx');
+    expect(scroll).not.toContain('<h1');
+    expect(scroll).toContain('aria-roledescription="carousel"');
+    expect(scroll).toContain('prefers-reduced-motion');
+  });
+
+  it('shows Free Delivery and Loan Eligible as buttons to the free delivery and loan page', () => {
+    const scroll = src('src/components/home/hero/ProductCarouselHero.tsx');
+    expect(scroll.match(/to="\/loan-calculator"/g)).toHaveLength(2);
+    expect(scroll).toContain('<Truck className="h-4 w-4 text-[#FF7A2E]" aria-hidden="true" /> Free Delivery');
+    expect(scroll).toContain('<Wallet className="h-4 w-4" aria-hidden="true" /> Loan Eligible');
+    // and on every card
+    expect(scroll).toContain('<span className="pc-card-perks" aria-hidden="true">');
   });
 });

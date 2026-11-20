@@ -1,16 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, BadgeCheck, ChevronDown, ChevronLeft, ChevronRight, Pause, Play, Search } from 'lucide-react';
-import LoanEligibleTag from '@/components/common/LoanEligibleTag';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, BadgeCheck, ChevronLeft, ChevronRight, Pause, Play, Truck, Wallet } from 'lucide-react';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatPriceRange } from '@/lib/productPrice';
 import { fromCatalogue, heroLists, loadHeroProducts, type HeroProduct } from './heroProducts';
 import './product-carousel.css';
 
 /**
- * Landing hero: heading, search, and a curved 3D ring of product cards that drifts slowly. Drag it, scroll it
+ * Product scroll under the landing hero: a curved 3D ring of product cards that drifts slowly. Drag it, scroll it
  * sideways, tap a card to bring it to the front (tap the front card to open it), or use the arrows and dots below.
- * The bottom bar names the product in front. Transforms only; still for people who ask for reduced motion and
+ * Every card shows Free Delivery and Loan Eligible; the bottom bar names the product in front and has both as
+ * buttons to the free delivery and loan page. Transforms only; still for people who ask for reduced motion and
  * paused while off screen.
  */
 
@@ -47,7 +47,6 @@ function prefersReducedMotion() {
 }
 
 export default function ProductCarouselHero() {
-  const navigate = useNavigate();
   const { currencyInfo, rates } = useCurrency();
   const currency = currencyInfo.currency;
   const [lists, setLists] = useState<ReturnType<typeof heroLists> | null>(null);
@@ -55,8 +54,6 @@ export default function ProductCarouselHero() {
   const [active, setActive] = useState(0);
   const [auto, setAuto] = useState(() => !prefersReducedMotion());
   const [geo, setGeo] = useState<Geometry>(() => geometryFor(typeof window === 'undefined' ? 1280 : window.innerWidth));
-  const [query, setQuery] = useState('');
-  const [scope, setScope] = useState<'Products' | 'Suppliers'>('Products');
 
   const stageRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Array<HTMLAnchorElement | HTMLDivElement | null>>([]);
@@ -321,12 +318,6 @@ export default function ProductCarouselHero() {
     cardRefs.current[((next % n) + n) % n]?.focus({ preventScroll: true });
   };
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    const q = query.trim();
-    navigate(scope === 'Suppliers' ? `/manufacturers${q ? `?q=${encodeURIComponent(q)}` : ''}` : `/products${q ? `?q=${encodeURIComponent(q)}` : ''}`);
-  };
-
   // Start loading the other list's photos when someone points at its tab, so switching shows them at once.
   const prefetched = useRef(new Set<Tab>());
   const prefetch = (key: Tab) => {
@@ -341,79 +332,36 @@ export default function ProductCarouselHero() {
 
   const price = (p: HeroProduct, compact = true) => formatPriceRange(p.priceMin, p.priceMax, p.currency, currency, rates, { compact });
 
+  const tabs = (
+    <div role="tablist" aria-label="Products to show" className="inline-flex shrink-0 rounded-full border border-white/12 bg-white/[0.04] p-1 text-[12px]">
+      {(
+        [
+          ['featured', 'Featured'],
+          ['top', 'Top Sellers'],
+        ] as const
+      ).map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          role="tab"
+          aria-selected={tab === key}
+          onClick={() => setTab(key)}
+          onPointerEnter={() => prefetch(key)}
+          onFocus={() => prefetch(key)}
+          className={`rounded-full px-3 py-1 font-semibold transition-colors ${tab === key ? 'bg-[#FF5A00] text-black' : 'text-white/70 hover:text-white'}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
-    <section className="pc-hero" aria-label="BulkSkart products">
-      <div className="relative mx-auto max-w-[1400px] px-4 pt-6 text-center sm:px-5 md:px-6 md:pt-8">
-        <p className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-[11.5px] font-semibold text-white/80 md:text-[12px]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#FF5A00] shadow-[0_0_10px_rgba(255,90,0,0.9)]" />
-          B2B wholesale marketplace
-        </p>
-        <h1 className="pc-title mt-3 text-[32px] sm:text-[44px] md:text-[56px]">
-          Source Direct From <em className="whitespace-nowrap">Top Sellers</em>
-        </h1>
-        <p className="mx-auto mt-2.5 max-w-[640px] text-[14px] leading-relaxed text-white/60 md:text-[15.5px]">
-          Buy in bulk from verified manufacturers. Drag, scroll or tap a product to explore.
-        </p>
-
-        <form onSubmit={submit} role="search" className="mx-auto mt-4 flex max-w-[620px] items-stretch overflow-hidden rounded-full border border-white/15 bg-[#121212] p-1 shadow-[0_18px_50px_-24px_rgba(255,90,0,0.55)] focus-within:border-[#FF5A00]/70">
-          <div className="relative shrink-0">
-            <select
-              value={scope}
-              onChange={(e) => setScope(e.target.value as 'Products' | 'Suppliers')}
-              aria-label="Search in"
-              className="h-10 cursor-pointer appearance-none rounded-full bg-transparent pl-4 pr-7 text-[13px] font-semibold text-white focus:outline-none md:h-11"
-            >
-              <option>Products</option>
-              <option>Suppliers</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/55" aria-hidden="true" />
-          </div>
-          <span className="my-2 w-px bg-white/12" aria-hidden="true" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search steel pipes, cotton yarn, packaging…"
-            aria-label="Search"
-            className="min-w-0 flex-1 bg-transparent px-3 text-[13.5px] text-white placeholder:text-white/40 focus:outline-none md:text-[14.5px]"
-          />
-          <button type="submit" className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#FF5A00] px-4 text-[13px] font-bold text-black transition-colors hover:bg-[#FF7A2E] md:px-5">
-            <Search className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Search</span>
-          </button>
-        </form>
-
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[12.5px]">
-          <div role="tablist" aria-label="Products to show" className="inline-flex rounded-full border border-white/12 bg-white/[0.04] p-1">
-            {(
-              [
-                ['featured', 'Featured'],
-                ['top', 'Top Sellers'],
-              ] as const
-            ).map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={tab === key}
-                onClick={() => setTab(key)}
-                onPointerEnter={() => prefetch(key)}
-                onFocus={() => prefetch(key)}
-                className={`rounded-full px-3.5 py-1.5 font-semibold transition-colors ${tab === key ? 'bg-[#FF5A00] text-black' : 'text-white/70 hover:text-white'}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <Link to="/products" className="inline-flex items-center gap-1 rounded-full border border-white/12 px-3.5 py-2 font-semibold text-white/85 transition-colors hover:border-[#FF5A00]/70 hover:text-white">
-            Explore all products <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </Link>
-        </div>
-      </div>
-
+    <section className="pc-hero" aria-label={tab === 'top' ? 'Top sellers' : 'Featured products'}>
       {/* ── the ring ── */}
       <div
         ref={stageRef}
-        className="pc-stage mx-auto mt-1 w-full max-w-[1600px]"
+        className="pc-stage mx-auto w-full max-w-[1600px]"
         style={{
           height: geo.stageH + 24,
           ['--pc-perspective' as string]: `${geo.perspective}px`,
@@ -461,13 +409,21 @@ export default function ProductCarouselHero() {
                 data-active={isFront}
                 tabIndex={isFront ? 0 : -1}
                 aria-hidden={isFront ? undefined : true}
-                aria-label={`${p.name}, ${p.supplier}, ${price(p, false)}`}
+                aria-label={`${p.name}, ${p.supplier}, ${price(p, false)}, free delivery, loan eligible`}
                 draggable={false}
                 onClick={onCardClick(i)}
               >
                 <img src={p.img} alt="" loading={i < 6 || i > count - 6 ? 'eager' : 'lazy'} decoding="async" draggable={false} />
+                <span className="pc-card-perks" aria-hidden="true">
+                  <span className="pc-perk">
+                    <Truck className="h-3 w-3" /> Free Delivery
+                  </span>
+                  <span className="pc-perk pc-perk-loan">
+                    <Wallet className="h-3 w-3" /> Loan Eligible
+                  </span>
+                </span>
                 {p.topSeller && p.badge && (
-                  <span className="pc-card-badge rounded-full bg-[#FF5A00] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-black">{p.badge}</span>
+                  <span className="pc-card-badge rounded-full bg-black/70 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-[#FF7A2E] ring-1 ring-[#FF5A00]/60">{p.badge}</span>
                 )}
                 <span className="pc-card-info text-left">
                   <span className="line-clamp-2 text-[11px] font-semibold leading-snug text-white sm:text-[12px] md:text-[13px]">{p.name}</span>
@@ -481,54 +437,66 @@ export default function ProductCarouselHero() {
 
       {/* ── bottom bar ── */}
       <div className="relative mx-auto max-w-[1400px] px-4 pb-5 sm:px-5 md:px-6 md:pb-6">
-        {/* room on the right for the floating "AI Trade Help" button, which sits over this bar on laptop screens */}
-        <div className="grid gap-3 border-t border-white/10 pt-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center lg:pr-[124px] min-[1620px]:pr-0">
-          <div className="flex min-w-0 items-center gap-3" aria-live={auto ? 'off' : 'polite'}>
-            <p className="shrink-0 text-white">
-              <span className="text-[26px] font-light tabular-nums leading-none md:text-[30px]">{current ? pad((active % unique.length) + 1) : '--'}</span>
-              <span className="ml-1 text-[12px] text-white/45 tabular-nums">/ {pad(unique.length || 16)}</span>
-            </p>
-            <div className="min-w-0">
-              <p className="truncate text-[13px] font-extrabold uppercase tracking-[0.06em] text-white md:text-[14px]">{current ? current.name : 'Loading products…'}</p>
-              {current && (
-                <p className="flex min-w-0 items-center gap-1 truncate text-[11.5px] text-white/55">
-                  {current.verified && <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" aria-label="Verified supplier" />}
-                  <span className="truncate">
-                    {current.supplier} · {current.country}
-                    {current.moq ? ` · MOQ ${current.moq}` : ''}
-                  </span>
-                </p>
-              )}
+        <div className="border-t border-white/10 pt-3">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+            <div className="flex min-w-0 items-center gap-3" aria-live={auto ? 'off' : 'polite'}>
+              <p className="shrink-0 text-white">
+                <span className="text-[26px] font-light tabular-nums leading-none md:text-[30px]">{current ? pad((active % unique.length) + 1) : '--'}</span>
+                <span className="ml-1 text-[12px] text-white/45 tabular-nums">/ {pad(unique.length || 16)}</span>
+              </p>
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-extrabold uppercase tracking-[0.06em] text-white md:text-[14px]">{current ? current.name : 'Loading products…'}</p>
+                {current && (
+                  <p className="flex min-w-0 items-center gap-1 truncate text-[11.5px] text-white/55">
+                    {current.verified && <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" aria-label="Verified supplier" />}
+                    <span className="truncate">
+                      {current.supplier} · {current.country}
+                      {current.moq ? ` · MOQ ${current.moq}` : ''}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 md:justify-end">
+              {current && <span className="mr-1 basis-full text-[15px] font-extrabold text-[#FF7A2E] md:basis-auto">{price(current)}</span>}
+              <Link
+                to="/loan-calculator"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#FF5A00] bg-[#FF5A00]/10 px-3.5 text-[12.5px] font-bold text-white transition-colors hover:bg-[#FF5A00] hover:text-black"
+              >
+                <Truck className="h-4 w-4 text-[#FF7A2E]" aria-hidden="true" /> Free Delivery
+              </Link>
+              <Link
+                to="/loan-calculator"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#FF8A3D] via-[#FF6A14] to-[#FF5A00] px-3.5 text-[12.5px] font-extrabold text-[#1A0A00] shadow-[0_0_14px_-3px_rgba(255,90,0,0.85)] transition-transform hover:scale-[1.03]"
+              >
+                <Wallet className="h-4 w-4" aria-hidden="true" /> Loan Eligible
+              </Link>
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-1.5" role="group" aria-label="Choose a product">
-            {unique.map((p, i) => (
-              <button
-                key={p.id}
-                type="button"
-                className="pc-dot"
-                aria-label={`Show ${p.name}`}
-                aria-current={current?.id === p.id ? 'true' : undefined}
-                onClick={() => {
-                  const n = countRef.current;
-                  const base = Math.round(pos.current);
-                  // the nearest copy of this product on the ring
-                  let best = i;
-                  for (let k = i; k < n; k += unique.length) if (Math.abs(wrap(k - base)) < Math.abs(wrap(best - base))) best = k;
-                  goTo(best);
-                }}
-              />
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
-            {current && (
-              <span className="flex items-center gap-2">
-                <span className="text-[14px] font-extrabold text-[#FF7A2E]">{price(current)}</span>
-                <LoanEligibleTag size="xs" />
-              </span>
-            )}
+          {/* room on the right for the floating "AI Trade Help" button, which sits over this row on laptop screens */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 lg:pr-[124px] min-[1620px]:pr-0">
+            {tabs}
+            <div className="order-last flex w-full items-center justify-center gap-1.5 md:order-none md:w-auto" role="group" aria-label="Choose a product">
+              {unique.map((p, i) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="pc-dot"
+                  aria-label={`Show ${p.name}`}
+                  aria-current={current?.id === p.id ? 'true' : undefined}
+                  onClick={() => {
+                    const n = countRef.current;
+                    const base = Math.round(pos.current);
+                    // the nearest copy of this product on the ring
+                    let best = i;
+                    for (let k = i; k < n; k += unique.length) if (Math.abs(wrap(k - base)) < Math.abs(wrap(best - base))) best = k;
+                    goTo(best);
+                  }}
+                />
+              ))}
+            </div>
             <span className="flex items-center gap-1.5">
               <button type="button" onClick={() => step(-1)} aria-label="Previous product" className="grid h-8 w-8 place-items-center rounded-full border border-white/15 text-white/80 transition-colors hover:border-[#FF5A00] hover:text-white">
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
