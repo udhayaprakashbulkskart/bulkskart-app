@@ -1,0 +1,151 @@
+/* Landing hero: curved 3D product carousel. Black and orange only; cards move with transforms. */
+
+.pc-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #050505;
+  color: #fff;
+}
+
+/* Soft orange light behind the heading and a glowing floor under the ring */
+.pc-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 46% 34% at 50% 0%, rgba(255, 90, 0, 0.26), transparent 70%),
+    radial-gradient(ellipse 60% 20% at 50% 86%, rgba(255, 90, 0, 0.14), transparent 72%),
+    linear-gradient(180deg, #0a0806 0%, #050505 45%, #050505 100%);
+}
+
+.pc-title {
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.pc-title em {
+  font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #ff5a00;
+  text-shadow: 0 0 34px rgba(255, 90, 0, 0.45);
+}
+
+/* The 3D stage */
+.pc-stage {
+  position: relative;
+  perspective: var(--pc-perspective, 1300px);
+  perspective-origin: 50% 45%;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  outline: none;
+}
+.pc-stage:active {
+  cursor: grabbing;
+}
+.pc-stage:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(255, 90, 0, 0.7);
+  border-radius: 24px;
+}
+.pc-ring {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  /* the ring layer sits in front of the cards set back in depth; let taps through to them */
+  pointer-events: none;
+}
+
+.pc-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--pc-card-w);
+  height: var(--pc-card-h);
+  margin-left: calc(var(--pc-card-w) / -2);
+  margin-top: calc(var(--pc-card-h) / -2);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.95);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transition: box-shadow 0.35s ease, border-color 0.35s ease;
+  -webkit-tap-highlight-color: transparent;
+  pointer-events: auto;
+}
+.pc-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+.pc-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(5, 5, 5, 0) 45%, rgba(5, 5, 5, 0.92) 100%);
+  pointer-events: none;
+}
+.pc-card[data-active='true'] {
+  border-color: rgba(255, 90, 0, 0.75);
+  box-shadow:
+    0 0 0 1px rgba(255, 90, 0, 0.55),
+    0 30px 90px -24px rgba(255, 90, 0, 0.6);
+}
+.pc-card:focus-visible {
+  outline: 2px solid #ff5a00;
+  outline-offset: 3px;
+}
+.pc-card-info {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 11px;
+  z-index: 1;
+}
+.pc-card-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+}
+
+.pc-skeleton {
+  background: linear-gradient(110deg, #121212 30%, #1d1d1d 50%, #121212 70%);
+  background-size: 200% 100%;
+  animation: pc-shimmer 1.6s linear infinite;
+}
+@keyframes pc-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Bottom bar */
+.pc-dot {
+  height: 6px;
+  width: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+.pc-dot[aria-current='true'] {
+  width: 22px;
+  background: #ff5a00;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-skeleton {
+    animation: none;
+  }
+  .pc-card,
+  .pc-dot {
+    transition: none;
+  }
+}

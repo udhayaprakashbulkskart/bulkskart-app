@@ -1,18 +1,15 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
-  Search, Camera, ChevronDown, ShieldCheck, Zap, Truck, ArrowRight, Sparkles,
+  ShieldCheck, Zap, ArrowRight, Sparkles,
   Settings, Box, Shirt, FlaskConical, Recycle, Layers, LayoutGrid,
   CheckCircle2, FileText, Gavel, Calculator, Wallet, Store, Users, Package, Globe,
-  Radio, BadgeCheck,
 } from 'lucide-react';
 import TransportScene from '@/components/home/TransportScene';
-import DiwaliBurst from '@/components/home/DiwaliBurst';
+import ProductCarouselHero from '@/components/home/hero/ProductCarouselHero';
 
 // ── Content ────────────────────────────────────────────────────────────
-const TRENDING = ['Textile', 'Steel', 'Chemicals', 'Packaging', 'Electrical'];
-
 const CATEGORY_CHIPS = [
   { label: 'Machinery', icon: Settings, to: '/products?category=machinery-industrial', tint: 'from-orange-500/30' },
   { label: 'Packaging', icon: Box, to: '/products?category=packaging', tint: 'from-[#C94400]/30' },
@@ -46,8 +43,6 @@ const PROMO_SLIDES = [
 ];
 const PROMO_POINTS = ['Post requirements (RFQ) in under a minute', 'Get multiple quotations', 'Compare and choose the best offer'];
 
-const HEADLINE = ['The', 'Global', 'B2B', 'Marketplace', 'for'];
-const HEADLINE_ACCENT = ['Bulk', 'Buying', '&', 'Selling'];
 
 // ── Helpers ────────────────────────────────────────────────────────────
 function CountUp({ to, suffix = '' }: { to: number; suffix?: string }) {
@@ -83,39 +78,8 @@ function CountUp({ to, suffix = '' }: { to: number; suffix?: string }) {
 }
 
 // ── Component ──────────────────────────────────────────────────────────
-// Solid orange letters with a staggered glow-and-bounce loop (Diwali highlight).
-function GlowLetters({ word, baseDelay, reduce }: { word: string; baseDelay: number; reduce: boolean }) {
-  return (
-    <>
-      {Array.from(word).map((ch, i) => (
-        <motion.span
-          key={i}
-          className="inline-block text-[#FF5A00]"
-          initial={reduce ? false : { opacity: 0, y: 26 }}
-          animate={reduce ? undefined : {
-            opacity: 1,
-            y: [0, -5, 0],
-            textShadow: ['0 0 0px rgba(255,90,0,0)', '0 0 18px rgba(255,90,0,0.85)', '0 0 0px rgba(255,90,0,0)'],
-          }}
-          transition={{
-            opacity: { duration: 0.5, delay: baseDelay + i * 0.05 },
-            y: { duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 1 + i * 0.12 },
-            textShadow: { duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 1 + i * 0.12 },
-          }}
-        >
-          {ch}
-        </motion.span>
-      ))}
-    </>
-  );
-}
-
 export default function LandingHero() {
-  const navigate = useNavigate();
   const reduce = useReducedMotion();
-  const [query, setQuery] = useState('');
-  const [scope, setScope] = useState<'Products' | 'Suppliers'>('Products');
-  const [focused, setFocused] = useState(false);
   const [slide, setSlide] = useState(0);
 
   useEffect(() => {
@@ -123,14 +87,6 @@ export default function LandingHero() {
     const t = setInterval(() => setSlide(s => (s + 1) % PROMO_SLIDES.length), 6500);
     return () => clearInterval(t);
   }, [reduce]);
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    const q = query.trim();
-    navigate(scope === 'Suppliers'
-      ? `/manufacturers${q ? `?q=${encodeURIComponent(q)}` : ''}`
-      : `/products${q ? `?q=${encodeURIComponent(q)}` : ''}`);
-  };
 
   const promo = PROMO_SLIDES[slide];
   const fadeUp = (delay: number) => ({
@@ -141,159 +97,8 @@ export default function LandingHero() {
 
   return (
     <section className="relative isolate overflow-hidden bg-black text-white">
-      {/* ═════════════ HERO ═════════════ */}
-      <div className="relative">
-        <div className="relative mx-auto grid max-w-[1400px] grid-cols-1 gap-8 px-4 pb-8 pt-8 sm:px-5 md:px-6 md:pb-12 md:pt-14 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
-          {/* Left column */}
-          <div className="relative">
-            <motion.div
-              {...fadeUp(0)}
-              className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#161616]/[0.06] px-3 py-1 text-[12px] font-semibold text-white/85 backdrop-blur-md"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C94400] opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#C94400]" />
-              </span>
-              Live now · 52,000+ active RFQs
-            </motion.div>
-
-            <h1 className="max-w-[640px] text-[30px] font-black leading-[1.05] tracking-tight sm:text-[40px] md:text-[54px]">
-              {HEADLINE.map((w, i) => (
-                <motion.span
-                  key={w + i}
-                  className="mr-[0.25em] inline-block"
-                  initial={reduce ? false : { opacity: 0, y: 26, filter: 'blur(6px)' }}
-                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                  transition={{ duration: 0.6, delay: 0.08 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  {w}
-                </motion.span>
-              ))}
-              <br />
-              {HEADLINE_ACCENT.map((w, i) => (
-                <span key={w + i} className="mr-[0.25em] inline-block whitespace-nowrap">
-                  <GlowLetters word={w} baseDelay={0.45 + i * 0.12} reduce={!!reduce} />
-                </span>
-              ))}
-            </h1>
-            {/* Diwali firecracker bursts behind the headline (decorative) */}
-            <DiwaliBurst />
-
-            <motion.p {...fadeUp(0.7)} className="mt-4 max-w-[560px] text-[15px] leading-relaxed text-white/70 md:text-[17px]">
-              Connect with verified manufacturers, suppliers and bulk buyers worldwide. Get the best bulk prices, instant quotes and secure deals.
-            </motion.p>
-
-            <motion.div {...fadeUp(0.85)} className="mt-5 flex flex-wrap gap-2">
-              {[
-                { icon: ShieldCheck, label: 'Verified suppliers' },
-                { icon: Zap, label: 'Bulk pricing' },
-                { icon: Truck, label: 'Free delivery*' },
-                { icon: BadgeCheck, label: 'Trade assurance' },
-              ].map(({ icon: Icon, label }) => (
-                <span key={label} className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-[#161616]/[0.06] px-3 py-1.5 text-[12px] font-semibold text-white/90 backdrop-blur-md">
-                  <Icon className="h-3.5 w-3.5 text-[#FF5A00]" />
-                  {label}
-                </span>
-              ))}
-            </motion.div>
-
-            {/* Search */}
-            <motion.div {...fadeUp(1)} className="mt-6 max-w-[860px]">
-              <form
-                onSubmit={submit}
-                role="search"
-                className={`group relative rounded-2xl bg-gradient-to-r from-[#C94400]/60 via-white/10 to-[#B33D00]/40 p-[1.5px] transition-shadow duration-300 ${focused ? 'shadow-[0_0_40px_-8px_rgba(255,90,0,0.55)]' : 'shadow-[0_10px_40px_-18px_rgba(0,0,0,0.8)]'}`}
-              >
-                <div className="flex items-stretch overflow-hidden rounded-[14px] bg-[#161616]">
-                  <div className="relative shrink-0">
-                    <select
-                      value={scope}
-                      onChange={e => setScope(e.target.value as 'Products' | 'Suppliers')}
-                      aria-label="Search in"
-                      className="h-12 cursor-pointer appearance-none border-r border-[#2A2A2A]/10 bg-transparent pl-4 pr-8 text-[14px] font-semibold text-white focus:outline-none md:h-14"
-                    >
-                      <option>Products</option>
-                      <option>Suppliers</option>
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
-                  </div>
-                  <input
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
-                    onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
-                    placeholder="Search products, suppliers, categories…"
-                    aria-label="Search"
-                    className="min-w-0 flex-1 bg-[#161616] px-3 text-[14px] text-white placeholder:text-white/45 focus:outline-none md:px-4 md:text-[15px]"
-                  />
-                  <button type="button" aria-label="Search by image" className="px-3 text-white/55 transition-colors hover:text-[#FF5A00]">
-                    <Camera className="h-5 w-5" />
-                  </button>
-                  <button type="submit" aria-label="Search" className="relative w-12 overflow-hidden bg-gradient-to-br from-[#FF7A2E] to-[#E84A00] transition-transform active:scale-95 md:w-14">
-                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                    <Search className="relative mx-auto h-5 w-5 text-white" />
-                  </button>
-                </div>
-              </form>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-white/60">
-                <Sparkles className="h-3.5 w-3.5 text-[#FF5A00]" />
-                <span>Trending:</span>
-                {TRENDING.map(t => (
-                  <Link key={t} to={`/products?q=${encodeURIComponent(t)}`} className="rounded-full border border-white/10 bg-[#161616]/[0.04] px-2.5 py-0.5 text-white/80 transition-colors hover:border-[#FF5A00]/60 hover:text-white">
-                    {t}
-                  </Link>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Right column: floating glass cards (desktop) */}
-          <div className="relative hidden h-[360px] lg:block">
-            <motion.div
-              className="absolute right-6 top-4 w-[280px] rounded-2xl border border-white/15 bg-[#161616]/[0.07] p-4 shadow-2xl backdrop-blur-xl"
-              initial={reduce ? false : { opacity: 0, x: 30 }}
-              animate={reduce ? undefined : { opacity: 1, x: 0, y: [0, -10, 0] }}
-              transition={{ opacity: { duration: 0.8, delay: 0.6 }, x: { duration: 0.8, delay: 0.6 }, y: { duration: 6, repeat: Infinity, ease: 'easeInOut' } }}
-            >
-              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-white/60">
-                <span className="flex items-center gap-1.5"><Radio className="h-3.5 w-3.5 text-[#FF7A2E]" /> Live RFQ</span>
-                <span>2 min ago</span>
-              </div>
-              <p className="mt-2 text-[15px] font-bold leading-snug">Urgent: 500 MT Stainless Steel Pipes, ASTM A312</p>
-              <div className="mt-3 flex items-center justify-between text-[12px] text-white/70">
-                <span>Visakhapatnam</span>
-                <span className="rounded-full bg-[#FF5A00]/20 px-2 py-0.5 font-semibold text-[#FF8A4C]">12 quotes</span>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="absolute bottom-6 left-0 w-[250px] rounded-2xl border border-white/15 bg-[#0b1220]/70 p-4 shadow-2xl backdrop-blur-xl"
-              initial={reduce ? false : { opacity: 0, x: -30 }}
-              animate={reduce ? undefined : { opacity: 1, x: 0, y: [0, 8, 0] }}
-              transition={{ opacity: { duration: 0.8, delay: 0.8 }, x: { duration: 0.8, delay: 0.8 }, y: { duration: 7, repeat: Infinity, ease: 'easeInOut' } }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7A2E] to-[#E84A00]">
-                  <ShieldCheck className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-[13px] font-bold">Trade Assurance</p>
-                  <p className="text-[11px] text-white/60">Milestone escrow on every order</p>
-                </div>
-              </div>
-              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-[#FF7A2E] to-[#B33D00]"
-                  initial={reduce ? false : { width: '0%' }}
-                  animate={{ width: '86%' }}
-                  transition={{ duration: 1.6, delay: 1.1, ease: 'easeOut' }}
-                />
-              </div>
-              <p className="mt-1.5 text-[11px] text-white/60">Protected: 86% of buyer funds</p>
-            </motion.div>
-          </div>
-        </div>
-      </div>
+      {/* ═════════════ HERO: curved product carousel ═════════════ */}
+      <ProductCarouselHero />
 
       {/* ═════════════ CATEGORY CHIPS ═════════════ */}
       <div className="relative mx-auto mt-2 max-w-[1400px] px-4 sm:px-5 md:px-6">
