@@ -8,11 +8,18 @@ interface LoanEligibleTagProps {
    */
   link?: boolean;
   size?: 'xs' | 'sm' | 'md';
+  /** 'gold' is the lighter pill used on the home page product cards (from the design picture). */
+  tone?: 'orange' | 'gold';
   className?: string;
 }
 
 const LABEL = 'Loan Eligible';
 const TITLE = 'Every BulkSkart order can be paid with an order loan. Check the monthly cost in the loan calculator.';
+
+const TONES = {
+  orange: 'bg-gradient-to-r from-[#FF8A3D] via-[#FF6A14] to-[#FF5A00] shadow-[0_0_12px_-3px_rgba(255,90,0,0.85)]',
+  gold: 'bg-gradient-to-r from-[#FFDB8E] to-[#F6BE57] shadow-[0_2px_10px_-4px_rgba(246,190,87,0.8)]',
+} as const;
 
 const SIZES = {
   xs: { box: 'gap-1 px-1.5 py-0.5 text-[9px]', icon: 'h-2.5 w-2.5' },
@@ -21,9 +28,9 @@ const SIZES = {
 } as const;
 
 /** The orange "Loan Eligible" tag shown on every product. */
-export default function LoanEligibleTag({ link = false, size = 'sm', className = '' }: LoanEligibleTagProps) {
+export default function LoanEligibleTag({ link = false, size = 'sm', tone = 'orange', className = '' }: LoanEligibleTagProps) {
   const s = SIZES[size];
-  const classes = `loan-eligible-tag inline-flex w-fit shrink-0 items-center whitespace-nowrap rounded-full bg-gradient-to-r from-[#FF8A3D] via-[#FF6A14] to-[#FF5A00] font-extrabold text-[#1A0A00] shadow-[0_0_12px_-3px_rgba(255,90,0,0.85)] ${s.box} ${className}`;
+  const classes = `loan-eligible-tag inline-flex w-fit shrink-0 items-center whitespace-nowrap rounded-full ${TONES[tone]} font-extrabold text-[#1A0A00] ${s.box} ${className}`;
   const content = (
     <>
       <Wallet className={s.icon} aria-hidden="true" />
