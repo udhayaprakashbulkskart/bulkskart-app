@@ -1976,6 +1976,8 @@ export type RequirementStatusFilter = 'all' | 'urgent' | 'new' | 'expiring' | 'l
  * One page of open buyer requirements from the database, with the real total for the same filters.
  * "urgent"/"expiring" = deadline within 7/3 days, "new"/"live" = posted in the last 3 days/24 hours.
  */
+import { isOutsideListing } from '@/lib/rfqSources';
+
 export async function getRequirementsPage(q: {
   page: number;
   pageSize: number;
@@ -2022,5 +2024,7 @@ export async function getRequirementsPage(q: {
     ...item,
     buyer_phone: item.profiles?.phone || item.buyer_phone || null,
   })) as Requirement[];
-  return { data: rows, count: typeof count === 'number' ? count : rows.length };
+  // Listings taken from tender portals or other websites stay off BulkSkart's RFQ pages
+  const own = rows.filter((r) => !isOutsideListing(r));
+  return { data: own, count: typeof count === 'number' ? count : own.length };
 }

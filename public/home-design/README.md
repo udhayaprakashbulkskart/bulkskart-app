@@ -8,3 +8,7 @@ The extra desktop category pictures (cat-metals, cat-construction, cat-agricultu
 cat-furniture, cat-home-kitchen, cat-beauty) are 300×200 thumbnails of the licensed catalogue photos
 curated-prod-55, -44, -25, -26, -9, -35, -41 and -38 in /public/verified-bulk-products; their sources, licences and
 creators are listed in /public/verified-bulk-products/CREDITS.md.
+
+Live RFQ and Verified Suppliers sections: rfq-port, rfq-icon, rfq-fryer, rfq-tshirts, rfq-computer, rfq-stove,
+sup-port, sup-shield, sup-cover-tower and sup-cover-factory are cut from the owner's Live RFQ and Verified Suppliers
+design pictures (November 2026).

@@ -1,21 +1,19 @@
 /**
- * LiveRequirementsFeed — Live Buying Requirements (real database records only).
+ * Live RFQ — buying requirements on the home page, laid out from the BulkSkart "Live RFQ" design picture.
  *
- * - Loads active requirements from Supabase, 10 per page (database pagination).
- * - Realtime: new INSERTs on `requirements` appear at the top with a NEW RFQ badge.
- * - Auto-scrolling feed with Auto Scroll on/off, Pause/Resume, speed 0.5x/1x/1.5x/2x,
- *   manual up/down, and auto-pause while the user interacts with the feed.
- * - Counts come from the database (no generated numbers).
- * - Submit Quote opens the existing supplier quote dialog (permissions and quota checks kept).
+ * - Real database records only: active requirements, 10 per page, filtered on the server.
+ * - Live: new requirements appear at the top as they are posted (realtime), counts refresh every minute and each
+ *   card counts down to the buyer's deadline.
+ * - Listings taken from tender portals or other websites are left out (see lib/rfqSources).
+ * - Submit Quotation opens the existing supplier quote dialog (permissions and quota checks kept).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
-  ArrowRight, Bell, ChevronDown, ChevronUp, Factory, Loader2, LayoutGrid, MapPin, Package, Pause, Play,
-  Shirt, Settings, Wrench, Zap, Lock, Building2, Users, Boxes, Wallet, Radio, Layers, FlaskConical, Wheat,
-  CheckCircle2,
+  ArrowRight, Bookmark, Box, CalendarDays, CheckCircle2, ChevronDown, Clock, Coins, Crown, FileText, Filter, Flame,
+  Handshake, Layers, LayoutGrid, Loader2, MapPin, Plus, Sparkles, Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
@@ -27,46 +25,117 @@ import RequirementDetailDrawer from '@/components/common/RequirementDetailDrawer
 import SafeImage from '@/components/common/SafeImage';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import { getRequirementVisualInfo } from '@/lib/requirementVisuals';
+import { formatMoney } from '@/lib/productPrice';
+import { isOutsideListing } from '@/lib/rfqSources';
 
 const PAGE_SIZE = 10;
-const SPEEDS = [0.5, 1, 1.5, 2] as const;
-const BASE_PX_PER_SEC = 28;
 const REQ_SELECT = '*, profiles!buyer_id(id,full_name,email), categories!category_id(id,name,slug)';
+const SAVED_KEY = 'bulkskart_saved_rfqs';
+const HOUR = 3600e3;
+const URGENT_BADGE_HOURS = 6; // red badge: ends within 6 hours
+const URGENT_FILTER_HOURS = 24; // Urgent filter: ends within a day, soonest first
+const NEW_HOURS = 48;
+const HIGH_VALUE_INR = 500000;
 
-// Each tab maps to the real `categories.slug` values in the database.
-// Filtering runs on the server, so a tab shows every matching requirement, not just the rows already loaded.
-const CATEGORY_TABS: Array<{ id: string; name: string; icon: typeof LayoutGrid; slugs: string[] }> = [
-  { id: 'all', name: 'All Categories', icon: LayoutGrid, slugs: [] },
-  { id: 'machinery', name: 'Machinery & Equipment', icon: Settings, slugs: ['machinery-industrial'] },
-  { id: 'textiles', name: 'Textiles & Fabrics', icon: Shirt, slugs: ['textiles-apparel'] },
-  { id: 'electronics', name: 'Electrical & Electronics', icon: Zap, slugs: ['electronics-electricals'] },
-  { id: 'packaging', name: 'Packaging', icon: Boxes, slugs: ['packaging'] },
-  { id: 'chemicals', name: 'Chemicals & Plastics', icon: FlaskConical, slugs: ['chemicals-raw-materials', 'plastics-rubber'] },
-  { id: 'construction', name: 'Construction', icon: Wrench, slugs: ['construction-building'] },
-  { id: 'agriculture', name: 'Agriculture & Food', icon: Wheat, slugs: ['agriculture-food'] },
-  { id: 'auto', name: 'Auto Parts', icon: Layers, slugs: ['auto-parts-vehicles'] },
-  { id: 'pharma', name: 'Pharma & Healthcare', icon: Package, slugs: ['pharma-healthcare'] },
+type Quick = 'all' | 'urgent' | 'new' | 'high' | 'mine';
+
+const QUICK_FILTERS: Array<{ id: Quick; label: string; icon: typeof LayoutGrid }> = [
+  { id: 'all', label: 'All RFQs', icon: LayoutGrid },
+  { id: 'urgent', label: 'Urgent', icon: Flame },
+  { id: 'new', label: 'New', icon: Sparkles },
+  { id: 'high', label: 'High Value', icon: Coins },
+  { id: 'mine', label: 'My RFQs', icon: Bookmark },
 ];
 
-function timeAgo(iso?: string): string {
-  if (!iso) return 'Just now';
-  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+// Each option maps to the real `categories.slug` values in the database (filtered on the server).
+const CATEGORIES: Array<{ id: string; name: string; slugs: string[] }> = [
+  { id: 'all', name: 'All Categories', slugs: [] },
+  { id: 'machinery', name: 'Machinery & Equipment', slugs: ['machinery-industrial'] },
+  { id: 'textiles', name: 'Textiles & Apparel', slugs: ['textiles-apparel'] },
+  { id: 'electronics', name: 'Electrical & Electronics', slugs: ['electronics-electricals'] },
+  { id: 'packaging', name: 'Packaging', slugs: ['packaging'] },
+  { id: 'chemicals', name: 'Chemicals & Plastics', slugs: ['chemicals-raw-materials', 'plastics-rubber'] },
+  { id: 'construction', name: 'Construction', slugs: ['construction-building'] },
+  { id: 'agriculture', name: 'Agriculture & Food', slugs: ['agriculture-food'] },
+  { id: 'auto', name: 'Auto Parts', slugs: ['auto-parts-vehicles'] },
+  { id: 'pharma', name: 'Pharma & Healthcare', slugs: ['pharma-healthcare'] },
+];
+
+const LOCATIONS = ['Mumbai', 'Delhi', 'Bengaluru', 'Chennai', 'Hyderabad', 'Kolkata', 'Pune', 'Ahmedabad', 'Coimbatore', 'Surat', 'Jaipur', 'Ludhiana', 'Trichy', 'Kochi'];
+
+const PROMISES = ['Genuine Buyers', 'Bulk Orders', 'Direct Quotation', 'High Opportunity'];
+
+// Pictures from the design, used when an RFQ is for the same kind of product and has no picture of its own
+const DESIGN_PICTURES: Array<[RegExp, string]> = [
+  [/\bfryer\b/i, '/home-design/rfq-fryer.jpg'],
+  [/\b(t-?shirts?|polo shirts?|tees?)\b/i, '/home-design/rfq-tshirts.jpg'],
+  [/\b(computer|laptops?|desktops?|ram|ssd|hdd|motherboards?|monitors?|cpu)\b/i, '/home-design/rfq-computer.jpg'],
+  [/\b(gas stoves?|stoves?|burners?|cooktops?)\b/i, '/home-design/rfq-stove.jpg'],
+];
+
+function readSaved(): Set<string> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
+    return new Set(Array.isArray(raw) ? raw.filter((v) => typeof v === 'string') : []);
+  } catch {
+    return new Set();
+  }
 }
 
-function startOfToday(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
+function writeSaved(ids: Set<string>) {
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify([...ids]));
+  } catch {
+    /* storage unavailable: saving lasts for this visit only */
+  }
+}
+
+function endsIn(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m ${String(s % 60).padStart(2, '0')}s`;
+}
+
+function postedOn(iso?: string): string {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function isMultiProduct(title: string): boolean {
+  return /\([^)]*,[^)]*,[^)]*\)/.test(title) || (title.match(/,/g) ?? []).length >= 3;
+}
+
+type Badge = { label: string; icon: typeof Flame; className: string };
+
+/** One badge per RFQ, from its real budget, title, deadline and posting time (in that order). */
+function primaryBadge(req: Requirement, now: number, fresh: boolean): Badge | null {
+  const deadline = req.deadline ? new Date(req.deadline).getTime() : null;
+  if ((req.currency || 'INR') === 'INR' && Number(req.budget_max) >= HIGH_VALUE_INR) {
+    return { label: 'High Value', icon: Crown, className: 'bg-[#F7C531] text-[#1A1200]' };
+  }
+  if (isMultiProduct(req.title || '')) {
+    return { label: 'Multi-Product RFQ', icon: Layers, className: 'bg-[#8B3DFF] text-white' };
+  }
+  if (deadline && deadline > now && deadline - now <= URGENT_BADGE_HOURS * HOUR) {
+    return { label: 'Urgent RFQ', icon: Flame, className: 'bg-[#E5322D] text-white' };
+  }
+  if (fresh || (req.created_at && now - new Date(req.created_at).getTime() <= NEW_HOURS * HOUR)) {
+    return { label: 'New RFQ', icon: Sparkles, className: 'bg-[#1DB954] text-white' };
+  }
+  return null;
+}
+
+function compactCount(n: number | null): string {
+  if (n === null) return '—';
+  return n > 0 ? `${n.toLocaleString('en-IN')}+` : '0';
 }
 
 export default function LiveRequirementsFeed() {
   const { user, profile, company } = useAuth();
-  const navigate = useNavigate();
   const reduce = useReducedMotion();
 
   const [items, setItems] = useState<Requirement[]>([]);
@@ -76,57 +145,69 @@ export default function LiveRequirementsFeed() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [quick, setQuick] = useState<Quick>('all');
   const [category, setCategory] = useState('all');
+  const [location, setLocation] = useState('all');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [saved, setSaved] = useState<Set<string>>(() => readSaved());
 
-  const [counts, setCounts] = useState<{ active: number | null; today: number | null; buyers: number | null }>({ active: null, today: null, buyers: null });
-
-  const [playing, setPlaying] = useState(true);
-  const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(1);
-  const [speedOpen, setSpeedOpen] = useState(false);
-  const [alerts, setAlerts] = useState(false);
+  const [counts, setCounts] = useState<{ live: number | null; buyers: number | null; value: number | null; industries: number | null }>({ live: null, buyers: null, value: null, industries: null });
+  const [now, setNow] = useState(() => Date.now());
+  const [updatedAt, setUpdatedAt] = useState(() => Date.now());
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogReason, setDialogReason] = useState<SubscriptionReason>('not_logged_in');
   const [detailReq, setDetailReq] = useState<Requirement | null>(null);
   const [respondReq, setRespondReq] = useState<Requirement | null>(null);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const posRef = useRef(0);
-  const pausedUntil = useRef(0);
-  const alertsRef = useRef(alerts);
-  alertsRef.current = alerts;
+  const sectionRef = useRef<HTMLElement>(null);
+  const filtersRef = useRef({ quick, category, location, verifiedOnly, saved, userId: user?.id });
+  filtersRef.current = { quick, category, location, verifiedOnly, saved, userId: user?.id };
 
-  // ── Database: page of active requirements ───────────────────────────────
-  const fetchPage = useCallback(async (pageNo: number, categoryId: string) => {
+  // ── Database: a page of active requirements for the chosen filters ─────
+  const fetchPage = useCallback(async (pageNo: number): Promise<Requirement[]> => {
+    const f = filtersRef.current;
     const from = pageNo * PAGE_SIZE;
     const nowIso = new Date().toISOString();
-    const tab = CATEGORY_TABS.find(t => t.id === categoryId);
-    const filterBySlug = !!tab && tab.slugs.length > 0;
+    const cat = CATEGORIES.find((c) => c.id === f.category);
+    const bySlug = !!cat && cat.slugs.length > 0;
+    if (f.quick === 'mine' && !f.userId && f.saved.size === 0) return [];
     let query = supabase
       .from('requirements')
-      .select(filterBySlug ? REQ_SELECT.replace('categories!category_id(', 'categories!category_id!inner(') : REQ_SELECT)
+      .select(bySlug ? REQ_SELECT.replace('categories!category_id(', 'categories!category_id!inner(') : REQ_SELECT)
       .eq('status', 'active')
       .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
       .or(`deadline.is.null,deadline.gt.${nowIso}`);
-    if (filterBySlug) query = query.in('categories.slug', tab!.slugs);
-    const { data, error: err } = await query
-      .order('created_at', { ascending: false })
-      .range(from, from + PAGE_SIZE - 1);
+    if (bySlug) query = query.in('categories.slug', cat!.slugs);
+    if (f.location !== 'all') query = query.ilike('destination_city', `%${f.location}%`);
+    if (f.verifiedOnly) query = query.eq('is_verified_buyer', true);
+    if (f.quick === 'urgent') query = query.lte('deadline', new Date(Date.now() + URGENT_FILTER_HOURS * HOUR).toISOString());
+    if (f.quick === 'new') query = query.gte('created_at', new Date(Date.now() - NEW_HOURS * HOUR).toISOString());
+    if (f.quick === 'high') query = query.eq('currency', 'INR').gte('budget_max', HIGH_VALUE_INR);
+    if (f.quick === 'mine') {
+      // RFQs you saved with the bookmark, and the ones you posted
+      const parts = [f.userId ? `buyer_id.eq.${f.userId}` : '', f.saved.size ? `id.in.(${[...f.saved].join(',')})` : ''].filter(Boolean);
+      query = query.or(parts.join(','));
+    }
+    const ordered =
+      f.quick === 'urgent' ? query.order('deadline', { ascending: true }) :
+      f.quick === 'high' ? query.order('budget_max', { ascending: false }) :
+      query.order('created_at', { ascending: false });
+    const { data, error: err } = await ordered.range(from, from + PAGE_SIZE - 1);
     if (err) throw err;
-    return (data ?? []) as unknown as Requirement[];
+    return ((data ?? []) as unknown as Requirement[]).filter((r) => !isOutsideListing(r));
   }, []);
-
-  const categoryRef = useRef(category);
-  categoryRef.current = category;
 
   const loadFirst = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const rows = await fetchPage(0, categoryRef.current);
+      const rows = await fetchPage(0);
       setItems(rows);
       setPage(0);
-      setHasMore(rows.length === PAGE_SIZE);
+      setHasMore(rows.length >= PAGE_SIZE - 2);
+      setUpdatedAt(Date.now());
     } catch (e) {
       console.error('Live requirements failed to load', e);
       setError('Live requirements could not be loaded. Please try again.');
@@ -140,13 +221,13 @@ export default function LiveRequirementsFeed() {
     setLoadingMore(true);
     try {
       const next = page + 1;
-      const rows = await fetchPage(next, category);
-      setItems(prev => {
-        const seen = new Set(prev.map(r => r.id));
-        return [...prev, ...rows.filter(r => !seen.has(r.id))];
+      const rows = await fetchPage(next);
+      setItems((prev) => {
+        const seen = new Set(prev.map((r) => r.id));
+        return [...prev, ...rows.filter((r) => !seen.has(r.id))];
       });
       setPage(next);
-      setHasMore(rows.length === PAGE_SIZE);
+      setHasMore(rows.length >= PAGE_SIZE - 2);
     } catch {
       toast.error('Could not load more requirements.');
     } finally {
@@ -154,26 +235,46 @@ export default function LiveRequirementsFeed() {
     }
   };
 
+  // ── Counts (database) ───────────────────────────────────────────────────
   const loadCounts = useCallback(async () => {
+    const nowIso = new Date().toISOString();
+    const monthAgo = new Date(Date.now() - 30 * 24 * HOUR).toISOString();
     try {
-      const [active, today, buyers] = await Promise.all([
-        supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).or(`deadline.is.null,deadline.gt.${new Date().toISOString()}`),
-        supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').gte('created_at', startOfToday()).or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).or(`deadline.is.null,deadline.gt.${new Date().toISOString()}`),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'buyer'),
+      const [live, buyers, month, industries] = await Promise.all([
+        supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${nowIso}`).or(`deadline.is.null,deadline.gt.${nowIso}`),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'buyer').eq('status', 'active'),
+        // Budgets of RFQs posted in the last 30 days (rupees); up to 1,000 rows, so the total is a lower bound
+        supabase.from('requirements').select('budget_max').eq('currency', 'INR').gte('created_at', monthAgo).not('budget_max', 'is', null).limit(1000),
+        supabase.from('categories').select('id', { count: 'exact', head: true }).is('parent_id', null),
       ]);
-      setCounts({ active: active.count ?? 0, today: today.count ?? 0, buyers: buyers.count ?? 0 });
+      const value = Array.isArray(month.data) ? (month.data as Array<{ budget_max: number | null }>).reduce((s, r) => s + (Number(r.budget_max) || 0), 0) : null;
+      setCounts({ live: live.count ?? null, buyers: buyers.count ?? null, value, industries: industries.count ?? null });
     } catch {
-      setCounts({ active: null, today: null, buyers: null });
+      setCounts({ live: null, buyers: null, value: null, industries: null });
     }
   }, []);
 
   useEffect(() => {
     loadFirst();
-  }, [loadFirst, category]);
+  }, [loadFirst, quick, category, location, verifiedOnly]);
 
   useEffect(() => {
     loadCounts();
+    const t = setInterval(loadCounts, 60e3);
+    return () => clearInterval(t);
   }, [loadCounts]);
+
+  // Countdowns tick every second while the section is on screen
+  useEffect(() => {
+    const el = sectionRef.current;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (!timer) timer = setInterval(() => setNow(Date.now()), 1000); };
+    const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+    if (!el || typeof IntersectionObserver === 'undefined') { start(); return stop; }
+    const io = new IntersectionObserver(([entry]) => (entry.isIntersecting ? start() : stop()));
+    io.observe(el);
+    return () => { io.disconnect(); stop(); };
+  }, []);
 
   // ── Realtime: new requirements from the database ────────────────────────
   useEffect(() => {
@@ -181,67 +282,28 @@ export default function LiveRequirementsFeed() {
     if (isBot) return;
     const channel = supabase
       .channel(`live-requirements-${Math.random().toString(36).slice(2, 8)}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requirements' }, async payload => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requirements' }, async (payload) => {
         const id = payload?.new?.id as string | undefined;
         if (!id) return;
         const { data } = await supabase.from('requirements').select(REQ_SELECT).eq('id', id).maybeSingle();
         if (!data || data.status !== 'active') return;
-        if (data.deadline && new Date(data.deadline).getTime() <= Date.now()) return;
-        if (data.expires_at && new Date(data.expires_at).getTime() <= Date.now()) return;
         const req = data as Requirement;
-        const activeTab = CATEGORY_TABS.find(t => t.id === categoryRef.current);
-        if (activeTab && activeTab.slugs.length > 0 && !activeTab.slugs.includes(req.categories?.slug ?? '')) return;
-        setItems(prev => (prev.some(p => p.id === req.id) ? prev : [req, ...prev]));
-        setFreshIds(prev => new Set(prev).add(req.id));
-        setCounts(c => ({ ...c, active: (c.active ?? 0) + 1, today: (c.today ?? 0) + 1 }));
-        if (alertsRef.current) toast.info(`New RFQ: ${req.title}`);
+        if (req.deadline && new Date(req.deadline).getTime() <= Date.now()) return;
+        if (isOutsideListing(req)) return;
+        const f = filtersRef.current;
+        const cat = CATEGORIES.find((c) => c.id === f.category);
+        if (cat && cat.slugs.length > 0 && !cat.slugs.includes(req.categories?.slug ?? '')) return;
+        if (f.quick !== 'all' && f.quick !== 'new') return;
+        setItems((prev) => (prev.some((p) => p.id === req.id) ? prev : [req, ...prev]));
+        setFreshIds((prev) => new Set(prev).add(req.id));
+        setCounts((c) => ({ ...c, live: (c.live ?? 0) + 1 }));
+        setUpdatedAt(Date.now());
       })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
-
-  // ── Auto-scroll (smooth, frame-based) ───────────────────────────────────
-  // Items are already filtered by the server for the selected tab.
-  const filtered = items;
-
-  useEffect(() => {
-    if (!playing || reduce) return;
-    let raf = 0;
-    let last = performance.now();
-    const step = (now: number) => {
-      const el = scrollRef.current;
-      const dt = Math.min(64, now - last);
-      last = now;
-      if (el && now > pausedUntil.current && el.scrollHeight > el.clientHeight + 1) {
-        posRef.current += (dt / 1000) * BASE_PX_PER_SEC * speed;
-        const max = el.scrollHeight - el.clientHeight;
-        if (posRef.current >= max) {
-          posRef.current = 0; // loop back to the first requirement
-          pausedUntil.current = now + 1200;
-        }
-        el.scrollTop = posRef.current;
-      } else if (el) {
-        posRef.current = el.scrollTop;
-      }
-      raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [playing, speed, reduce, filtered.length]);
-
-  const pauseForUser = () => {
-    pausedUntil.current = performance.now() + 3500; // resume automatically after 3.5s idle
-  };
-
-  const nudge = (dir: 1 | -1) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    pauseForUser();
-    el.scrollBy({ top: dir * 180, behavior: 'smooth' });
-    setTimeout(() => { posRef.current = el.scrollTop; }, 400);
-  };
 
   // ── Quote flow (existing permissions and quota) ─────────────────────────
   const handleSubmitQuote = async (req: Requirement) => {
@@ -254,301 +316,244 @@ export default function LiveRequirementsFeed() {
     setRespondReq(req);
   };
 
-  const showStats = counts.active !== null;
+  const toggleSaved = (id: string) => {
+    setSaved((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      writeSaved(next);
+      return next;
+    });
+  };
+
+  const locations = useMemo(() => {
+    const fromFeed = items.map((r) => (r.destination_city || '').trim()).filter(Boolean);
+    return [...new Set([...LOCATIONS, ...fromFeed])].sort((a, b) => a.localeCompare(b));
+  }, [items]);
+
+  const stats = [
+    { icon: FileText, value: compactCount(counts.live), label: 'Live RFQs' },
+    { icon: Users, value: compactCount(counts.buyers), label: 'Active Buyers' },
+    { icon: Box, value: counts.value === null ? '—' : `${formatMoney({ amount: counts.value, currency: 'INR', approximate: false }, { compact: true })}+`, label: 'RFQ Value (Monthly)' },
+    { icon: Handshake, value: compactCount(counts.industries), label: 'Industries' },
+  ];
+
+  const secondsAgo = Math.max(0, Math.round((now - updatedAt) / 1000));
 
   return (
-    <section className="relative w-full overflow-hidden bg-[#050505] py-6 text-white sm:py-10">
-      {/* Ambient glow */}
-      <div aria-hidden="true" className="pointer-events-none absolute -top-24 left-1/4 h-72 w-72 rounded-full bg-[#FF5A00]/10 blur-[110px]" />
-      <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 right-10 h-72 w-72 rounded-full bg-[#FF5A00]/10 blur-[110px]" />
+    <section ref={sectionRef} className="relative w-full overflow-hidden bg-[#070707] py-5 text-white sm:py-8" aria-labelledby="live-rfq-title">
+      {/* port picture top right, fading into the black */}
+      <img
+        src="/home-design/rfq-port.jpg"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute right-0 top-0 h-[150px] w-[44%] max-w-[520px] object-cover [mask-image:linear-gradient(90deg,transparent_0%,#000_45%),linear-gradient(0deg,transparent_0%,#000_40%)] [mask-composite:intersect] [-webkit-mask-composite:source-in] sm:h-[190px] md:h-[240px]"
+        loading="lazy"
+        decoding="async"
+      />
+      <div aria-hidden="true" className="pointer-events-none absolute -left-24 top-10 h-60 w-60 rounded-full bg-[#FF5A00]/10 blur-[100px]" />
 
-      <div className="relative mx-auto w-full max-w-[1400px] px-4 sm:px-5 md:px-6">
+      <div className="relative mx-auto w-full max-w-[1400px] px-2.5 sm:px-5 md:px-6">
         {/* ── Header ── */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-lg bg-[#B33D00] px-3 py-1 text-[12px] font-extrabold tracking-wider shadow-[0_0_18px_-2px_rgba(220,38,38,0.8)]">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#161616] opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#161616]" />
-            </span>
-            LIVE
-          </span>
+        <div className="flex items-center gap-3 px-1 md:gap-5">
+          <img src="/home-design/rfq-icon.png" alt="" aria-hidden="true" className="h-[52px] w-[49px] shrink-0 object-contain md:h-[84px] md:w-[79px]" loading="lazy" />
+          <div className="min-w-0">
+            <h2 id="live-rfq-title" className="flex items-center gap-2 text-[30px] font-black leading-none tracking-tight md:text-[48px]">
+              <span>Live <span className="text-[#FF6A14]">RFQ</span></span>
+              <span className="relative ml-0.5 flex h-2.5 w-2.5" aria-hidden="true">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E5322D] opacity-70" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#E5322D]" />
+              </span>
+            </h2>
+            <p className="mt-1 max-w-[230px] text-[12.5px] leading-snug text-white/85 md:max-w-none md:text-[17px]">Real-Time Bulk Requirements from Verified Buyers</p>
+          </div>
         </div>
-        <h2 className="mt-2 text-[30px] font-black leading-tight tracking-tight sm:text-[40px]">
-          Live <span className="text-[#FF5A00]">Buying Requirements</span>
-        </h2>
-        <p className="mt-1 text-sm text-neutral-400 sm:text-[15px]">Real-time bulk purchase demands from verified businesses.</p>
 
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[12px] text-slate-300">
-          {[
-            { icon: CheckCircle2, text: 'Verified Buyers Only' },
-            { icon: Zap, text: 'Live & Auto Updating' },
-            { icon: Boxes, text: 'Bulk Orders & Long-Term Supply' },
-            { icon: Radio, text: 'Respond with Your Best Quote' },
-          ].map(({ icon: Icon, text }) => (
-            <span key={text} className="flex items-center gap-1.5">
-              <Icon className="h-3.5 w-3.5 text-[#FF5A00]" />
-              {text}
-            </span>
+        <ul className="mt-3.5 grid grid-cols-4 md:mt-5 md:max-w-[900px]">
+          {PROMISES.map((text, i) => (
+            <li key={text} className={`flex min-w-0 items-center justify-center gap-[3px] px-0.5 md:justify-start md:gap-2 md:px-4 ${i > 0 ? 'border-l border-white/20' : 'md:pl-1'}`}>
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 fill-[#FF6A14] text-black md:h-5 md:w-5" aria-hidden="true" />
+              <span className="whitespace-nowrap text-[8.5px] font-medium tracking-[-0.01em] text-white/90 min-[400px]:text-[9px] sm:text-[11px] md:text-[15px]">{text}</span>
+            </li>
           ))}
-        </div>
+        </ul>
 
-        {/* ── Live stats (database) ── */}
-        <div className="mt-5 grid grid-cols-2 overflow-hidden rounded-2xl border border-[#FF5A00]/40 bg-gradient-to-r from-[#0d0d0d] via-[#141414] to-[#0d0d0d] shadow-[0_0_30px_-12px_rgba(255,90,0,0.6)] md:grid-cols-4">
-          {[
-            { icon: Users, value: counts.active, label: 'Active Buying RFQs' },
-            { icon: Radio, value: counts.today, label: 'Posted Today' },
-            { icon: Building2, value: counts.buyers, label: 'Registered Buyers' },
-            { icon: Package, value: null, label: 'Live Updates', live: true },
-          ].map(({ icon: Icon, value, label, live }, i) => (
-            <div key={label} className={`flex items-center gap-3 px-4 py-3.5 ${i % 2 === 0 ? 'border-r border-white/10' : ''} ${i < 2 ? 'border-b border-white/10 md:border-b-0' : ''} ${i < 3 ? 'md:border-r md:border-white/10' : ''}`}>
-              <Icon className="h-6 w-6 shrink-0 text-[#FF5A00]" />
-              <div className="min-w-0">
-                <div className="text-[18px] font-black leading-none sm:text-[22px]">
-                  {live ? (
-                    <span className="flex items-center gap-2 text-[15px] font-bold sm:text-[16px]">
-                      <span className="h-2 w-2 animate-pulse rounded-full bg-[#C94400]" /> On
-                    </span>
-                  ) : value === null ? '—' : value.toLocaleString('en-IN')}
-                </div>
-                <div className="mt-1 truncate text-[11px] text-neutral-400">{live ? 'New RFQs appear as they are posted' : label}</div>
-              </div>
+        {/* ── Live counts (database) ── */}
+        <div className="mt-3.5 grid grid-cols-4 rounded-2xl border border-[#FF5A00]/45 bg-gradient-to-b from-[#16100c] to-[#0b0b0b] px-1 py-3 shadow-[0_0_30px_-14px_rgba(255,90,0,0.8)] md:mt-5 md:py-5">
+          {stats.map(({ icon: Icon, value, label }, i) => (
+            <div key={label} className={`flex flex-col items-center px-1 text-center ${i > 0 ? 'border-l border-white/10' : ''}`}>
+              <Icon className="h-[22px] w-[22px] text-[#FF6A14] md:h-8 md:w-8" strokeWidth={1.6} aria-hidden="true" />
+              <span className="mt-1 text-[16px] font-extrabold leading-none tabular-nums min-[400px]:text-[17px] md:mt-2 md:text-[30px]">{value}</span>
+              <span className="mt-1 whitespace-nowrap text-[8.5px] leading-tight text-white/80 min-[400px]:text-[9.5px] sm:text-[11px] md:text-[15px]">{label}</span>
             </div>
           ))}
         </div>
-        {!showStats && <p className="mt-2 text-[11px] text-neutral-400">Counts are unavailable right now.</p>}
 
-        {/* ── Category filters ── */}
-        <div className="mt-5 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {CATEGORY_TABS.map(tab => {
-            const active = category === tab.id;
-            const Icon = tab.icon;
+        {/* ── Quick filters ── */}
+        <div className="mt-3.5 flex gap-1 overflow-x-auto pb-0.5 scrollbar-none md:mt-5 md:gap-3">
+          {QUICK_FILTERS.map(({ id, label, icon: Icon }) => {
+            const active = quick === id;
             return (
               <button
-                key={tab.id}
+                key={id}
                 type="button"
-                onClick={() => setCategory(tab.id)}
-                className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${
+                aria-pressed={active}
+                onClick={() => setQuick(id)}
+                className={`flex h-[30px] shrink-0 items-center gap-[3px] whitespace-nowrap rounded-full border px-1.5 text-[9.5px] font-semibold transition-colors min-[380px]:px-2 min-[380px]:text-[10px] min-[400px]:text-[11px] md:h-11 md:gap-1.5 md:px-5 md:text-[15px] ${
                   active
-                    ? 'border-transparent bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-white shadow-[0_8px_22px_-8px_rgba(255,90,0,0.9)]'
-                    : 'border-white/10 bg-[#101010] text-slate-200 hover:border-white/25 hover:text-white'
+                    ? 'border-transparent bg-gradient-to-b from-[#FF7A1A] to-[#F25600] text-white shadow-[0_0_16px_-4px_rgba(255,90,0,0.9)]'
+                    : 'border-white/20 bg-[#101010] text-white hover:border-[#FF5A00]/70'
                 }`}
               >
-                <Icon className="h-4 w-4" />
-                {tab.name}
+                <Icon className={`h-3 w-3 min-[400px]:h-3.5 min-[400px]:w-3.5 md:h-5 md:w-5 ${active ? '' : 'text-[#FF6A14]'}`} aria-hidden="true" />
+                {label}
               </button>
             );
           })}
         </div>
 
-        {/* ── Feed controls ── */}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0c0c0c] px-3.5 py-2.5">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-2 rounded-lg bg-[#FF5A00]/15 px-3 py-1.5 text-[12px] font-extrabold tracking-wider text-[#FF7A2E]">
-              <Radio className="h-4 w-4" /> LIVE FEED
-            </span>
-            <span className="hidden items-center gap-2 text-[12px] text-neutral-400 sm:flex">
-              <span className={`h-2 w-2 rounded-full ${playing ? 'animate-pulse bg-[#C94400]' : 'bg-[#262626]'}`} />
-              {playing ? 'Auto-scrolling live requirements' : 'Paused'}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 text-[12px] font-semibold text-slate-300">
-              Auto Scroll
-              <button
-                type="button"
-                role="switch"
-                aria-checked={playing}
-                aria-label="Auto scroll"
-                onClick={() => setPlaying(p => !p)}
-                className={`relative h-5 w-9 rounded-full transition-colors ${playing ? 'bg-[#C94400]' : 'bg-[#0A0A0A]'}`}
-              >
-                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-[#161616] shadow transition-all ${playing ? 'left-4' : 'left-0.5'}`} />
-              </button>
-            </label>
-            <button
-              type="button"
-              onClick={() => setPlaying(p => !p)}
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-white/15 px-3 text-[12px] font-semibold text-white hover:border-[#FF5A00]"
-            >
-              {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-              {playing ? 'Pause' : 'Resume'}
-            </button>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setSpeedOpen(o => !o)}
-                className="flex h-8 items-center gap-1 rounded-lg border border-white/15 px-3 text-[12px] font-semibold text-white hover:border-[#FF5A00]"
-              >
-                Speed: {speed}x <ChevronDown className="h-3.5 w-3.5" />
-              </button>
-              {speedOpen && (
-                <div className="absolute right-0 z-20 mt-1 w-28 overflow-hidden rounded-lg border border-white/15 bg-[#111] shadow-xl">
-                  {SPEEDS.map(s => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => { setSpeed(s); setSpeedOpen(false); }}
-                      className={`block w-full px-3 py-1.5 text-left text-[12px] hover:bg-white/10 ${speed === s ? 'font-bold text-[#FF7A2E]' : 'text-slate-200'}`}
-                    >
-                      {s}x
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={() => nudge(-1)} aria-label="Scroll up" className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 hover:border-[#FF5A00]">
-              <ChevronUp className="h-4 w-4" />
-            </button>
-            <button type="button" onClick={() => nudge(1)} aria-label="Scroll down" className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 hover:border-[#FF5A00]">
-              <ChevronDown className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setAlerts(a => !a)}
-              className={`flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold ${alerts ? 'bg-[#C94400] text-white' : 'border border-white/15 text-slate-200 hover:border-[#FF5A00]'}`}
-              aria-pressed={alerts}
-            >
-              <Bell className="h-3.5 w-3.5" /> Alerts {alerts ? 'On' : 'Off'}
-            </button>
-          </div>
+        {/* ── Category, location, verified buyers ── */}
+        <div className="mt-2.5 flex gap-1.5 md:mt-4 md:gap-3">
+          <label className="relative flex h-[32px] min-w-0 flex-1 items-center rounded-xl border border-white/20 bg-[#101010] md:h-11 md:max-w-[340px]">
+            <Box className="pointer-events-none absolute left-2.5 h-4 w-4 text-white/80" aria-hidden="true" />
+            <span className="sr-only">Category</span>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-full w-full min-w-0 cursor-pointer appearance-none truncate bg-transparent pl-8 pr-7 text-[11.5px] text-white focus:outline-none md:text-[14px]">
+              {CATEGORIES.map((c) => <option key={c.id} value={c.id} className="bg-[#111]">{c.name}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-white/80" aria-hidden="true" />
+          </label>
+          <label className="relative flex h-[32px] min-w-0 flex-1 items-center rounded-xl border border-white/20 bg-[#101010] md:h-11 md:max-w-[340px]">
+            <MapPin className="pointer-events-none absolute left-2.5 h-4 w-4 text-white/80" aria-hidden="true" />
+            <span className="sr-only">Delivery location</span>
+            <select value={location} onChange={(e) => setLocation(e.target.value)} className="h-full w-full min-w-0 cursor-pointer appearance-none truncate bg-transparent pl-8 pr-7 text-[11.5px] text-white focus:outline-none md:text-[14px]">
+              <option value="all" className="bg-[#111]">All Locations</option>
+              {locations.map((l) => <option key={l} value={l} className="bg-[#111]">{l}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-white/80" aria-hidden="true" />
+          </label>
+          <button
+            type="button"
+            aria-pressed={verifiedOnly}
+            onClick={() => setVerifiedOnly((v) => !v)}
+            title={verifiedOnly ? 'Showing verified buyers only' : 'Show verified buyers only'}
+            aria-label="Verified buyers only"
+            className={`flex h-[32px] w-[44px] shrink-0 items-center justify-center rounded-xl border transition-colors md:h-11 md:w-14 ${verifiedOnly ? 'border-[#FF5A00] bg-[#FF5A00]/15 text-[#FF7A2E]' : 'border-white/20 bg-[#101010] text-white hover:border-[#FF5A00]/70'}`}
+          >
+            <Filter className="h-4 w-4 md:h-5 md:w-5" />
+          </button>
         </div>
 
-        {/* ── Feed ── */}
-        <div
-          ref={scrollRef}
-          onPointerDown={pauseForUser}
-          onWheel={pauseForUser}
-          onTouchStart={pauseForUser}
-          onKeyDown={pauseForUser}
-          className="mt-4 h-[560px] space-y-3 overflow-y-auto pr-1 sm:h-[600px] [scrollbar-width:thin] [scrollbar-color:#FF5A00_transparent]"
-          aria-live="polite"
-        >
+        {/* ── Live feed ── */}
+        <p className="mt-3 flex items-center gap-1.5 px-1 text-[10.5px] text-white/60 md:text-[13px]" aria-live="polite">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#E5322D]" aria-hidden="true" />
+          Live feed · new RFQs appear as buyers post them · updated {secondsAgo < 5 ? 'just now' : `${secondsAgo}s ago`}
+        </p>
+
+        <div className="mt-2 grid gap-2 md:mt-3 md:grid-cols-2 md:gap-4">
           {loading && items.length === 0 ? (
-            [1, 2, 3].map(n => <div key={n} className="h-36 animate-pulse rounded-2xl border border-white/5 bg-[#161616]/[0.03]" />)
+            [1, 2, 3, 4].map((n) => <div key={n} className="h-[118px] animate-pulse rounded-2xl border border-white/10 bg-[#121212] md:h-[160px]" />)
           ) : error ? (
-            <div className="rounded-2xl border border-[#FF5A00]/30 bg-[#FF5A00]/5 p-6 text-center">
+            <div className="rounded-2xl border border-[#FF5A00]/30 bg-[#FF5A00]/5 p-6 text-center md:col-span-2">
               <p className="text-sm text-[#FF7A2E]">{error}</p>
               <button type="button" onClick={loadFirst} className="mt-3 rounded-lg bg-[#C94400] px-4 py-2 text-sm font-bold">Retry</button>
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-8 text-center">
-              <Factory className="mx-auto h-9 w-9 text-[#FF5A00]" />
-              <p className="mt-3 text-sm font-semibold">No live requirements {category === 'all' ? 'right now' : 'in this category'}.</p>
-              <p className="mt-1 text-xs text-neutral-400">New buyer requirements appear here as soon as they are posted.</p>
-              {category !== 'all' && (
-                <button type="button" onClick={() => setCategory('all')} className="mt-4 rounded-lg border border-white/15 px-4 py-2 text-xs font-semibold hover:border-[#FF5A00]">
-                  View all categories
+          ) : items.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-7 text-center md:col-span-2">
+              <FileText className="mx-auto h-8 w-8 text-[#FF5A00]" />
+              <p className="mt-2 text-sm font-semibold">
+                {quick === 'mine' ? (user ? 'No saved or posted RFQs yet.' : 'Sign in to see the RFQs you saved or posted.') : 'No live RFQs match these filters right now.'}
+              </p>
+              <p className="mt-1 text-xs text-white/60">{quick === 'mine' ? 'Tap the bookmark on any RFQ to keep it here.' : 'New buyer requirements appear here as soon as they are posted.'}</p>
+              {quick === 'mine' && !user ? (
+                <Link to="/auth" className="mt-4 inline-flex rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold hover:border-[#FF5A00]">Sign in</Link>
+              ) : (quick !== 'all' || category !== 'all' || location !== 'all' || verifiedOnly) && (
+                <button type="button" onClick={() => { setQuick('all'); setCategory('all'); setLocation('all'); setVerifiedOnly(false); }} className="mt-4 rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold hover:border-[#FF5A00]">
+                  Show all RFQs
                 </button>
               )}
             </div>
           ) : (
             <AnimatePresence initial={false}>
-              {filtered.map((req, index) => {
+              {items.map((req, index) => {
                 const visual = getRequirementVisualInfo(req, index);
-                const isFresh = freshIds.has(req.id);
-                const minutes = Math.floor((Date.now() - new Date(req.created_at || 0).getTime()) / 60000);
-                const isNewPost = isFresh || minutes < 60;
-                // Urgency comes from the buyer's real deadline, never from a fixed label.
-                const hoursLeft = req.deadline ? (new Date(req.deadline).getTime() - Date.now()) / 3600000 : null;
-                const isEmergency = hoursLeft !== null && hoursLeft > 0 && hoursLeft <= 48;
-                const isUrgent = !isEmergency && hoursLeft !== null && hoursLeft > 0 && hoursLeft <= 168;
+                const ownPicture = Array.isArray(req.images) && req.images.find((u) => typeof u === 'string' && u.trim());
+                const designPicture = DESIGN_PICTURES.find(([re]) => re.test(req.title || ''))?.[1];
+                const picture = ownPicture || designPicture || visual.image;
+                const badge = primaryBadge(req, now, freshIds.has(req.id));
+                const showBulk = Number(req.quantity) >= 50 && badge?.label !== 'Multi-Product RFQ';
+                const ends = req.deadline || req.expires_at;
+                const left = ends ? new Date(ends).getTime() - now : null;
+                const isSaved = saved.has(req.id);
                 return (
                   <motion.article
                     key={req.id}
                     layout={!reduce}
-                    initial={reduce ? false : { opacity: 0, y: -16, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={reduce ? undefined : { opacity: 0, x: -20 }}
-                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                    className={`group relative rounded-2xl border bg-[#0c0c0c] p-3 transition-colors sm:p-4 ${
-                      isFresh ? 'border-[#FF5A00] shadow-[0_0_28px_-6px_rgba(255,90,0,0.7)]' : 'border-white/10 hover:border-[#FF5A00]/50'
-                    }`}
+                    initial={reduce ? false : { opacity: 0, y: -12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduce ? undefined : { opacity: 0 }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    className={`relative flex gap-2.5 rounded-2xl border bg-gradient-to-b from-[#161616] to-[#0d0d0d] p-2 md:gap-4 md:p-3 ${freshIds.has(req.id) ? 'border-[#FF5A00] shadow-[0_0_24px_-6px_rgba(255,90,0,0.75)]' : 'border-white/15'}`}
                   >
-                    <div className="flex gap-3 sm:gap-4">
-                      <button
-                        type="button"
-                        onClick={() => setDetailReq(req)}
-                        className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#141414] sm:h-24 sm:w-24"
-                        aria-label={`View ${visual.cleanTitle}`}
-                      >
-                        <SafeImage
-                          src={visual.image}
-                          alt={visual.cleanTitle}
-                          category={req.categories?.name || req.category_id}
-                          fallbackType="rfq"
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          sizes="96px"
-                        />
-                      </button>
+                    <button type="button" onClick={() => setDetailReq(req)} className="h-[70px] w-[82px] shrink-0 overflow-hidden rounded-xl bg-[#e9e9eb] md:h-[118px] md:w-[140px]" aria-label={`View ${visual.cleanTitle}`}>
+                      <SafeImage src={picture} alt={visual.cleanTitle} category={req.categories?.name || req.category_id} fallbackType="rfq" className="h-full w-full object-cover" sizes="140px" />
+                    </button>
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {isNewPost && (
-                            <span className="rounded-md bg-[#C94400] px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white">NEW RFQ</span>
-                          )}
-                          <span className="flex items-center gap-1 text-[11px] text-neutral-400">
-                            <Zap className="h-3 w-3 text-[#FF5A00]" /> {timeAgo(req.created_at)}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1 md:gap-1.5">
+                        {badge && (
+                          <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-[2px] text-[9px] font-bold md:px-2 md:text-[12px] ${badge.className}`}>
+                            <badge.icon className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" aria-hidden="true" /> {badge.label}
                           </span>
-                          {isEmergency && (
-                            <span className="rounded-md bg-[#B33D00] px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white">EMERGENCY</span>
-                          )}
-                          {isUrgent && (
-                            <span className="rounded-md bg-[#FF5A00]/15 px-2 py-0.5 text-[10px] font-bold text-[#FF7A2E] border border-[#FF5A00]/40">URGENT</span>
-                          )}
-                          <span className="rounded-md border border-[#FF5A00]/40 bg-[#FF5A00]/10 px-2 py-0.5 text-[10px] font-bold text-[#FF7A2E]">Bulk Purchase</span>
-                          <span className="rounded-md border border-[#FF5A00]/40 bg-[#FF5A00]/10 px-2 py-0.5 text-[10px] font-bold text-[#FF7A2E]">Free Delivery</span>
-                          {req.is_verified_buyer && (
-                            <span className="flex items-center gap-1 rounded-md border border-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
-                              <Lock className="h-2.5 w-2.5 text-[#FF7A2E]" /> Verified Buyer
-                            </span>
-                          )}
-                        </div>
-                        <button type="button" onClick={() => setDetailReq(req)} className="mt-1.5 block w-full text-left">
-                          <h3 className="line-clamp-1 text-[15px] font-bold text-white group-hover:text-[#FF7A2E] sm:text-[17px]">{visual.cleanTitle}</h3>
-                        </button>
-                        <p className="line-clamp-1 text-[12px] text-neutral-400">{visual.subtitle}</p>
-
-                        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[12px] sm:grid-cols-3">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 truncate font-bold text-[#FF7A2E]">
-                              <Package className="h-3.5 w-3.5 shrink-0" />
-                              <span className="truncate">{visual.quantityDisplay}</span>
-                            </div>
-                            <div className="text-[10px] text-neutral-400">Quantity</div>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 truncate font-semibold text-slate-100">
-                              <MapPin className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
-                              <span className="truncate" title={visual.locationDisplay}>{visual.locationDisplay}</span>
-                            </div>
-                            <div className="text-[10px] text-neutral-400">Location</div>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 truncate font-semibold text-slate-100">
-                              <Wallet className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
-                              <span className="truncate">{req.deadline ? new Date(req.deadline).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Open'}</span>
-                            </div>
-                            <div className="text-[10px] text-neutral-400">Required By</div>
-                          </div>
-                        </div>
+                        )}
+                        {showBulk && (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-white/10 px-1.5 py-[2px] text-[9px] font-semibold text-white/90 md:px-2 md:text-[12px]">
+                            <Box className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" aria-hidden="true" /> Bulk Order
+                          </span>
+                        )}
                       </div>
+                      <button type="button" onClick={() => setDetailReq(req)} className="mt-1 block w-full text-left">
+                        <h3 className="line-clamp-2 text-[11.5px] font-bold leading-tight text-white hover:text-[#FF7A2E] md:text-[16px]">{visual.cleanTitle}</h3>
+                      </button>
+                      <dl className="mt-1 space-y-[1px] text-[9.5px] leading-snug text-white/85 md:mt-2 md:space-y-1 md:text-[13px]">
+                        <div className="flex gap-1.5">
+                          <dt className="flex shrink-0 items-center gap-1 text-white/70"><Users className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />Quantity:</dt>
+                          <dd className="truncate">{visual.quantityDisplay}</dd>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <dt className="flex shrink-0 items-center gap-1 text-white/70"><MapPin className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />Delivery:</dt>
+                          <dd className="truncate">{visual.locationDisplay}</dd>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <dt className="flex shrink-0 items-center gap-1 text-white/70"><CalendarDays className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />Posted:</dt>
+                          <dd className="truncate">{postedOn(req.created_at)}</dd>
+                        </div>
+                      </dl>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
-                      <button
-                        type="button"
-                        onClick={() => setDetailReq(req)}
-                        className="h-10 rounded-xl border border-white/15 text-[13px] font-semibold text-white transition-colors hover:border-[#FF5A00] hover:text-[#FF7A2E]"
-                      >
-                        View Details
-                      </button>
+                    <div className="flex w-[112px] shrink-0 flex-col items-end justify-between md:w-[170px]">
+                      <div className="flex w-full items-start justify-end gap-1">
+                        <div className="flex items-center gap-1 rounded-lg border border-[#E5322D]/60 bg-[#2a0d0b] px-1.5 py-1 md:gap-2 md:px-2.5 md:py-1.5">
+                          <Clock className="h-3.5 w-3.5 text-[#FF4D3D] md:h-5 md:w-5" aria-hidden="true" />
+                          <span className="leading-none">
+                            <span className="block text-[8px] text-white/70 md:text-[11px]">{left !== null ? 'Ends in' : 'Status'}</span>
+                            <span className="block whitespace-nowrap text-[11px] font-extrabold tabular-nums md:text-[16px]">{left !== null ? endsIn(left) : 'Open'}</span>
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => toggleSaved(req.id)}
+                          aria-pressed={isSaved}
+                          aria-label={isSaved ? 'Remove from My RFQs' : 'Save to My RFQs'}
+                          className="flex h-6 w-5 items-start justify-center text-white/85 hover:text-[#FF7A2E] md:h-7 md:w-6"
+                        >
+                          <Bookmark className={`h-4 w-4 md:h-5 md:w-5 ${isSaved ? 'fill-[#FF6A14] text-[#FF6A14]' : ''}`} />
+                        </button>
+                      </div>
                       <button
                         type="button"
                         onClick={() => handleSubmitQuote(req)}
-                        className="group/btn flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-[13px] font-bold text-white shadow-[0_8px_20px_-8px_rgba(255,90,0,0.9)] transition-transform hover:-translate-y-0.5"
+                        className="group/btn mt-2 flex h-[28px] w-full items-center justify-center gap-0.5 whitespace-nowrap rounded-lg bg-gradient-to-b from-[#FF7A1A] to-[#F25600] px-1 text-[10px] font-bold text-white shadow-[0_6px_16px_-6px_rgba(255,90,0,0.9)] transition-transform hover:-translate-y-0.5 md:h-10 md:rounded-xl md:text-[14px]"
                       >
-                        Submit Quote <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+                        Submit Quotation <ArrowRight className="h-3 w-3 shrink-0 transition-transform group-hover/btn:translate-x-0.5 md:h-4 md:w-4" aria-hidden="true" />
                       </button>
                     </div>
                   </motion.article>
@@ -556,42 +561,25 @@ export default function LiveRequirementsFeed() {
               })}
             </AnimatePresence>
           )}
-
-          {hasMore && filtered.length > 0 && (
-            <div className="flex justify-center pt-2">
-              <button
-                type="button"
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="flex h-10 items-center gap-2 rounded-xl border border-white/15 px-5 text-[13px] font-semibold hover:border-[#FF5A00] disabled:opacity-60"
-              >
-                {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Load more requirements
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* ── Manufacturer conversion banner ── */}
-        <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-[#FF5A00]/50 bg-gradient-to-r from-[#1a0c05] via-[#0c0c0c] to-[#0c0c0c] p-5 shadow-[0_0_40px_-12px_rgba(255,90,0,0.6)] sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div className="flex items-center gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#FF5A00]/15 text-[#FF5A00]">
-              <Factory className="h-6 w-6" />
-            </span>
-            <div>
-              <p className="text-[18px] font-black sm:text-[22px]">Are You a <span className="text-[#FF5A00]">Manufacturer?</span></p>
-              <p className="text-[12px] text-neutral-400 sm:text-[13px]">Get access to real-time bulk buying requirements. Discover buyers. Submit quotations. Win bulk orders.</p>
-            </div>
+        {hasMore && items.length > 0 && (
+          <div className="mt-3 flex justify-center">
+            <button type="button" onClick={loadMore} disabled={loadingMore} className="flex h-9 items-center gap-2 rounded-xl border border-white/15 px-5 text-[12.5px] font-semibold hover:border-[#FF5A00] disabled:opacity-60">
+              {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
+              Load more RFQs
+            </button>
           </div>
-          <div className="flex flex-wrap gap-2.5">
-            <Link to="/requirements" className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] px-5 text-[13px] font-bold text-white shadow-[0_10px_24px_-10px_rgba(255,90,0,0.9)]">
-              Explore Buying Opportunities <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link to="/auth?tab=supplier" className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/20 px-5 text-[13px] font-bold text-white hover:border-[#FF5A00] hover:text-[#FF7A2E]">
-              List Your Products
-            </Link>
-          </div>
-        </div>
+        )}
+
+        <Link
+          to="/post-requirement"
+          className="group mt-4 flex h-[46px] items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-b from-[#FF7A1A] to-[#F25600] px-4 text-[14.5px] font-bold text-white shadow-[0_10px_30px_-10px_rgba(255,90,0,0.95)] transition-transform hover:-translate-y-0.5 md:mx-auto md:mt-6 md:h-14 md:max-w-[640px] md:text-[18px]"
+        >
+          <Plus className="h-5 w-5" aria-hidden="true" />
+          Post a Buying Requirement (RFQ)
+          <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        </Link>
       </div>
 
       {detailReq && (
@@ -599,9 +587,9 @@ export default function LiveRequirementsFeed() {
           requirement={detailReq}
           open={!!detailReq}
           onClose={() => setDetailReq(null)}
-          onRequirementUpdated={updated => {
+          onRequirementUpdated={(updated) => {
             setDetailReq(updated);
-            setItems(prev => prev.map(r => (r.id === updated.id ? updated : r)));
+            setItems((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
           }}
         />
       )}

@@ -49,6 +49,7 @@ import {
 import { calculateProductMatchScore, catalogueInr, generateAIQuotationDraft, type AIQuotationDraft, type MatchedProduct } from '@/lib/aiSalesAssistant';
 import { formatPriceRange } from '@/lib/productPrice';
 import type { Product, Quotation, Requirement } from '@/types/types';
+import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
 
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -489,22 +490,28 @@ export default function RequirementDetailsPage() {
             <div className="lg:col-span-2 space-y-4 md:space-y-5 min-w-0">
               {req.attachment_url && !imageBroken && (
                 <Card title="Buyer's reference" icon={FileText}>
-                  <a href={req.attachment_url} target="_blank" rel="noreferrer" className="block">
-                    <img
-                      src={req.attachment_url}
-                      alt={`Reference image for ${req.title}`}
-                      loading="lazy"
-                      decoding="async"
-                      onError={() => setImageBroken(true)}
-                      className="w-full max-h-[420px] object-contain rounded-xl bg-muted"
-                    />
-                  </a>
+                  {(() => {
+                    const image = (
+                      <img
+                        src={req.attachment_url}
+                        alt={`Reference image for ${req.title}`}
+                        loading="lazy"
+                        decoding="async"
+                        onError={() => setImageBroken(true)}
+                        className="w-full max-h-[420px] object-contain rounded-xl bg-muted"
+                      />
+                    );
+                    // Open the file only when BulkSkart stores it; never send people to other websites
+                    return isOwnUrl(req.attachment_url) ? (
+                      <a href={req.attachment_url} target="_blank" rel="noreferrer" className="block">{image}</a>
+                    ) : image;
+                  })()}
                 </Card>
               )}
 
               <Card title="What the buyer needs" icon={FileText}>
                 {req.description ? (
-                  <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{req.description}</p>
+                  <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{withoutOutsideLinks(req.description)}</p>
                 ) : (
                   <p className="text-sm text-muted-foreground">The buyer has not added a description.</p>
                 )}
@@ -521,7 +528,7 @@ export default function RequirementDetailsPage() {
                   req.specifications && (
                     <div className="mt-4">
                       <h3 className="text-sm font-bold text-foreground mb-1">Specifications</h3>
-                      <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{req.specifications}</p>
+                      <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{withoutOutsideLinks(req.specifications)}</p>
                     </div>
                   )
                 )}
