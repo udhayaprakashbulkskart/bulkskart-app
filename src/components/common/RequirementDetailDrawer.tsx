@@ -32,8 +32,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import BuyerQuotationsPanel from './BuyerQuotationsPanel';
 import SubscribeToContactDialog, { type SubscriptionReason } from './SubscribeToContactDialog';
 import SupplierRespondDialog from './SupplierRespondDialog';
-import { ExternalSourceLink, GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
+import { GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
 import { gemTenderUrl, sharedBuyerPhone, specificationProse } from '@/lib/externalListing';
+import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
 
 // ── Deal status pipeline ────────────────────────────────────────────────────────
 const DEAL_STEPS = [
@@ -494,24 +495,22 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
               {requirement.description && (
                 <div>
                   <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">Description</p>
-                  <p className="text-[12px] text-foreground leading-relaxed">{requirement.description}</p>
+                  <p className="text-[12px] text-foreground leading-relaxed">{withoutOutsideLinks(requirement.description)}</p>
                 </div>
               )}
               {gemUrl && (
                 <div className="flex flex-wrap items-center gap-2">
                   <GovernmentTenderBadge />
-                  <ExternalSourceLink href={gemUrl} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF5A1F] hover:text-[#e04e00]">
-                    View bid on GeM
-                  </ExternalSourceLink>
                 </div>
               )}
               {requirement.specifications && (!gemUrl || specificationProse(requirement.specifications)) && (
                 <div>
                   <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">Specifications</p>
-                  <p className="text-[12px] text-foreground leading-relaxed whitespace-pre-wrap">{gemUrl ? specificationProse(requirement.specifications) : requirement.specifications}</p>
+                  <p className="text-[12px] text-foreground leading-relaxed whitespace-pre-wrap">{withoutOutsideLinks(gemUrl ? specificationProse(requirement.specifications) : requirement.specifications)}</p>
                 </div>
               )}
-              {requirement.attachment_url && (
+              {/* Only files stored by BulkSkart open from here; links to other websites are not shown */}
+              {requirement.attachment_url && isOwnUrl(requirement.attachment_url) && (
                 <a href={requirement.attachment_url} target="_blank" rel="noreferrer"
                   className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#FF5A00] hover:underline">
                   <Upload className="w-3.5 h-3.5" /> View Attachment
@@ -532,7 +531,7 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                       <p className="text-xs font-bold text-foreground">{contactMissing ? 'Quotation on BulkSkart' : 'Paid Subscription Companies Only'}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                         {contactMissing
-                          ? 'No buyer phone number is listed for this tender. You can still send a quotation, or open the bid on GeM.'
+                          ? 'No buyer phone number is listed for this tender. You can still send a quotation.'
                           : 'Only verified companies with an active paid plan can send direct messages and quotations to this buyer.'}
                       </p>
                     </div>

@@ -1,498 +1,619 @@
 /**
- * LiveRequirementsFeed: the newest open buying requirements on the home page.
+ * Live RFQ — buying requirements on the home page, laid out from the BulkSkart "Live RFQ" design picture.
  *
- * Everything shown comes from the requirements table: the newest open posts (no generated or
- * demonstration rows), the real number of open requirements, and new posts as they are saved (the
- * realtime channel adds them to the top). Badges come from what the buyer entered (urgent, deadline,
- * verified buyer) and nothing is assigned by position.
+ * - Real database records only: active requirements, 10 per page, filtered on the server.
+ * - Live: new requirements appear at the top as they are posted (realtime), counts refresh every minute and each
+ *   card counts down to the buyer's deadline.
+ * - Listings taken from tender portals or other websites are left out (see lib/rfqSources).
+ * - Submit Quotation opens the existing supplier quote dialog (permissions and quota checks kept).
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
-  ArrowRight, Calendar, CheckCircle2, ChevronLeft, ChevronRight, LayoutGrid, MapPin, MessageSquare, Package, RefreshCw, Zap,
+  ArrowRight, Bookmark, Box, CalendarDays, CheckCircle2, ChevronDown, Clock, Coins, Crown, FileText, Filter, Flame,
+  Handshake, Layers, LayoutGrid, Loader2, MapPin, Plus, Sparkles, Users,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
-import { checkSupplierPaidSubscription, countOpenRequirements, getCategories, getOpenRequirements } from '@/lib/api';
-import type { Category, Requirement } from '@/types/types';
+import { checkDirectMessageQuota, checkSupplierPaidSubscription } from '@/lib/api';
+import type { Requirement } from '@/types/types';
 import { useAuth } from '@/contexts/AuthContext';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
+import RequirementDetailDrawer from '@/components/common/RequirementDetailDrawer';
+import SafeImage from '@/components/common/SafeImage';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
-import RequirementThumb, { categoryIcon } from '@/components/common/RequirementThumb';
 import { getRequirementVisualInfo } from '@/lib/requirementVisuals';
-import { ExternalSourceLink, GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
-import { isSeededRequirement } from '@/lib/seedData';
+import { formatMoney } from '@/lib/productPrice';
+import { isOutsideListing } from '@/lib/rfqSources';
+import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
 
-const FEED_SIZE = 16;
-const CARDS_PER_VIEW = 4;
-const REFRESH_MS = 2 * 60 * 1000;
+const PAGE_SIZE = 10;
+const REQ_SELECT = '*, profiles!buyer_id(id,full_name,email), categories!category_id(id,name,slug)';
+const SAVED_KEY = 'bulkskart_saved_rfqs';
+const HOUR = 3600e3;
+const URGENT_BADGE_HOURS = 6; // red badge: ends within 6 hours
+const URGENT_FILTER_HOURS = 24; // Urgent filter: ends within a day, soonest first
+const NEW_HOURS = 48;
+const HIGH_VALUE_INR = 500000;
 
-function timeAgo(iso?: string): string {
+type Quick = 'all' | 'urgent' | 'new' | 'high' | 'mine';
+
+const QUICK_FILTERS: Array<{ id: Quick; label: string; icon: typeof LayoutGrid }> = [
+  { id: 'all', label: 'All RFQs', icon: LayoutGrid },
+  { id: 'urgent', label: 'Urgent', icon: Flame },
+  { id: 'new', label: 'New', icon: Sparkles },
+  { id: 'high', label: 'High Value', icon: Coins },
+  { id: 'mine', label: 'My RFQs', icon: Bookmark },
+];
+
+// Each option maps to the real `categories.slug` values in the database (filtered on the server).
+const CATEGORIES: Array<{ id: string; name: string; slugs: string[] }> = [
+  { id: 'all', name: 'All Categories', slugs: [] },
+  { id: 'machinery', name: 'Machinery & Equipment', slugs: ['machinery-industrial'] },
+  { id: 'textiles', name: 'Textiles & Apparel', slugs: ['textiles-apparel'] },
+  { id: 'electronics', name: 'Electrical & Electronics', slugs: ['electronics-electricals'] },
+  { id: 'packaging', name: 'Packaging', slugs: ['packaging'] },
+  { id: 'chemicals', name: 'Chemicals & Plastics', slugs: ['chemicals-raw-materials', 'plastics-rubber'] },
+  { id: 'construction', name: 'Construction', slugs: ['construction-building'] },
+  { id: 'agriculture', name: 'Agriculture & Food', slugs: ['agriculture-food'] },
+  { id: 'auto', name: 'Auto Parts', slugs: ['auto-parts-vehicles'] },
+  { id: 'pharma', name: 'Pharma & Healthcare', slugs: ['pharma-healthcare'] },
+];
+
+const LOCATIONS = ['Mumbai', 'Delhi', 'Bengaluru', 'Chennai', 'Hyderabad', 'Kolkata', 'Pune', 'Ahmedabad', 'Coimbatore', 'Surat', 'Jaipur', 'Ludhiana', 'Trichy', 'Kochi'];
+
+const PROMISES = ['Genuine Buyers', 'Bulk Orders', 'Direct Quotation', 'High Opportunity'];
+
+// Pictures from the design, used when an RFQ is for the same kind of product and has no picture of its own
+const DESIGN_PICTURES: Array<[RegExp, string]> = [
+  [/\bfryer\b/i, '/home-design/rfq-fryer.jpg'],
+  [/\b(t-?shirts?|polo shirts?|tees?)\b/i, '/home-design/rfq-tshirts.jpg'],
+  [/\b(computer|laptops?|desktops?|ram|ssd|hdd|motherboards?|monitors?|cpu)\b/i, '/home-design/rfq-computer.jpg'],
+  [/\b(gas stoves?|stoves?|burners?|cooktops?)\b/i, '/home-design/rfq-stove.jpg'],
+];
+
+function readSaved(): Set<string> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
+    return new Set(Array.isArray(raw) ? raw.filter((v) => typeof v === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeSaved(ids: Set<string>) {
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify([...ids]));
+  } catch {
+    /* storage unavailable: saving lasts for this visit only */
+  }
+}
+
+function endsIn(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m ${String(s % 60).padStart(2, '0')}s`;
+}
+
+function postedOn(iso?: string): string {
   if (!iso) return '';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function isMultiProduct(title: string): boolean {
+  return /\([^)]*,[^)]*,[^)]*\)/.test(title) || (title.match(/,/g) ?? []).length >= 3;
+}
+
+type Badge = { label: string; icon: typeof Flame; className: string };
+
+/** One badge per RFQ, from its real budget, title, deadline and posting time (in that order). */
+function primaryBadge(req: Requirement, now: number, fresh: boolean): Badge | null {
+  const deadline = req.deadline ? new Date(req.deadline).getTime() : null;
+  if ((req.currency || 'INR') === 'INR' && Number(req.budget_max) >= HIGH_VALUE_INR) {
+    return { label: 'High Value', icon: Crown, className: 'bg-[#F7C531] text-[#1A1200]' };
+  }
+  if (isMultiProduct(req.title || '')) {
+    return { label: 'Multi-Product RFQ', icon: Layers, className: 'bg-[#8B3DFF] text-white' };
+  }
+  if (deadline && deadline > now && deadline - now <= URGENT_BADGE_HOURS * HOUR) {
+    return { label: 'Urgent RFQ', icon: Flame, className: 'bg-[#E5322D] text-white' };
+  }
+  if (fresh || (req.created_at && now - new Date(req.created_at).getTime() <= NEW_HOURS * HOUR)) {
+    return { label: 'New RFQ', icon: Sparkles, className: 'bg-[#1DB954] text-white' };
+  }
+  return null;
+}
+
+function compactCount(n: number | null): string {
+  if (n === null) return '—';
+  return n > 0 ? `${n.toLocaleString('en-IN')}+` : '0';
 }
 
 export default function LiveRequirementsFeed() {
   const { user, profile, company } = useAuth();
-  const navigate = useNavigate();
+  const reduce = useReducedMotion();
 
-  const [reqs, setReqs] = useState<Requirement[]>([]);
-  const [openTotal, setOpenTotal] = useState<number | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [items, setItems] = useState<Requirement[]>([]);
+  const [freshIds, setFreshIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [pageOffset, setPageOffset] = useState(0);
-  const [tick, setTick] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [quick, setQuick] = useState<Quick>('all');
+  const [category, setCategory] = useState('all');
+  const [location, setLocation] = useState('all');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [saved, setSaved] = useState<Set<string>>(() => readSaved());
+
+  const [counts, setCounts] = useState<{ live: number | null; buyers: number | null; value: number | null; industries: number | null }>({ live: null, buyers: null, value: null, industries: null });
+  const [now, setNow] = useState(() => Date.now());
+  const [updatedAt, setUpdatedAt] = useState(() => Date.now());
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogReason, setDialogReason] = useState<SubscriptionReason>('not_logged_in');
-  const [respondDialogReq, setRespondDialogReq] = useState<Requirement | null>(null);
+  const [detailReq, setDetailReq] = useState<Requirement | null>(null);
+  const [respondReq, setRespondReq] = useState<Requirement | null>(null);
 
-  useEffect(() => {
-    getCategories().then(setCategories);
-  }, []);
+  const sectionRef = useRef<HTMLElement>(null);
+  const filtersRef = useRef({ quick, category, location, verifiedOnly, saved, userId: user?.id });
+  filtersRef.current = { quick, category, location, verifiedOnly, saved, userId: user?.id };
 
-  const categoryTabs = useMemo(
-    () => [
-      { id: 'all', name: 'All Categories', icon: LayoutGrid as ReturnType<typeof categoryIcon> },
-      ...categories
-        .filter((c) => !c.parent_id)
-        .slice(0, 8)
-        .map((c) => ({ id: c.id, name: c.name, icon: categoryIcon(c.slug || c.name) })),
-    ],
-    [categories],
-  );
-
-  const categoryIds = useMemo(() => {
-    if (selectedCategory === 'all') return undefined;
-    return [selectedCategory, ...categories.filter((c) => c.parent_id === selectedCategory).map((c) => c.id)];
-  }, [selectedCategory, categories]);
-
-  // ── The newest open requirements, and how many are open in all ─────────────
-  const loadData = useCallback(async () => {
-    const [page, counts] = await Promise.all([
-      getOpenRequirements({ page: 1, pageSize: FEED_SIZE, sort: 'latest', categoryIds }),
-      countOpenRequirements({}, ['all']),
-    ]);
-    setReqs(page.rows);
-    setFailed(Boolean(page.error));
-    setOpenTotal(counts.all);
-    setLoading(false);
-    // tick reloads the feed every two minutes and on "Fresh RFQs"
-  }, [categoryIds, tick]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), REFRESH_MS);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const handleClear = () => {
-      setSelectedCategory('all');
-      setPageOffset(0);
-    };
-    window.addEventListener('bulkskart-clear-landing-filters', handleClear);
-    return () => window.removeEventListener('bulkskart-clear-landing-filters', handleClear);
-  }, []);
-
-  // ── New requirements as buyers post them ───────────────────────────────────
-  useEffect(() => {
-    const isBot =
-      typeof window !== 'undefined' &&
-      /Lighthouse|PageSpeed|HeadlessChrome|Googlebot|Chrome-Lighthouse/i.test(navigator.userAgent || '');
-    if (isBot) return;
-
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(`live-feed-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requirements' }, async (payload) => {
-          const id = (payload?.new as { id?: string } | undefined)?.id;
-          if (!id) return;
-          const { data } = await supabase
-            .from('requirements')
-            .select('*, profiles!buyer_id(id,full_name,company_name), categories!category_id(id,name,slug)')
-            .eq('id', id)
-            .maybeSingle();
-          const row = data as Requirement | null;
-          if (!row || row.status !== 'active' || isSeededRequirement(row)) return;
-          if (categoryIds && !categoryIds.includes(row.category_id ?? '')) return;
-          setReqs((prev) => (prev.some((p) => p.id === row.id) ? prev : [row, ...prev].slice(0, FEED_SIZE)));
-          setOpenTotal((n) => (n === null ? n : n + 1));
-        })
-        .subscribe((status, err) => {
-          if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) && channel) {
-            supabase.removeChannel(channel);
-            channel = null;
-          }
-        });
-    } catch {
-      // The feed still works without realtime; it reloads every two minutes.
+  // ── Database: a page of active requirements for the chosen filters ─────
+  const fetchPage = useCallback(async (pageNo: number): Promise<Requirement[]> => {
+    const f = filtersRef.current;
+    const from = pageNo * PAGE_SIZE;
+    const nowIso = new Date().toISOString();
+    const cat = CATEGORIES.find((c) => c.id === f.category);
+    const bySlug = !!cat && cat.slugs.length > 0;
+    if (f.quick === 'mine' && !f.userId && f.saved.size === 0) return [];
+    let query = supabase
+      .from('requirements')
+      .select(bySlug ? REQ_SELECT.replace('categories!category_id(', 'categories!category_id!inner(') : REQ_SELECT)
+      .eq('status', 'active')
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .or(`deadline.is.null,deadline.gt.${nowIso}`);
+    // demonstration rows from the template migrations are never shown as live demand
+    if (!INCLUDE_TEMPLATE_SEED_DATA) query = query.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
+    if (bySlug) query = query.in('categories.slug', cat!.slugs);
+    if (f.location !== 'all') query = query.ilike('destination_city', `%${f.location}%`);
+    if (f.verifiedOnly) query = query.eq('is_verified_buyer', true);
+    if (f.quick === 'urgent') query = query.lte('deadline', new Date(Date.now() + URGENT_FILTER_HOURS * HOUR).toISOString());
+    if (f.quick === 'new') query = query.gte('created_at', new Date(Date.now() - NEW_HOURS * HOUR).toISOString());
+    if (f.quick === 'high') query = query.eq('currency', 'INR').gte('budget_max', HIGH_VALUE_INR);
+    if (f.quick === 'mine') {
+      // RFQs you saved with the bookmark, and the ones you posted
+      const parts = [f.userId ? `buyer_id.eq.${f.userId}` : '', f.saved.size ? `id.in.(${[...f.saved].join(',')})` : ''].filter(Boolean);
+      query = query.or(parts.join(','));
     }
+    const ordered =
+      f.quick === 'urgent' ? query.order('deadline', { ascending: true }) :
+      f.quick === 'high' ? query.order('budget_max', { ascending: false }) :
+      query.order('created_at', { ascending: false });
+    const { data, error: err } = await ordered.range(from, from + PAGE_SIZE - 1);
+    if (err) throw err;
+    return ((data ?? []) as unknown as Requirement[]).filter((r) => !isOutsideListing(r) && !isSeededRequirement(r));
+  }, []);
+
+  const loadFirst = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const rows = await fetchPage(0);
+      setItems(rows);
+      setPage(0);
+      setHasMore(rows.length >= PAGE_SIZE - 2);
+      setUpdatedAt(Date.now());
+    } catch (e) {
+      console.error('Live requirements failed to load', e);
+      setError('Live requirements could not be loaded. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchPage]);
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const next = page + 1;
+      const rows = await fetchPage(next);
+      setItems((prev) => {
+        const seen = new Set(prev.map((r) => r.id));
+        return [...prev, ...rows.filter((r) => !seen.has(r.id))];
+      });
+      setPage(next);
+      setHasMore(rows.length >= PAGE_SIZE - 2);
+    } catch {
+      toast.error('Could not load more requirements.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // ── Counts (database) ───────────────────────────────────────────────────
+  const loadCounts = useCallback(async () => {
+    const nowIso = new Date().toISOString();
+    const monthAgo = new Date(Date.now() - 30 * 24 * HOUR).toISOString();
+    try {
+      let liveQuery = supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${nowIso}`).or(`deadline.is.null,deadline.gt.${nowIso}`);
+      if (!INCLUDE_TEMPLATE_SEED_DATA) liveQuery = liveQuery.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
+      const [live, buyers, month, industries] = await Promise.all([
+        liveQuery,
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'buyer').eq('status', 'active'),
+        // Budgets of RFQs posted in the last 30 days (rupees); up to 1,000 rows, so the total is a lower bound
+        supabase.from('requirements').select('budget_max').eq('currency', 'INR').gte('created_at', monthAgo).not('budget_max', 'is', null).limit(1000),
+        supabase.from('categories').select('id', { count: 'exact', head: true }).is('parent_id', null),
+      ]);
+      const value = Array.isArray(month.data) ? (month.data as Array<{ budget_max: number | null }>).reduce((s, r) => s + (Number(r.budget_max) || 0), 0) : null;
+      setCounts({ live: live.count ?? null, buyers: buyers.count ?? null, value, industries: industries.count ?? null });
+    } catch {
+      setCounts({ live: null, buyers: null, value: null, industries: null });
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFirst();
+  }, [loadFirst, quick, category, location, verifiedOnly]);
+
+  useEffect(() => {
+    loadCounts();
+    const t = setInterval(loadCounts, 60e3);
+    return () => clearInterval(t);
+  }, [loadCounts]);
+
+  // Countdowns tick every second while the section is on screen
+  useEffect(() => {
+    const el = sectionRef.current;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (!timer) timer = setInterval(() => setNow(Date.now()), 1000); };
+    const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+    if (!el || typeof IntersectionObserver === 'undefined') { start(); return stop; }
+    const io = new IntersectionObserver(([entry]) => (entry.isIntersecting ? start() : stop()));
+    io.observe(el);
+    return () => { io.disconnect(); stop(); };
+  }, []);
+
+  // ── Realtime: new requirements from the database ────────────────────────
+  useEffect(() => {
+    const isBot = typeof navigator !== 'undefined' && /Lighthouse|PageSpeed|HeadlessChrome|Googlebot/i.test(navigator.userAgent || '');
+    if (isBot) return;
+    const channel = supabase
+      .channel(`live-requirements-${Math.random().toString(36).slice(2, 8)}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requirements' }, async (payload) => {
+        const id = payload?.new?.id as string | undefined;
+        if (!id) return;
+        const { data } = await supabase.from('requirements').select(REQ_SELECT).eq('id', id).maybeSingle();
+        if (!data || data.status !== 'active') return;
+        const req = data as Requirement;
+        if (req.deadline && new Date(req.deadline).getTime() <= Date.now()) return;
+        if (isOutsideListing(req) || isSeededRequirement(req)) return;
+        const f = filtersRef.current;
+        const cat = CATEGORIES.find((c) => c.id === f.category);
+        if (cat && cat.slugs.length > 0 && !cat.slugs.includes(req.categories?.slug ?? '')) return;
+        if (f.quick !== 'all' && f.quick !== 'new') return;
+        setItems((prev) => (prev.some((p) => p.id === req.id) ? prev : [req, ...prev]));
+        setFreshIds((prev) => new Set(prev).add(req.id));
+        setCounts((c) => ({ ...c, live: (c.live ?? 0) + 1 }));
+        setUpdatedAt(Date.now());
+      })
+      .subscribe();
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
-  }, [categoryIds]);
+  }, []);
 
-  const handleFreshRFQs = () => {
-    setIsRefreshing(true);
-    setPageOffset(0);
-    setTick((t) => t + 1);
-    setTimeout(() => setIsRefreshing(false), 600);
-  };
-
-  const pageCount = Math.max(1, Math.ceil(reqs.length / CARDS_PER_VIEW));
-  const currentPage = Math.min(pageOffset, pageCount - 1);
-  const visibleReqs = reqs.slice(currentPage * CARDS_PER_VIEW, currentPage * CARDS_PER_VIEW + CARDS_PER_VIEW);
-  const firstShown = reqs.length ? currentPage * CARDS_PER_VIEW + 1 : 0;
-  const lastShown = currentPage * CARDS_PER_VIEW + visibleReqs.length;
-
-  const handleViewRFQ = (req: Requirement) => {
-    navigate(`/requirement/${req.req_number || req.id}`);
-  };
-
-  // Send Quote: only a registered business with a paid plan can quote, as on the requirement page.
-  const handleOpenRespond = async (req: Requirement) => {
+  // ── Quote flow (existing permissions and quota) ─────────────────────────
+  const handleSubmitQuote = async (req: Requirement) => {
     if (!user || !profile) { setDialogReason('not_logged_in'); setDialogOpen(true); return; }
     if (!company) { setDialogReason('not_registered_business'); setDialogOpen(true); return; }
-    const check = await checkSupplierPaidSubscription(company.id, company);
-    if (!check.allowed) {
-      setDialogReason(check.reason === 'no_subscription' ? 'quotation_subscription' : check.reason);
-      setDialogOpen(true);
-      return;
-    }
-    setRespondDialogReq(req);
+    const sub = await checkSupplierPaidSubscription(company.id, company);
+    if (!sub.allowed) { setDialogReason(sub.reason); setDialogOpen(true); return; }
+    const quota = await checkDirectMessageQuota(company.id, company);
+    if (quota !== 'ok') { setDialogReason(quota); setDialogOpen(true); return; }
+    setRespondReq(req);
   };
 
+  const toggleSaved = (id: string) => {
+    setSaved((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      writeSaved(next);
+      return next;
+    });
+  };
+
+  const locations = useMemo(() => {
+    const fromFeed = items.map((r) => (r.destination_city || '').trim()).filter(Boolean);
+    return [...new Set([...LOCATIONS, ...fromFeed])].sort((a, b) => a.localeCompare(b));
+  }, [items]);
+
+  const stats = [
+    { icon: FileText, value: compactCount(counts.live), label: 'Live RFQs' },
+    { icon: Users, value: compactCount(counts.buyers), label: 'Active Buyers' },
+    { icon: Box, value: counts.value === null ? '—' : `${formatMoney({ amount: counts.value, currency: 'INR', approximate: false }, { compact: true })}+`, label: 'RFQ Value (Monthly)' },
+    { icon: Handshake, value: compactCount(counts.industries), label: 'Industries' },
+  ];
+
+  const secondsAgo = Math.max(0, Math.round((now - updatedAt) / 1000));
+
   return (
-    <section className="w-full py-3 sm:py-5 bg-background border-b border-border text-foreground relative overflow-hidden">
-      <div className="w-full max-w-[1400px] mx-auto px-3.5 sm:px-5 md:px-6">
+    <section ref={sectionRef} className="relative w-full overflow-hidden bg-[#070707] py-5 text-white sm:py-8" aria-labelledby="live-rfq-title">
+      {/* port picture top right, fading into the black */}
+      <img
+        src="/home-design/rfq-port.jpg"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute right-0 top-0 h-[150px] w-[44%] max-w-[520px] object-cover [mask-image:linear-gradient(90deg,transparent_0%,#000_45%),linear-gradient(0deg,transparent_0%,#000_40%)] [mask-composite:intersect] [-webkit-mask-composite:source-in] sm:h-[190px] md:h-[240px]"
+        loading="lazy"
+        decoding="async"
+      />
+      <div aria-hidden="true" className="pointer-events-none absolute -left-24 top-10 h-60 w-60 rounded-full bg-[#FF5A00]/10 blur-[100px]" />
 
-        {/* ── LIVE FEED HEADER ─────────────────────────────── */}
-        <div className="mb-2 sm:mb-2.5">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="w-2 h-2 rounded-full bg-[#FF5A00] animate-pulse shadow-[0_0_8px_#FF5A00]" />
-            <span className="text-[10px] font-black text-[#FF5A00] tracking-widest uppercase">
-              LIVE FEED
-            </span>
+      <div className="relative mx-auto w-full max-w-[1400px] px-2.5 sm:px-5 md:px-6">
+        {/* ── Header ── */}
+        <div className="flex items-center gap-3 px-1 md:gap-5">
+          <img src="/home-design/rfq-icon.png" alt="" aria-hidden="true" className="h-[52px] w-[49px] shrink-0 object-contain md:h-[84px] md:w-[79px]" loading="lazy" />
+          <div className="min-w-0">
+            <h2 id="live-rfq-title" className="flex items-center gap-2 text-[30px] font-black leading-none tracking-tight md:text-[48px]">
+              <span>Live <span className="text-[#FF6A14]">RFQ</span></span>
+              <span className="relative ml-0.5 flex h-2.5 w-2.5" aria-hidden="true">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E5322D] opacity-70" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#E5322D]" />
+              </span>
+            </h2>
+            <p className="mt-1 max-w-[230px] text-[12.5px] leading-snug text-white/85 md:max-w-none md:text-[17px]">Real-Time Bulk Requirements from Verified Buyers</p>
           </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight leading-tight">
-            Live <span className="text-[#FF5A00]">Buying Requirements</span>
-          </h2>
-          <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-            The newest requirements posted by buyers on BulkSkart
-          </p>
         </div>
 
-        {/* ── STATS & ACTIONS ROW ─────────────────────────── */}
-        <div className="flex items-center justify-between gap-1.5 sm:gap-2.5 mb-2.5 w-full">
-          <button
-            type="button"
-            onClick={handleFreshRFQs}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 px-2 min-[360px]:px-3 py-1.5 rounded-lg bg-card hover:bg-muted border border-orange-500/40 text-orange-700 dark:text-orange-300 text-[11px] min-[360px]:text-xs font-bold shadow-sm transition-all active:scale-95 h-9 shrink-0"
-            title="Check for new requirements"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#FF5A00] shrink-0 transition-transform duration-500 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="truncate">Fresh RFQs</span>
-          </button>
+        <ul className="mt-3.5 grid grid-cols-4 md:mt-5 md:max-w-[900px]">
+          {PROMISES.map((text, i) => (
+            <li key={text} className={`flex min-w-0 items-center justify-center gap-[3px] px-0.5 md:justify-start md:gap-2 md:px-4 ${i > 0 ? 'border-l border-white/20' : 'md:pl-1'}`}>
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 fill-[#FF6A14] text-black md:h-5 md:w-5" aria-hidden="true" />
+              <span className="whitespace-nowrap text-[8.5px] font-medium tracking-[-0.01em] text-white/90 min-[400px]:text-[9px] sm:text-[11px] md:text-[15px]">{text}</span>
+            </li>
+          ))}
+        </ul>
 
-          <div className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 bg-card border border-border rounded-lg px-2 min-[360px]:px-3 py-1 shadow-sm h-9">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
-            </span>
-            <div className="text-left leading-tight truncate">
-              <div className="text-xs sm:text-sm font-black text-foreground leading-tight">
-                {openTotal === null ? '–' : openTotal.toLocaleString()}
-              </div>
-              <div className="text-[8.5px] min-[360px]:text-[9px] text-muted-foreground font-medium leading-none">Open RFQs</div>
+        {/* ── Live counts (database) ── */}
+        <div className="mt-3.5 grid grid-cols-4 rounded-2xl border border-[#FF5A00]/45 bg-gradient-to-b from-[#16100c] to-[#0b0b0b] px-1 py-3 shadow-[0_0_30px_-14px_rgba(255,90,0,0.8)] md:mt-5 md:py-5">
+          {stats.map(({ icon: Icon, value, label }, i) => (
+            <div key={label} className={`flex flex-col items-center px-1 text-center ${i > 0 ? 'border-l border-white/10' : ''}`}>
+              <Icon className="h-[22px] w-[22px] text-[#FF6A14] md:h-8 md:w-8" strokeWidth={1.6} aria-hidden="true" />
+              <span className="mt-1 text-[16px] font-extrabold leading-none tabular-nums min-[400px]:text-[17px] md:mt-2 md:text-[30px]">{value}</span>
+              <span className="mt-1 whitespace-nowrap text-[8.5px] leading-tight text-white/80 min-[400px]:text-[9.5px] sm:text-[11px] md:text-[15px]">{label}</span>
             </div>
-          </div>
-
-          <Link to="/requirements" className="flex-1 sm:flex-initial">
-            <Button className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-9 px-2.5 min-[360px]:px-3 text-[11px] min-[360px]:text-xs gap-1 sm:gap-1.5 rounded-lg shadow-[0_2px_8px_rgba(255,90,0,0.3)] transition-all">
-              <span className="truncate">View All</span> <ArrowRight className="w-3.5 h-3.5 shrink-0" />
-            </Button>
-          </Link>
+          ))}
         </div>
 
-        {/* ── CATEGORY FILTER TABS ────────────────────────── */}
-        <div className="w-full max-w-full flex items-center gap-1.5 overflow-x-auto pb-1.5 mb-2 scrollbar-none scroll-smooth overscroll-x-contain touch-pan-x">
-          {categoryTabs.map(cat => {
-            const active = selectedCategory === cat.id;
-            const Icon = cat.icon;
+        {/* ── Quick filters ── */}
+        <div className="mt-3.5 flex gap-1 overflow-x-auto pb-0.5 scrollbar-none md:mt-5 md:gap-3">
+          {QUICK_FILTERS.map(({ id, label, icon: Icon }) => {
+            const active = quick === id;
             return (
               <button
+                key={id}
                 type="button"
-                key={cat.id}
                 aria-pressed={active}
-                onClick={() => {
-                  setSelectedCategory(cat.id);
-                  setPageOffset(0);
-                }}
-                className={`whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 min-h-[32px] ${
+                onClick={() => setQuick(id)}
+                className={`flex h-[30px] shrink-0 items-center gap-[3px] whitespace-nowrap rounded-full border px-1.5 text-[9.5px] font-semibold transition-colors min-[380px]:px-2 min-[380px]:text-[10px] min-[400px]:text-[11px] md:h-11 md:gap-1.5 md:px-5 md:text-[15px] ${
                   active
-                    ? 'bg-primary/15 text-primary border border-primary shadow-sm font-bold'
-                    : 'bg-card text-foreground/80 hover:text-foreground border border-border hover:border-foreground/20'
+                    ? 'border-transparent bg-gradient-to-b from-[#FF7A1A] to-[#F25600] text-white shadow-[0_0_16px_-4px_rgba(255,90,0,0.9)]'
+                    : 'border-white/20 bg-[#101010] text-white hover:border-[#FF5A00]/70'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span>{cat.name}</span>
+                <Icon className={`h-3 w-3 min-[400px]:h-3.5 min-[400px]:w-3.5 md:h-5 md:w-5 ${active ? '' : 'text-[#FF6A14]'}`} aria-hidden="true" />
+                {label}
               </button>
             );
           })}
         </div>
 
-        {/* ── FEED BAR: what is shown, and paging ───────────────────────── */}
-        <div className="bg-card border border-border rounded-2xl p-2.5 sm:p-3 mb-3.5 flex items-center justify-between gap-2.5 shadow-sm">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <span className="flex items-center gap-1.5 font-bold text-orange-700 dark:text-orange-400 bg-orange-500/10 border border-orange-500/30 px-2.5 py-1 rounded-full text-[11px] shadow-sm shrink-0">
-              <span className="relative flex h-2 w-2 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
-              </span>
-              NEWEST FIRST
-            </span>
-            <span className="text-xs text-muted-foreground truncate">
-              {reqs.length > 0 ? (
-                <>Showing <strong className="text-foreground">{firstShown}–{lastShown}</strong> of the {reqs.length} newest</>
-              ) : (
-                'New posts appear here as buyers post them'
-              )}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => setPageOffset(Math.max(0, currentPage - 1))}
-              disabled={currentPage === 0}
-              aria-label="Previous requirements"
-              className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 text-foreground flex items-center justify-center border border-border transition-colors min-h-[32px] min-w-[32px] disabled:opacity-40"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setPageOffset(Math.min(pageCount - 1, currentPage + 1))}
-              disabled={currentPage >= pageCount - 1}
-              aria-label="Next requirements"
-              className="w-8 h-8 rounded-lg bg-[#FF5A00] hover:bg-[#e04f00] text-white flex items-center justify-center font-bold shadow-sm transition-colors min-h-[32px] min-w-[32px] disabled:opacity-40"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+        {/* ── Category, location, verified buyers ── */}
+        <div className="mt-2.5 flex gap-1.5 md:mt-4 md:gap-3">
+          <label className="relative flex h-[32px] min-w-0 flex-1 items-center rounded-xl border border-white/20 bg-[#101010] md:h-11 md:max-w-[340px]">
+            <Box className="pointer-events-none absolute left-2.5 h-4 w-4 text-white/80" aria-hidden="true" />
+            <span className="sr-only">Category</span>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-full w-full min-w-0 cursor-pointer appearance-none truncate bg-transparent pl-8 pr-7 text-[11.5px] text-white focus:outline-none md:text-[14px]">
+              {CATEGORIES.map((c) => <option key={c.id} value={c.id} className="bg-[#111]">{c.name}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-white/80" aria-hidden="true" />
+          </label>
+          <label className="relative flex h-[32px] min-w-0 flex-1 items-center rounded-xl border border-white/20 bg-[#101010] md:h-11 md:max-w-[340px]">
+            <MapPin className="pointer-events-none absolute left-2.5 h-4 w-4 text-white/80" aria-hidden="true" />
+            <span className="sr-only">Delivery location</span>
+            <select value={location} onChange={(e) => setLocation(e.target.value)} className="h-full w-full min-w-0 cursor-pointer appearance-none truncate bg-transparent pl-8 pr-7 text-[11.5px] text-white focus:outline-none md:text-[14px]">
+              <option value="all" className="bg-[#111]">All Locations</option>
+              {locations.map((l) => <option key={l} value={l} className="bg-[#111]">{l}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-white/80" aria-hidden="true" />
+          </label>
+          <button
+            type="button"
+            aria-pressed={verifiedOnly}
+            onClick={() => setVerifiedOnly((v) => !v)}
+            title={verifiedOnly ? 'Showing verified buyers only' : 'Show verified buyers only'}
+            aria-label="Verified buyers only"
+            className={`flex h-[32px] w-[44px] shrink-0 items-center justify-center rounded-xl border transition-colors md:h-11 md:w-14 ${verifiedOnly ? 'border-[#FF5A00] bg-[#FF5A00]/15 text-[#FF7A2E]' : 'border-white/20 bg-[#101010] text-white hover:border-[#FF5A00]/70'}`}
+          >
+            <Filter className="h-4 w-4 md:h-5 md:w-5" />
+          </button>
         </div>
 
-        {/* ── RFQ CARDS (Compact 2-col desktop layout) ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
-          {loading && reqs.length === 0 ? (
-            [1, 2, 3, 4].map(n => (
-              <div key={n} className="h-44 rounded-2xl bg-muted/40 animate-pulse border border-border" />
-            ))
-          ) : visibleReqs.length === 0 ? (
-            <div className="text-center py-12 w-full bg-card rounded-2xl border border-border md:col-span-2">
-              <p className="text-muted-foreground text-xs sm:text-sm">
-                {failed
-                  ? 'Requirements could not be loaded just now.'
-                  : selectedCategory === 'all'
-                    ? 'No open requirements right now.'
-                    : 'No open requirements in this category right now.'}
+        {/* ── Live feed ── */}
+        <p className="mt-3 flex items-center gap-1.5 px-1 text-[10.5px] text-white/60 md:text-[13px]" aria-live="polite">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#E5322D]" aria-hidden="true" />
+          Live feed · new RFQs appear as buyers post them · updated {secondsAgo < 5 ? 'just now' : `${secondsAgo}s ago`}
+        </p>
+
+        <div className="mt-2 grid gap-2 md:mt-3 md:grid-cols-2 md:gap-4">
+          {loading && items.length === 0 ? (
+            [1, 2, 3, 4].map((n) => <div key={n} className="h-[118px] animate-pulse rounded-2xl border border-white/10 bg-[#121212] md:h-[160px]" />)
+          ) : error ? (
+            <div className="rounded-2xl border border-[#FF5A00]/30 bg-[#FF5A00]/5 p-6 text-center md:col-span-2">
+              <p className="text-sm text-[#FF7A2E]">{error}</p>
+              <button type="button" onClick={loadFirst} className="mt-3 rounded-lg bg-[#C94400] px-4 py-2 text-sm font-bold">Retry</button>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-7 text-center md:col-span-2">
+              <FileText className="mx-auto h-8 w-8 text-[#FF5A00]" />
+              <p className="mt-2 text-sm font-semibold">
+                {quick === 'mine' ? (user ? 'No saved or posted RFQs yet.' : 'Sign in to see the RFQs you saved or posted.') : 'No live RFQs match these filters right now.'}
               </p>
-              <Button
-                size="sm"
-                onClick={() => (selectedCategory === 'all' ? handleFreshRFQs() : setSelectedCategory('all'))}
-                className="mt-3 text-xs h-9 px-4 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-semibold rounded-lg"
-              >
-                {selectedCategory === 'all' ? 'Check again' : 'View All Categories'}
-              </Button>
+              <p className="mt-1 text-xs text-white/60">{quick === 'mine' ? 'Tap the bookmark on any RFQ to keep it here.' : 'New buyer requirements appear here as soon as they are posted.'}</p>
+              {quick === 'mine' && !user ? (
+                <Link to="/auth" className="mt-4 inline-flex rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold hover:border-[#FF5A00]">Sign in</Link>
+              ) : (quick !== 'all' || category !== 'all' || location !== 'all' || verifiedOnly) && (
+                <button type="button" onClick={() => { setQuick('all'); setCategory('all'); setLocation('all'); setVerifiedOnly(false); }} className="mt-4 rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold hover:border-[#FF5A00]">
+                  Show all RFQs
+                </button>
+              )}
             </div>
           ) : (
-            visibleReqs.map((req, index) => {
-              const visual = getRequirementVisualInfo(req, index);
-              const isMine = Boolean(user && req.buyer_id === user.id);
-              const quotes = Number(req.quote_count) || 0;
+            <AnimatePresence initial={false}>
+              {items.map((req, index) => {
+                const visual = getRequirementVisualInfo(req, index);
+                const ownPicture = Array.isArray(req.images) && req.images.find((u) => typeof u === 'string' && u.trim());
+                const designPicture = DESIGN_PICTURES.find(([re]) => re.test(req.title || ''))?.[1];
+                const picture = ownPicture || designPicture || visual.image;
+                const badge = primaryBadge(req, now, freshIds.has(req.id));
+                const showBulk = Number(req.quantity) >= 50 && badge?.label !== 'Multi-Product RFQ';
+                const ends = req.deadline || req.expires_at;
+                const left = ends ? new Date(ends).getTime() - now : null;
+                const isSaved = saved.has(req.id);
+                return (
+                  <motion.article
+                    key={req.id}
+                    layout={!reduce}
+                    initial={reduce ? false : { opacity: 0, y: -12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduce ? undefined : { opacity: 0 }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    className={`relative flex gap-2.5 rounded-2xl border bg-gradient-to-b from-[#161616] to-[#0d0d0d] p-2 md:gap-4 md:p-3 ${freshIds.has(req.id) ? 'border-[#FF5A00] shadow-[0_0_24px_-6px_rgba(255,90,0,0.75)]' : 'border-white/15'}`}
+                  >
+                    <button type="button" onClick={() => setDetailReq(req)} className="h-[70px] w-[82px] shrink-0 overflow-hidden rounded-xl bg-[#e9e9eb] md:h-[118px] md:w-[140px]" aria-label={`View ${visual.cleanTitle}`}>
+                      <SafeImage src={picture} alt={visual.cleanTitle} category={req.categories?.name || req.category_id} fallbackType="rfq" className="h-full w-full object-cover" sizes="140px" />
+                    </button>
 
-              return (
-                <div
-                  key={req.id}
-                  className="bg-card hover:bg-muted/50 border border-border hover:border-[#FF5A00]/50 rounded-xl p-2.5 sm:p-3 transition-all shadow-sm group flex flex-col justify-between w-full min-w-0"
-                >
-                  <div className="w-full min-w-0">
-                    <div className="flex gap-2.5 sm:gap-3 items-start w-full min-w-0">
-                      {/* The buyer's own photo, or a plain tile */}
-                      <button
-                        type="button"
-                        onClick={() => handleViewRFQ(req)}
-                        aria-label={`Open ${visual.cleanTitle}`}
-                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-muted border border-border relative cursor-pointer aspect-square shadow-sm"
-                      >
-                        <RequirementThumb src={visual.image} alt={visual.cleanTitle} slug={req.categories?.slug || req.categories?.name || ''} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1 md:gap-1.5">
+                        {badge && (
+                          <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-[2px] text-[9px] font-bold md:px-2 md:text-[12px] ${badge.className}`}>
+                            <badge.icon className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" aria-hidden="true" /> {badge.label}
+                          </span>
+                        )}
+                        {showBulk && (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-white/10 px-1.5 py-[2px] text-[9px] font-semibold text-white/90 md:px-2 md:text-[12px]">
+                            <Box className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" aria-hidden="true" /> Bulk Order
+                          </span>
+                        )}
+                      </div>
+                      <button type="button" onClick={() => setDetailReq(req)} className="mt-1 block w-full text-left">
+                        <h3 className="line-clamp-2 text-[11.5px] font-bold leading-tight text-white hover:text-[#FF7A2E] md:text-[16px]">{visual.cleanTitle}</h3>
                       </button>
+                      <dl className="mt-1 space-y-[1px] text-[9.5px] leading-snug text-white/85 md:mt-2 md:space-y-1 md:text-[13px]">
+                        <div className="flex gap-1.5">
+                          <dt className="flex shrink-0 items-center gap-1 text-white/70"><Users className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />Quantity:</dt>
+                          <dd className="truncate">{visual.quantityDisplay}</dd>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <dt className="flex shrink-0 items-center gap-1 text-white/70"><MapPin className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />Delivery:</dt>
+                          <dd className="truncate">{visual.locationDisplay}</dd>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <dt className="flex shrink-0 items-center gap-1 text-white/70"><CalendarDays className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />Posted:</dt>
+                          <dd className="truncate">{postedOn(req.created_at)}</dd>
+                        </div>
+                      </dl>
+                    </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {visual.tag.type === 'urgent' ? (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase flex items-center gap-0.5 bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30">
-                              <Zap className="w-2.5 h-2.5 fill-current text-orange-500" />
-                              URGENT
-                            </span>
-                          ) : visual.tag.type === 'new' ? (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-orange-600 text-white">
-                              New
-                            </span>
-                          ) : visual.tag.type === 'expiring' ? (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30">
-                              Closing soon
-                            </span>
-                          ) : null}
-                          {visual.verifiedStatus && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md tracking-wider uppercase bg-[#FF5A00] text-white">
-                              Verified buyer
-                            </span>
-                          )}
-                          {visual.governmentTenderUrl && <GovernmentTenderBadge />}
-                          <span className="text-[9.5px] text-muted-foreground ml-auto font-mono shrink-0">
-                            {timeAgo(req.created_at)}
+                    <div className="flex w-[112px] shrink-0 flex-col items-end justify-between md:w-[170px]">
+                      <div className="flex w-full items-start justify-end gap-1">
+                        <div className="flex items-center gap-1 rounded-lg border border-[#E5322D]/60 bg-[#2a0d0b] px-1.5 py-1 md:gap-2 md:px-2.5 md:py-1.5">
+                          <Clock className="h-3.5 w-3.5 text-[#FF4D3D] md:h-5 md:w-5" aria-hidden="true" />
+                          <span className="leading-none">
+                            <span className="block text-[8px] text-white/70 md:text-[11px]">{left !== null ? 'Ends in' : 'Status'}</span>
+                            <span className="block whitespace-nowrap text-[11px] font-extrabold tabular-nums md:text-[16px]">{left !== null ? endsIn(left) : 'Open'}</span>
                           </span>
                         </div>
-
-                        <h3
-                          onClick={() => handleViewRFQ(req)}
-                          className="text-xs sm:text-sm font-bold text-foreground mt-1 leading-snug line-clamp-1 group-hover:text-[#FF5A00] transition-colors cursor-pointer"
+                        <button
+                          type="button"
+                          onClick={() => toggleSaved(req.id)}
+                          aria-pressed={isSaved}
+                          aria-label={isSaved ? 'Remove from My RFQs' : 'Save to My RFQs'}
+                          className="flex h-6 w-5 items-start justify-center text-white/85 hover:text-[#FF7A2E] md:h-7 md:w-6"
                         >
-                          {visual.cleanTitle}
-                        </h3>
-
-                        {visual.subtitle && (
-                          <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight line-clamp-1">
-                            {visual.subtitle}
-                          </p>
-                        )}
-                        {visual.governmentTenderUrl && (
-                          <ExternalSourceLink
-                            href={visual.governmentTenderUrl}
-                            onClick={(event) => event.stopPropagation()}
-                            className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-[#FF5A1F] hover:text-[#e04e00]"
-                          >
-                            View bid on GeM
-                          </ExternalSourceLink>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1.5 pt-1.5 border-t border-border text-[11px]">
-                          <div className="min-w-0">
-                            <div className="font-bold text-[#FF5A00] flex items-center gap-1 leading-tight truncate">
-                              <Package className="w-3 h-3 text-[#FF5A00] shrink-0" />
-                              <span className="truncate">{visual.quantityDisplay}</span>
-                            </div>
-                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Quantity</div>
-                          </div>
-
-                          <div className="min-w-0">
-                            <div className={`flex items-center gap-1 font-medium leading-tight truncate ${visual.hasLocation ? 'text-foreground' : 'text-muted-foreground italic'}`}>
-                              <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
-                              <span className="truncate" title={visual.locationDisplay}>
-                                {visual.hasLocation ? visual.locationDisplay : 'Not stated'}
-                              </span>
-                            </div>
-                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Delivery to</div>
-                          </div>
-
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1 text-foreground font-medium leading-tight truncate">
-                              <Calendar className="w-3 h-3 text-muted-foreground shrink-0" />
-                              <span className="truncate">
-                                {req.deadline
-                                  ? new Date(`${req.deadline.slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-                                  : 'Not set'}
-                              </span>
-                            </div>
-                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Deadline</div>
-                          </div>
-
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1 text-foreground font-medium leading-tight truncate">
-                              {visual.verifiedStatus ? (
-                                <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />
-                              ) : (
-                                <MessageSquare className="w-3 h-3 text-muted-foreground shrink-0" />
-                              )}
-                              <span className="truncate">{quotes} quote{quotes === 1 ? '' : 's'}</span>
-                            </div>
-                            <div className="text-[9px] text-muted-foreground leading-none mt-0.5">Received</div>
-                          </div>
-                        </div>
+                          <Bookmark className={`h-4 w-4 md:h-5 md:w-5 ${isSaved ? 'fill-[#FF6A14] text-[#FF6A14]' : ''}`} />
+                        </button>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSubmitQuote(req)}
+                        className="group/btn mt-2 flex h-[28px] w-full items-center justify-center gap-0.5 whitespace-nowrap rounded-lg bg-gradient-to-b from-[#FF7A1A] to-[#F25600] px-1 text-[10px] font-bold text-white shadow-[0_6px_16px_-6px_rgba(255,90,0,0.9)] transition-transform hover:-translate-y-0.5 md:h-10 md:rounded-xl md:text-[14px]"
+                      >
+                        Submit Quotation <ArrowRight className="h-3 w-3 shrink-0 transition-transform group-hover/btn:translate-x-0.5 md:h-4 md:w-4" aria-hidden="true" />
+                      </button>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mt-2 pt-2 border-t border-border">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleViewRFQ(req)}
-                      className="w-full border-border bg-card hover:bg-muted font-medium text-[11px] sm:text-xs h-8 rounded-lg transition-all px-1 truncate shadow-none"
-                    >
-                      <span className="truncate">View Details</span>
-                    </Button>
-                    {isMine ? (
-                      <Button
-                        variant="outline"
-                        onClick={() => handleViewRFQ(req)}
-                        className="w-full font-bold text-[11px] sm:text-xs h-8 rounded-lg gap-1 transition-all px-1"
-                      >
-                        <span className="truncate">Your requirement</span>
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => handleOpenRespond(req)}
-                        className="w-full bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-[11px] sm:text-xs h-8 rounded-lg shadow-sm gap-1 transition-all px-1"
-                      >
-                        <span className="truncate">Send Quote</span>
-                        <ArrowRight className="w-3 h-3 shrink-0" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })
+                  </motion.article>
+                );
+              })}
+            </AnimatePresence>
           )}
         </div>
 
+        {hasMore && items.length > 0 && (
+          <div className="mt-3 flex justify-center">
+            <button type="button" onClick={loadMore} disabled={loadingMore} className="flex h-9 items-center gap-2 rounded-xl border border-white/15 px-5 text-[12.5px] font-semibold hover:border-[#FF5A00] disabled:opacity-60">
+              {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
+              Load more RFQs
+            </button>
+          </div>
+        )}
+
+        <Link
+          to="/post-requirement"
+          className="group mt-4 flex h-[46px] items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-b from-[#FF7A1A] to-[#F25600] px-4 text-[14.5px] font-bold text-white shadow-[0_10px_30px_-10px_rgba(255,90,0,0.95)] transition-transform hover:-translate-y-0.5 md:mx-auto md:mt-6 md:h-14 md:max-w-[640px] md:text-[18px]"
+        >
+          <Plus className="h-5 w-5" aria-hidden="true" />
+          Post a Buying Requirement (RFQ)
+          <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        </Link>
       </div>
 
-      {respondDialogReq && user && company && (
-        <SupplierRespondDialog
-          requirement={respondDialogReq}
-          open={!!respondDialogReq}
-          onClose={() => setRespondDialogReq(null)}
-          supplierId={user.id}
-          supplierCompanyId={company.id}
-          onResponded={() => {
-            setRespondDialogReq(null);
-            setTick((t) => t + 1);
+      {detailReq && (
+        <RequirementDetailDrawer
+          requirement={detailReq}
+          open={!!detailReq}
+          onClose={() => setDetailReq(null)}
+          onRequirementUpdated={(updated) => {
+            setDetailReq(updated);
+            setItems((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
           }}
         />
       )}
 
-      <SubscribeToContactDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        reason={dialogReason}
-      />
+      {respondReq && user && company && (
+        <SupplierRespondDialog
+          requirement={respondReq}
+          open={!!respondReq}
+          onClose={() => setRespondReq(null)}
+          supplierId={user.id}
+          supplierCompanyId={company.id}
+          onResponded={() => {
+            setRespondReq(null);
+            loadFirst();
+          }}
+        />
+      )}
+
+      <SubscribeToContactDialog open={dialogOpen} onClose={() => setDialogOpen(false)} reason={dialogReason} />
     </section>
   );
 }

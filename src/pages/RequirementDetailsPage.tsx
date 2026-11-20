@@ -30,7 +30,7 @@ import Breadcrumbs from '@/components/common/Breadcrumbs';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
 import AIQuotationModal from '@/components/common/AIQuotationModal';
 import SubmitQuotationWizard from '@/components/rfq/SubmitQuotationWizard';
-import { ExternalSourceLink, GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
+import { GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
 import ProtectedContact from '@/components/common/ProtectedContact';
 import { gemTenderUrl, sharedBuyerPhone, specificationProse } from '@/lib/externalListing';
 import ReportItemModal from '@/components/common/ReportItemModal';
@@ -52,6 +52,7 @@ import { calculateProductMatchScore, catalogueInr, generateAIQuotationDraft, typ
 import { formatPriceRange } from '@/lib/productPrice';
 import type { Product, Quotation, Requirement } from '@/types/types';
 import '@/components/formkit/formkit.css';
+import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
 
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -430,11 +431,6 @@ export default function RequirementDetailsPage() {
               </button>
               {req.created_at && <span className="text-xs text-muted-foreground">{postedLabel(req.created_at)}</span>}
               {gemUrl && <GovernmentTenderBadge />}
-              {gemUrl && (
-                <ExternalSourceLink href={gemUrl} className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF5A1F] hover:text-[#e04e00]">
-                  View bid on GeM
-                </ExternalSourceLink>
-              )}
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground leading-tight">{req.title}</h1>
             <LoanEligibleTag size="sm" />
@@ -504,22 +500,28 @@ export default function RequirementDetailsPage() {
             <div className="lg:col-span-2 space-y-4 md:space-y-5 min-w-0">
               {req.attachment_url && !imageBroken && (
                 <Card title="Buyer's reference" icon={FileText}>
-                  <a href={req.attachment_url} target="_blank" rel="noreferrer" className="block">
-                    <img
-                      src={req.attachment_url}
-                      alt={`Reference image for ${req.title}`}
-                      loading="lazy"
-                      decoding="async"
-                      onError={() => setImageBroken(true)}
-                      className="w-full max-h-[420px] object-contain rounded-xl bg-muted"
-                    />
-                  </a>
+                  {(() => {
+                    const image = (
+                      <img
+                        src={req.attachment_url}
+                        alt={`Reference image for ${req.title}`}
+                        loading="lazy"
+                        decoding="async"
+                        onError={() => setImageBroken(true)}
+                        className="w-full max-h-[420px] object-contain rounded-xl bg-muted"
+                      />
+                    );
+                    // Open the file only when BulkSkart stores it; never send people to other websites
+                    return isOwnUrl(req.attachment_url) ? (
+                      <a href={req.attachment_url} target="_blank" rel="noreferrer" className="block">{image}</a>
+                    ) : image;
+                  })()}
                 </Card>
               )}
 
               <Card title="What the buyer needs" icon={FileText}>
                 {req.description ? (
-                  <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{req.description}</p>
+                  <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{withoutOutsideLinks(req.description)}</p>
                 ) : (
                   <p className="text-sm text-muted-foreground">The buyer has not added a description.</p>
                 )}
@@ -528,7 +530,7 @@ export default function RequirementDetailsPage() {
                     {specs.map((row, index) => (
                       <div key={`${row.label}-${index}`} className="grid grid-cols-3 gap-3 px-3 py-2.5 text-sm">
                         <dt className="text-muted-foreground">{row.label}</dt>
-                        <dd className="col-span-2 font-medium text-foreground break-words">{row.value || '—'}</dd>
+                        <dd className="col-span-2 font-medium text-foreground break-words">{withoutOutsideLinks(row.value).replace(/\|(\s*\|)+/g, '|') || '—'}</dd>
                       </div>
                     ))}
                   </dl>
@@ -536,7 +538,7 @@ export default function RequirementDetailsPage() {
                   specText && (
                     <div className="mt-4">
                       <h3 className="text-sm font-bold text-foreground mb-1">Specifications</h3>
-                      <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{specText}</p>
+                      <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{withoutOutsideLinks(specText)}</p>
                     </div>
                   )
                 )}
@@ -733,7 +735,7 @@ export default function RequirementDetailsPage() {
                   <div className="mt-3 space-y-2">
                     {contactMissing ? (
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        No buyer phone number is listed for this tender. You can still send a quotation{gemUrl ? ', or open the bid on GeM' : ''}.
+                        No buyer phone number is listed for this tender. You can still send a quotation.
                       </p>
                     ) : (
                       <ProtectedContact phone={buyer?.phone} country={req.destination_country} contactType="buyer" variant="card" allowPaidSupplierUnlock seed={req.id} />

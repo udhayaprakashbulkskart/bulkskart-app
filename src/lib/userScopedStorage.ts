@@ -5,7 +5,7 @@
  * Someone who saved things before creating their account keeps them.
  */
 
-export const USER_SCOPED_KEYS = ['bulkskart_rfq_draft', 'bulkskart_product_wishlist', 'bulkskart_fav_mfg'] as const;
+export const USER_SCOPED_KEYS = ['bulkskart_rfq_draft', 'bulkskart_product_wishlist', 'bulkskart_fav_mfg', 'bulkskart_saved_rfqs'] as const;
 export const LAST_USER_KEY = 'bulkskart_last_user';
 
 export function claimBrowserStorageFor(userId: string | null | undefined): void {
