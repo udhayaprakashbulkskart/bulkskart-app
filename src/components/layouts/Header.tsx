@@ -11,9 +11,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useCurrency, useCountry } from '@/contexts/CurrencyContext';
 import { usePrefetch } from '@/hooks/usePrefetch';
 import NotificationBell from '@/components/common/NotificationBell';
-import MobileHomeHeader from '@/components/home/mobile/MobileHomeHeader';
-import { MOBILE_QUERY, useMediaQuery } from '@/hooks/use-media-query';
-import './header-desktop-home.css';
 import CopyPublicProfileButton from '@/components/common/CopyPublicProfileButton';
 import { toast } from 'sonner';
 import {
@@ -142,10 +139,6 @@ export default function Header() {
     return '/dashboard/buyer';
   };
   const isActive = (href: string) => location.pathname === href;
-  const isPhone = useMediaQuery(MOBILE_QUERY);
-  const mobileHome = isPhone && location.pathname === '/';
-  // Home page on a wide screen: the same header, dressed like the new design (see header-desktop-home.css).
-  const desktopHome = !isPhone && location.pathname === '/';
 
   // The slide-in menu, shared by the old mobile header and the mobile home header.
   const drawer = (
@@ -314,32 +307,14 @@ export default function Header() {
     </SheetContent>
   );
 
-  // Home page on a phone: the new header. Everything else keeps the header below.
-  if (mobileHome) {
-    return (
-      <header className="relative z-30 w-full bg-[#111111]">
-        <MobileHomeHeader dashboardHref={getDashboardLink()} onMenu={() => setMobileOpen(true)} />
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          {drawer}
-        </Sheet>
-      </header>
-    );
-  }
-
   return (
-    <header
-      className={
-        desktopHome
-          ? 'dh-header dark relative z-30 w-full border-b transition-colors'
-          : 'relative z-30 w-full bg-background border-b border-border shadow-sm transition-colors'
-      }
-    >
+    <header className="relative z-30 w-full bg-background border-b border-border shadow-sm transition-colors">
       {/* ── Main row ── */}
       <div className="max-w-[1400px] mx-auto px-2.5 sm:px-4 md:px-6 h-[56px] flex items-center gap-1 sm:gap-2 md:gap-4 justify-between md:justify-start">
 
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0 group py-1 min-w-0" aria-label="BulkSkart Homepage">
-          <LogoMark onDark={desktopHome} />
+          <LogoMark />
         </Link>
 
         {/* Search bar — desktop */}
