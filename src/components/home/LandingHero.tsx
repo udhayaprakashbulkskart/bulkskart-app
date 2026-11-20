@@ -35,6 +35,18 @@ const CATEGORY_TILES = [
   { label: ['Chemicals', '& Raw Materials'], img: '/home-design/cat-chemicals.jpg', to: '/products?category=chemicals-raw-materials' },
 ];
 
+// More categories on wider screens (photos are thumbnails of the licensed catalogue photos, see public/home-design)
+const MORE_CATEGORY_TILES = [
+  { label: ['Metals', '& Steel'], img: '/home-design/cat-metals.jpg', to: '/products?category=construction-building' },
+  { label: ['Construction', '& Building'], img: '/home-design/cat-construction.jpg', to: '/products?q=construction' },
+  { label: ['Agriculture', '& Food'], img: '/home-design/cat-agriculture.jpg', to: '/products?category=agriculture-food' },
+  { label: ['Automotive', 'Parts'], img: '/home-design/cat-automotive.jpg', to: '/products?q=automotive' },
+  { label: ['Solar', '& Energy'], img: '/home-design/cat-solar.jpg', to: '/products?q=solar' },
+  { label: ['Office', 'Furniture'], img: '/home-design/cat-furniture.jpg', to: '/products?q=furniture' },
+  { label: ['Home', '& Kitchen'], img: '/home-design/cat-home-kitchen.jpg', to: '/products?q=kitchen' },
+  { label: ['Beauty &', 'Personal Care'], img: '/home-design/cat-beauty.jpg', to: '/products?q=beauty' },
+];
+
 const ACTION_TILES = [
   { title: 'Live Bidding', sub: '(Buy & Sell)', icon: Gavel, to: '/auctions' },
   { title: 'Post RFQ', sub: '(Get Quotes)', icon: FilePlus2, to: '/post-requirement' },
@@ -219,15 +231,29 @@ export default function LandingHero() {
 
       {/* ═════════════ CATEGORY TILES ═════════════ */}
       <div className="relative mx-auto max-w-[1400px] px-2 sm:px-5 md:px-6">
-        <div className="grid grid-cols-6 gap-1.5 sm:gap-2.5 md:gap-4">
+        <div className="grid grid-cols-6 gap-1.5 sm:gap-2.5 md:grid-cols-7 md:gap-3 lg:gap-4">
           {CATEGORY_TILES.map(({ label, img, to }) => (
             <Link
               key={label.join(' ')}
               to={to}
               className="group flex flex-col items-center overflow-hidden rounded-[10px] bg-white px-0.5 pb-1.5 pt-1.5 text-center shadow-[0_6px_18px_-10px_rgba(0,0,0,0.9)] transition-transform hover:-translate-y-0.5 md:rounded-2xl md:pb-3 md:pt-3"
             >
-              <img src={img} alt="" className="h-[33px] w-full object-contain mix-blend-multiply sm:h-[48px] md:h-[78px]" loading="eager" decoding="async" />
-              <span className="mt-1 whitespace-nowrap text-[7.5px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#141414] min-[420px]:text-[8px] sm:text-[11px] md:mt-2 md:text-[14px]">
+              <img src={img} alt="" className="h-[33px] w-full object-contain mix-blend-multiply sm:h-[48px] md:h-[60px] lg:h-[78px]" loading="eager" decoding="async" />
+              <span className="mt-1 whitespace-nowrap text-[7.5px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#141414] min-[420px]:text-[8px] sm:text-[11px] md:mt-2 md:text-[12px] lg:text-[14px]">
+                {label[0]}
+                <br />
+                {label[1]}
+              </span>
+            </Link>
+          ))}
+          {MORE_CATEGORY_TILES.map(({ label, img, to }) => (
+            <Link
+              key={label.join(' ')}
+              to={to}
+              className="group hidden flex-col items-center overflow-hidden rounded-2xl bg-white px-2 pb-3 pt-3 text-center shadow-[0_6px_18px_-10px_rgba(0,0,0,0.9)] transition-transform hover:-translate-y-0.5 md:flex"
+            >
+              <img src={img} alt="" className="h-[60px] w-full rounded-lg object-cover lg:h-[78px]" loading="lazy" decoding="async" />
+              <span className="mt-2 whitespace-nowrap text-[12px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#141414] lg:text-[14px]">
                 {label[0]}
                 <br />
                 {label[1]}
@@ -241,7 +267,7 @@ export default function LandingHero() {
             <span className="grid h-[24px] w-[24px] place-items-center rounded-full bg-[#ECECEC] sm:h-8 sm:w-8 md:h-12 md:w-12">
               <ChevronRight className="h-3.5 w-3.5 text-[#141414] sm:h-4 sm:w-4 md:h-6 md:w-6" />
             </span>
-            <span className="mt-1.5 whitespace-nowrap text-[7.5px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#141414] min-[420px]:text-[8px] sm:text-[11px] md:mt-2 md:text-[14px]">
+            <span className="mt-1.5 whitespace-nowrap text-[7.5px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#141414] min-[420px]:text-[8px] sm:text-[11px] md:mt-2 md:text-[12px] lg:text-[14px]">
               More
               <br />
               Categories
