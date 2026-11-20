@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import IntersectObserver from '@/components/common/IntersectObserver';
 const LiveBuyerOrderAlert = lazy(() => import('@/components/common/LiveBuyerOrderAlert'));
 const AIChatAssistant = lazy(() => import('@/components/common/AIChatAssistant'));
+const DownloadAppPopup = lazy(() => import('@/components/common/DownloadAppPopup'));
 import AutoImageSyncManager from '@/components/common/AutoImageSyncManager';
 import VersionCheckSafetyNet from '@/components/common/VersionCheckSafetyNet';
 import PageSkeleton from '@/components/common/PageSkeleton';
@@ -70,6 +71,7 @@ const App: React.FC = () => {
               <Suspense fallback={null}>
                 <LiveBuyerOrderAlert />
                 <AIChatAssistant />
+                <DownloadAppPopup />
               </Suspense>
             )}
             <AutoImageSyncManager />

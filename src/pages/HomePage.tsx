@@ -5,6 +5,7 @@ import PageMeta from '@/components/common/PageMeta';
 import { ArrowRight, Globe, Package, Building2, ShieldCheck, FileText } from 'lucide-react';
 import MainLayout from '@/components/layouts/MainLayout';
 import LandingHero from '@/components/home/LandingHero';
+import { HIDDEN_HOME_SECTIONS } from '@/config/homeSections';
 
 // Below-the-fold sections are split into their own chunks so the first paint only downloads the hero.
 const VerifiedSuppliersSection = lazy(() => import('@/components/home/VerifiedSuppliersSection'));
@@ -141,10 +142,11 @@ export default function HomePage() {
       <Suspense fallback={null}><VerifiedSuppliersSection /></Suspense>
       <WhenVisible><FeaturedProductsSection /></WhenVisible>
       <WhenVisible><OrderBenefitsSection /></WhenVisible>
-      <WhenVisible><CategoriesAndStatsSection /></WhenVisible>
-      <WhenVisible><VerifiedSupplierQuickActions /></WhenVisible>
+      {/* Hidden for now (code and data kept): see src/config/homeSections.ts */}
+      {!HIDDEN_HOME_SECTIONS.exploreCategories && <WhenVisible><CategoriesAndStatsSection /></WhenVisible>}
+      {!HIDDEN_HOME_SECTIONS.tradeWorkflows && <WhenVisible><VerifiedSupplierQuickActions /></WhenVisible>}
       <WhenVisible><LiveRequirementsFeed /></WhenVisible>
-      <WhenVisible><LiveReverseAuctionsRail /></WhenVisible>
+      {!HIDDEN_HOME_SECTIONS.sellIn24Hours && <WhenVisible><LiveReverseAuctionsRail /></WhenVisible>}
       <WhenVisible><GlobalTradeNetworkSection /></WhenVisible>
       <WhenVisible><PostRequirementsHomeSection /></WhenVisible>
       <WhenVisible><PlansHomeSection /></WhenVisible>

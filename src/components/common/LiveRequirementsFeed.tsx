@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   ArrowRight, Bookmark, Box, CalendarDays, CheckCircle2, ChevronDown, Clock, Coins, Crown, FileText, Filter, Flame,
-  Handshake, Layers, LayoutGrid, Loader2, MapPin, Plus, Sparkles, Users,
+  Handshake, Layers, LayoutGrid, Loader2, Lock, MapPin, Plus, Sparkles, Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
@@ -310,6 +310,9 @@ export default function LiveRequirementsFeed() {
     };
   }, []);
 
+  /** Guests sign up as a supplier; signed-in people without a company finish their company profile. */
+  const registerCompanyHref = user ? '/dashboard/supplier/profile' : '/auth?tab=supplier';
+
   // ── Quote flow (existing permissions and quota) ─────────────────────────
   const handleSubmitQuote = async (req: Requirement) => {
     if (!user || !profile) { setDialogReason('not_logged_in'); setDialogOpen(true); return; }
@@ -338,7 +341,7 @@ export default function LiveRequirementsFeed() {
   const stats = [
     { icon: FileText, value: compactCount(counts.live), label: 'Live RFQs' },
     { icon: Users, value: compactCount(counts.buyers), label: 'Active Buyers' },
-    { icon: Box, value: counts.value === null ? '—' : `${formatMoney({ amount: counts.value, currency: 'INR', approximate: false }, { compact: true })}+`, label: 'RFQ Value (Monthly)' },
+    { icon: Box, value: counts.value === null ? '—' : counts.value > 0 ? `${formatMoney({ amount: counts.value, currency: 'INR', approximate: false }, { compact: true })}+` : '₹0', label: 'RFQ Value (Monthly)' },
     { icon: Handshake, value: compactCount(counts.industries), label: 'Industries' },
   ];
 
@@ -453,6 +456,28 @@ export default function LiveRequirementsFeed() {
           Live feed · new RFQs appear as buyers post them · updated {secondsAgo < 5 ? 'just now' : `${secondsAgo}s ago`}
         </p>
 
+        {/* Who can quote */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/[0.07] px-3 py-2 md:mt-3 md:px-4 md:py-2.5" role="note">
+          <span className="flex min-w-0 flex-1 items-center gap-2 text-[11.5px] leading-snug md:text-[14px]">
+            <Lock className="h-4 w-4 shrink-0 text-[#FF7A2E]" aria-hidden="true" />
+            <span>
+              <strong className="font-bold">Only registered companies can send quotations.</strong>{' '}
+              <span className="text-white/70">
+                {company ? `You are quoting as ${company.company_name}.` : 'Register your business to quote on buyer RFQs.'}
+              </span>
+            </span>
+          </span>
+          {!company && (
+            <Link
+              to={registerCompanyHref}
+              className="group inline-flex shrink-0 items-center gap-1 text-[11.5px] font-bold text-[#FF8A3D] hover:text-[#FFA766] md:text-[14px]"
+            >
+              Register your company
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+            </Link>
+          )}
+        </div>
+
         <div className="mt-2 grid gap-2 md:mt-3 md:grid-cols-2 md:gap-4">
           {loading && items.length === 0 ? (
             [1, 2, 3, 4].map((n) => <div key={n} className="h-[118px] animate-pulse rounded-2xl border border-white/10 bg-[#121212] md:h-[160px]" />)
@@ -462,20 +487,42 @@ export default function LiveRequirementsFeed() {
               <button type="button" onClick={loadFirst} className="mt-3 rounded-lg bg-[#C94400] px-4 py-2 text-sm font-bold">Retry</button>
             </div>
           ) : items.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-7 text-center md:col-span-2">
-              <FileText className="mx-auto h-8 w-8 text-[#FF5A00]" />
-              <p className="mt-2 text-sm font-semibold">
-                {quick === 'mine' ? (user ? 'No saved or posted RFQs yet.' : 'Sign in to see the RFQs you saved or posted.') : 'No live RFQs match these filters right now.'}
-              </p>
-              <p className="mt-1 text-xs text-white/60">{quick === 'mine' ? 'Tap the bookmark on any RFQ to keep it here.' : 'New buyer requirements appear here as soon as they are posted.'}</p>
-              {quick === 'mine' && !user ? (
-                <Link to="/auth" className="mt-4 inline-flex rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold hover:border-[#FF5A00]">Sign in</Link>
-              ) : (quick !== 'all' || category !== 'all' || location !== 'all' || verifiedOnly) && (
-                <button type="button" onClick={() => { setQuick('all'); setCategory('all'); setLocation('all'); setVerifiedOnly(false); }} className="mt-4 rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold hover:border-[#FF5A00]">
-                  Show all RFQs
-                </button>
-              )}
-            </div>
+            quick === 'all' && category === 'all' && location === 'all' && !verifiedOnly ? (
+              <div className="rounded-2xl border border-[#FF5A00]/35 bg-gradient-to-b from-[#140d08] to-[#0b0b0b] px-5 py-7 text-center md:col-span-2 md:py-10">
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-[#FF5A00]/40 bg-[#FF5A00]/10">
+                  <Lock className="h-6 w-6 text-[#FF7A2E]" aria-hidden="true" />
+                </span>
+                <p className="mt-3 text-[16px] font-black md:text-[20px]">No open RFQs right now</p>
+                <p className="mx-auto mt-1.5 max-w-[460px] text-[12.5px] leading-relaxed text-white/70 md:text-[14px]">
+                  New buying requirements appear here live as soon as buyers post them.{' '}
+                  <strong className="font-bold text-white">Only registered companies are allowed to send quotations.</strong>
+                </p>
+                {!company && (
+                  <Link
+                    to={registerCompanyHref}
+                    className="group mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-b from-[#FF7A1A] to-[#F25600] px-5 text-[13px] font-bold text-white shadow-[0_8px_22px_-10px_rgba(255,90,0,0.95)] md:h-11 md:text-[14px]"
+                  >
+                    Register your company to quote
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-7 text-center md:col-span-2">
+                <FileText className="mx-auto h-8 w-8 text-[#FF5A00]" />
+                <p className="mt-2 text-sm font-semibold">
+                  {quick === 'mine' ? (user ? 'No saved or posted RFQs yet.' : 'Sign in to see the RFQs you saved or posted.') : 'No live RFQs match these filters right now.'}
+                </p>
+                <p className="mt-1 text-xs text-white/60">{quick === 'mine' ? 'Tap the bookmark on any RFQ to keep it here.' : 'New buyer requirements appear here as soon as they are posted.'}</p>
+                {quick === 'mine' && !user ? (
+                  <Link to="/auth" className="mt-4 inline-flex rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold hover:border-[#FF5A00]">Sign in</Link>
+                ) : (
+                  <button type="button" onClick={() => { setQuick('all'); setCategory('all'); setLocation('all'); setVerifiedOnly(false); }} className="mt-4 rounded-lg border border-white/20 px-4 py-2 text-xs font-semibold hover:border-[#FF5A00]">
+                    Show all RFQs
+                  </button>
+                )}
+              </div>
+            )
           ) : (
             <AnimatePresence initial={false}>
               {items.map((req, index) => {
