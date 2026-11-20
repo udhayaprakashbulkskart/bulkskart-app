@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useTheme } from '@/contexts/ThemeContext';
 import {
   BULKSKART_LOGO_DARK,
   BULKSKART_LOGO_LIGHT,
@@ -21,7 +20,6 @@ export default function BrandLogo({
   className = '',
   linkTo = '/',
 }: BrandLogoProps) {
-  const { theme } = useTheme();
   const [imgError, setImgError] = useState(false);
 
   // Determine active logo source based on current theme and requested variant
@@ -29,8 +27,8 @@ export default function BrandLogo({
     if (variant === 'original') return BULKSKART_LOGO_URL;
     if (variant === 'dark') return BULKSKART_LOGO_DARK;
     if (variant === 'light') return BULKSKART_LOGO_LIGHT;
-    // 'auto' - adapts to dark or light theme seamlessly
-    return theme === 'light' ? BULKSKART_LOGO_LIGHT : BULKSKART_LOGO_DARK;
+    // 'auto': both themes use the same black background (see index.css), so the logo for dark backgrounds is always right
+    return BULKSKART_LOGO_DARK;
   })();
 
   const sizeClasses = {
