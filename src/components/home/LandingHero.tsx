@@ -5,11 +5,11 @@ import {
   Search, Camera, ChevronDown, ShieldCheck, Zap, Truck, ArrowRight, Sparkles,
   Settings, Box, Shirt, FlaskConical, Recycle, Layers, LayoutGrid,
   CheckCircle2, FileText, Gavel, Calculator, Wallet, Store, Users, Package, Globe,
-  Radio, BadgeCheck,
+  BadgeCheck,
 } from 'lucide-react';
 import TransportScene from '@/components/home/TransportScene';
-import DiwaliBurst from '@/components/home/DiwaliBurst';
 import ProductCarouselHero from '@/components/home/hero/ProductCarouselHero';
+import heroArt from '@/assets/mobile-home/hero-art.webp';
 
 // ── Content ────────────────────────────────────────────────────────────
 const TRENDING = ['Textile', 'Steel', 'Chemicals', 'Packaging', 'Electrical'];
@@ -83,34 +83,6 @@ function CountUp({ to, suffix = '' }: { to: number; suffix?: string }) {
   return <span ref={ref}>{shown}{suffix && suffix !== 'M+' ? suffix : ''}{suffix === 'M+' ? 'M+' : ''}</span>;
 }
 
-// ── Component ──────────────────────────────────────────────────────────
-// Solid orange letters with a staggered glow-and-bounce loop (Diwali highlight).
-function GlowLetters({ word, baseDelay, reduce }: { word: string; baseDelay: number; reduce: boolean }) {
-  return (
-    <>
-      {Array.from(word).map((ch, i) => (
-        <motion.span
-          key={i}
-          className="inline-block text-[#FF5A00]"
-          initial={reduce ? false : { opacity: 0, y: 26 }}
-          animate={reduce ? undefined : {
-            opacity: 1,
-            y: [0, -5, 0],
-            textShadow: ['0 0 0px rgba(255,90,0,0)', '0 0 18px rgba(255,90,0,0.85)', '0 0 0px rgba(255,90,0,0)'],
-          }}
-          transition={{
-            opacity: { duration: 0.5, delay: baseDelay + i * 0.05 },
-            y: { duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 1 + i * 0.12 },
-            textShadow: { duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 1 + i * 0.12 },
-          }}
-        >
-          {ch}
-        </motion.span>
-      ))}
-    </>
-  );
-}
-
 export default function LandingHero() {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
@@ -143,61 +115,74 @@ export default function LandingHero() {
   return (
     <section className="relative isolate overflow-hidden bg-black text-white">
       {/* ═════════════ HERO ═════════════ */}
-      <div className="relative">
-        <div className="relative mx-auto grid max-w-[1400px] grid-cols-1 gap-8 px-4 pb-8 pt-8 sm:px-5 md:px-6 md:pb-12 md:pt-14 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
-          {/* Left column */}
-          <div className="relative">
-            <motion.div
-              {...fadeUp(0)}
-              className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#161616]/[0.06] px-3 py-1 text-[12px] font-semibold text-white/85 backdrop-blur-md"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C94400] opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#C94400]" />
-              </span>
-              Live now · 52,000+ active RFQs
-            </motion.div>
-
-            <h1 className="max-w-[640px] text-[30px] font-black leading-[1.05] tracking-tight sm:text-[40px] md:text-[54px]">
-              {HEADLINE.map((w, i) => (
-                <motion.span
-                  key={w + i}
-                  className="mr-[0.25em] inline-block"
-                  initial={reduce ? false : { opacity: 0, y: 26, filter: 'blur(6px)' }}
-                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                  transition={{ duration: 0.6, delay: 0.08 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  {w}
-                </motion.span>
-              ))}
-              <br />
-              {HEADLINE_ACCENT.map((w, i) => (
-                <span key={w + i} className="mr-[0.25em] inline-block whitespace-nowrap">
-                  <GlowLetters word={w} baseDelay={0.45 + i * 0.12} reduce={!!reduce} />
-                </span>
-              ))}
+      <div className="relative mx-auto w-full max-w-[1400px] px-3 pt-3 sm:px-5 md:px-6 lg:pt-6">
+        <div className="relative min-h-[250px] overflow-hidden rounded-2xl border border-white/10 lg:min-h-[320px]">
+          <img
+            src={heroArt}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-[68%_center] lg:object-right"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/25" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#FF5A00]/30 via-transparent to-transparent" />
+          <div className="relative flex min-h-[250px] flex-col justify-center px-3 py-3 lg:min-h-[320px] lg:max-w-[640px] lg:px-8 lg:py-8">
+            <div className="inline-flex items-center rounded-full border border-[#FF5A00]/50 bg-black/45 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#FF8A4C] lg:text-[11px]">
+              Global B2B Marketplace
+            </div>
+            <h1 className="mt-2 max-w-[15.5rem] text-[22px] font-black leading-[1.08] tracking-tight text-white lg:max-w-xl lg:text-[42px]">
+              The Global B2B Marketplace for<br />
+              <span className="text-[#FF5A00]">Bulk Buying &amp; Selling</span>
             </h1>
-            {/* Diwali firecracker bursts behind the headline (decorative) */}
-            <DiwaliBurst />
-
-            <motion.p {...fadeUp(0.7)} className="mt-4 max-w-[560px] text-[15px] leading-relaxed text-white/70 md:text-[17px]">
-              Connect with verified manufacturers, suppliers and bulk buyers worldwide. Get the best bulk prices, instant quotes and secure deals.
-            </motion.p>
-
-            <motion.div {...fadeUp(0.85)} className="mt-5 flex flex-wrap gap-2">
+            <p className="mt-1.5 max-w-[17rem] text-[12.5px] leading-snug text-white/80 lg:max-w-md lg:text-[15px]">
+              Connect with verified manufacturers, suppliers and bulk buyers worldwide.
+            </p>
+            <div className="mt-2.5 grid grid-cols-4 gap-1">
               {[
-                { icon: ShieldCheck, label: 'Verified suppliers' },
-                { icon: Zap, label: 'Bulk pricing' },
-                { icon: Truck, label: 'Free delivery*' },
-                { icon: BadgeCheck, label: 'Trade assurance' },
+                { icon: ShieldCheck, label: 'Verified Suppliers' },
+                { icon: Zap, label: 'Bulk Pricing' },
+                { icon: Truck, label: 'Free Delivery' },
+                { icon: BadgeCheck, label: 'Trade Assurance' },
               ].map(({ icon: Icon, label }) => (
-                <span key={label} className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-[#161616]/[0.06] px-3 py-1.5 text-[12px] font-semibold text-white/90 backdrop-blur-md">
-                  <Icon className="h-3.5 w-3.5 text-[#FF5A00]" />
+                <span key={label} className="flex flex-col items-center gap-0.5 text-center text-[9px] font-semibold leading-tight text-white lg:text-xs">
+                  <Icon className="h-3.5 w-3.5 text-[#FF5A00] lg:h-4 lg:w-4" />
                   {label}
                 </span>
               ))}
-            </motion.div>
+            </div>
+            <div className="mt-2.5 grid grid-cols-2 gap-2">
+              <Link
+                to="/post-requirement"
+                className="inline-flex h-9 items-center justify-center gap-1 rounded-lg bg-[#FF5A00] px-1 text-[11px] font-bold text-white lg:h-11 lg:text-sm"
+              >
+                Post Your Requirement
+                <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+              </Link>
+              <Link
+                to="/requirements"
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-white/30 bg-black/35 px-1 text-center text-[11px] font-bold text-white lg:h-11 lg:text-sm"
+              >
+                Get Supplier Quotes
+              </Link>
+            </div>
+            <div className="mt-2 flex items-center justify-center gap-1.5" role="tablist" aria-label="Promo slides">
+              {PROMO_SLIDES.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === slide}
+                  aria-label={`Show slide ${i + 1}`}
+                  onClick={() => setSlide(i)}
+                  className="flex h-6 items-center"
+                >
+                  <span className={`block h-1.5 rounded-full ${i === slide ? 'w-4 bg-white' : 'w-1.5 bg-white/45'}`} />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
 
+      <div className="relative mx-auto mt-4 w-full max-w-[1400px] px-3 sm:px-5 md:px-6">
             {/* Search */}
             <motion.div {...fadeUp(1)} className="mt-6 max-w-[860px]">
               <form
@@ -246,54 +231,6 @@ export default function LandingHero() {
                 ))}
               </div>
             </motion.div>
-          </div>
-
-          {/* Right column: floating glass cards (desktop) */}
-          <div className="relative hidden h-[360px] lg:block">
-            <motion.div
-              className="absolute right-6 top-4 w-[280px] rounded-2xl border border-white/15 bg-[#161616]/[0.07] p-4 shadow-2xl backdrop-blur-xl"
-              initial={reduce ? false : { opacity: 0, x: 30 }}
-              animate={reduce ? undefined : { opacity: 1, x: 0, y: [0, -10, 0] }}
-              transition={{ opacity: { duration: 0.8, delay: 0.6 }, x: { duration: 0.8, delay: 0.6 }, y: { duration: 6, repeat: Infinity, ease: 'easeInOut' } }}
-            >
-              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-white/60">
-                <span className="flex items-center gap-1.5"><Radio className="h-3.5 w-3.5 text-[#FF7A2E]" /> Live RFQ</span>
-                <span>2 min ago</span>
-              </div>
-              <p className="mt-2 text-[15px] font-bold leading-snug">Urgent: 500 MT Stainless Steel Pipes, ASTM A312</p>
-              <div className="mt-3 flex items-center justify-between text-[12px] text-white/70">
-                <span>Visakhapatnam</span>
-                <span className="rounded-full bg-[#FF5A00]/20 px-2 py-0.5 font-semibold text-[#FF8A4C]">12 quotes</span>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="absolute bottom-6 left-0 w-[250px] rounded-2xl border border-white/15 bg-[#0b1220]/70 p-4 shadow-2xl backdrop-blur-xl"
-              initial={reduce ? false : { opacity: 0, x: -30 }}
-              animate={reduce ? undefined : { opacity: 1, x: 0, y: [0, 8, 0] }}
-              transition={{ opacity: { duration: 0.8, delay: 0.8 }, x: { duration: 0.8, delay: 0.8 }, y: { duration: 7, repeat: Infinity, ease: 'easeInOut' } }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7A2E] to-[#E84A00]">
-                  <ShieldCheck className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-[13px] font-bold">Trade Assurance</p>
-                  <p className="text-[11px] text-white/60">Milestone escrow on every order</p>
-                </div>
-              </div>
-              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-[#FF7A2E] to-[#B33D00]"
-                  initial={reduce ? false : { width: '0%' }}
-                  animate={{ width: '86%' }}
-                  transition={{ duration: 1.6, delay: 1.1, ease: 'easeOut' }}
-                />
-              </div>
-              <p className="mt-1.5 text-[11px] text-white/60">Protected: 86% of buyer funds</p>
-            </motion.div>
-          </div>
-        </div>
       </div>
 
       {/* ═════════════ PRODUCT SCROLL: curved product carousel ═════════════ */}
