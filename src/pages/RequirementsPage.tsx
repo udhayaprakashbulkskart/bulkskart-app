@@ -30,6 +30,7 @@ import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import RequirementDetailDrawer from '@/components/common/RequirementDetailDrawer';
 import { getRequirementVisualInfo, placeLabel, quantityLabel } from '@/lib/requirementVisuals';
 import RequirementThumb, { categoryIcon } from '@/components/common/RequirementThumb';
+import { ExternalSourceLink, GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
 
 const REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
 const PAGE_SIZE = 12;
@@ -766,6 +767,18 @@ export default function RequirementsPage() {
                             <p className="text-xs md:text-sm text-muted-foreground mt-0.5 line-clamp-1">
                               {visual.subtitle}
                             </p>
+                          )}
+
+                          {visual.governmentTenderUrl && (
+                            <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                              <GovernmentTenderBadge />
+                              <ExternalSourceLink
+                                href={visual.governmentTenderUrl}
+                                className="inline-flex items-center gap-1 text-xs font-bold text-[#FF5A1F] hover:text-[#e04e00]"
+                              >
+                                View bid on GeM
+                              </ExternalSourceLink>
+                            </div>
                           )}
 
                           {/* Category Badge with Icon */}

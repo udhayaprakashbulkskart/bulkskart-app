@@ -8,8 +8,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CreateReverseAuctionDialog from '@/components/auctions/CreateReverseAuctionDialog';
+import { ExternalSourceLink, PublicAuctionBadge } from '@/components/common/ExternalSourceLink';
 import { getCategories } from '@/lib/api';
 import { auctionMoney, auctionPhase, getAuctionListings, secondsLeft, type AuctionListing } from '@/lib/auctionListing';
+import { viewOnSourceLabel } from '@/lib/externalListing';
 
 const CYCLE_SECONDS = 25;
 /** 3 roomier cards fit laptop screens better than a cramped 4-up row */
@@ -255,6 +257,8 @@ export default function LiveReverseAuctionsRail() {
             const detailPath = `/auctions/${auction.auctionType === 'forward' ? 'forward' : 'reverse'}/${auction.id}`;
             const price = auctionMoney(auction.startingPrice, auction.currency);
             const category = auction.categoryId ? categoryNames.get(auction.categoryId) : undefined;
+            const isPublic = auction.external.external;
+            const showQuantity = auction.totalQuantity !== null && (!isPublic || auction.totalQuantity > 0);
 
             return (
               <div
@@ -299,6 +303,7 @@ export default function LiveReverseAuctionsRail() {
                           {phase.label}
                         </span>
                       )}
+                      {isPublic && <PublicAuctionBadge className="shrink-0" />}
                       {phase.key === 'live' && (
                         <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-white border border-neutral-700/80 font-mono flex items-center gap-1 shrink-0">
                           <Clock className="w-3 h-3 text-[#FF5A1F]" />
@@ -325,14 +330,34 @@ export default function LiveReverseAuctionsRail() {
                     <h3 className="font-bold text-white text-sm group-hover:text-[#FF5A1F] transition-colors line-clamp-2 leading-snug">
                       {auction.title}
                     </h3>
-                    {auction.totalQuantity !== null && (
+                    {isPublic && auction.sellerName && (
+                      <div className="text-xs text-neutral-300 font-medium mt-1 truncate">{auction.sellerName}</div>
+                    )}
+                    {showQuantity && (
                       <div className="text-xs text-neutral-300 font-medium mt-1 truncate">
-                        {auction.totalQuantity.toLocaleString('en-IN')} {auction.quantityUnit}
+                        {auction.totalQuantity!.toLocaleString('en-IN')} {auction.quantityUnit}
                       </div>
                     )}
-                    <div className="text-sm sm:text-base font-extrabold text-[#FF5A1F] mt-1 truncate">
-                      {price ? `${price} / ${auction.quantityUnit}` : 'Starting price not stated'}
-                    </div>
+                    {isPublic ? (
+                      price ? (
+                        <div className="text-sm sm:text-base font-extrabold text-[#FF5A1F] mt-1 truncate">
+                          {price} / {auction.quantityUnit}
+                        </div>
+                      ) : null
+                    ) : (
+                      <div className="text-sm sm:text-base font-extrabold text-[#FF5A1F] mt-1 truncate">
+                        {price ? `${price} / ${auction.quantityUnit}` : 'Starting price not stated'}
+                      </div>
+                    )}
+                    {isPublic && auction.external.sourceUrl && (
+                      <ExternalSourceLink
+                        href={auction.external.sourceUrl}
+                        onClick={(event) => event.stopPropagation()}
+                        className="mt-2 inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-xl bg-[#FF5A00] hover:bg-[#e04e00] text-white text-xs font-bold"
+                      >
+                        {viewOnSourceLabel(auction.external.sourceName)}
+                      </ExternalSourceLink>
+                    )}
                   </div>
 
                   <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-400 gap-2">

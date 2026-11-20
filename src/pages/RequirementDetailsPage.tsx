@@ -30,7 +30,9 @@ import Breadcrumbs from '@/components/common/Breadcrumbs';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
 import AIQuotationModal from '@/components/common/AIQuotationModal';
 import SubmitQuotationWizard from '@/components/rfq/SubmitQuotationWizard';
+import { ExternalSourceLink, GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
 import ProtectedContact from '@/components/common/ProtectedContact';
+import { gemTenderUrl, sharedBuyerPhone, specificationProse } from '@/lib/externalListing';
 import ReportItemModal from '@/components/common/ReportItemModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
@@ -342,8 +344,11 @@ export default function RequirementDetailsPage() {
   const budget = hasBudget ? formatPriceRange(req.budget_min, req.budget_max, req.currency, req.currency || 'INR', undefined, { openEnded: false }) : null;
   const deadlinePassed = Boolean(req.deadline && new Date(req.deadline).getTime() < Date.now() - 24 * 60 * 60 * 1000);
   const isOpen = req.status === 'active' && !deadlinePassed;
-  const specs = parseSpecs(req.specifications);
+  const gemUrl = gemTenderUrl(req.specifications);
+  const specText = gemUrl ? specificationProse(req.specifications) : req.specifications;
+  const specs = parseSpecs(specText);
   const buyer = req.profiles as (Requirement['profiles'] & { company_name?: string | null }) | undefined;
+  const contactMissing = Boolean(gemUrl) && !sharedBuyerPhone(buyer?.phone);
   const buyerName = buyer?.company_name || buyer?.full_name || 'Buyer';
   const memberSince = buyer?.created_at ? new Date(buyer.created_at).getFullYear() : null;
   const quoteCount = quotes.length;
@@ -361,10 +366,12 @@ export default function RequirementDetailsPage() {
         {busy === 'quote' ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
         {myQuotes.length > 0 ? 'Send a New Quote' : 'Send Quote'}
       </button>
+      {!contactMissing && (
       <button type="button" onClick={handleMessageBuyer} disabled={busy === 'message'} className="fk-btn is-ghost">
         {busy === 'message' ? <Loader2 className="animate-spin" aria-hidden="true" /> : <MessageSquare aria-hidden="true" />}
         Message Buyer
       </button>
+      )}
     </div>
   );
 
@@ -422,6 +429,12 @@ export default function RequirementDetailsPage() {
                 <span className="sr-only">Copy the requirement number</span>
               </button>
               {req.created_at && <span className="text-xs text-muted-foreground">{postedLabel(req.created_at)}</span>}
+              {gemUrl && <GovernmentTenderBadge />}
+              {gemUrl && (
+                <ExternalSourceLink href={gemUrl} className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF5A1F] hover:text-[#e04e00]">
+                  View bid on GeM
+                </ExternalSourceLink>
+              )}
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground leading-tight">{req.title}</h1>
             <LoanEligibleTag size="sm" />
@@ -520,10 +533,10 @@ export default function RequirementDetailsPage() {
                     ))}
                   </dl>
                 ) : (
-                  req.specifications && (
+                  specText && (
                     <div className="mt-4">
                       <h3 className="text-sm font-bold text-foreground mb-1">Specifications</h3>
-                      <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{req.specifications}</p>
+                      <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{specText}</p>
                     </div>
                   )
                 )}
@@ -718,8 +731,14 @@ export default function RequirementDetailsPage() {
                 </dl>
                 {!isPoster && (
                   <div className="mt-3 space-y-2">
-                    <ProtectedContact phone={buyer?.phone} country={req.destination_country} contactType="buyer" variant="card" allowPaidSupplierUnlock seed={req.id} />
-                    {(isSupplier || company) && (
+                    {contactMissing ? (
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        No buyer phone number is listed for this tender. You can still send a quotation{gemUrl ? ', or open the bid on GeM' : ''}.
+                      </p>
+                    ) : (
+                      <ProtectedContact phone={buyer?.phone} country={req.destination_country} contactType="buyer" variant="card" allowPaidSupplierUnlock seed={req.id} />
+                    )}
+                    {(isSupplier || company) && !contactMissing && (
                       <button
                         type="button"
                         onClick={handleMessageBuyer}
