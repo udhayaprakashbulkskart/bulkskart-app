@@ -10,7 +10,7 @@ import SectionHeader from '@/components/home/SectionHeader';
 export default function TrustAndFinalCTASection() {
   const trustPoints = [
     {
-      title: '100% Escrow Protection',
+      title: 'Escrow Protection',
       desc: 'Buyer payments are held securely in escrow until goods pass physical quality inspection and receipt is confirmed.',
       icon: ShieldCheck
     },
@@ -70,7 +70,7 @@ export default function TrustAndFinalCTASection() {
             eyebrow="Global B2B Wholesale"
             icon={<Sparkles className="h-3.5 w-3.5" />}
             title="Start Your Bulk Trading Journey Today"
-            subtitle="Join 50,000+ verified manufacturers and enterprise buyers securing high-volume orders with guaranteed escrow protection."
+            subtitle="Post a requirement or list your factory. Orders can be protected with escrow until the buyer confirms receipt."
           />
         </div>
 

@@ -26,7 +26,7 @@ export default function VerifiedSupplierQuickActions() {
     {
       id: 'mfr',
       title: 'Find a Manufacturer',
-      subtitle: 'Browse 1,200+ audited global plants',
+      subtitle: 'Browse verified manufacturers',
       icon: Factory,
       badge: 'Verified',
       badgeColor: 'bg-[#FF5A00]/15 text-[#FF5A00] border-[#FF5A00]/30',
@@ -37,7 +37,7 @@ export default function VerifiedSupplierQuickActions() {
     {
       id: 'product',
       title: 'Find a Product',
-      subtitle: '50,000+ bulk catalog items & raw materials',
+      subtitle: 'Search the live product catalog',
       icon: Package,
       badge: 'Wholesale',
       badgeColor: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
@@ -106,13 +106,13 @@ export default function VerifiedSupplierQuickActions() {
           <div className="flex items-center gap-2 text-xs text-neutral-400 shrink-0">
             <span className="flex items-center gap-1.5 whitespace-nowrap">
               <ShieldCheck className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
-              100% Verified Trade Assurance
+              Trade Assurance
             </span>
           </div>
         </div>
 
         {/* Responsive workflow grid: equal-height cards that fit laptop → wide displays */}
-        <div className="relative z-10 grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-3.5 auto-rows-fr">
+        <div className="relative z-10 grid auto-rows-fr grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {actions.map((act) => {
             const Icon = act.icon;
             return (

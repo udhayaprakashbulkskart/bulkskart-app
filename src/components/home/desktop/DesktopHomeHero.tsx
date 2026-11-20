@@ -6,7 +6,8 @@ import promoArt from '@/assets/desktop-home/promo-art-2x.webp';
 import machineryIcon from '@/assets/mobile-home/cat-machinery.webp';
 import packagingIcon from '@/assets/mobile-home/cat-packaging.webp';
 import textileIcon from '@/assets/mobile-home/cat-textile.webp';
-import { CheckBadge, FEATURES, Laurel, MoreIcon, PROMO_POINTS, STATS, type HomeSearchType } from '../shared/parts';
+import { CheckBadge, FEATURES, Laurel, MoreIcon, PROMO_POINTS, type HomeSearchType } from '../shared/parts';
+import LiveCountStrip from '@/components/common/LiveCountStrip';
 import './desktop-home.css';
 
 interface DesktopHomeHeroProps {
@@ -176,19 +177,7 @@ export default function DesktopHomeHero({
             </div>
           </div>
 
-          <div className="dh-stats">
-            {STATS.map(({ icon: Icon, value, label, tone }) => (
-              <div key={label} className={`dh-stat dh-stat-${tone}`}>
-                <span className="dh-stat-icon">
-                  <Icon aria-hidden="true" />
-                </span>
-                <span className="dh-stat-text">
-                  <b>{value}</b>
-                  <span>{label}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <LiveCountStrip className="dh-stats" />
         </div>
       </section>
 

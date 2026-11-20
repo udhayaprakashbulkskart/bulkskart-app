@@ -102,11 +102,10 @@ describe('desktop home (wide screens)', () => {
     expect(props.onQuickTag).toHaveBeenCalledWith('steel pipe rebar sheet');
   });
 
-  it('shows the four figures as printed in the design', () => {
+  it('does not print invented catalogue totals', () => {
     setup();
-    const stats = within(document.querySelector('.dh-stats') as HTMLElement);
-    for (const text of ['5000+', 'Verified Manufacturers', '1M+', 'Bulk Products', '120+', 'Trade Countries', '10,000+', 'Live RFQs & Auctions']) {
-      expect(stats.getByText(text)).toBeInTheDocument();
+    for (const text of ['5000+', '1M+', '10,000+', '120+']) {
+      expect(screen.queryByText(text)).toBeNull();
     }
   });
 

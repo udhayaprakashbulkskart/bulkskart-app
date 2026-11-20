@@ -618,7 +618,7 @@ export default function AuthPage() {
     <div className="min-h-screen flex">
       <PageMeta
         title="Login or Register — BulkSkart B2B Marketplace"
-        description="Sign in to BulkSkart to source bulk products, post RFQs, or register as a verified supplier and connect with thousands of global buyers."
+        description="Sign in to BulkSkart to source bulk products, post RFQs, or register as a supplier."
         keywords="B2B login, supplier registration, buyer signup, BulkSkart account"
         canonical="/auth"
         robots="noindex, nofollow"
@@ -634,10 +634,10 @@ export default function AuthPage() {
           </div>
 
           <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'login' | 'buyer' | 'supplier')}>
-            <TabsList className="w-full bg-muted border border-border mb-6 grid grid-cols-3">
-              <TabsTrigger value="login" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Login</TabsTrigger>
-              <TabsTrigger value="buyer" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Buyer</TabsTrigger>
-              <TabsTrigger value="supplier" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Supplier</TabsTrigger>
+            <TabsList className="mb-6 grid h-auto w-full grid-cols-3 border border-border bg-muted">
+              <TabsTrigger value="login" className="min-h-11 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Login</TabsTrigger>
+              <TabsTrigger value="buyer" className="min-h-11 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Buyer</TabsTrigger>
+              <TabsTrigger value="supplier" className="min-h-11 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Supplier</TabsTrigger>
             </TabsList>
 
             {/* ===== LOGIN ===== */}

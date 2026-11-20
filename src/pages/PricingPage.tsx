@@ -488,7 +488,7 @@ export default function PricingPage() {
       {/* Plans grid */}
       <section className="pb-6 md:pb-8">
         <div className="max-w-[1400px] mx-auto px-4 md:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 xl:grid-cols-4">
             {dynamicPlans.map(plan => {
               const Icon = plan.icon;
               const pricingBreakdown = plan.basePrice ? calculatePricing(plan.basePrice) : null;
@@ -685,7 +685,7 @@ export default function PricingPage() {
               <ul className="space-y-2 flex-1 mb-5 border-t border-border/80 pt-4">
                 {[
                   'Top Homepage & Marketplace 24H Spotlight Placement',
-                  'Instant Broadcast to 10,000+ Active Global Bulk Buyers',
+                  'Buyer alerts for the 24-hour spotlight',
                   'Direct Factory WhatsApp & Call Lead Priority',
                   'High Urgency 24-Hour Deal Banner & Countdown Badge',
                   'Zero Platform Commission on All Bulk Transactions',

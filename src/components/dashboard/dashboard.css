@@ -603,7 +603,25 @@ html.dash-active .dsh-sheet .dsh-brand {
 @media (max-width: 859px) {
   .dsh {
     --dsh-pad: 40px;
-    padding: 8px 10px var(--dsh-pad);
+    padding: 8px 12px var(--dsh-pad);
+    overflow-x: clip;
+  }
+  .dsh-burger {
+    width: 44px;
+    height: 44px;
+  }
+  .dbtn {
+    min-height: 44px;
+    height: auto;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .dhead-sub,
+  .dsh p,
+  .dsh li,
+  .dsh td,
+  .dsh label {
+    font-size: 14px;
   }
   .dsh-bar {
     top: 8px;

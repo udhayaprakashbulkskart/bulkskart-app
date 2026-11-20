@@ -193,7 +193,7 @@ export default function LiveRequirementsFeed() {
           <h2 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight leading-tight">
             Live <span className="text-[#FF5A00]">Buying Requirements</span>
           </h2>
-          <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+          <p className="mt-1 text-sm text-muted-foreground">
             The newest requirements posted by buyers on BulkSkart
           </p>
         </div>
@@ -203,14 +203,14 @@ export default function LiveRequirementsFeed() {
           <button
             type="button"
             onClick={handleFreshRFQs}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 sm:gap-1.5 px-2 min-[360px]:px-3 py-1.5 rounded-lg bg-card hover:bg-muted border border-orange-500/40 text-orange-700 dark:text-orange-300 text-[11px] min-[360px]:text-xs font-bold shadow-sm transition-all active:scale-95 h-9 shrink-0"
+            className="flex h-11 shrink-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-orange-500/40 bg-card px-3 text-sm font-bold text-orange-700 shadow-sm transition-all active:scale-95 hover:bg-muted dark:text-orange-300 sm:flex-initial"
             title="Check for new requirements"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#FF5A00] shrink-0 transition-transform duration-500 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span className="truncate">Fresh RFQs</span>
           </button>
 
-          <div className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 bg-card border border-border rounded-lg px-2 min-[360px]:px-3 py-1 shadow-sm h-9">
+          <div className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 shadow-sm sm:flex-initial">
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
@@ -219,12 +219,12 @@ export default function LiveRequirementsFeed() {
               <div className="text-xs sm:text-sm font-black text-foreground leading-tight">
                 {openTotal === null ? '–' : openTotal.toLocaleString()}
               </div>
-              <div className="text-[8.5px] min-[360px]:text-[9px] text-muted-foreground font-medium leading-none">Open RFQs</div>
+              <div className="text-sm font-medium leading-none text-muted-foreground">Open RFQs</div>
             </div>
           </div>
 
           <Link to="/requirements" className="flex-1 sm:flex-initial">
-            <Button className="w-full sm:w-auto bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-9 px-2.5 min-[360px]:px-3 text-[11px] min-[360px]:text-xs gap-1 sm:gap-1.5 rounded-lg shadow-[0_2px_8px_rgba(255,90,0,0.3)] transition-all">
+            <Button className="h-11 w-full gap-1.5 rounded-lg bg-[#FF5A00] px-3 text-sm font-bold text-white shadow-[0_2px_8px_rgba(255,90,0,0.3)] transition-all hover:bg-[#e04f00] sm:w-auto">
               <span className="truncate">View All</span> <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </Button>
           </Link>
@@ -244,7 +244,7 @@ export default function LiveRequirementsFeed() {
                   setSelectedCategory(cat.id);
                   setPageOffset(0);
                 }}
-                className={`whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 min-h-[32px] ${
+                className={`flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-all ${
                   active
                     ? 'bg-primary/15 text-primary border border-primary shadow-sm font-bold'
                     : 'bg-card text-foreground/80 hover:text-foreground border border-border hover:border-foreground/20'
@@ -282,7 +282,7 @@ export default function LiveRequirementsFeed() {
               onClick={() => setPageOffset(Math.max(0, currentPage - 1))}
               disabled={currentPage === 0}
               aria-label="Previous requirements"
-              className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 text-foreground flex items-center justify-center border border-border transition-colors min-h-[32px] min-w-[32px] disabled:opacity-40"
+              className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted text-foreground transition-colors hover:bg-muted/80 disabled:opacity-40"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -291,7 +291,7 @@ export default function LiveRequirementsFeed() {
               onClick={() => setPageOffset(Math.min(pageCount - 1, currentPage + 1))}
               disabled={currentPage >= pageCount - 1}
               aria-label="Next requirements"
-              className="w-8 h-8 rounded-lg bg-[#FF5A00] hover:bg-[#e04f00] text-white flex items-center justify-center font-bold shadow-sm transition-colors min-h-[32px] min-w-[32px] disabled:opacity-40"
+              className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#FF5A00] font-bold text-white shadow-sm transition-colors hover:bg-[#e04f00] disabled:opacity-40"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -373,7 +373,7 @@ export default function LiveRequirementsFeed() {
 
                         <h3
                           onClick={() => handleViewRFQ(req)}
-                          className="text-xs sm:text-sm font-bold text-foreground mt-1 leading-snug line-clamp-1 group-hover:text-[#FF5A00] transition-colors cursor-pointer"
+                          className="mt-1 cursor-pointer text-sm font-bold leading-snug text-foreground line-clamp-2 transition-colors group-hover:text-[#FF5A00] sm:text-base"
                         >
                           {visual.cleanTitle}
                         </h3>

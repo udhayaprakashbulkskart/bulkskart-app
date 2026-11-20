@@ -308,9 +308,10 @@ export default function Header() {
   );
 
   return (
-    <header className="relative z-30 w-full bg-background border-b border-border shadow-sm transition-colors">
+    <>
+    <header className="site-header sticky top-0 z-50 w-full border-b border-border bg-background/95 shadow-sm backdrop-blur transition-colors supports-[backdrop-filter]:bg-background/85">
       {/* ── Main row ── */}
-      <div className="max-w-[1400px] mx-auto px-2.5 sm:px-4 md:px-6 h-[56px] flex items-center gap-1 sm:gap-2 md:gap-4 justify-between md:justify-start">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-2 px-3 sm:px-4 md:h-[60px] md:justify-start md:gap-4 md:px-6">
 
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0 group py-1 min-w-0" aria-label="BulkSkart Homepage">
@@ -318,7 +319,7 @@ export default function Header() {
         </Link>
 
         {/* Search bar — desktop */}
-        <form onSubmit={handleSearch} className="dh-search hidden md:flex flex-1 min-w-[140px] max-w-[420px] lg:max-w-[500px] items-center bg-muted border border-border rounded-lg h-9 px-3 gap-2 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/30 transition-all">
+        <form onSubmit={handleSearch} className="dh-search hidden h-11 min-w-[140px] max-w-[420px] flex-1 items-center gap-2 rounded-lg border border-border bg-muted px-3 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/30 md:flex lg:max-w-[500px]">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input
             ref={searchInputRef}
@@ -326,33 +327,29 @@ export default function Header() {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search products, suppliers, categories…"
-            className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
-          <Button type="submit" size="sm" className="h-7 px-3 text-[12px] bg-primary text-white rounded-md shrink-0">
+          <Button type="submit" size="sm" className="h-9 shrink-0 rounded-md bg-primary px-3 text-sm text-white">
             Search
           </Button>
         </form>
 
         {/* ── Mobile: icon row (right side of logo) ── */}
-        <div className="md:hidden flex items-center gap-1 sm:gap-1.5 ml-auto shrink-0">
-          <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0" aria-label="Toggle theme">
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
-          <CopyPublicProfileButton compact />
+        <div className="ml-auto flex shrink-0 items-center gap-1 md:hidden">
           <NotificationBell />
           {user && profile ? (
-            <Link to={getDashboardLink()} className="w-7 h-7 rounded-full bg-[#FF5A00] flex items-center justify-center text-white text-xs font-bold shrink-0">
+            <Link to={getDashboardLink()} aria-label="Open dashboard" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FF5A00] text-sm font-bold text-white">
               {(displayName || profile?.full_name || 'U')[0]?.toUpperCase() ?? 'U'}
             </Link>
           ) : (
             <Link to="/auth">
-              <Button size="sm" className="h-7 px-2 min-[360px]:px-2.5 text-[10.5px] min-[360px]:text-[11px] font-bold bg-[#FF5A00] hover:bg-[#e04e00] text-white rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Sign In</Button>
+              <Button size="sm" className="h-11 rounded-lg bg-[#FF5A00] px-3 text-sm font-bold text-white shadow-[0_2px_0_#922f00] hover:bg-[#e04e00]">Sign In</Button>
             </Link>
           )}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-foreground h-8 w-8 shrink-0" aria-label="Open navigation menu">
-                <Menu className="w-4.5 h-4.5" />
+              <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 text-foreground" aria-label="Open navigation menu">
+                <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             {drawer}
@@ -491,49 +488,31 @@ export default function Header() {
       </div>
 
       {/* ── Mobile: full-width search bar row ── */}
-      <div className="md:hidden px-2.5 sm:px-4 pt-1 pb-1.5 bg-background w-full min-w-0 box-border">
-        <form onSubmit={handleSearch} className="flex items-center rounded-xl border border-border bg-muted overflow-hidden h-9 w-full min-w-0 shadow-xs">
-          <Search className="w-3.5 h-3.5 text-muted-foreground ml-2.5 shrink-0" />
+      <div className="box-border w-full min-w-0 bg-background px-3 pb-2 pt-0 md:hidden sm:px-4">
+        <form onSubmit={handleSearch} className="flex h-11 w-full min-w-0 items-center overflow-hidden rounded-xl border border-border bg-muted shadow-xs">
+          <Search className="ml-3 h-4 w-4 shrink-0 text-muted-foreground" />
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search products, suppliers, categories..."
-            className="flex-1 min-w-0 px-2 py-1.5 text-[12px] outline-none bg-transparent text-foreground placeholder:text-muted-foreground"
+            className="min-w-0 flex-1 bg-transparent px-2 text-base text-foreground outline-none placeholder:text-muted-foreground"
           />
-          <button type="submit" aria-label="Search" className="bg-[#FF5A00] hover:bg-[#e04e00] px-3 min-[360px]:px-3.5 h-full text-white text-[11px] font-bold shrink-0 transition-colors">
+          <button type="submit" aria-label="Search" className="h-full shrink-0 bg-[#FF5A00] px-4 text-sm font-bold text-white transition-colors hover:bg-[#e04e00]">
             Search
           </button>
         </form>
       </div>
 
-      {/* ── Mobile: category chips with smooth touch swipe ── */}
-      <div className="md:hidden flex items-center gap-1.5 overflow-x-auto px-2.5 sm:px-4 pb-2 w-full min-w-0 scrollbar-none overscroll-x-contain touch-pan-x">
-        {MOBILE_CATS.map(({ label, icon: Icon, href }) => (
-          <Link key={label} to={href}
-            className="flex items-center gap-1 shrink-0 px-2.5 py-1 bg-muted border border-border rounded-full text-[10px] font-medium text-foreground whitespace-nowrap hover:border-primary/50 hover:text-primary transition-colors">
-            <Icon className="w-2.5 h-2.5 shrink-0" />
-            {label}
-          </Link>
-        ))}
-        <Link to="/products"
-          className="flex items-center gap-1 shrink-0 px-2.5 py-1 bg-muted border border-border rounded-full text-[10px] font-medium text-foreground whitespace-nowrap hover:border-primary/50 hover:text-primary transition-colors">
-          <span className="grid grid-cols-2 gap-0.5 w-2.5 h-2.5">
-            {[...Array(4)].map((_, i) => <span key={i} className="block w-0.5 h-0.5 rounded-sm bg-current" />)}
-          </span>
-          More
-        </Link>
-      </div>
-
       {/* ── Desktop Category Nav ── */}
-      <nav className="dh-nav hidden md:block border-t border-border">
-        <div className="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center overflow-x-auto scrollbar-none whitespace-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <nav className="dh-nav hidden border-t border-border md:block">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6">
+          <div className="flex items-center overflow-x-auto whitespace-nowrap py-0.5 scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {navLinks.map((link, i) => (
               <Link key={link.href} to={link.href}
                 {...getPrefetchHandlers(link.href)}
-                className={`whitespace-nowrap px-3.5 lg:px-4 py-2.5 text-[12.5px] lg:text-[13px] font-medium transition-colors hover:text-primary border-b-2 ${
+                className={`whitespace-nowrap border-b-2 px-3.5 py-3 text-sm font-medium transition-colors hover:text-primary lg:px-4 ${
                   i === 0 ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
                 }`}>
                 {link.label}
@@ -543,6 +522,24 @@ export default function Header() {
         </div>
       </nav>
     </header>
+    {/* Category chips sit under the sticky bar and scroll away with the page. */}
+    <div className="flex w-full min-w-0 touch-pan-x items-center gap-2 overflow-x-auto overscroll-x-contain bg-background px-3 pb-2 scrollbar-none md:hidden sm:px-4">
+        {MOBILE_CATS.map(({ label, icon: Icon, href }) => (
+          <Link key={label} to={href}
+            className="flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-muted px-3 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary">
+            <Icon className="h-4 w-4 shrink-0" />
+            {label}
+          </Link>
+        ))}
+        <Link to="/products"
+          className="flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-muted px-3 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary">
+          <span className="grid grid-cols-2 gap-0.5 w-2.5 h-2.5">
+            {[...Array(4)].map((_, i) => <span key={i} className="block w-0.5 h-0.5 rounded-sm bg-current" />)}
+          </span>
+          More
+        </Link>
+      </div>
+    </>
   );
 }
 

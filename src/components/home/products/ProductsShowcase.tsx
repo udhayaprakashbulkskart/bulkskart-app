@@ -100,7 +100,7 @@ function StripShield() {
 const POINTS: Array<{ icon: React.ComponentType; top: string; bottom: string; green?: boolean }> = [
   { icon: StripShield, top: 'Verified', bottom: 'Manufacturers' },
   { icon: Box, top: 'Bulk', bottom: 'Pricing' },
-  { icon: Layers, top: 'MOQ', bottom: 'Min. 10 Pieces' },
+  { icon: Layers, top: 'MOQ', bottom: 'On each listing' },
   { icon: Truck, top: 'Free', bottom: 'Delivery', green: true },
 ];
 
@@ -274,11 +274,11 @@ export default function ProductsShowcase<T extends ShowcaseProduct>({
             <Laurel flip className="pv-laurel" idPrefix="pv-laurel" />
           </div>
           <p className="pv-sub">
-            <span>100% Verified Manufacturers</span>
+            <span>Verified Manufacturers</span>
             <i aria-hidden="true">•</i>
             <span>Wholesale Only</span>
             <i aria-hidden="true">•</i>
-            <span>Min. Order 10 Pieces</span>
+            <span>MOQ on each listing</span>
             <i aria-hidden="true">•</i>
             <span className="pv-free">
               <FastTruck />
