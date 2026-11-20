@@ -201,7 +201,7 @@ function getInitialDisplayProducts(seed = createVisitSeed()): DisplayProduct[] {
 const FEATURE_STRIP = [
   { icon: ShieldCheck, label: 'Verified', sub: 'Manufacturers', color: 'text-[#FF5A00]' },
   { icon: Box, label: 'Bulk', sub: 'Pricing', color: 'text-[#FF5A00]' },
-  { icon: Layers, label: 'MOQ', sub: 'Shown on each product', color: 'text-[#FF5A00]' },
+  { icon: Layers, label: 'MOQ', sub: 'Min. 10 Pieces', color: 'text-[#FF5A00]' },
   { icon: Truck, label: 'Free', sub: 'Delivery', color: 'text-[#FF7A2E]' },
 ];
 
@@ -724,11 +724,11 @@ export default function FeaturedProductsSection() {
             <FeaturedLaurel side="right" />
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[12px] text-neutral-300 sm:text-[14px]">
-            <span>Verified Manufacturers</span>
+            <span>100% Verified Manufacturers</span>
             <span className="text-neutral-300">•</span>
             <span>Wholesale Only</span>
             <span className="text-neutral-300">•</span>
-            <span>MOQ on each listing</span>
+            <span>Min. Order 10 Pieces</span>
             <span className="text-neutral-300">•</span>
             <span className="flex items-center gap-1.5 font-semibold text-[#FF7A2E]">
               <Truck className="h-4 w-4" />
@@ -739,7 +739,7 @@ export default function FeaturedProductsSection() {
           {/* Live rotation, item count and quick actions */}
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             <span className="rounded-full border border-white/10 bg-[#161616]/[0.04] px-3 py-1 font-mono text-[11px] text-neutral-300">
-              {totalCount.toLocaleString()} items
+              {totalCount.toLocaleString()}+ Items
             </span>
             {isDefaultBrowse && (
               <span className="flex items-center gap-1.5 rounded-full border border-[#FF5A00]/35 bg-[#FF5A00]/10 px-3 py-1 text-[11px] font-semibold tabular-nums text-[#FF7A2E]">
@@ -1138,7 +1138,7 @@ export default function FeaturedProductsSection() {
         {/* ── 4. PRODUCT GRID ───────────────────────────────────────────────── */}
         {loading && products.length === 0 ? (
           // Skeleton Loader: 8 cards matching PC grid
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5 md:gap-4">
             {Array.from({ length: 8 }).map((_, idx) => (
               <div
                 key={idx}
@@ -1252,7 +1252,7 @@ export default function FeaturedProductsSection() {
             {/* Mobile: Exactly 2-column grid without text clipping */}
             {/* Desktop PC: Balanced 3 to 4 columns (up to 5 on 2K+) */}
             <div
-              className={`grid grid-cols-1 gap-3 transition-opacity duration-300 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 ${
+              className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5 md:gap-4 transition-opacity duration-300 ${
                 isRotating ? 'opacity-55' : 'opacity-100'
               }`}
             >

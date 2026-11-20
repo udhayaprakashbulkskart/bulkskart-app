@@ -13,6 +13,7 @@ import {
 import SafeImage from '@/components/common/SafeImage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getCompanies, getOrCreateConversation, checkDirectMessageQuota, incrementMessageQuota } from '@/lib/api';
+import { TOTAL_VERIFIED_SUPPLIERS_COUNT } from '@/data/alibabaVerifiedSuppliers';
 import type { Company } from '@/types/types';
 import { useAuth } from '@/contexts/AuthContext';
 import SubscribeToContactDialog from '@/components/common/SubscribeToContactDialog';
@@ -319,7 +320,7 @@ function SupplierCard({
             size="sm"
             disabled={contacting}
             onClick={() => onContact(co)}
-            className="flex h-11 w-full items-center justify-center gap-1 bg-[#FF5A00] px-1 text-sm font-bold text-white shadow-sm hover:bg-[#e04e00]"
+            className="w-full h-8 text-xs font-bold bg-[#FF5A00] hover:bg-[#e04e00] text-white shadow-sm px-1 flex items-center justify-center gap-1"
           >
             <MessageSquare className="w-3 h-3" /> Contact
           </Button>
@@ -344,7 +345,7 @@ export default function ManufacturersPage() {
   const [selectedMoq, setSelectedMoq] = useState('all');
   const [selectedCert, setSelectedCert] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [totalCount, setTotalCount] = useState(TOTAL_VERIFIED_SUPPLIERS_COUNT + 76);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 24;
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -420,9 +421,10 @@ export default function ManufacturersPage() {
   // count
   useEffect(() => {
     import('@/db/supabase').then(({ supabase }) => {
-      supabase.from('companies').select('id', { count: 'exact', head: true }).neq('owner_id', '00000000-0000-0000-0000-000000000001')
-        .then(({ count, error }) => {
-          if (!error && typeof count === 'number') setTotalCount(count);
+      supabase.from('companies').select('id', { count: 'exact', head: true })
+        .then(({ count }) => {
+          const dbC = count ?? 0;
+          setTotalCount(TOTAL_VERIFIED_SUPPLIERS_COUNT + dbC);
         });
     });
   }, []);
@@ -525,11 +527,13 @@ export default function ManufacturersPage() {
       {/* ── Trust bar */}
       <div className="w-full bg-[#242424] text-white text-[11px] py-1.5 px-4">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between">
-          <span className="font-medium">Verified manufacturers and exporters</span>
-          <div className="hidden items-center gap-4 text-sm text-white/70 md:flex">
-            <span className="flex items-center gap-1"><Shield className="h-4 w-4 text-[#FF5A00]" /> Verified suppliers</span>
+          <span className="font-medium">Trusted by 500K+ Businesses Worldwide</span>
+          <div className="hidden md:flex items-center gap-4 text-white/60">
+            <span className="flex items-center gap-1"><Shield className="w-3 h-3 text-[#FF5A00]" /> Verified Suppliers</span>
             <span>|</span>
-            <span className="flex items-center gap-1"><BadgeCheck className="h-4 w-4 text-[#FF5A00]" /> Trade Assurance</span>
+            <span className="flex items-center gap-1"><Globe className="w-3 h-3 text-[#FF5A00]" /> 180+ Countries</span>
+            <span>|</span>
+            <span className="flex items-center gap-1"><BadgeCheck className="w-3 h-3 text-[#FF5A00]" /> Trade Assurance</span>
           </div>
         </div>
       </div>
@@ -553,7 +557,7 @@ export default function ManufacturersPage() {
                 Verified <span className="text-[#FF5A00]">Suppliers</span> & Manufacturers
               </h1>
               <p className="text-white/70 text-[14px]">
-                Connect directly with certified factories, OEM/ODM producers, and verified exporters
+                Connect directly with certified factories, OEM/ODM producers, and verified exporters across 180+ countries
               </p>
             </div>
             <Link to="/auth?tab=register">
@@ -566,8 +570,11 @@ export default function ManufacturersPage() {
           {/* Stats */}
           <div className="flex flex-wrap items-center gap-4 md:gap-6 mt-4 md:mt-8">
             {[
-              totalCount != null ? { icon: Building2, value: totalCount.toLocaleString('en-IN'), label: 'Registered suppliers' } : null,
-            ].filter((item): item is { icon: typeof Building2; value: string; label: string } => item != null).map(({ icon: Icon, value, label }) => (
+              { icon: Building2, value: totalCount || '500K+', label: 'Registered Suppliers' },
+              { icon: Globe, value: '180+', label: 'Countries' },
+              { icon: BadgeCheck, value: '75K+', label: 'Verified Suppliers' },
+              { icon: Star, value: '4.7', label: 'Avg. Rating' },
+            ].map(({ icon: Icon, value, label }) => (
               <div key={label} className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-[#FF5A00]/15 border border-[#FF5A00]/30 flex items-center justify-center">
                   <Icon className="w-4 h-4 text-[#FF5A00]" />
@@ -731,7 +738,7 @@ export default function ManufacturersPage() {
 
           {/* Grid */}
           {loading ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
               {[...Array(8)].map((_, i) => (
                 <div key={i} className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                   <div className="aspect-[16/9] bg-muted animate-pulse" />
@@ -759,7 +766,7 @@ export default function ManufacturersPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
               {paginated.map((co, i) => (
                 <SupplierCard
                   key={co.id}

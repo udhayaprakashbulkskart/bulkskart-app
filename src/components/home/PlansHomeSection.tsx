@@ -122,7 +122,7 @@ export default function PlansHomeSection() {
         </div>
 
         {/* Plans Grid (3 Monthly Columns) */}
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {MONTHLY_PLANS.map((plan) => (
             <div
               key={plan.tier}
@@ -149,7 +149,7 @@ export default function PlansHomeSection() {
                   </Badge>
                 </div>
 
-                <p className="mb-4 text-sm text-pretty text-muted-foreground">
+                <p className="text-xs text-muted-foreground text-pretty mb-4 min-h-[32px]">
                   {plan.tagline}
                 </p>
 
@@ -166,11 +166,11 @@ export default function PlansHomeSection() {
 
                 {/* Features List */}
                 <div className="space-y-2.5 mb-6">
-                  <p className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wider">
                     Included with {plan.tier}:
                   </p>
                   {plan.features.map((feature, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-foreground/90">
+                    <div key={i} className="flex items-start gap-2 text-xs text-foreground/90">
                       <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                       <span className="leading-snug">{feature}</span>
                     </div>
@@ -183,7 +183,7 @@ export default function PlansHomeSection() {
                 <Button
                   onClick={() => handleSelectPlan(plan)}
                   disabled={paying}
-                  className={`h-12 w-full gap-1.5 text-sm font-bold transition-all ${
+                  className={`w-full h-11 text-xs font-bold gap-1.5 transition-all ${
                     plan.popular
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-md'
                       : 'bg-muted hover:bg-muted/80 text-foreground border border-border'
