@@ -21,6 +21,7 @@ import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import RequirementThumb, { categoryIcon } from '@/components/common/RequirementThumb';
 import { getRequirementVisualInfo } from '@/lib/requirementVisuals';
+import { ExternalSourceLink, GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
 import { isSeededRequirement } from '@/lib/seedData';
 
 const FEED_SIZE = 16;
@@ -364,6 +365,7 @@ export default function LiveRequirementsFeed() {
                               Verified buyer
                             </span>
                           )}
+                          {visual.governmentTenderUrl && <GovernmentTenderBadge />}
                           <span className="text-[9.5px] text-muted-foreground ml-auto font-mono shrink-0">
                             {timeAgo(req.created_at)}
                           </span>
@@ -380,6 +382,15 @@ export default function LiveRequirementsFeed() {
                           <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight line-clamp-1">
                             {visual.subtitle}
                           </p>
+                        )}
+                        {visual.governmentTenderUrl && (
+                          <ExternalSourceLink
+                            href={visual.governmentTenderUrl}
+                            onClick={(event) => event.stopPropagation()}
+                            className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-[#FF5A1F] hover:text-[#e04e00]"
+                          >
+                            View bid on GeM
+                          </ExternalSourceLink>
                         )}
 
                         <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1.5 pt-1.5 border-t border-border text-[11px]">

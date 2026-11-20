@@ -4,6 +4,7 @@
  * something out the field is null and the card leaves it out.
  */
 import { supabase } from '@/db/supabase';
+import { readExternalAuction, type ExternalAuctionInfo } from '@/lib/externalListing';
 import { formatMoney, productCurrency } from '@/lib/productPrice';
 
 export type AuctionPhaseKey = 'scheduled' | 'live' | 'ended' | 'sold' | 'unsold' | 'review' | 'cancelled';
@@ -36,6 +37,8 @@ export interface AuctionListing {
   /** the seller's company name, when it could be read */
   sellerName: string | null;
   categoryId: string | null;
+  /** a public GeM (or other) listing. Normal auctions leave this unset. */
+  external: ExternalAuctionInfo;
 }
 
 /** Stock-photo hosts: a picture from these was put there by the old site, not uploaded by the seller. */
@@ -72,6 +75,7 @@ function text(value: unknown): string | null {
 }
 
 export function toAuctionListing(row: any, sellerName: string | null = null): AuctionListing {
+  const external = readExternalAuction(row.specifications, text(row.description));
   return {
     id: String(row.id),
     auctionNumber: text(row.auction_number) ?? `AUC-${String(row.id).replace(/-/g, '').slice(0, 6).toUpperCase()}`,
@@ -95,8 +99,9 @@ export function toAuctionListing(row: any, sellerName: string | null = null): Au
     image: sellerPhoto(row.images),
     sellerId: text(row.seller_id),
     sellerCompanyId: text(row.seller_company_id),
-    sellerName,
+    sellerName: external.external && external.sellerOrg ? external.sellerOrg : sellerName,
     categoryId: text(row.category_id),
+    external,
   };
 }
 

@@ -32,6 +32,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import BuyerQuotationsPanel from './BuyerQuotationsPanel';
 import SubscribeToContactDialog, { type SubscriptionReason } from './SubscribeToContactDialog';
 import SupplierRespondDialog from './SupplierRespondDialog';
+import { ExternalSourceLink, GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
+import { gemTenderUrl, sharedBuyerPhone, specificationProse } from '@/lib/externalListing';
 
 // ── Deal status pipeline ────────────────────────────────────────────────────────
 const DEAL_STEPS = [
@@ -391,6 +393,8 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
 
   // @ts-expect-error
   const dealStatus: string = requirement.deal_status ?? 'active';
+  const gemUrl = gemTenderUrl(requirement.specifications);
+  const contactMissing = Boolean(gemUrl) && !sharedBuyerPhone((requirement.profiles as { phone?: string | null } | undefined)?.phone);
 
   const reqDate = new Date(requirement.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -493,10 +497,18 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                   <p className="text-[12px] text-foreground leading-relaxed">{requirement.description}</p>
                 </div>
               )}
-              {requirement.specifications && (
+              {gemUrl && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <GovernmentTenderBadge />
+                  <ExternalSourceLink href={gemUrl} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF5A1F] hover:text-[#e04e00]">
+                    View bid on GeM
+                  </ExternalSourceLink>
+                </div>
+              )}
+              {requirement.specifications && (!gemUrl || specificationProse(requirement.specifications)) && (
                 <div>
                   <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">Specifications</p>
-                  <p className="text-[12px] text-foreground leading-relaxed whitespace-pre-wrap">{requirement.specifications}</p>
+                  <p className="text-[12px] text-foreground leading-relaxed whitespace-pre-wrap">{gemUrl ? specificationProse(requirement.specifications) : requirement.specifications}</p>
                 </div>
               )}
               {requirement.attachment_url && (
@@ -517,9 +529,11 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                   <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 flex items-start gap-2.5">
                     <Lock className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-xs font-bold text-foreground">Paid Subscription Companies Only</p>
+                      <p className="text-xs font-bold text-foreground">{contactMissing ? 'Quotation on BulkSkart' : 'Paid Subscription Companies Only'}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                        Only verified companies with an active paid plan can send direct messages and quotations to this buyer.
+                        {contactMissing
+                          ? 'No buyer phone number is listed for this tender. You can still send a quotation, or open the bid on GeM.'
+                          : 'Only verified companies with an active paid plan can send direct messages and quotations to this buyer.'}
                       </p>
                     </div>
                   </div>
@@ -551,7 +565,7 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                     }}
                     className="w-full bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-10 rounded-xl shadow-md gap-2"
                   >
-                    <Send className="w-4 h-4" /> Send Direct Quote / Message Buyer
+                    <Send className="w-4 h-4" /> {contactMissing ? 'Send Quote' : 'Send Direct Quote / Message Buyer'}
                   </Button>
                 </div>
               )}

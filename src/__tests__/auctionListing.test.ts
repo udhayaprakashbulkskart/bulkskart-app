@@ -24,6 +24,8 @@ describe('auction lists show auctions as stored', () => {
     expect(lot.startingPrice).toBeNull();
     expect(lot.totalBids).toBe(0);
     expect(lot.currency).toBe('INR');
+    expect(lot.external.external).toBe(false);
+    expect(lot.external.sourceUrl).toBeNull();
   });
 
   it('reads the phase from the status and the auction\'s own times', () => {
@@ -39,6 +41,26 @@ describe('auction lists show auctions as stored', () => {
     expect(secondsLeft(at(90_000), NOW)).toBe(90);
     expect(secondsLeft(at(-90_000), NOW)).toBe(0);
     expect(secondsLeft(null, NOW)).toBe(0);
+  });
+
+  it('keeps a public GeM lot\'s seller and does not invent a quantity or price', () => {
+    const lot = toAuctionListing(
+      {
+        id: 'gem-1',
+        title: 'HR coils',
+        status: 'live',
+        total_quantity: 0,
+        starting_price: 0,
+        description: 'Bid at https://bidplus.gem.gov.in/all-bids/GEM/2026/B/12345',
+        specifications: { external_listing: 'true', seller_org: 'SAIL', source_name: 'GeM' },
+      },
+      'Importer account',
+    );
+    expect(lot.external.external).toBe(true);
+    expect(lot.external.sourceUrl).toBe('https://bidplus.gem.gov.in/all-bids/GEM/2026/B/12345');
+    expect(lot.sellerName).toBe('SAIL');
+    expect(lot.totalQuantity).toBe(0);
+    expect(lot.startingPrice).toBe(0);
   });
 
   it('formats money in the lot\'s currency and leaves out prices that were not given', () => {

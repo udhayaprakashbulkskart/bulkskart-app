@@ -9,6 +9,7 @@ import {
   Flame, Building2, Package, RefreshCw, ImageOff
 } from 'lucide-react';
 import CreateReverseAuctionDialog from '@/components/auctions/CreateReverseAuctionDialog';
+import { ExternalSourceLink, PublicAuctionBadge } from '@/components/common/ExternalSourceLink';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   auctionMoney,
@@ -17,6 +18,7 @@ import {
   secondsLeft,
   type AuctionListing,
 } from '@/lib/auctionListing';
+import { viewOnSourceLabel } from '@/lib/externalListing';
 
 export default function AuctionsHubPage() {
   const navigate = useNavigate();
@@ -268,6 +270,9 @@ export default function AuctionsHubPage() {
               const startPrice = auctionMoney(auc.startingPrice, auc.currency);
               const leading = auc.totalBids > 0 ? auctionMoney(auc.currentHighestBid, auc.currency) : null;
               const isMine = Boolean(user && auc.sellerId === user.id);
+              const isPublic = auc.external.external;
+              const showQuantity = auc.totalQuantity !== null && (!isPublic || auc.totalQuantity > 0);
+              const showMoq = auc.moq !== null && (!isPublic || auc.moq > 0);
 
               return (
                 <div
@@ -311,6 +316,7 @@ export default function AuctionsHubPage() {
                       <span className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-black/75 text-white backdrop-blur-sm">
                         {auc.auctionNumber}
                       </span>
+                      {isPublic && <PublicAuctionBadge />}
                     </div>
 
                     {/* Countdown to the auction's own end time */}
@@ -359,16 +365,18 @@ export default function AuctionsHubPage() {
                       </Link>
 
                       {/* Lot Size */}
-                      {auc.totalQuantity !== null && (
+                      {showQuantity && (
                         <div className="flex items-center gap-2 mt-2 text-xs font-semibold text-muted-foreground">
                           <Package className="w-3.5 h-3.5 text-[#FF5A1F]" />
-                          <span>Bulk Lot: <strong>{auc.totalQuantity.toLocaleString('en-IN')} {auc.quantityUnit}</strong></span>
-                          {auc.moq !== null && <span className="text-muted-foreground/60">• MOQ: {auc.moq.toLocaleString('en-IN')}</span>}
+                          <span>Bulk Lot: <strong>{auc.totalQuantity!.toLocaleString('en-IN')} {auc.quantityUnit}</strong></span>
+                          {showMoq && <span className="text-muted-foreground/60">• MOQ: {auc.moq!.toLocaleString('en-IN')}</span>}
                         </div>
                       )}
 
-                      {/* Price Metrics Box */}
-                      <div className="grid grid-cols-2 gap-2 mt-3 p-3 rounded-xl bg-muted/40 border border-border/50">
+                      {/* Price Metrics Box. A public listing with no price leaves that figure out. */}
+                      {(!isPublic || startPrice || leading) && (
+                      <div className={`grid ${isPublic && startPrice && !leading ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mt-3 p-3 rounded-xl bg-muted/40 border border-border/50`}>
+                        {(!isPublic || startPrice) && (
                         <div>
                           <div className="text-[10px] text-muted-foreground font-semibold uppercase">
                             Starting price
@@ -377,6 +385,8 @@ export default function AuctionsHubPage() {
                             {startPrice ? `${startPrice} / ${auc.quantityUnit}` : 'Not stated'}
                           </div>
                         </div>
+                        )}
+                        {(!isPublic || leading) && (
                         <div>
                           <div className="text-[10px] text-[#FF5A1F] font-bold uppercase">
                             {phase.key === 'sold' ? 'Winning bid' : phase.ended ? 'Highest bid' : 'Leading bid'}
@@ -385,7 +395,9 @@ export default function AuctionsHubPage() {
                             {leading ?? 'No bids yet'}
                           </div>
                         </div>
+                        )}
                       </div>
+                      )}
                     </div>
 
                     {/* Footer Actions */}
@@ -396,7 +408,7 @@ export default function AuctionsHubPage() {
                       </div>
 
                       <div className="flex items-center gap-2 flex-wrap shrink-0">
-                        {phase.ended && isMine && (
+                        {phase.ended && isMine && !isPublic && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -419,6 +431,14 @@ export default function AuctionsHubPage() {
                             <span>Re-list Lot</span>
                           </Button>
                         )}
+                        {isPublic && auc.external.sourceUrl ? (
+                          <ExternalSourceLink
+                            href={auc.external.sourceUrl}
+                            className="inline-flex items-center gap-1 font-bold text-xs h-9 px-3.5 rounded-xl bg-[#FF5A1F] hover:bg-[#e04e17] text-white shadow-sm"
+                          >
+                            {viewOnSourceLabel(auc.external.sourceName)}
+                          </ExternalSourceLink>
+                        ) : (
                         <Link to={detailPath} className="shrink-0">
                           <Button
                             size="sm"
@@ -428,10 +448,11 @@ export default function AuctionsHubPage() {
                                 : 'bg-[#FF5A1F] hover:bg-[#e04e17] text-white'
                             }`}
                           >
-                            <span>{phase.ended ? 'View Lot' : 'Enter Live Room'}</span>
+                            <span>{isPublic ? 'View listing' : phase.ended ? 'View Lot' : 'Enter Live Room'}</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </Button>
                         </Link>
+                        )}
                       </div>
                     </div>
                   </div>
