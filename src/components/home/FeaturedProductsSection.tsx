@@ -1,47 +1,27 @@
 /**
- * FeaturedProductsSection - High-Scale B2B Wholesale Product Marketplace Catalog
- * Powered by Direct Global Manufacturer Sourcing & Dynamic Supabase Database
- *
- * Requirements Met:
- * 1. Product Catalog: Dynamic backend pagination supporting 5,000+ to millions of products
- * 2. Categories: All, Apparel, Electronics, Machinery, Home & Garden, Beauty & Personal Care,
- *    Furniture, Construction, Automotive, Agriculture, Packaging, Electrical, Renewable Energy,
- *    Raw Materials, More Categories (dynamically loaded from DB)
- * 3. Product Cards: Real product-specific photography, Name, MOQ, Bulk Price Range, Supplier,
- *    Country flag, Verified badge, Star Rating, Review count, Badges (Bulk Deal, New, Popular, Best Seller),
- *    View Details, Get Quote (#FF5A00 brand button opening QuickQuoteModal)
- * 4. Search & Filter: Search products, Category, Sub-category, MOQ, Price, Country, Verified Supplier,
- *    Rating, Sort (Popular, New, Price Low-High, Price High-Low)
- * 5. Mobile & Desktop: Mobile 2-column grid without text clipping, desktop 4-6 column grid,
- *    smooth horizontal category scrolling, mobile filter drawer.
+ * FeaturedProductsSection - "Verified Bulk Products" on the home page, laid out from the design picture:
+ * banner (title, line, Explore Products, boxes on a pallet), four promises, category chips with a scroll
+ * arrow, "Trending Wholesale Deals" with View All, and two-per-row cards on phones (picture, ribbon badge,
+ * save, name, bulk price with the minimum-order price struck through and the saving, MOQ, Free Delivery,
+ * Loan Eligible, Buy in Bulk). Products come from the catalogue, filled out with the sample catalogue,
+ * rotate every 30 seconds and load more on request. Search and filters live on the Products page.
  */
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
-  ArrowRight, Check, Heart, Star, Flame, Crown, Tag,
-  MessageSquare, RefreshCw, Sparkles, AlertCircle, ChevronRight,
-  Search, SlidersHorizontal, Filter, X, Building2, MapPin,
-  ShieldCheck, ChevronDown, CheckCircle2, Globe, Layers, ArrowUpDown,
-  Zap, PackageCheck, ExternalLink, Loader2,
-  Truck, LayoutGrid, Wrench, Cpu, Shirt, Home, Network, Box
+  ArrowRight, Heart, Flame, AlertCircle, ChevronRight, ShieldCheck, ChevronDown, CheckCircle2, Layers,
+  Zap, PackageCheck, Loader2, Truck, LayoutGrid, Wrench, Cpu, Shirt, Home, Box, CookingPot, Monitor, ShoppingCart,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select';
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger
-} from '@/components/ui/sheet';
 import SafeImage from '@/components/common/SafeImage';
 import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import QuickQuoteModal from '@/components/home/QuickQuoteModal';
 import { getMarketplaceProducts, getCategories, type MarketplaceProductFilterOptions } from '@/lib/api';
-import type { Product, Category } from '@/types/types';
+import type { Category } from '@/types/types';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { shortMoq } from '@/lib/moqText';
 import { CURATED_INDUSTRIAL_PRODUCTS, type CuratedProduct } from '@/data/curatedIndustrialProducts';
 import { catalogProductPhoto, VERIFIED_BULK_CURATED_PHOTOS } from '@/data/verifiedBulkProductPhotos';
 
@@ -80,10 +60,15 @@ interface NavCategory {
   dbSlugMatch: string[];
   icon?: string;
   subCategories: string[];
+  /** Words that put a product in this group when the database has no category for it. */
+  keywords?: RegExp;
 }
+
+const KITCHEN_WORDS = /\b(kitchen\w*|cook\w*|dinnerware|tableware|crockery|cutlery|utensils?|sinks?|stoves?|fryers?|ovens?|burners?|tandoor)\b/i;
 
 const MARKETPLACE_CATEGORIES: NavCategory[] = [
   { id: 'all', label: 'All Products', dbSlugMatch: [], subCategories: ['All Subcategories', 'High Demand', 'Wholesale Bulk', 'Direct Factory'] },
+  { id: 'kitchen', label: 'Kitchen', dbSlugMatch: ['kitchen'], subCategories: ['All Subcategories', 'Cookware', 'Kitchen Sinks', 'Dinnerware', 'Commercial Kitchen'], keywords: KITCHEN_WORDS },
   { id: 'apparel', label: 'Apparel', dbSlugMatch: ['textiles-apparel', 'apparel', 'fashion'], subCategories: ['All Subcategories', 'Fabric Rolls', 'Cotton Yarn', 'Denim', 'Silk', 'Garments', 'Sportswear'] },
   { id: 'electronics', label: 'Electronics', dbSlugMatch: ['electronics-electricals', 'electronics'], subCategories: ['All Subcategories', 'Microchips', 'Sensors', 'Audio Equipment', 'IoT Devices', 'CCTV', 'Displays'] },
   { id: 'machinery', label: 'Machinery', dbSlugMatch: ['machinery-industrial', 'machinery'], subCategories: ['All Subcategories', 'CNC Centers', 'Excavators', 'Hydraulic Pumps', 'Milling', 'Lathes', 'Water Pumps'] },
@@ -198,50 +183,21 @@ function getInitialDisplayProducts(seed = createVisitSeed()): DisplayProduct[] {
   return pickProductBatch(shuffled, 0, LANDING_DISPLAY_COUNT);
 }
 
+/** The four promises under the banner, as in the design picture. */
 const FEATURE_STRIP = [
-  { icon: ShieldCheck, label: 'Verified', sub: 'Manufacturers', color: 'text-[#FF5A00]' },
-  { icon: Box, label: 'Bulk', sub: 'Pricing', color: 'text-[#FF5A00]' },
-  { icon: Layers, label: 'MOQ', sub: 'Min. 10 Pieces', color: 'text-[#FF5A00]' },
-  { icon: Truck, label: 'Free', sub: 'Delivery', color: 'text-[#FF7A2E]' },
+  { icon: ShieldCheck, label: 'Verified', sub: 'Manufacturers' },
+  { icon: Layers, label: 'Low MOQ', sub: '(Min. 10 Pcs)' },
+  { icon: Truck, label: 'Free', sub: 'Delivery' },
+  { icon: Zap, label: 'Best', sub: 'Wholesale Price' },
 ];
-
-/** Gold laurel wreath for the section title (desktop only). */
-function FeaturedLaurel({ side }: { side: 'left' | 'right' }) {
-  const id = `featured-laurel-${side}`;
-  return (
-    <svg
-      viewBox="0 0 40 80"
-      aria-hidden="true"
-      className="hidden h-16 w-9 shrink-0 sm:block"
-      style={side === 'right' ? { transform: 'scaleX(-1)' } : undefined}
-    >
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#F7C35A" />
-          <stop offset="1" stopColor="#B7791F" />
-        </linearGradient>
-      </defs>
-      <path d="M30 4 C 10 18, 8 46, 30 76" fill="none" stroke={`url(#${id})`} strokeWidth="2.2" strokeLinecap="round" />
-      {[14, 26, 38, 50, 62].map((y, i) => (
-        <ellipse
-          key={y}
-          cx={i % 2 ? 14 : 20}
-          cy={y}
-          rx="6"
-          ry="2.6"
-          transform={`rotate(${i % 2 ? -35 : 35} ${i % 2 ? 14 : 20} ${y})`}
-          fill={`url(#${id})`}
-        />
-      ))}
-    </svg>
-  );
-}
 
 /** Icon for a category pill, chosen from its label. */
 function categoryIcon(label: string) {
   const l = label.toLowerCase();
   if (l.includes('all')) return LayoutGrid;
+  if (l.includes('kitchen')) return CookingPot;
   if (l.includes('machin')) return Wrench;
+  if (l === 'electronics') return Monitor;
   if (l.includes('electr')) return Cpu;
   if (l.includes('apparel') || l.includes('textile')) return Shirt;
   if (l.includes('home') || l.includes('garden')) return Home;
@@ -249,9 +205,7 @@ function categoryIcon(label: string) {
 }
 
 export default function FeaturedProductsSection() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { formatPrice, countryConfig, currencyInfo, setCountry } = useCurrency();
+  const { formatPrice, countryConfig, currencyInfo } = useCurrency();
 
   // Dynamic state
   const [categories, setCategories] = useState<Category[]>([]);
@@ -269,16 +223,6 @@ export default function FeaturedProductsSection() {
   const [verifiedOnly, setVerifiedOnly] = useState<boolean>(false);
   const [ratingFilter, setRatingFilter] = useState<string>('all');
 
-  const handleCountryFilterChange = (v: string) => {
-    setCountryFilter(v);
-    setPage(1);
-    if (v === 'India') {
-      setCountry('IN');
-    } else if (v === 'USA') {
-      setCountry('US');
-    }
-  };
-
   // Visit seed → different product batch on every hard refresh
   const visitSeedRef = useRef<number>(createVisitSeed());
   const [catalogPool, setCatalogPool] = useState<DisplayProduct[]>(() =>
@@ -289,7 +233,7 @@ export default function FeaturedProductsSection() {
   );
   const rotationOffsetRef = useRef(rotationOffset);
   rotationOffsetRef.current = rotationOffset;
-  const [secondsLeft, setSecondsLeft] = useState(ROTATION_SECONDS);
+  const [, setSecondsLeft] = useState(ROTATION_SECONDS);
   const [isRotating, setIsRotating] = useState(false);
   const rotateAnimRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -308,7 +252,7 @@ export default function FeaturedProductsSection() {
   const [selectedProductForQuote, setSelectedProductForQuote] = useState<DisplayProduct | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [chipsScrolled, setChipsScrolled] = useState(false);
 
   // Category scroll container reference
   const categoryScrollRef = useRef<HTMLDivElement>(null);
@@ -391,10 +335,8 @@ export default function FeaturedProductsSection() {
     loadDbCategories();
   }, []);
 
-  // Active category subcategories
-  const activeNavCat = useMemo(() => {
-    return MARKETPLACE_CATEGORIES.find(c => c.id === selectedCategory) || MARKETPLACE_CATEGORIES[0];
-  }, [selectedCategory]);
+  /** Words for a chip with no database category of its own (Kitchen). */
+  const categoryWords = MARKETPLACE_CATEGORIES.find((c) => c.id === selectedCategory)?.keywords;
 
   // Resolve matching DB Category ID based on selected NavCategory
   const resolvedDbCategoryId = useMemo(() => {
@@ -408,21 +350,6 @@ export default function FeaturedProductsSection() {
     );
     return found ? found.id : undefined;
   }, [selectedCategory, categories]);
-
-  // Count active filters
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (selectedCategory !== 'all') count++;
-    if (selectedSubCategory !== 'all') count++;
-    if (debouncedSearch.trim()) count++;
-    if (moqFilter !== 'all') count++;
-    if (priceFilter !== 'all') count++;
-    if (countryFilter !== 'all') count++;
-    if (verifiedOnly) count++;
-    if (ratingFilter !== 'all') count++;
-    if (sortBy !== 'popular') count++;
-    return count;
-  }, [selectedCategory, selectedSubCategory, debouncedSearch, moqFilter, priceFilter, countryFilter, verifiedOnly, ratingFilter, sortBy]);
 
   // Parse MOQ and Price filters into numerical values for API
   const filterParams = useMemo<MarketplaceProductFilterOptions>(() => {
@@ -526,7 +453,7 @@ export default function FeaturedProductsSection() {
           createdAt: p.created_at,
           categoryName: cat?.name,
         }];
-      });
+      }).filter((p) => !categoryWords || Boolean(resolvedDbCategoryId) || categoryWords.test(`${p.name} ${p.subtitle} ${p.categoryName ?? ''}`));
 
       // Enrich with curated Alibaba-style samples so the landing grid stays dense & professional
       if (formatted.length < LANDING_CATALOG_MIN) {
@@ -536,6 +463,7 @@ export default function FeaturedProductsSection() {
         const matchingCategory = CURATED_INDUSTRIAL_PRODUCTS.filter(p => {
           if (seenNames.has(p.name.toLowerCase())) return false;
           if (selectedCategory === 'all') return true;
+          if (categoryWords) return categoryWords.test(`${p.name} ${p.subtitle}`);
           return p.categorySlug.toLowerCase().includes(selectedCategory.toLowerCase()) ||
                  selectedCategory.toLowerCase().includes(p.categorySlug.toLowerCase());
         });
@@ -624,6 +552,8 @@ export default function FeaturedProductsSection() {
     }
   }, [
     filterParams,
+    categoryWords,
+    resolvedDbCategoryId,
     selectedCategory,
     selectedSubCategory,
     debouncedSearch,
@@ -694,6 +624,26 @@ export default function FeaturedProductsSection() {
     setQuoteModalOpen(true);
   };
 
+  /**
+   * Price shown on a card: the bulk price (lowest in the product's own range), the price at the minimum order
+   * (highest in the range) struck through, and the saving between the two. Nothing is shown that the range lacks.
+   */
+  const priceParts = (product: DisplayProduct) => {
+    if (!product.usdMin) return { now: 'Price on request', was: '', off: 0 };
+    const isIndia =
+      countryFilter === 'India' ||
+      product.country === 'India' ||
+      countryConfig.code === 'IN' ||
+      countryConfig.currency === 'INR' ||
+      currencyInfo.currency === 'INR';
+    const inrRate = currencyInfo.rate || 83.5;
+    const low = isIndia ? Math.round(product.inrMin || product.usdMin * inrRate) : product.usdMin;
+    const high = isIndia ? Math.round(product.inrMax || product.usdMax * inrRate) : product.usdMax;
+    const show = (v: number) => (isIndia ? `₹${v.toLocaleString('en-IN')}` : formatPrice(v));
+    const off = high > low ? Math.round((1 - low / high) * 100) : 0;
+    return { now: show(low), was: off > 0 ? show(high) : '', off };
+  };
+
   // Category horizontal scroll helper
   const scrollCategories = (direction: 'left' | 'right') => {
     if (categoryScrollRef.current) {
@@ -703,569 +653,194 @@ export default function FeaturedProductsSection() {
   };
 
   return (
-    <section className="py-6 md:py-8 bg-[#15181F] border-b border-white/10 text-foreground relative overflow-hidden">
-      {/* Background ambient lighting */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#FF5A00]/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#FF5A00]/5 rounded-full blur-[120px] pointer-events-none" />
+    <section className="relative overflow-hidden border-b border-white/10 bg-black py-3 text-white sm:py-6 md:py-8" aria-labelledby="verified-bulk-products-title">
+      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-2 sm:px-5 md:px-6">
 
-      <div className="w-full max-w-[1440px] mx-auto px-3.5 sm:px-5 md:px-6 relative z-10">
-
-        {/* ── 1. SECTION HEADER — reference design: laurels, shield badge, title, subtitle, feature strip ── */}
-        <div className="mb-5 text-center sm:mb-6">
-          <div className="flex items-center justify-center gap-3 sm:gap-4">
-            <FeaturedLaurel side="left" />
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7A2E] to-[#C2410C] shadow-[0_0_40px_-6px_rgba(255,90,0,0.85)] sm:h-16 sm:w-16">
-              <ShieldCheck className="h-7 w-7 text-white sm:h-8 sm:w-8" strokeWidth={2.4} />
-            </div>
-            <h2 className="text-[30px] font-black leading-none tracking-tight sm:text-[40px]">
-              <span className="text-white">Verified </span>
-              <span className="text-[#FF5A00]">Bulk Products</span>
+        {/* ── 1. BANNER — from the design picture: title, line, Explore Products, dots, boxes on a pallet ── */}
+        <div className="relative overflow-hidden rounded-[14px] border border-white/10 bg-[radial-gradient(120%_150%_at_0%_0%,#2b1406_0%,#0e0e0e_48%,#060606_100%)] sm:rounded-2xl">
+          <div className="pointer-events-none absolute inset-y-0 right-0 [mask-image:linear-gradient(to_right,transparent,black_14%)]">
+            <img
+              src="/home-design/vbp-banner.jpg"
+              alt=""
+              width={420}
+              height={312}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-auto max-w-none"
+            />
+          </div>
+          <div className="relative z-10 flex min-h-[132px] flex-col justify-center py-2.5 pl-6 pr-3 sm:min-h-[210px] sm:pl-10 lg:min-h-[250px] lg:pl-14">
+            <h2 id="verified-bulk-products-title" className="text-[26px] font-black leading-[1.04] tracking-tight min-[400px]:text-[27px] sm:text-[42px] lg:text-[52px]">
+              <span className="block text-white">Verified</span>
+              <span className="block text-[#FF6A00]">Bulk Products</span>
             </h2>
-            <FeaturedLaurel side="right" />
-          </div>
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[12px] text-slate-300 sm:text-[14px]">
-            <span>100% Verified Manufacturers</span>
-            <span className="text-neutral-300">•</span>
-            <span>Wholesale Only</span>
-            <span className="text-neutral-300">•</span>
-            <span>Min. Order 10 Pieces</span>
-            <span className="text-neutral-300">•</span>
-            <span className="flex items-center gap-1.5 font-semibold text-[#FF7A2E]">
-              <Truck className="h-4 w-4" />
-              Free Delivery
-            </span>
-          </div>
-
-          {/* Live rotation, item count and quick actions */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-            <span className="rounded-full border border-white/10 bg-[#161616]/[0.04] px-3 py-1 font-mono text-[11px] text-slate-300">
-              {totalCount.toLocaleString()}+ Items
-            </span>
-            {isDefaultBrowse && (
-              <span className="flex items-center gap-1.5 rounded-full border border-[#FF5A00]/35 bg-[#FF5A00]/10 px-3 py-1 text-[11px] font-semibold tabular-nums text-[#FF7A2E]">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#C94400]" />
-                Live 30s Rotation · {secondsLeft}s
+            <p className="mt-1.5 max-w-[205px] text-[10.5px] leading-[1.3] text-neutral-200 min-[400px]:max-w-[215px] sm:mt-2.5 sm:max-w-[380px] sm:text-[15px] lg:max-w-[600px] lg:text-[17px]">
+              Source directly from verified manufacturers at wholesale prices
+            </p>
+            <div className="mt-2.5 flex items-center gap-7 sm:mt-4 sm:gap-12">
+              <Link
+                to="/products"
+                className="group inline-flex h-7 items-center gap-2 rounded-full bg-gradient-to-r from-[#FF7A1A] to-[#F05A00] px-3.5 text-[11px] font-bold text-white shadow-[0_8px_22px_-8px_rgba(255,90,0,0.9)] transition-transform hover:scale-[1.03] sm:h-11 sm:gap-3 sm:px-6 sm:text-[15px]"
+              >
+                Explore Products
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 sm:h-4 sm:w-4" />
+              </Link>
+              {/* Dots follow the live product rotation (a new set every 30 seconds) */}
+              <span className="flex items-center gap-1.5 sm:gap-2" aria-hidden="true">
+                {[0, 1, 2].map((dot) => (
+                  <span
+                    key={dot}
+                    className={`h-1.5 w-1.5 rounded-full transition-colors sm:h-2 sm:w-2 ${dot === Math.floor(rotationOffset / LANDING_DISPLAY_COUNT) % 3 ? 'bg-[#FF6A00]' : 'bg-white/45'}`}
+                  />
+                ))}
               </span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                visitSeedRef.current = createVisitSeed();
-                if (isDefaultBrowse && catalogPool.length > 0) {
-                  const reshuffled = shuffleWithSeed(catalogPool, visitSeedRef.current);
-                  setCatalogPool(reshuffled);
-                  setRotationOffset(visitSeedRef.current % Math.max(1, reshuffled.length));
-                  setSecondsLeft(ROTATION_SECONDS);
-                  setIsRotating(true);
-                  if (rotateAnimRef.current) clearTimeout(rotateAnimRef.current);
-                  rotateAnimRef.current = setTimeout(() => setIsRotating(false), 420);
-                }
-                fetchProducts(1, false);
-              }}
-              disabled={loading}
-              className="h-8 rounded-full border-white/15 bg-[#161616]/[0.04] px-3 text-xs text-slate-200 hover:bg-white/10"
-              title="Shuffle & refresh featured catalog"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading || isRotating ? 'animate-spin text-[#FF5A00]' : ''}`} />
-              <span className="ml-1.5 hidden sm:inline">Refresh</span>
-            </Button>
-            <Link
-              to="/products"
-              className="group flex h-8 items-center gap-1.5 rounded-full border border-[#FF5A00]/50 px-3 text-xs font-bold text-[#FF7A2E] transition-all hover:border-[#FF5A00] hover:bg-[#B33D00]/10 sm:text-sm"
-            >
-              <span>View All ({totalCount.toLocaleString()})</span>
-              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </Link>
+            </div>
           </div>
         </div>
 
-        {/* Feature strip */}
-        <div className="mb-5 grid grid-cols-2 overflow-hidden rounded-2xl border border-[#FF5A00]/25 bg-gradient-to-r from-[#0d1320] via-[#FF5A00]/[0.06] to-[#0d1320] shadow-[0_0_24px_-14px_rgba(255,90,0,0.25)] lg:grid-cols-4">
-          {FEATURE_STRIP.map(({ icon: Icon, label, sub, color }, i) => (
-            <div
-              key={label}
-              className={`flex items-center gap-3 px-4 py-4 sm:px-6 ${i % 2 === 0 ? 'border-r border-white/10' : ''} ${i < 2 ? 'border-b border-white/10 lg:border-b-0' : ''} ${i < 3 ? 'lg:border-r lg:border-white/10' : 'lg:border-r-0'}`}
-            >
-              <Icon className={`h-7 w-7 shrink-0 sm:h-8 sm:w-8 ${color}`} strokeWidth={1.8} />
-              <div>
-                <div className="text-[15px] font-black leading-tight text-white sm:text-[17px]">{label}</div>
-                <div className="mt-0.5 text-[11px] text-neutral-400 sm:text-[12px]">{sub}</div>
+        {/* Promises */}
+        <div className="mt-2.5 flex items-center justify-between gap-1 px-1 sm:mt-4 sm:justify-around sm:px-2 lg:mt-5">
+          {FEATURE_STRIP.map(({ icon: Icon, label, sub }, i) => (
+            <React.Fragment key={label}>
+              {i > 0 && <span className="h-5 w-px shrink-0 bg-white/25 sm:h-8" aria-hidden="true" />}
+              <div className="flex min-w-0 items-center gap-1 min-[380px]:gap-1.5 sm:gap-3">
+                <Icon className="h-4 w-4 shrink-0 text-[#FF6A00] min-[380px]:h-[19px] min-[380px]:w-[19px] sm:h-8 sm:w-8" strokeWidth={1.9} />
+                <div className="min-w-0 text-[8.5px] leading-[1.3] text-white min-[380px]:text-[9px] min-[400px]:text-[9.5px] sm:text-[14px] lg:text-[15px]">
+                  <div className="font-semibold">{label}</div>
+                  <div className="whitespace-nowrap text-neutral-200">{sub}</div>
+                </div>
               </div>
-            </div>
+            </React.Fragment>
           ))}
         </div>
 
-        {/* ── 2. DYNAMIC CATEGORY PILL NAVIGATION ───────────────────────────── */}
-        <div className="relative mb-3 sm:mb-4 group">
-          {/* Scroll left button */}
-          <button
-            onClick={() => scrollCategories('left')}
-            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-card border border-border text-foreground items-center justify-center hover:bg-[#C94400] hover:text-white hover:border-[#FF5A00] transition-colors shadow-lg"
-            aria-label="Scroll categories left"
-          >
-            <ChevronRight className="w-4 h-4 rotate-180" />
-          </button>
-
-          {/* Horizontally scrollable pill track */}
+        {/* ── 2. CATEGORY CHIPS ─────────────────────────────────────────────── */}
+        <div className="mt-[18px] flex items-center gap-1 min-[400px]:gap-1.5 sm:mt-6 sm:gap-2">
+          {chipsScrolled && (
+            <button
+              type="button"
+              onClick={() => scrollCategories('left')}
+              className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/40 bg-black text-white transition-colors hover:border-[#FF6A00] hover:text-[#FF6A00] md:flex"
+              aria-label="Scroll categories left"
+            >
+              <ChevronRight className="h-5 w-5 rotate-180" />
+            </button>
+          )}
           <div
             ref={categoryScrollRef}
-            className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-none scroll-smooth overscroll-x-contain px-0.5"
+            onScroll={(e) => setChipsScrolled(e.currentTarget.scrollLeft > 4)}
+            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scroll-smooth overscroll-x-contain min-[400px]:gap-1.5 sm:gap-2"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {MARKETPLACE_CATEGORIES.map(cat => {
+            {MARKETPLACE_CATEGORIES.map((cat) => {
               const active = selectedCategory === cat.id;
               const Icon = categoryIcon(cat.label);
               return (
                 <button
                   key={cat.id}
+                  type="button"
+                  aria-pressed={active}
                   onClick={() => {
                     setSelectedCategory(cat.id);
                     setSelectedSubCategory('all');
                     setPage(1);
                   }}
-                  className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${
+                  className={`flex h-[28px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2 text-[10.5px] font-semibold transition-colors min-[400px]:px-2.5 sm:h-10 sm:gap-2 sm:px-4 sm:text-[14px] ${
                     active
-                      ? 'border-transparent bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-white shadow-[0_8px_24px_-8px_rgba(255,90,0,0.8)]'
-                      : 'border-white/10 bg-[#0d1320] text-slate-200 hover:border-white/25 hover:text-white'
+                      ? 'border-transparent bg-gradient-to-r from-[#FF7A1A] to-[#F05A00] text-white shadow-[0_8px_22px_-10px_rgba(255,90,0,0.9)]'
+                      : 'border-white/40 bg-black text-white hover:border-[#FF6A00] hover:text-[#FF8A3D]'
                   }`}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
+                  <Icon className="h-3.5 w-3.5 shrink-0 sm:h-[18px] sm:w-[18px]" strokeWidth={1.9} />
                   <span>{cat.label}</span>
                 </button>
               );
             })}
           </div>
-
-          {/* Scroll right button */}
           <button
+            type="button"
             onClick={() => scrollCategories('right')}
-            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-card border border-border text-foreground items-center justify-center hover:bg-[#C94400] hover:text-white hover:border-[#FF5A00] transition-colors shadow-lg"
-            aria-label="Scroll categories right"
+            className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full border border-white/40 bg-black text-white transition-colors hover:border-[#FF6A00] hover:text-[#FF6A00] sm:h-10 sm:w-10"
+            aria-label="More categories"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
         </div>
 
-        {/* ── 3. SEARCH & ADVANCED FILTER TOOLBAR ───────────────────────────── */}
-        <div className="bg-card border border-border rounded-xl p-2.5 sm:p-3 mb-4 shadow-sm">
-          {/* Top row: Search input + mobile filter trigger + desktop quick filters */}
-          <div className="flex flex-col sm:flex-row flex-wrap xl:flex-nowrap items-stretch sm:items-center gap-2 sm:gap-2.5">
-            {/* Search Input */}
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <Input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search 5,000+ products (e.g. Solar panels, Cotton, CNC, Food truck)..."
-                className="pl-9 pr-8 h-9 text-xs sm:text-sm bg-background border-border text-foreground placeholder:text-muted-foreground rounded-lg focus-visible:ring-1 focus-visible:ring-[#FF5A00] focus-visible:border-[#FF5A00]"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Desktop Quick Dropdowns */}
-            <div className="hidden lg:flex flex-wrap items-center gap-1.5 xl:gap-2">
-              {/* Sub-category selector */}
-              {activeNavCat.subCategories.length > 1 && (
-                <Select
-                  value={selectedSubCategory}
-                  onValueChange={v => {
-                    setSelectedSubCategory(v);
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="w-[150px] h-9 text-xs bg-background border-border text-foreground rounded-lg">
-                    <SelectValue placeholder="Subcategory" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border text-foreground">
-                    <SelectItem value="all">All Subcategories</SelectItem>
-                    {activeNavCat.subCategories.filter(s => s !== 'All Subcategories').map(sub => (
-                      <SelectItem key={sub} value={sub}>{sub}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-
-              {/* MOQ Filter */}
-              <Select value={moqFilter} onValueChange={v => { setMoqFilter(v); setPage(1); }}>
-                <SelectTrigger className="w-[125px] h-9 text-xs bg-background border-border text-foreground rounded-lg">
-                  <SelectValue placeholder="MOQ" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border text-foreground">
-                  <SelectItem value="all">Any MOQ</SelectItem>
-                  <SelectItem value="50">MOQ ≤ 50</SelectItem>
-                  <SelectItem value="100">MOQ ≤ 100</SelectItem>
-                  <SelectItem value="500">MOQ ≤ 500</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Price Filter */}
-              <Select value={priceFilter} onValueChange={v => { setPriceFilter(v); setPage(1); }}>
-                <SelectTrigger className="w-[130px] h-9 text-xs bg-background border-border text-foreground rounded-lg">
-                  <SelectValue placeholder="Price" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border text-foreground">
-                  <SelectItem value="all">Any Price</SelectItem>
-                  <SelectItem value="under50">Under $50</SelectItem>
-                  <SelectItem value="50to500">$50 - $500</SelectItem>
-                  <SelectItem value="500to2000">$500 - $2,000</SelectItem>
-                  <SelectItem value="2000plus">$2,000+</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Origin Country */}
-              <Select value={countryFilter} onValueChange={handleCountryFilterChange}>
-                <SelectTrigger className="w-[130px] h-9 text-xs bg-background border-border text-foreground rounded-lg">
-                  <SelectValue placeholder="Country" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border text-foreground">
-                  <SelectItem value="all">All Origins</SelectItem>
-                  <SelectItem value="India">🇮🇳 India</SelectItem>
-                  <SelectItem value="China">🇨🇳 China</SelectItem>
-                  <SelectItem value="USA">🇺🇸 USA</SelectItem>
-                  <SelectItem value="Germany">🇩🇪 Germany</SelectItem>
-                  <SelectItem value="UAE">🇦🇪 UAE</SelectItem>
-                  <SelectItem value="Vietnam">🇻🇳 Vietnam</SelectItem>
-                  <SelectItem value="Japan">🇯🇵 Japan</SelectItem>
-                  <SelectItem value="UK">🇬🇧 UK</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Sort By */}
-              <Select value={sortBy} onValueChange={(v: any) => { setSortBy(v); setPage(1); }}>
-                <SelectTrigger className="w-[145px] h-9 text-xs bg-background border-border text-foreground rounded-lg">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border text-foreground">
-                  <SelectItem value="popular">🔥 Most Popular</SelectItem>
-                  <SelectItem value="new">✨ New Arrivals</SelectItem>
-                  <SelectItem value="price_low">💵 Price: Low to High</SelectItem>
-                  <SelectItem value="price_high">💎 Price: High to Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Mobile / Tablet Filter Button */}
-            <div className="flex items-center gap-2 sm:shrink-0">
-              <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`h-9 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 flex-1 sm:flex-initial ${
-                      activeFilterCount > 0
-                        ? 'bg-[#C94400] text-white border-[#FF5A00]'
-                        : 'bg-card text-foreground border-border hover:bg-muted'
-                    }`}
-                  >
-                    <SlidersHorizontal className="w-3.5 h-3.5" />
-                    <span>Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="bg-background border-r border-border text-foreground w-[300px] sm:w-[360px] p-5 overflow-y-auto">
-                  <SheetHeader className="mb-5 pb-3 border-b border-border text-left">
-                    <SheetTitle className="text-foreground text-base font-bold flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-[#FF5A00]" />
-                      Marketplace Filters
-                    </SheetTitle>
-                  </SheetHeader>
-
-                  <div className="space-y-4 text-xs">
-                    {/* Sub-Category */}
-                    <div>
-                      <label className="text-muted-foreground block mb-1.5 font-medium">Sub-Category</label>
-                      <Select
-                        value={selectedSubCategory}
-                        onValueChange={v => {
-                          setSelectedSubCategory(v);
-                          setPage(1);
-                        }}
-                      >
-                        <SelectTrigger className="w-full h-9 bg-card border-border text-foreground rounded-lg">
-                          <SelectValue placeholder="Subcategory" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border text-foreground">
-                          <SelectItem value="all">All Subcategories</SelectItem>
-                          {activeNavCat.subCategories.filter(s => s !== 'All Subcategories').map(sub => (
-                            <SelectItem key={sub} value={sub}>{sub}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Sort */}
-                    <div>
-                      <label className="text-muted-foreground block mb-1.5 font-medium">Sort By</label>
-                      <Select value={sortBy} onValueChange={(v: any) => { setSortBy(v); setPage(1); }}>
-                        <SelectTrigger className="w-full h-9 bg-card border-border text-foreground rounded-lg">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border text-foreground">
-                          <SelectItem value="popular">🔥 Most Popular</SelectItem>
-                          <SelectItem value="new">✨ New Arrivals</SelectItem>
-                          <SelectItem value="price_low">💵 Price: Low to High</SelectItem>
-                          <SelectItem value="price_high">💎 Price: High to Low</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* MOQ */}
-                    <div>
-                      <label className="text-muted-foreground block mb-1.5 font-medium">Minimum Order Quantity (MOQ)</label>
-                      <Select value={moqFilter} onValueChange={v => { setMoqFilter(v); setPage(1); }}>
-                        <SelectTrigger className="w-full h-9 bg-card border-border text-foreground rounded-lg">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border text-foreground">
-                          <SelectItem value="all">Any MOQ</SelectItem>
-                          <SelectItem value="50">Small Batch (≤ 50 Units)</SelectItem>
-                          <SelectItem value="100">Medium Batch (≤ 100 Units)</SelectItem>
-                          <SelectItem value="500">Commercial Batch (≤ 500 Units)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Price Bracket */}
-                    <div>
-                      <label className="text-muted-foreground block mb-1.5 font-medium">Unit Price Range</label>
-                      <Select value={priceFilter} onValueChange={v => { setPriceFilter(v); setPage(1); }}>
-                        <SelectTrigger className="w-full h-9 bg-card border-border text-foreground rounded-lg">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border text-foreground">
-                          <SelectItem value="all">Any Price</SelectItem>
-                          <SelectItem value="under50">Under $50</SelectItem>
-                          <SelectItem value="50to500">$50 - $500</SelectItem>
-                          <SelectItem value="500to2000">$500 - $2,000</SelectItem>
-                          <SelectItem value="2000plus">$2,000+</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Country of Origin */}
-                    <div>
-                      <label className="text-muted-foreground block mb-1.5 font-medium">Supplier Origin Country</label>
-                      <Select value={countryFilter} onValueChange={handleCountryFilterChange}>
-                        <SelectTrigger className="w-full h-9 bg-card border-border text-foreground rounded-lg">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border text-foreground">
-                          <SelectItem value="all">All Origins</SelectItem>
-                          <SelectItem value="India">🇮🇳 India</SelectItem>
-                          <SelectItem value="China">🇨🇳 China</SelectItem>
-                          <SelectItem value="USA">🇺🇸 USA</SelectItem>
-                          <SelectItem value="Germany">🇩🇪 Germany</SelectItem>
-                          <SelectItem value="UAE">🇦🇪 UAE</SelectItem>
-                          <SelectItem value="Vietnam">🇻🇳 Vietnam</SelectItem>
-                          <SelectItem value="Japan">🇯🇵 Japan</SelectItem>
-                          <SelectItem value="UK">🇬🇧 UK</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Verified Only Toggle */}
-                    <div className="pt-2 border-t border-border flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <ShieldCheck className="w-4 h-4 text-[#FF7A2E]" />
-                        <span className="text-foreground font-medium">Verified Suppliers Only</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={verifiedOnly}
-                        onChange={e => { setVerifiedOnly(e.target.checked); setPage(1); }}
-                        className="w-4 h-4 accent-[#FF5A00] rounded cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Rating Filter */}
-                    <div>
-                      <label className="text-muted-foreground block mb-1.5 font-medium">Supplier Minimum Rating</label>
-                      <Select value={ratingFilter} onValueChange={v => { setRatingFilter(v); setPage(1); }}>
-                        <SelectTrigger className="w-full h-9 bg-card border-border text-foreground rounded-lg">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border text-foreground">
-                          <SelectItem value="all">Any Rating</SelectItem>
-                          <SelectItem value="4.5">★ 4.5 & Above (Top Rated)</SelectItem>
-                          <SelectItem value="4.0">★ 4.0 & Above</SelectItem>
-                          <SelectItem value="3.5">★ 3.5 & Above</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Drawer Action Buttons */}
-                    <div className="pt-4 border-t border-border space-y-2">
-                      <Button
-                        onClick={() => setMobileFilterOpen(false)}
-                        className="w-full bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-9 rounded-lg"
-                      >
-                        Apply Filters ({totalCount.toLocaleString()} Results)
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={handleResetFilters}
-                        className="w-full text-muted-foreground hover:text-foreground h-8 text-xs"
-                      >
-                        Reset All Filters
-                      </Button>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-
-              {/* Reset filter badge button if filters applied */}
-              {activeFilterCount > 0 && (
-                <button
-                  onClick={handleResetFilters}
-                  className="text-[11px] text-[#FF5A00] hover:underline flex items-center gap-1 px-1.5 py-1 whitespace-nowrap"
-                >
-                  <X className="w-3 h-3" />
-                  <span>Clear ({activeFilterCount})</span>
-                </button>
-              )}
-            </div>
-          </div>
+        {/* ── 3. TRENDING WHOLESALE DEALS ───────────────────────────────────── */}
+        <div className="mb-3 mt-5 flex items-center justify-between gap-2 sm:mb-5 sm:mt-8">
+          <h3 className="flex min-w-0 items-center gap-1.5 text-[16px] font-black tracking-tight min-[400px]:text-[17px] sm:gap-2.5 sm:text-[26px]">
+            <Flame className="h-5 w-5 shrink-0 fill-[#FF6A00] text-[#FF8A3D] sm:h-7 sm:w-7" />
+            <span className="truncate">
+              Trending Wholesale <span className="text-[#FF6A00]">Deals</span>
+            </span>
+          </h3>
+          <Link
+            to="/products"
+            className="group flex h-[22px] shrink-0 items-center gap-1.5 rounded-full border border-[#FF6A00] px-2.5 text-[10.5px] font-bold text-[#FF6A00] transition-colors hover:bg-[#FF6A00]/10 sm:h-10 sm:gap-2 sm:px-5 sm:text-[14px]"
+          >
+            View All
+            <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 sm:h-4 sm:w-4" />
+          </Link>
         </div>
 
         {/* ── 4. PRODUCT GRID ───────────────────────────────────────────────── */}
         {loading && products.length === 0 ? (
-          // Skeleton Loader: 8 cards matching PC grid
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5 md:gap-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, idx) => (
-              <div
-                key={idx}
-                className="bg-card border border-border rounded-xl overflow-hidden p-2 sm:p-2.5 animate-pulse flex flex-col"
-              >
-                <div className="aspect-[4/3] w-full bg-muted rounded-lg mb-2.5" />
-                <div className="h-4 bg-muted rounded w-3/4 mb-1.5" />
-                <div className="h-3 bg-muted/60 rounded w-1/2 mb-2" />
-                <div className="h-4 bg-muted rounded w-2/3 mb-2 mt-auto" />
-                <div className="h-8 bg-muted rounded w-full mt-2" />
+              <div key={idx} className="flex animate-pulse flex-col overflow-hidden rounded-[11px] border border-white/15 bg-[#0b0b0b] sm:rounded-2xl">
+                <div className="aspect-[16/9] w-full bg-white/10" />
+                <div className="flex flex-col gap-2 p-2.5">
+                  <div className="h-3.5 w-3/4 rounded bg-white/10" />
+                  <div className="h-5 w-1/2 rounded bg-white/10" />
+                  <div className="h-3 w-2/3 rounded bg-white/10" />
+                  <div className="mt-1 h-8 w-full rounded-full bg-white/10" />
+                </div>
               </div>
             ))}
           </div>
         ) : error && products.length === 0 ? (
-          // Error State with Retry
-          <div className="bg-card border border-destructive/30 rounded-xl p-8 text-center my-6 max-w-md mx-auto shadow-sm">
-            <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
-            <h3 className="text-foreground font-bold text-base mb-1">Catalog Connection Error</h3>
-            <p className="text-muted-foreground text-xs mb-4">{error}</p>
+          <div className="mx-auto my-6 max-w-md rounded-xl border border-[#FF5A00]/30 bg-[#0b0b0b] p-8 text-center">
+            <AlertCircle className="mx-auto mb-3 h-10 w-10 text-[#FF6A00]" />
+            <h3 className="mb-1 text-base font-bold text-white">Catalog Connection Error</h3>
+            <p className="mb-4 text-xs text-neutral-400">{error}</p>
             <Button
               onClick={() => fetchProducts(1, false)}
-              className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs h-8 px-4 rounded-lg"
+              className="h-8 rounded-lg bg-[#C94400] px-4 text-xs font-bold text-white hover:bg-[#B33D00]"
             >
               Retry Loading Catalog
             </Button>
           </div>
         ) : products.length === 0 ? (
-          // Empty State with Reset Filters
-          <div className="bg-card border border-border rounded-2xl p-8 sm:p-12 text-center my-6 max-w-lg mx-auto shadow-sm">
-            <PackageCheck className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-            <h3 className="text-foreground font-bold text-base sm:text-lg mb-1">No products match your criteria</h3>
-            <p className="text-muted-foreground text-xs sm:text-sm mb-4">
-              Try adjusting your keyword, expanding price or MOQ thresholds, or switching category tabs.
-            </p>
+          <div className="mx-auto my-6 max-w-lg rounded-2xl border border-white/15 bg-[#0b0b0b] p-8 text-center sm:p-12">
+            <PackageCheck className="mx-auto mb-3 h-12 w-12 text-neutral-600" />
+            <h3 className="mb-1 text-base font-bold text-white sm:text-lg">No products in this category yet</h3>
+            <p className="mb-4 text-xs text-neutral-400 sm:text-sm">Try another category, or browse every product.</p>
             <Button
               onClick={handleResetFilters}
-              className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs sm:text-sm h-9 px-5 rounded-lg shadow-lg shadow-[#FF5A00]/20"
+              className="h-9 rounded-lg bg-[#C94400] px-5 text-xs font-bold text-white hover:bg-[#B33D00] sm:text-sm"
             >
-              Clear All Filters
+              Show All Products
             </Button>
           </div>
         ) : (
-          <>
-            {/* ── Trending Deals on Mobile (Horizontal Swipe Carousel with Partial Next Card Peek) ── */}
-            {products.length > 0 && (
-              <div className="md:hidden mb-4">
-                <div className="flex items-center justify-between mb-2 px-0.5">
-                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <Flame className="w-3.5 h-3.5 text-[#FF5A00]" />
-                    <span>Trending Wholesale Deals</span>
-                  </span>
-                  <span className="text-[10px] text-muted-foreground font-medium">Swipe to browse →</span>
-                </div>
-                <div className="flex items-stretch gap-2.5 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory overscroll-x-contain touch-pan-x -mx-3.5 px-3.5 sm:-mx-5 sm:px-5">
-                  {products.slice(0, 8).map((product) => {
-                    const isIndia = countryFilter === 'India' || product.country === 'India' || countryConfig.code === 'IN' || countryConfig.currency === 'INR' || currencyInfo.currency === 'INR';
-                    const inrRate = currencyInfo.rate || 83.5;
-                    const minFormatted = !product.usdMin
-                      ? 'Price on request'
-                      : isIndia ? `₹${Math.round(product.inrMin || (product.usdMin * inrRate)).toLocaleString('en-IN')}` : formatPrice(product.usdMin);
-
-                    return (
-                      <div
-                        key={`carousel-${product.id}`}
-                        className="shrink-0 w-[150px] min-[360px]:w-[165px] snap-start bg-card border border-border hover:border-[#FF5A00]/50 rounded-xl overflow-hidden flex flex-col justify-between shadow-sm"
-                      >
-                        <div className="relative aspect-square w-full bg-muted overflow-hidden">
-                          <SafeImage
-                            src={product.img}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                            sizes="165px"
-                          />
-                          {product.badgeLabel && (
-                            <span className="absolute top-1 left-1 bg-[#C94400] text-white text-[8.5px] font-bold px-1.5 py-0.2 rounded shadow">
-                              {product.badgeLabel}
-                            </span>
-                          )}
-                        </div>
-                        <div className="p-2 flex-1 flex flex-col justify-between">
-                          <Link to={product.slug ? `/products/${product.slug}` : `/products/${product.id}`}>
-                            <h4 className="text-[11px] font-bold text-foreground line-clamp-2 leading-tight hover:text-[#FF5A00]">
-                              {product.name}
-                            </h4>
-                          </Link>
-                          <div className="mt-1 pt-1 border-t border-border">
-                            <div className="text-[#FF5A00] font-black text-xs leading-none">
-                              {minFormatted}
-                            </div>
-                            <div className="text-[9.5px] text-[#FF7A2E] font-semibold mt-0.5 truncate">
-                              {product.moq}
-                            </div>
-                            <LoanEligibleTag size="xs" className="mt-1" />
-                          </div>
-                          <Button
-                            onClick={() => openQuoteModal(product)}
-                            size="sm"
-                            className="w-full h-7 mt-2 bg-[#C94400] hover:bg-[#B33D00] text-white text-[10px] font-bold rounded-lg p-0"
-                          >
-                            Get Best Price
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Responsive Product Marketplace Grid */}
-            {/* Mobile: Exactly 2-column grid without text clipping */}
-            {/* Desktop PC: Balanced 3 to 4 columns (up to 5 on 2K+) */}
-            <div
-              className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5 md:gap-4 transition-opacity duration-300 ${
-                isRotating ? 'opacity-55' : 'opacity-100'
-              }`}
-            >
+          <div
+            className={`grid grid-cols-2 gap-2 transition-opacity duration-300 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 ${
+              isRotating ? 'opacity-55' : 'opacity-100'
+            }`}
+          >
             {products.map((product, productIdx) => {
               const isFav = favorites.has(product.id);
-
+              const price = priceParts(product);
+              const href = product.slug ? `/products/${product.slug}` : `/products/${product.id}`;
               return (
-                <div
+                <article
                   key={`${product.id}-${rotationOffset}`}
-                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#FF5A00]/35 bg-gradient-to-b from-[#0e1522] to-[#0a0f1a] shadow-[0_18px_50px_-22px_rgba(255,90,0,0.55)] transition-all duration-300 hover:-translate-y-1 hover:border-[#FF5A00] animate-in fade-in duration-300"
+                  className="group flex flex-col overflow-hidden rounded-[11px] border border-white/20 bg-[#0b0b0b] transition-colors duration-300 animate-in fade-in hover:border-[#FF6A00]/70 sm:rounded-2xl"
                 >
-                    {/* ── Product Image Container ── */}
-                    <div className="relative aspect-square w-full overflow-hidden bg-[#0a0f1a]">
+                  {/* Picture, ribbon and save */}
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#141414]">
+                    <Link to={href} tabIndex={-1} aria-hidden="true" className="block h-full w-full">
                       <SafeImage
                         src={product.img}
                         alt={product.name}
@@ -1273,139 +848,103 @@ export default function FeaturedProductsSection() {
                         category={product.categoryName}
                         isDuplicateOnPage={false}
                         isRepresentativeImage={true}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         loading={productIdx < 6 ? 'eager' : 'lazy'}
                         priority={productIdx < 4}
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
+                        sizes="(max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 340px"
                       />
-
-                    <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#0a0f1a] to-transparent pointer-events-none" />
-
-                    {/* Top-left: Verified Product badge (reference design) */}
-                    <div className="absolute left-2.5 top-2.5 z-10">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#C94400] to-[#B33D00] px-2.5 py-1 text-[10px] font-bold text-white shadow-lg sm:text-[11px]">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Verified Product
+                    </Link>
+                    {product.badgeLabel && (
+                      <span className="pointer-events-none absolute left-1 top-2 z-10 sm:left-1.5 sm:top-3">
+                        <span className="relative block rounded-r-full rounded-tl-[5px] bg-gradient-to-r from-[#FF7A1A] to-[#F05A00] py-[3px] pl-2 pr-2.5 text-[9.5px] font-extrabold leading-none text-white shadow-[0_4px_10px_-4px_rgba(0,0,0,0.8)] sm:py-1.5 sm:pl-3 sm:pr-4 sm:text-[12px]">
+                          {product.badgeLabel}
+                        </span>
+                        <span className="absolute -bottom-[4px] left-0 h-[4px] w-[5px] bg-[#8A2E00] [clip-path:polygon(0_0,100%_0,100%_100%)]" />
                       </span>
-                    </div>
-
-                    {/* Top-right: save button */}
+                    )}
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         toggleFavorite(product.id, product.name);
                       }}
-                      className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-[#0A0A0A]/50 backdrop-blur-md transition-transform hover:scale-110"
-                      aria-label="Save to wishlist"
+                      className="absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-white/40 bg-black/60 backdrop-blur-sm transition-transform hover:scale-110 sm:right-2.5 sm:top-2.5 sm:h-9 sm:w-9"
+                      aria-label={isFav ? 'Remove from wishlist' : 'Save to wishlist'}
+                      aria-pressed={isFav}
                     >
-                      <Heart
-                        className={`h-4 w-4 ${isFav ? 'fill-[#FF5A00] text-[#FF5A00]' : 'text-white'}`}
-                      />
+                      <Heart className={`h-3.5 w-3.5 sm:h-[18px] sm:w-[18px] ${isFav ? 'fill-[#FF6A00] text-[#FF6A00]' : 'text-white'}`} />
                     </button>
                   </div>
 
-                  {/* ── Product Card Body (reference design) ── */}
-                  <div className="flex flex-1 flex-col p-3 sm:p-3.5">
-                    {/* Product Title */}
-                    <Link
-                      to={product.slug ? `/products/${product.slug}` : `/products/${product.id}`}
-                      className="block transition-colors group-hover:text-[#FF7A2E]"
-                    >
-                      <h3
-                        className="min-h-[2.6em] line-clamp-2 text-[14px] font-bold leading-snug text-white sm:text-[15px]"
-                        title={product.name}
-                      >
+                  <div className="flex flex-1 flex-col px-2 pb-2.5 pt-2 min-[400px]:px-2.5 sm:px-4 sm:pb-4 sm:pt-3">
+                    <Link to={href} className="transition-colors hover:text-[#FF8A3D]">
+                      <h4 className="line-clamp-2 min-h-[2.4em] text-[12px] font-extrabold leading-[1.2] text-white min-[400px]:text-[12.5px] sm:text-[16px]" title={product.name}>
                         {product.name}
-                      </h3>
+                      </h4>
                     </Link>
 
-                    {/* Price */}
-                    {(() => {
-                      const isIndia =
-                        countryFilter === 'India' ||
-                        product.country === 'India' ||
-                        countryConfig.code === 'IN' ||
-                        countryConfig.currency === 'INR' ||
-                        currencyInfo.currency === 'INR';
-                      const inrRate = currencyInfo.rate || 83.5;
-                      const minFormatted = !product.usdMin
-                        ? 'Price on request'
-                        : isIndia
-                          ? `₹${Math.round(product.inrMin || (product.usdMin * inrRate)).toLocaleString('en-IN')}`
-                          : formatPrice(product.usdMin);
-                      const maxFormatted = isIndia
-                        ? `₹${Math.round(product.inrMax || (product.usdMax * inrRate)).toLocaleString('en-IN')}`
-                        : formatPrice(product.usdMax);
-
-                      return (
-                        <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5">
-                          <span className="text-[17px] font-black leading-none text-[#FF7A2E] sm:text-[19px]">{minFormatted}</span>
-                          {product.usdMin > 0 && product.usdMax > 0 && product.usdMax !== product.usdMin && (
-                            <span className="text-[11px] font-semibold text-neutral-400">– {maxFormatted}</span>
-                          )}
-                          {product.usdMin > 0 && <span className="text-[11px] text-neutral-400">/ Piece</span>}
-                        </div>
-                      );
-                    })()}
-
-                    {/* MOQ pill */}
-                    <div className="mt-2.5 inline-flex w-fit items-center gap-1.5 rounded-lg border border-[#FF5A00]/50 bg-[#FF5A00]/5 px-2.5 py-1 text-[12px] text-slate-200">
-                      <Box className="h-3.5 w-3.5 text-[#FF7A2E]" />
-                      <span className="font-bold text-[#FF7A2E]">{product.moq}</span>
+                    {/* Bulk price, the price at the minimum order, and the saving between them */}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 sm:mt-2.5 sm:gap-x-2.5">
+                      <span className={`font-black leading-none tracking-tight text-[#FF6A00] ${!product.usdMin ? 'text-[13px] sm:text-[16px]' : price.now.length > 8 ? 'text-[15px] min-[400px]:text-[16px] sm:text-[21px]' : 'text-[17px] min-[400px]:text-[19px] sm:text-[26px]'}`}>
+                        {price.now}
+                      </span>
+                      {price.was && (
+                        <s className="text-[9px] font-semibold text-neutral-400 min-[400px]:text-[9.5px] sm:text-[13px]">{price.was}</s>
+                      )}
+                      {price.off > 0 && (
+                        <span
+                          className="ml-auto rounded-full bg-[#F05A00] px-1.5 py-[3px] text-[9px] font-extrabold leading-none text-white min-[400px]:px-2 min-[400px]:text-[9.5px] sm:px-3 sm:py-1.5 sm:text-[12px]"
+                          title="Bulk price compared with the price at the minimum order"
+                        >
+                          {price.off}% OFF
+                        </span>
+                      )}
                     </div>
 
-                    {/* Free delivery + loan eligibility pills */}
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      <div className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-[#FF5A00]/50 bg-[#FF5A00]/10 px-2.5 py-1 text-[12px] font-bold text-[#FF7A2E]">
-                        <Truck className="h-3.5 w-3.5" />
+                    <div className="mt-2 flex items-center gap-1 border-t border-white/15 pt-2 text-[9px] text-white min-[400px]:gap-1.5 min-[400px]:text-[9.5px] sm:mt-3 sm:gap-2.5 sm:pt-3 sm:text-[13px]">
+                      <span className="flex min-w-0 items-center gap-1 sm:gap-1.5" title={product.moq}>
+                        <Box className="h-3 w-3 shrink-0 text-[#FF6A00] sm:h-4 sm:w-4" strokeWidth={1.9} />
+                        <span className="truncate">{shortMoq(product.moq)}</span>
+                      </span>
+                      <span className="h-3 w-px shrink-0 bg-white/30 sm:h-4" aria-hidden="true" />
+                      <span className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+                        <Truck className="h-3 w-3 shrink-0 text-[#FF6A00] sm:h-4 sm:w-4" strokeWidth={1.9} />
                         Free Delivery
-                      </div>
-                      <LoanEligibleTag size="md" />
-                    </div>
-
-                    {/* Supplier + country */}
-                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/10 pt-2.5 text-[12px]">
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        <Building2 className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
-                        <span className="truncate text-slate-200" title={product.supplierName}>{product.supplierName}</span>
-                        {product.isVerifiedSupplier && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[#FF7A2E]" />}
-                      </div>
-                      <span className="flex shrink-0 items-center gap-1 text-slate-300">
-                        <span className="text-[13px] leading-none">{product.countryFlag || '🌐'}</span>
-                        <span className="max-w-[80px] truncate">{product.country}</span>
                       </span>
                     </div>
 
-                    {/* Primary action */}
+                    <LoanEligibleTag link size="sm" tone="gold" className="mt-2 sm:mt-3 sm:px-3 sm:py-1 sm:text-[12.5px]" />
+
+                    <div className="mt-auto pt-2.5 sm:pt-4">
                     <Button
                       onClick={() => openQuoteModal(product)}
-                      className="group/btn mt-3 h-10 w-full rounded-xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-[13px] font-bold text-white shadow-[0_10px_24px_-10px_rgba(255,90,0,0.9)] transition-transform hover:opacity-95 active:scale-[0.98]"
+                      className="group/btn h-[30px] w-full rounded-full bg-gradient-to-r from-[#FF7A1A] to-[#F05A00] px-3 text-[12px] font-bold text-white shadow-[0_8px_20px_-10px_rgba(255,90,0,0.9)] transition-transform hover:opacity-95 active:scale-[0.98] sm:h-11 sm:px-5 sm:text-[15px]"
                     >
-                      <PackageCheck className="mr-2 h-4 w-4" />
-                      <span className="truncate">Buy in Bulk</span>
-                      <ArrowRight className="ml-auto h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+                      <ShoppingCart className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+                      <span className="mx-auto truncate">Buy in Bulk</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover/btn:translate-x-0.5 sm:h-5 sm:w-5" />
                     </Button>
+                    </div>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
-        </>
         )}
 
         {/* ── 5. BACKEND PAGINATION / LOAD MORE ─────────────────────────────── */}
         {products.length > 0 && (
-          <div className="mt-6 sm:mt-8 pt-4 border-t border-border flex flex-col items-center justify-center gap-3">
-            <div className="text-xs text-muted-foreground font-medium text-center">
-              Showing <span className="text-foreground font-bold">{products.length}</span> of <span className="text-foreground font-bold">{totalCount.toLocaleString()}+</span> wholesale products
+          <div className="mt-5 flex flex-col items-center justify-center gap-3 border-t border-white/10 pt-4 sm:mt-8">
+            <div className="text-center text-xs font-medium text-neutral-400">
+              Showing <span className="font-bold text-white">{products.length}</span> of <span className="font-bold text-white">{totalCount.toLocaleString()}+</span> wholesale products
             </div>
 
             {hasMore ? (
               <Button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs sm:text-sm h-10 px-6 sm:px-8 rounded-full shadow-lg shadow-[#FF5A00]/25 transition-all flex items-center gap-2 group"
+                className="group flex h-10 items-center gap-2 rounded-full border border-[#FF6A00] bg-black px-6 text-xs font-bold text-[#FF8A3D] transition-colors hover:bg-[#FF6A00]/10 sm:px-8 sm:text-sm"
               >
                 {loadingMore ? (
                   <>
@@ -1420,7 +959,7 @@ export default function FeaturedProductsSection() {
                 )}
               </Button>
             ) : (
-              <div className="text-xs text-muted-foreground flex items-center gap-1.5 bg-card px-4 py-2 rounded-full border border-border">
+              <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-[#0b0b0b] px-4 py-2 text-xs text-neutral-400">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#FF7A2E]" />
                 <span>You've reached the end of the filtered catalog. Explore more in the complete Products Directory.</span>
               </div>
