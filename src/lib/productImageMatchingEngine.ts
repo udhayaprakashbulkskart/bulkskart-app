@@ -489,39 +489,39 @@ export function getCategoryPlaceholderSVG(categoryName?: string, productName?: s
   const title = (productName || 'Bulk Industrial Commodity').slice(0, 32);
 
   let iconPath = '';
-  let hue = 21; // BulkSkart orange
+  let hue = 24; // BulkSkart Orange default
 
   if (cat.includes('textile') || cat.includes('apparel')) {
-    hue = 21; // brand orange (site uses white, black and orange only)
+    hue = 260; // Purple / fabric
     iconPath = '<path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
   } else if (cat.includes('jewel') || cat.includes('gem')) {
-    hue = 21; // brand orange (site uses white, black and orange only)
+    hue = 45; // Gold
     iconPath = '<polygon points="6,4 18,4 22,10 12,22 2,10" stroke="currentColor" stroke-width="2" fill="none"/>';
   } else if (cat.includes('machin') || cat.includes('industr')) {
-    hue = 21; // brand orange
+    hue = 24; // Brand Orange
     iconPath = '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2" fill="none"/>';
   } else if (cat.includes('chem') || cat.includes('raw')) {
-    hue = 21; // brand orange (site uses white, black and orange only)
+    hue = 180; // Cyan
     iconPath = '<path d="M10 2v7.31a2 2 0 0 1-.37 1.15l-4.26 6.08A2 2 0 0 0 7 19.54h10a2 2 0 0 0 1.63-2.99l-4.26-6.09a2 2 0 0 1-.37-1.15V2" stroke="currentColor" stroke-width="2" fill="none"/>';
   } else if (cat.includes('packag')) {
-    hue = 21; // brand orange (site uses white, black and orange only)
+    hue = 30; // Amber kraft
     iconPath = '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" stroke="currentColor" stroke-width="2" fill="none"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12" stroke="currentColor" stroke-width="2"/>';
   } else if (cat.includes('electr')) {
-    hue = 21; // brand orange (site uses white, black and orange only)
+    hue = 210; // Blue
     iconPath = '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" stroke="currentColor" stroke-width="2" fill="none"/>';
   } else if (cat.includes('agri') || cat.includes('food')) {
-    hue = 21; // brand orange (site uses white, black and orange only)
+    hue = 140; // Green
     iconPath = '<path d="M12 2a10 10 0 0 0-10 10c0 4.4 2.9 8.2 7 9.5V14a3 3 0 0 1 6 0v7.5c4.1-1.3 7-5.1 7-9.5A10 10 0 0 0 12 2z" stroke="currentColor" stroke-width="2" fill="none"/>';
   } else if (cat.includes('steel') || cat.includes('metal') || cat.includes('construct')) {
-    hue = 21; // brand orange (site uses white, black and orange only)
+    hue = 215; // Steel slate
     iconPath = '<rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" stroke-width="2"/><line x1="9" y1="21" x2="9" y2="9" stroke="currentColor" stroke-width="2"/>';
   }
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
     <defs>
       <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#161616"/>
-        <stop offset="50%" stop-color="#1c1c1c"/>
+        <stop offset="0%" stop-color="#0b1120"/>
+        <stop offset="50%" stop-color="#0f172a"/>
         <stop offset="100%" stop-color="#020617"/>
       </linearGradient>
       <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -542,7 +542,7 @@ export function getCategoryPlaceholderSVG(categoryName?: string, productName?: s
     </g>
     <!-- Brand glow badge -->
     <circle cx="200" cy="115" r="44" fill="hsl(${hue}, 90%, 50%)" fill-opacity="0.12"/>
-    <circle cx="200" cy="115" r="32" stroke="hsl(${hue}, 85%, 55%)" stroke-width="2" fill="#1c1c1c"/>
+    <circle cx="200" cy="115" r="32" stroke="hsl(${hue}, 85%, 55%)" stroke-width="2" fill="#0f172a"/>
     <g transform="translate(188, 103) scale(1)" color="hsl(${hue}, 90%, 65%)">
       ${iconPath}
     </g>
@@ -555,8 +555,8 @@ export function getCategoryPlaceholderSVG(categoryName?: string, productName?: s
     <text x="200" y="235" fill="#f8fafc" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" text-anchor="middle">
       ${String(title).replace(/&/g, '&amp;').replace(/</g, '&lt;')}
     </text>
-    <text x="200" y="260" fill="#dd5912" font-family="system-ui, -apple-system, sans-serif" font-size="11" text-anchor="middle">
-      Photo not added yet
+    <text x="200" y="260" fill="#64748b" font-family="system-ui, -apple-system, sans-serif" font-size="11" text-anchor="middle">
+      BulkSkart Verified Sourcing Standard
     </text>
   </svg>`;
 

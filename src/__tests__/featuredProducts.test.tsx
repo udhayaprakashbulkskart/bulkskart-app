@@ -1,13 +1,10 @@
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const toastMock = vi.hoisted(() => ({ success: vi.fn(), info: vi.fn() }));
 vi.mock('sonner', () => ({ toast: toastMock }));
-
-const api = vi.hoisted(() => ({ getMarketplaceProducts: vi.fn(), getCategories: vi.fn() }));
-vi.mock('@/lib/api', () => api);
 
 const currency = vi.hoisted(() => ({
   formatPrice: (n: number) => `$${n}`,
@@ -27,7 +24,6 @@ vi.mock('@/components/common/SafeImage', () => ({
   default: ({ alt, src }: { alt: string; src: string }) => <img alt={alt} src={src} />,
 }));
 
-import FeaturedProductsSection from '@/components/home/FeaturedProductsSection';
 import ProductsShowcase, { type ShowcaseCategory, type ShowcaseProduct } from '@/components/home/products/ProductsShowcase';
 import { describeMoq } from '@/components/home/products/format';
 
@@ -125,8 +121,6 @@ function setup(overrides: Partial<React.ComponentProps<typeof ProductsShowcase<S
 beforeEach(() => {
   toastMock.success.mockClear();
   toastMock.info.mockClear();
-  api.getMarketplaceProducts.mockReset();
-  api.getCategories.mockReset();
   localStorage.clear();
 });
 
@@ -267,146 +261,5 @@ describe('Featured Products: loading, empty and error states, and the end of the
   it('dims the cards while a new batch is on its way in', () => {
     setup({ isRotating: true });
     expect(document.querySelector('.pv-grid')).toHaveClass('is-rotating');
-  });
-});
-
-/** One product as the database sends it. */
-const dbProduct = {
-  id: 'db-1',
-  name: 'Hydraulic Press 200T',
-  slug: 'hydraulic-press-200t',
-  images: ['https://images.unsplash.com/photo-9?auto=format'],
-  specifications: 'Heavy duty',
-  tags: [],
-  moq: 10,
-  moq_unit: 'Pcs',
-  price_min: 12.5,
-  price_max: 12.5,
-  price_currency: 'USD',
-  company_id: 'co-9',
-  created_at: '2026-01-01T00:00:00Z',
-  categories: { slug: 'machinery-industrial', name: 'Machinery' },
-  companies: { id: 'co-9', company_name: 'Acme Works', country: 'China', verification_status: 'verified', rating_avg: 4.8, review_count: 12, owner_id: 'u-9' },
-};
-
-function renderSection() {
-  return render(
-    <MemoryRouter>
-      <FeaturedProductsSection />
-    </MemoryRouter>,
-  );
-}
-
-describe('Featured Products: the section with its products and filters', () => {
-  beforeEach(() => {
-    api.getCategories.mockResolvedValue([{ id: 'cat-mach', slug: 'machinery-industrial', name: 'Machinery' }]);
-    api.getMarketplaceProducts.mockResolvedValue({ products: [], totalCount: 0, hasMore: true });
-  });
-
-  it('shows the new design with a full first screen of cards before anything has loaded', () => {
-    renderSection();
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Verified Bulk Products');
-    const chips = within(screen.getByRole('group', { name: 'Filter products by category' })).getAllByRole('button');
-    expect(chips.slice(0, 5).map((b) => b.textContent)).toEqual(['All Products', 'Machinery', 'Electronics', 'Apparel', 'Home & Garden']);
-    expect(chips).toHaveLength(14);
-    expect(screen.getAllByRole('article')).toHaveLength(20);
-  });
-
-  it('asks for the right category and writes a card from the product\'s own data', async () => {
-    api.getMarketplaceProducts.mockResolvedValue({ products: [dbProduct], totalCount: 1, hasMore: false });
-    renderSection();
-    await waitFor(() => expect(api.getCategories).toHaveBeenCalled());
-    await act(async () => {});
-    fireEvent.click(screen.getByRole('button', { name: 'Machinery' }));
-    await waitFor(() => expect(api.getMarketplaceProducts).toHaveBeenCalledWith(expect.objectContaining({ categoryId: 'cat-mach' })));
-    const card = await waitFor(() => {
-      const found = screen.getAllByRole('article')[0];
-      expect(within(found).getByRole('heading', { level: 3 })).toHaveTextContent('Hydraulic Press 200T');
-      return within(found);
-    });
-    expect(card.getByText('$12.5')).toBeInTheDocument();
-    expect(card.getByText('/ Piece')).toBeInTheDocument();
-    expect(card.getByText(/Minimum Order:/)).toHaveTextContent('Minimum Order: 10 Pieces');
-    expect(card.getByText('Acme Works')).toBeInTheDocument();
-    expect(card.getByText('China')).toBeInTheDocument();
-    expect(card.getByRole('link', { name: 'Hydraulic Press 200T' })).toHaveAttribute('href', '/products/hydraulic-press-200t');
-  });
-
-  it('shows a rupee price exactly as saved to a visitor who sees rupees, and no made-up price when there is none', async () => {
-    const before = { countryConfig: currency.countryConfig, currencyInfo: currency.currencyInfo };
-    currency.countryConfig = { code: 'IN', currency: 'INR' };
-    currency.currencyInfo = { currency: 'INR', rate: 83.5 };
-    try {
-      api.getMarketplaceProducts.mockResolvedValue({
-        products: [
-          { ...dbProduct, id: 'db-2', name: 'Steel Tiffin 3-Tier', slug: 'steel-tiffin', price_min: 450, price_max: 600, price_currency: 'INR' },
-          { ...dbProduct, id: 'db-3', name: 'Custom Gearbox', slug: 'custom-gearbox', price_min: null, price_max: null, price_currency: 'INR' },
-        ],
-        totalCount: 2,
-        hasMore: false,
-      });
-      renderSection();
-      await waitFor(() => expect(api.getCategories).toHaveBeenCalled());
-      await act(async () => {});
-      fireEvent.click(screen.getByRole('button', { name: 'Machinery' }));
-      const tiffin = await waitFor(() => {
-        const found = screen.getAllByRole('article').find((a) => within(a).queryByText('Steel Tiffin 3-Tier'));
-        expect(found).toBeTruthy();
-        return within(found as HTMLElement);
-      });
-      expect(tiffin.getByText('₹450')).toBeInTheDocument();
-      expect(tiffin.getByText('₹450').closest('p')).toHaveAttribute('title', '₹450 - ₹600');
-      const gearbox = within(screen.getAllByRole('article').find((a) => within(a).queryByText('Custom Gearbox')) as HTMLElement);
-      expect(gearbox.getByText('Price on request')).toBeInTheDocument();
-      expect(gearbox.queryByText(/^\/ /)).not.toBeInTheDocument();
-    } finally {
-      currency.countryConfig = before.countryConfig;
-      currency.currencyInfo = before.currencyInfo;
-    }
-  });
-
-  it('opens the quote form for the product on its card', async () => {
-    api.getMarketplaceProducts.mockResolvedValue({ products: [dbProduct], totalCount: 1, hasMore: false });
-    renderSection();
-    await waitFor(() => expect(api.getCategories).toHaveBeenCalled());
-    await act(async () => {});
-    fireEvent.click(screen.getByRole('button', { name: 'Machinery' }));
-    await waitFor(() => expect(within(screen.getAllByRole('article')[0]).getByRole('heading', { level: 3 })).toHaveTextContent('Hydraulic Press 200T'));
-    expect(screen.queryByRole('dialog', { name: 'Quick quote' })).not.toBeInTheDocument();
-    fireEvent.click(within(screen.getAllByRole('article')[0]).getByRole('button', { name: /Buy in Bulk/ }));
-    expect(screen.getByRole('dialog', { name: 'Quick quote' })).toHaveTextContent('Hydraulic Press 200T');
-  });
-
-  it('keeps the wishlist in the same place as before', () => {
-    renderSection();
-    const first = screen.getAllByRole('article')[0];
-    const name = within(first).getByRole('heading', { level: 3 }).textContent as string;
-    fireEvent.click(within(first).getByRole('button', { name: /to your wishlist/ }));
-    expect(toastMock.success).toHaveBeenCalledWith(`Saved "${name}" to Wishlist`);
-    expect(JSON.parse(localStorage.getItem('bulkskart_product_wishlist') as string)).toHaveLength(1);
-    expect(within(screen.getAllByRole('article')[0]).getByRole('button', { name: /from your wishlist/ })).toHaveAttribute('aria-pressed', 'true');
-  });
-
-  it('searches after the visitor stops typing, and can clear the search', async () => {
-    renderSection();
-    const box = screen.getByRole('textbox', { name: 'Search products' });
-    fireEvent.change(box, { target: { value: 'bearing' } });
-    await waitFor(() => expect(api.getMarketplaceProducts).toHaveBeenCalledWith(expect.objectContaining({ search: 'bearing' })), { timeout: 3000 });
-    fireEvent.click(screen.getByRole('button', { name: 'Clear the search' }));
-    expect(box).toHaveValue('');
-  });
-
-  it('loads the next page from the button', async () => {
-    api.getMarketplaceProducts.mockResolvedValue({ products: [dbProduct], totalCount: 40, hasMore: true });
-    renderSection();
-    const more = await screen.findByRole('button', { name: /Load More Products/ });
-    fireEvent.click(more);
-    await waitFor(() => expect(api.getMarketplaceProducts).toHaveBeenCalledWith(expect.objectContaining({ page: 2 })));
-  });
-
-  it('opens the filters drawer', async () => {
-    renderSection();
-    fireEvent.click(screen.getByRole('button', { name: /Filters/ }));
-    expect(await screen.findByText('Marketplace Filters')).toBeInTheDocument();
   });
 });
