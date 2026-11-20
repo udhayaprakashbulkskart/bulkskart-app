@@ -1,36 +1,45 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
-  Search, Camera, ChevronDown, ShieldCheck, Zap, Truck, ArrowRight, Sparkles,
-  Settings, Box, Shirt, FlaskConical, Recycle, Layers, LayoutGrid,
-  CheckCircle2, FileText, Gavel, Calculator, Wallet, Store, Users, Package, Globe,
-  Radio, BadgeCheck,
+  ShieldCheck, Truck, ArrowRight, Layers, ChevronRight, FilePlus2, Gavel, Store, Users, Package, Globe, BadgeCheck,
 } from 'lucide-react';
-import TransportScene from '@/components/home/TransportScene';
-import DiwaliBurst from '@/components/home/DiwaliBurst';
+import { useAuth } from '@/contexts/AuthContext';
 import ProductCarouselHero from '@/components/home/hero/ProductCarouselHero';
 
-// ── Content ────────────────────────────────────────────────────────────
-const TRENDING = ['Textile', 'Steel', 'Chemicals', 'Packaging', 'Electrical'];
+/*
+ * Top of the home page, laid out from the BulkSkart mobile design picture: the hero banner with the forklift photo,
+ * the category tiles, the "Get Bulk Orders" banner and four action tiles. The photos are cut from that picture
+ * (public/home-design). The product scroll and the stats strip follow.
+ */
 
-const CATEGORY_CHIPS = [
-  { label: 'Machinery', icon: Settings, to: '/products?category=machinery-industrial', tint: 'from-orange-500/30' },
-  { label: 'Packaging', icon: Box, to: '/products?category=packaging', tint: 'from-[#C94400]/30' },
-  { label: 'Electrical', icon: Zap, to: '/products?category=electronics-electricals', tint: 'from-[#C94400]/30' },
-  { label: 'Textile', icon: Shirt, to: '/products?category=textiles-apparel', tint: 'from-[#C94400]/30' },
-  { label: 'Chemicals', icon: FlaskConical, to: '/products?category=chemicals-raw-materials', tint: 'from-[#C94400]/30' },
-  { label: 'Plastic', icon: Recycle, to: '/products?q=plastic', tint: 'from-[#C94400]/30' },
-  { label: 'Steel', icon: Layers, to: '/products?q=steel', tint: 'from-slate-400/30' },
-  { label: 'More', icon: LayoutGrid, to: '/products', tint: 'from-[#C94400]/30' },
+// ── Content ────────────────────────────────────────────────────────────
+const HERO_SLIDES = [
+  { title: 'The Global B2B Marketplace for', accent: 'Bulk Buying & Selling' },
+  { title: 'Compare Quotes From', accent: 'Factories Worldwide' },
+  { title: 'Pay Securely With', accent: 'Trade Assurance' },
 ];
 
-const QUICK_ACTIONS = [
-  { label: 'Post RFQ', sub: 'Get quotes fast', icon: FileText, to: '/post-requirement', tint: 'from-orange-500' },
-  { label: 'Live Auctions', sub: 'Buy at best price', icon: Gavel, to: '/auctions', tint: 'from-[#C94400]' },
-  { label: 'Bulk Calculator', sub: 'Estimate & save', icon: Calculator, to: '/loan-calculator', tint: 'from-[#C94400]' },
-  { label: 'Order Loan', sub: 'Business credit', icon: Wallet, to: '/loan-calculator', tint: 'from-[#C94400]' },
-  { label: 'Become a Supplier', sub: 'List your products', icon: Store, to: '/auth?tab=supplier', tint: 'from-[#C94400]' },
+const HERO_FEATURES = [
+  { icon: ShieldCheck, label: ['Verified', 'Suppliers'] },
+  { icon: Layers, label: ['Bulk', 'Pricing'] },
+  { icon: Truck, label: ['Free', 'Delivery*'] },
+  { icon: BadgeCheck, label: ['Trade', 'Assurance'] },
+];
+
+const CATEGORY_TILES = [
+  { label: ['Industrial', 'Machinery'], img: '/home-design/cat-machinery.jpg', to: '/products?category=machinery-industrial' },
+  { label: ['Packaging', 'Materials'], img: '/home-design/cat-packaging.jpg', to: '/products?category=packaging' },
+  { label: ['Electrical', '& Electronics'], img: '/home-design/cat-electrical.jpg', to: '/products?category=electronics-electricals' },
+  { label: ['Textile', '& Apparel'], img: '/home-design/cat-textile.jpg', to: '/products?category=textiles-apparel' },
+  { label: ['Chemicals', '& Raw Materials'], img: '/home-design/cat-chemicals.jpg', to: '/products?category=chemicals-raw-materials' },
+];
+
+const ACTION_TILES = [
+  { title: 'Live Bidding', sub: '(Buy & Sell)', icon: Gavel, to: '/auctions' },
+  { title: 'Post RFQ', sub: '(Get Quotes)', icon: FilePlus2, to: '/post-requirement' },
+  { title: 'Find Suppliers', sub: '(Verified)', icon: Users, to: '/manufacturers' },
+  { title: 'Become a Supplier', sub: '(List & Sell)', icon: Store, to: '/auth?tab=supplier' },
 ];
 
 const STATS = [
@@ -39,16 +48,6 @@ const STATS = [
   { to: 120, suffix: '+', label: 'Trade Countries', icon: Globe },
   { to: 10000, suffix: '+', label: 'Live RFQs & Auctions', icon: Gavel },
 ];
-
-const PROMO_SLIDES = [
-  { tag: 'Bulk Made Easy', title: 'Source directly from', highlight: 'verified manufacturers' },
-  { tag: 'Bulk Made Easy', title: 'Compare quotes from', highlight: 'factories worldwide' },
-  { tag: 'Bulk Made Easy', title: 'Pay securely with', highlight: 'trade assurance' },
-];
-const PROMO_POINTS = ['Post requirements (RFQ) in under a minute', 'Get multiple quotations', 'Compare and choose the best offer'];
-
-const HEADLINE = ['The', 'Global', 'B2B', 'Marketplace', 'for'];
-const HEADLINE_ACCENT = ['Bulk', 'Buying', '&', 'Selling'];
 
 // ── Helpers ────────────────────────────────────────────────────────────
 function CountUp({ to, suffix = '' }: { to: number; suffix?: string }) {
@@ -84,369 +83,224 @@ function CountUp({ to, suffix = '' }: { to: number; suffix?: string }) {
 }
 
 // ── Component ──────────────────────────────────────────────────────────
-// Solid orange letters with a staggered glow-and-bounce loop (Diwali highlight).
-function GlowLetters({ word, baseDelay, reduce }: { word: string; baseDelay: number; reduce: boolean }) {
-  return (
-    <>
-      {Array.from(word).map((ch, i) => (
-        <motion.span
-          key={i}
-          className="inline-block text-[#FF5A00]"
-          initial={reduce ? false : { opacity: 0, y: 26 }}
-          animate={reduce ? undefined : {
-            opacity: 1,
-            y: [0, -5, 0],
-            textShadow: ['0 0 0px rgba(255,90,0,0)', '0 0 18px rgba(255,90,0,0.85)', '0 0 0px rgba(255,90,0,0)'],
-          }}
-          transition={{
-            opacity: { duration: 0.5, delay: baseDelay + i * 0.05 },
-            y: { duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 1 + i * 0.12 },
-            textShadow: { duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 1 + i * 0.12 },
-          }}
-        >
-          {ch}
-        </motion.span>
-      ))}
-    </>
-  );
-}
-
 export default function LandingHero() {
-  const navigate = useNavigate();
   const reduce = useReducedMotion();
-  const [query, setQuery] = useState('');
-  const [scope, setScope] = useState<'Products' | 'Suppliers'>('Products');
-  const [focused, setFocused] = useState(false);
+  const { profile, resolvedRole } = useAuth();
   const [slide, setSlide] = useState(0);
+  const isSupplier = resolvedRole === 'supplier' || profile?.role === 'supplier';
 
   useEffect(() => {
     if (reduce) return;
-    const t = setInterval(() => setSlide(s => (s + 1) % PROMO_SLIDES.length), 6500);
+    const t = setInterval(() => setSlide((s) => (s + 1) % HERO_SLIDES.length), 6500);
     return () => clearInterval(t);
   }, [reduce]);
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    const q = query.trim();
-    navigate(scope === 'Suppliers'
-      ? `/manufacturers${q ? `?q=${encodeURIComponent(q)}` : ''}`
-      : `/products${q ? `?q=${encodeURIComponent(q)}` : ''}`);
-  };
-
-  const promo = PROMO_SLIDES[slide];
-  const fadeUp = (delay: number) => ({
-    initial: reduce ? false : { opacity: 0, y: 24 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] as const },
-  });
+  const current = HERO_SLIDES[slide];
 
   return (
     <section className="relative isolate overflow-hidden bg-black text-white">
       {/* ═════════════ HERO ═════════════ */}
-      <div className="relative">
-        <div className="relative mx-auto grid max-w-[1400px] grid-cols-1 gap-8 px-4 pb-8 pt-8 sm:px-5 md:px-6 md:pb-12 md:pt-14 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
-          {/* Left column */}
-          <div className="relative">
-            <motion.div
-              {...fadeUp(0)}
-              className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#161616]/[0.06] px-3 py-1 text-[12px] font-semibold text-white/85 backdrop-blur-md"
+      <div className="relative overflow-hidden">
+        {/* the same warehouse, dim and soft, behind the text */}
+        <img
+          src="/home-design/hero-forklift.jpg"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover object-left-top opacity-[0.22] blur-[2px]"
+          loading="eager"
+          decoding="async"
+        />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+        {/* warm light from the lower left, like the picture */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_0%_100%,rgba(255,90,0,0.28),transparent_70%),radial-gradient(ellipse_50%_50%_at_75%_45%,rgba(255,140,40,0.12),transparent_70%)]" />
+        {/* warehouse and forklift photo on the right, fading into the black on its left */}
+        <div aria-hidden="true" className="pointer-events-none absolute right-0 top-0 w-[43%] max-w-[300px] [mask-image:linear-gradient(to_top,transparent_0%,#000_30%)] sm:w-[40%] sm:max-w-none lg:h-full lg:w-auto">
+          <img
+            src="/home-design/hero-forklift.jpg"
+            alt=""
+            className="h-auto w-full [mask-image:linear-gradient(90deg,transparent_0%,rgba(0,0,0,0.75)_16%,#000_30%)] lg:h-full lg:w-auto lg:max-w-none"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+
+        <div className="relative mx-auto max-w-[1400px] px-3.5 pt-4 sm:px-5 md:px-6 md:pt-12">
+          <div className="max-w-[640px]">
+            <motion.span
+              initial={reduce ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#FF5A00]/80 bg-black/50 px-2.5 py-[3px] text-[10.5px] font-semibold text-white backdrop-blur-sm md:gap-2 md:px-3 md:py-1 md:text-[13px]"
             >
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C94400] opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#C94400]" />
+              <span className="relative flex h-2 w-2 md:h-2.5 md:w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF2D1A] opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF2D1A] md:h-2.5 md:w-2.5" />
               </span>
-              Live now · 52,000+ active RFQs
-            </motion.div>
+              Live Now: 52,000+ Active RFQs
+            </motion.span>
 
-            <h1 className="max-w-[640px] text-[30px] font-black leading-[1.05] tracking-tight sm:text-[40px] md:text-[54px]">
-              {HEADLINE.map((w, i) => (
-                <motion.span
-                  key={w + i}
-                  className="mr-[0.25em] inline-block"
-                  initial={reduce ? false : { opacity: 0, y: 26, filter: 'blur(6px)' }}
-                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                  transition={{ duration: 0.6, delay: 0.08 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  {w}
-                </motion.span>
-              ))}
-              <br />
-              {HEADLINE_ACCENT.map((w, i) => (
-                <span key={w + i} className="mr-[0.25em] inline-block whitespace-nowrap">
-                  <GlowLetters word={w} baseDelay={0.45 + i * 0.12} reduce={!!reduce} />
-                </span>
-              ))}
-            </h1>
-            {/* Diwali firecracker bursts behind the headline (decorative) */}
-            <DiwaliBurst />
-
-            <motion.p {...fadeUp(0.7)} className="mt-4 max-w-[560px] text-[15px] leading-relaxed text-white/70 md:text-[17px]">
-              Connect with verified manufacturers, suppliers and bulk buyers worldwide. Get the best bulk prices, instant quotes and secure deals.
-            </motion.p>
-
-            <motion.div {...fadeUp(0.85)} className="mt-5 flex flex-wrap gap-2">
-              {[
-                { icon: ShieldCheck, label: 'Verified suppliers' },
-                { icon: Zap, label: 'Bulk pricing' },
-                { icon: Truck, label: 'Free delivery*' },
-                { icon: BadgeCheck, label: 'Trade assurance' },
-              ].map(({ icon: Icon, label }) => (
-                <span key={label} className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-[#161616]/[0.06] px-3 py-1.5 text-[12px] font-semibold text-white/90 backdrop-blur-md">
-                  <Icon className="h-3.5 w-3.5 text-[#FF5A00]" />
-                  {label}
-                </span>
-              ))}
-            </motion.div>
-
-            {/* Search */}
-            <motion.div {...fadeUp(1)} className="mt-6 max-w-[860px]">
-              <form
-                onSubmit={submit}
-                role="search"
-                className={`group relative rounded-2xl bg-gradient-to-r from-[#C94400]/60 via-white/10 to-[#B33D00]/40 p-[1.5px] transition-shadow duration-300 ${focused ? 'shadow-[0_0_40px_-8px_rgba(255,90,0,0.55)]' : 'shadow-[0_10px_40px_-18px_rgba(0,0,0,0.8)]'}`}
-              >
-                <div className="flex items-stretch overflow-hidden rounded-[14px] bg-[#161616]">
-                  <div className="relative shrink-0">
-                    <select
-                      value={scope}
-                      onChange={e => setScope(e.target.value as 'Products' | 'Suppliers')}
-                      aria-label="Search in"
-                      className="h-12 cursor-pointer appearance-none border-r border-[#2A2A2A]/10 bg-transparent pl-4 pr-8 text-[14px] font-semibold text-white focus:outline-none md:h-14"
-                    >
-                      <option>Products</option>
-                      <option>Suppliers</option>
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
-                  </div>
-                  <input
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
-                    onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
-                    placeholder="Search products, suppliers, categories…"
-                    aria-label="Search"
-                    className="min-w-0 flex-1 bg-[#161616] px-3 text-[14px] text-white placeholder:text-white/45 focus:outline-none md:px-4 md:text-[15px]"
-                  />
-                  <button type="button" aria-label="Search by image" className="px-3 text-white/55 transition-colors hover:text-[#FF5A00]">
-                    <Camera className="h-5 w-5" />
-                  </button>
-                  <button type="submit" aria-label="Search" className="relative w-12 overflow-hidden bg-gradient-to-br from-[#FF7A2E] to-[#E84A00] transition-transform active:scale-95 md:w-14">
-                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                    <Search className="relative mx-auto h-5 w-5 text-white" />
-                  </button>
-                </div>
-              </form>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-white/60">
-                <Sparkles className="h-3.5 w-3.5 text-[#FF5A00]" />
-                <span>Trending:</span>
-                {TRENDING.map(t => (
-                  <Link key={t} to={`/products?q=${encodeURIComponent(t)}`} className="rounded-full border border-white/10 bg-[#161616]/[0.04] px-2.5 py-0.5 text-white/80 transition-colors hover:border-[#FF5A00]/60 hover:text-white">
-                    {t}
-                  </Link>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Right column: floating glass cards (desktop) */}
-          <div className="relative hidden h-[360px] lg:block">
-            <motion.div
-              className="absolute right-6 top-4 w-[280px] rounded-2xl border border-white/15 bg-[#161616]/[0.07] p-4 shadow-2xl backdrop-blur-xl"
-              initial={reduce ? false : { opacity: 0, x: 30 }}
-              animate={reduce ? undefined : { opacity: 1, x: 0, y: [0, -10, 0] }}
-              transition={{ opacity: { duration: 0.8, delay: 0.6 }, x: { duration: 0.8, delay: 0.6 }, y: { duration: 6, repeat: Infinity, ease: 'easeInOut' } }}
-            >
-              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-white/60">
-                <span className="flex items-center gap-1.5"><Radio className="h-3.5 w-3.5 text-[#FF7A2E]" /> Live RFQ</span>
-                <span>2 min ago</span>
-              </div>
-              <p className="mt-2 text-[15px] font-bold leading-snug">Urgent: 500 MT Stainless Steel Pipes, ASTM A312</p>
-              <div className="mt-3 flex items-center justify-between text-[12px] text-white/70">
-                <span>Visakhapatnam</span>
-                <span className="rounded-full bg-[#FF5A00]/20 px-2 py-0.5 font-semibold text-[#FF8A4C]">12 quotes</span>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="absolute bottom-6 left-0 w-[250px] rounded-2xl border border-white/15 bg-[#0b1220]/70 p-4 shadow-2xl backdrop-blur-xl"
-              initial={reduce ? false : { opacity: 0, x: -30 }}
-              animate={reduce ? undefined : { opacity: 1, x: 0, y: [0, 8, 0] }}
-              transition={{ opacity: { duration: 0.8, delay: 0.8 }, x: { duration: 0.8, delay: 0.8 }, y: { duration: 7, repeat: Infinity, ease: 'easeInOut' } }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7A2E] to-[#E84A00]">
-                  <ShieldCheck className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-[13px] font-bold">Trade Assurance</p>
-                  <p className="text-[11px] text-white/60">Milestone escrow on every order</p>
-                </div>
-              </div>
-              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="mt-2.5 min-h-[72px] min-[400px]:min-h-[76px] sm:min-h-[118px] md:mt-4 lg:min-h-[176px]">
+              <AnimatePresence mode="wait" initial={false}>
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-[#FF7A2E] to-[#B33D00]"
-                  initial={reduce ? false : { width: '0%' }}
-                  animate={{ width: '86%' }}
-                  transition={{ duration: 1.6, delay: 1.1, ease: 'easeOut' }}
-                />
-              </div>
-              <p className="mt-1.5 text-[11px] text-white/60">Protected: 86% of buyer funds</p>
-            </motion.div>
+                  key={slide}
+                  initial={reduce ? false : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduce ? undefined : { opacity: 0, y: -10 }}
+                  transition={{ duration: 0.45 }}
+                >
+                  {slide === 0 ? (
+                    <h1 className="max-w-[245px] text-[21px] font-extrabold leading-[1.13] tracking-tight min-[400px]:max-w-[262px] min-[400px]:text-[22.5px] sm:max-w-[420px] sm:text-[34px] lg:max-w-[620px] lg:text-[52px]">
+                      {current.title}
+                      <br />
+                      <span className="text-[#FF6A14]">{current.accent}</span>
+                    </h1>
+                  ) : (
+                    <p className="max-w-[245px] text-[21px] font-extrabold leading-[1.13] tracking-tight min-[400px]:max-w-[262px] min-[400px]:text-[22.5px] sm:max-w-[420px] sm:text-[34px] lg:max-w-[620px] lg:text-[52px]">
+                      {current.title}
+                      <br />
+                      <span className="text-[#FF6A14]">{current.accent}</span>
+                    </p>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <p className="mt-2 max-w-[205px] text-[11.5px] leading-[1.35] text-white/85 min-[400px]:max-w-[222px] min-[400px]:text-[12px] sm:max-w-[420px] sm:text-[14px] lg:max-w-[460px] lg:text-[17px] lg:leading-relaxed">
+              Connect with verified manufacturers, suppliers and bulk buyers worldwide. Get the best bulk prices, instant quotes and secure deals.
+            </p>
+
+            <div className="mt-3.5 flex flex-wrap items-center gap-2 md:mt-6 md:gap-3">
+              <Link
+                to="/post-requirement"
+                className="group inline-flex h-[31px] items-center gap-1.5 rounded-[10px] bg-gradient-to-b from-[#FF7A1A] to-[#F25600] px-3.5 text-[12px] font-bold text-white shadow-[0_8px_24px_-8px_rgba(255,90,0,0.9)] transition-transform hover:-translate-y-0.5 md:h-12 md:px-6 md:text-[15px]"
+              >
+                Post Your Requirement
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <Link
+                to="/manufacturers"
+                className="inline-flex h-[31px] items-center rounded-[10px] border border-white/80 bg-black/60 px-3.5 text-[12px] font-bold text-white backdrop-blur-sm transition-colors hover:border-[#FF5A00] md:h-12 md:px-6 md:text-[15px]"
+              >
+                Get Supplier Quotes
+              </Link>
+            </div>
           </div>
+
+          {/* four promises with dividers */}
+          <ul className="relative mt-4 grid grid-cols-4 md:mt-10 md:max-w-[760px]">
+            {HERO_FEATURES.map(({ icon: Icon, label }, i) => (
+              <li key={label.join(' ')} className={`flex items-center justify-center gap-1.5 px-1 md:justify-start md:gap-2.5 md:px-4 ${i > 0 ? 'border-l border-white/20' : ''} ${i === 0 ? 'md:pl-0' : ''}`}>
+                <Icon className="h-[18px] w-[18px] shrink-0 text-[#FF6A14] min-[400px]:h-5 min-[400px]:w-5 md:h-7 md:w-7" strokeWidth={1.75} aria-hidden="true" />
+                <span className="text-[9.5px] font-medium leading-tight text-white/90 min-[400px]:text-[10px] sm:text-[12px] md:text-[14px]">
+                  {label[0]}
+                  <br />
+                  {label[1]}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {/* slide dots */}
+          <div className="relative flex items-center justify-center gap-1.5 pb-3 pt-3 md:justify-start md:gap-2 md:pb-8" role="tablist" aria-label="Hero slides">
+            {HERO_SLIDES.map((s, i) => (
+              <button
+                key={s.accent}
+                type="button"
+                role="tab"
+                aria-selected={i === slide}
+                aria-label={`Show slide ${i + 1}`}
+                onClick={() => setSlide(i)}
+                className={`h-2 w-2 rounded-full transition-colors md:h-2.5 md:w-2.5 ${i === slide ? 'bg-[#FF5A00]' : 'bg-white/35 hover:bg-white/60'}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ═════════════ CATEGORY TILES ═════════════ */}
+      <div className="relative mx-auto max-w-[1400px] px-2 sm:px-5 md:px-6">
+        <div className="grid grid-cols-6 gap-1.5 sm:gap-2.5 md:gap-4">
+          {CATEGORY_TILES.map(({ label, img, to }) => (
+            <Link
+              key={label.join(' ')}
+              to={to}
+              className="group flex flex-col items-center overflow-hidden rounded-[10px] bg-white px-0.5 pb-1.5 pt-1.5 text-center shadow-[0_6px_18px_-10px_rgba(0,0,0,0.9)] transition-transform hover:-translate-y-0.5 md:rounded-2xl md:pb-3 md:pt-3"
+            >
+              <img src={img} alt="" className="h-[33px] w-full object-contain mix-blend-multiply sm:h-[48px] md:h-[78px]" loading="eager" decoding="async" />
+              <span className="mt-1 whitespace-nowrap text-[7.5px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#141414] min-[420px]:text-[8px] sm:text-[11px] md:mt-2 md:text-[14px]">
+                {label[0]}
+                <br />
+                {label[1]}
+              </span>
+            </Link>
+          ))}
+          <Link
+            to="/categories"
+            className="flex flex-col items-center justify-center rounded-[10px] bg-white px-1 py-1.5 text-center shadow-[0_6px_18px_-10px_rgba(0,0,0,0.9)] transition-transform hover:-translate-y-0.5 md:rounded-2xl"
+          >
+            <span className="grid h-[24px] w-[24px] place-items-center rounded-full bg-[#ECECEC] sm:h-8 sm:w-8 md:h-12 md:w-12">
+              <ChevronRight className="h-3.5 w-3.5 text-[#141414] sm:h-4 sm:w-4 md:h-6 md:w-6" />
+            </span>
+            <span className="mt-1.5 whitespace-nowrap text-[7.5px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#141414] min-[420px]:text-[8px] sm:text-[11px] md:mt-2 md:text-[14px]">
+              More
+              <br />
+              Categories
+            </span>
+          </Link>
+        </div>
+      </div>
+
+      {/* ═════════════ GET BULK ORDERS ═════════════ */}
+      <div className="relative mx-auto mt-4 max-w-[1400px] px-2 sm:px-5 md:mt-6 md:px-6">
+        <div className="relative overflow-hidden rounded-2xl border border-[#FF8A4C]/35 bg-gradient-to-r from-[#120d1a] via-[#1a1224] to-[#120d1a] md:rounded-3xl">
+          <img
+            src="/home-design/banner-refinery.jpg"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-y-0 right-0 h-full w-[62%] object-cover [mask-image:linear-gradient(90deg,transparent_0%,rgba(0,0,0,0.7)_30%,#000_55%)] md:w-[55%]"
+            loading="lazy"
+            decoding="async"
+          />
+          <div className="relative px-3.5 py-3 md:px-10 md:py-10">
+            <h2 className="text-[17px] font-extrabold leading-[1.15] tracking-tight min-[400px]:text-[18px] sm:text-[26px] md:text-[40px]">
+              Get <span className="text-[#FF6A14]">Bulk Orders</span>
+              <br />
+              for Your Products
+            </h2>
+            <p className="mt-1 max-w-[190px] text-[10.5px] leading-snug text-white/85 min-[400px]:max-w-[205px] min-[400px]:text-[11px] sm:max-w-[320px] sm:text-[13px] md:mt-3 md:max-w-[420px] md:text-[16px]">
+              List your products, reach verified buyers and grow your business.
+            </p>
+            <Link
+              to={isSupplier ? '/dashboard/supplier/products' : '/auth?tab=supplier'}
+              className="group mt-2.5 inline-flex h-[27px] items-center gap-1.5 rounded-[9px] bg-gradient-to-b from-[#FF7A1A] to-[#F25600] px-3.5 text-[11.5px] font-bold text-white shadow-[0_8px_22px_-8px_rgba(255,90,0,0.9)] transition-transform hover:-translate-y-0.5 md:mt-5 md:h-12 md:px-6 md:text-[15px]"
+            >
+              List Now
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ═════════════ ACTION TILES ═════════════ */}
+      <div className="relative mx-auto mt-3 max-w-[1400px] px-2 sm:px-5 md:mt-5 md:px-6">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5 md:gap-4">
+          {ACTION_TILES.map(({ title, sub, icon: Icon, to }) => (
+            <Link
+              key={title}
+              to={to}
+              className="group flex flex-col items-center justify-center rounded-xl border border-white/12 bg-gradient-to-b from-[#1b1b1b] to-[#0e0e0e] px-0.5 py-2 text-center md:rounded-2xl shadow-[0_10px_24px_-14px_rgba(255,90,0,0.6)] transition-all hover:-translate-y-0.5 hover:border-[#FF5A00]/60 md:py-6"
+            >
+              <Icon className="h-[22px] w-[22px] text-[#FF6A14] md:h-9 md:w-9" strokeWidth={1.6} aria-hidden="true" />
+              <span className="mt-1 whitespace-nowrap text-[9.5px] font-bold leading-tight text-white min-[400px]:text-[10px] sm:text-[12px] md:mt-3 md:text-[16px]">{title}</span>
+              <span className="mt-0.5 text-[8.5px] text-white/70 min-[400px]:text-[9px] sm:text-[11px] md:text-[13px]">{sub}</span>
+            </Link>
+          ))}
         </div>
       </div>
 
       {/* ═════════════ PRODUCT SCROLL: curved product carousel ═════════════ */}
-      <ProductCarouselHero />
-
-      {/* ═════════════ CATEGORY CHIPS ═════════════ */}
-      <div className="relative mx-auto mt-2 max-w-[1400px] px-4 sm:px-5 md:px-6">
-        <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-8">
-          {CATEGORY_CHIPS.map(({ label, icon: Icon, to, tint }, i) => (
-            <motion.div
-              key={label}
-              initial={reduce ? false : { opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: 0.45, delay: i * 0.04 }}
-            >
-              <Link
-                to={to}
-                className="group relative flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-2xl border border-white/10 bg-[#161616]/[0.04] py-3.5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:shadow-[0_18px_40px_-16px_rgba(255,90,0,0.5)]"
-              >
-                <span className={`pointer-events-none absolute -inset-6 bg-gradient-to-br ${tint} to-transparent opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100`} />
-                <Icon className="relative h-5 w-5 text-[#FF7A2E] transition-transform duration-300 group-hover:scale-110" />
-                <span className="relative text-[11px] font-semibold text-white/90 md:text-[12px]">{label}</span>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* ═════════════ PROMO CAROUSEL ═════════════ */}
-      <div className="relative mx-auto mt-5 max-w-[1400px] px-4 sm:px-5 md:px-6">
-        <div className="relative min-h-[300px] overflow-hidden rounded-3xl border border-white/10 md:min-h-[320px]">
-          <motion.div
-            className="absolute inset-0"
-            initial={reduce ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.1, ease: 'easeOut' }}
-          >
-            <TransportScene />
-          </motion.div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#070B14] via-[#070B14]/75 to-[#070B14]/15" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#070B14]/80 via-transparent to-transparent" />
-
-          <div className="relative flex min-h-[300px] flex-col justify-between p-5 md:min-h-[320px] md:p-8">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`copy-${slide}`}
-                initial={reduce ? false : { opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.45 }}
-                className="max-w-[560px]"
-              >
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#FF5A00]/50 bg-[#FF5A00]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#FF8A4C]">
-                  <Sparkles className="h-3 w-3" /> {promo.tag}
-                </span>
-                <h2 className="mt-3 text-[26px] font-black leading-[1.1] md:text-[38px]">
-                  {promo.title}{' '}
-                  <span className="bg-gradient-to-r from-[#FF7A2E] to-[#FFB067] bg-clip-text text-transparent">{promo.highlight}</span>
-                </h2>
-                <ul className="mt-4 space-y-2">
-                  {PROMO_POINTS.map((p, i) => (
-                    <motion.li
-                      key={p}
-                      initial={reduce ? false : { opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.15 + i * 0.1 }}
-                      className="flex items-center gap-2.5 text-[13px] text-white/85 md:text-[14px]"
-                    >
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-[#FF5A00]" /> {p}
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.div>
-            </AnimatePresence>
-
-            <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
-              <Link
-                to="/post-requirement"
-                className="group inline-flex h-12 items-center gap-2 rounded-xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] px-6 text-[14px] font-bold text-white shadow-[0_10px_30px_-8px_rgba(255,90,0,0.7)] transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
-              >
-                Post your requirement
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-
-              <div className="flex items-center gap-2.5 rounded-2xl border border-white/15 bg-[#070B14]/70 px-4 py-2.5 backdrop-blur-md">
-                <ShieldCheck className="h-5 w-5 text-[#FF5A00]" />
-                <div>
-                  <div className="text-[18px] font-black leading-none"><CountUp to={50000} suffix="+" /></div>
-                  <div className="mt-0.5 text-[11px] text-white/60">Verified manufacturers</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Slide controls */}
-            <div className="mt-5 flex items-center gap-2" role="tablist" aria-label="Promo slides">
-              {PROMO_SLIDES.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  role="tab"
-                  aria-selected={i === slide}
-                  aria-label={`Show slide ${i + 1}`}
-                  onClick={() => setSlide(i)}
-                  className="relative h-1.5 overflow-hidden rounded-full bg-white/25 transition-all duration-300"
-                  style={{ width: i === slide ? 44 : 18 }}
-                >
-                  {i === slide && !reduce && (
-                    <motion.span
-                      key={`bar-${slide}`}
-                      className="absolute inset-y-0 left-0 bg-[#1A0C05]"
-                      initial={{ width: '0%' }}
-                      animate={{ width: '100%' }}
-                      transition={{ duration: 6.5, ease: 'linear' }}
-                    />
-                  )}
-                  {i === slide && reduce && <span className="absolute inset-0 bg-[#1A0C05]" />}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ═════════════ QUICK ACTIONS ═════════════ */}
-      <div className="relative mx-auto mt-5 max-w-[1400px] px-4 sm:px-5 md:px-6">
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5">
-          {QUICK_ACTIONS.map(({ label, sub, icon: Icon, to, tint }, i) => (
-            <motion.div
-              key={label}
-              className={i === QUICK_ACTIONS.length - 1 ? 'col-span-2 sm:col-span-1' : ''}
-              initial={reduce ? false : { opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: 0.5, delay: i * 0.06 }}
-            >
-              <Link
-                to={to}
-                className="group relative flex h-full flex-col items-start gap-3 overflow-hidden rounded-2xl border border-white/10 bg-[#161616]/[0.04] p-4 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/25"
-              >
-                <span className={`pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br ${tint} to-transparent opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-60`} />
-                <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7A2E] to-[#E84A00] shadow-[0_8px_20px_-6px_rgba(255,90,0,0.7)]">
-                  <Icon className="h-5 w-5 text-white" />
-                </span>
-                <span className="relative">
-                  <span className="block text-[14px] font-bold text-white">{label}</span>
-                  <span className="mt-0.5 block text-[12px] text-white/55">{sub}</span>
-                </span>
-                <ArrowRight className="absolute bottom-4 right-4 h-4 w-4 text-white/35 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-[#FF7A2E]" />
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+      <div className="mt-4 md:mt-8">
+        <ProductCarouselHero />
       </div>
 
       {/* ═════════════ STATS ═════════════ */}
