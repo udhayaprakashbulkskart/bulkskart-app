@@ -75,10 +75,7 @@ const AdminPaymentsPage     = lazy(() => import('./pages/dashboard/admin/AdminPa
 const SupplierWalletPage    = lazy(() => import('./pages/dashboard/supplier/SupplierWalletPage'));
 const FactoryVisitsPage     = lazy(() => import('./pages/dashboard/shared/FactoryVisitsPage'));
 const AIMatchAnalyticsPage  = lazy(() => import('./pages/dashboard/admin/AIMatchAnalyticsPage'));
-const AdminReportsPage      = lazy(() => import('./pages/dashboard/admin/AdminReportsPage'));
-const AdminPaymentsPage     = lazy(() => import('./pages/dashboard/admin/AdminPaymentsPage'));
 const SupplierPayoutsPage   = lazy(() => import('./pages/dashboard/supplier/SupplierPayoutsPage'));
-const FactoryVisitsPage     = lazy(() => import('./pages/dashboard/shared/FactoryVisitsPage'));
 
 // ─── Lazy: footer / company pages ─────────────────────────────────────────────
 const AboutPage         = lazy(() => import('./pages/AboutPage'));
