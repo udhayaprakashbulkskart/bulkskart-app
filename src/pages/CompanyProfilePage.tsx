@@ -17,6 +17,7 @@ import {
   Building2, Mail, Phone, Flag, Copy, Check, Camera, Sparkles, CalendarDays,
 } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import SupplierDirectChatModal from '@/components/common/SupplierDirectChatModal';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import CompanyReviewsAndRatingSection from '@/components/common/CompanyReviewsAndRatingSection';
@@ -311,6 +312,7 @@ export default function CompanyProfilePage() {
                 <div className="pt-1 flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-xl md:text-2xl font-bold text-foreground break-words">{company.company_name}</h1>
+                    <LoanEligibleTag size="sm" />
                     {(company.is_verified || company.verification_status === 'verified') && (
                       <Badge className="bg-primary/15 text-primary border-primary/30 text-xs gap-1">
                         <ShieldCheck className="w-3 h-3" /> Verified Business

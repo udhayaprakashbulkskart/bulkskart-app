@@ -1,3 +1,4 @@
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -171,6 +172,7 @@ function ProductCard({
           <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 flex-1 min-w-0">
             {product.name}
           </h3>
+          <LoanEligibleTag size="sm" />
           {isVerified && (
             <span className="shrink-0 mt-0.5 inline-flex items-center gap-0.5 rounded-full border border-primary/25 bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary" title="Verified supplier"><Shield className="w-2.5 h-2.5" />Verified</span>
           )}

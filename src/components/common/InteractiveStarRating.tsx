@@ -33,16 +33,26 @@ export default function InteractiveStarRating({
       <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => {
           const isFilled = star <= activeVal;
+          if (readOnly) {
+            return (
+              <span key={star} className="p-0.5" title={`${value} stars`}>
+                <Star
+                  className={`${starSizes[size]} ${
+                    isFilled ? 'text-orange-400 fill-orange-400' : 'text-neutral-600 fill-transparent'
+                  }`}
+                />
+              </span>
+            );
+          }
           return (
             <button
               key={star}
               type="button"
-              disabled={readOnly}
               onClick={() => onChange && onChange(star)}
-              onMouseEnter={() => !readOnly && setHoverVal(star)}
-              onMouseLeave={() => !readOnly && setHoverVal(null)}
-              className={`${readOnly ? 'cursor-default' : 'cursor-pointer hover:scale-115 transition-transform'} p-0.5 focus:outline-none`}
-              title={readOnly ? `${value} stars` : `Rate ${star} star${star > 1 ? 's' : ''}`}
+              onMouseEnter={() => setHoverVal(star)}
+              onMouseLeave={() => setHoverVal(null)}
+              className="cursor-pointer hover:scale-115 transition-transform p-0.5 focus:outline-none"
+              title={`Rate ${star} star${star > 1 ? 's' : ''}`}
             >
               <Star
                 className={`${starSizes[size]} transition-colors ${

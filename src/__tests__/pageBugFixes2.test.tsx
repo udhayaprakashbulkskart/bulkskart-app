@@ -27,20 +27,20 @@ describe('requirements show only real facts', () => {
   it('tags come from the deadline and posting date, not from the title or position', () => {
     const inDays = (n: number) => new Date(Date.now() + n * day).toISOString().slice(0, 10);
     expect(getRequirementVisualInfo(req({ deadline: inDays(2) })).tag.type).toBe('expiring');
-    expect(getRequirementVisualInfo(req({ deadline: inDays(6) })).tag.type).toBe('urgent');
-    expect(getRequirementVisualInfo(req({ created_at: new Date().toISOString() })).tag.type).toBe('live');
-    expect(getRequirementVisualInfo(req({ created_at: new Date(Date.now() - 2 * day).toISOString() })).tag.type).toBe('new');
-    expect(getRequirementVisualInfo(req({ destination_country: 'Kenya' })).tag.type).toBe('export');
+    expect(getRequirementVisualInfo(req({ deadline: inDays(6) })).tag.type).toBe('expiring');
+    expect(getRequirementVisualInfo(req({ created_at: new Date().toISOString() })).tag.type).toBe('new');
+    expect(getRequirementVisualInfo(req({ created_at: new Date(Date.now() - 3 * day).toISOString() })).tag.type).toBe('open');
+    expect(getRequirementVisualInfo(req({ destination_country: 'Kenya' })).tag.type).toBe('open');
     // a saree request is no longer always "urgent", and the same row gets the same tag anywhere in a list
-    expect(getRequirementVisualInfo(req({}), 0).tag.type).toBe('regular');
-    expect(getRequirementVisualInfo(req({}), 5).tag.type).toBe('regular');
+    expect(getRequirementVisualInfo(req({}), 0).tag.type).toBe('open');
+    expect(getRequirementVisualInfo(req({}), 5).tag.type).toBe('open');
   });
 
   it('never guesses a location or calls an unverified buyer verified', () => {
     const v = getRequirementVisualInfo(req({ destination_country: null as unknown as string }));
-    expect(v.locationDisplay).toBe('Location not given');
+    expect(v.locationDisplay).toBe('Location not stated');
     expect(v.verifiedStatus).toBe('');
-    expect(getRequirementVisualInfo(req({ is_verified_buyer: true })).verifiedStatus).toBe('Verified Buyer');
+    expect(getRequirementVisualInfo(req({ is_verified_buyer: true })).verifiedStatus).toBe('Verified buyer');
   });
 
   it('the requirement list and detail page use the database only', () => {
@@ -48,7 +48,7 @@ describe('requirements show only real facts', () => {
       expect(existsSync(join(process.cwd(), `src/lib/${f}.ts`)), f).toBe(false);
     }
     const list = src('src/pages/RequirementsPage.tsx');
-    expect(list).toContain('getRequirementsPage(');
+    expect(list).toContain('getOpenRequirements(');
     expect(list).not.toMatch(/totalCount \* 0\.\d+|Nairobi|50,000\+ verified/);
     expect(src('src/pages/RequirementDetailsPage.tsx')).not.toMatch(/COTTON_SAREES|getBuyerProfileForRequirement|generateSyntheticRequirement/);
   });

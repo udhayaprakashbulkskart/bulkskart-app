@@ -27,6 +27,7 @@ const UNPAID_SUPPLIER_ALLOWLIST = [
   '/dashboard/supplier/verification',
   '/dashboard/supplier/messages',
   '/dashboard/supplier/notifications',
+  '/dashboard/supplier/wallet', // their own money, plan or not
   '/dashboard/supplier/payouts', // their own money, plan or not
   '/dashboard/supplier/visits',
   '/dashboard/supplier/overview',
@@ -76,6 +77,7 @@ export const supplierNavItems: NavItem[] = [
   { label: 'RFQ Leads', href: '/dashboard/supplier/rfqs', icon: FileText },
   { label: 'Quotations', href: '/dashboard/supplier/quotations', icon: TrendingUp },
   { label: 'Orders', href: '/dashboard/supplier/orders', icon: Building2 },
+  { label: 'Wallet', href: '/dashboard/supplier/wallet', icon: Wallet },
   { label: 'Payouts', href: '/dashboard/supplier/payouts', icon: Wallet },
   { label: 'Factory Visits', href: '/dashboard/supplier/visits', icon: Factory },
   { label: 'Messages', href: '/dashboard/supplier/messages', icon: MessageSquare },

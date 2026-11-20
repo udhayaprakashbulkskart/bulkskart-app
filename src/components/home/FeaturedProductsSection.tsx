@@ -20,6 +20,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import { RefreshCw, Search, SlidersHorizontal, Filter, X, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -1150,6 +1151,7 @@ export default function FeaturedProductsSection() {
 
   return (
     <>
+      <LoanEligibleTag size="sm" />
       <ProductsShowcase<ProductCard>
         products={cards}
         status={status}

@@ -27,6 +27,7 @@ import { formatPriceRange, priceInCurrency, productCurrency } from '@/lib/produc
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountry } from '@/contexts/CurrencyContext';
 import PageMeta from '@/components/common/PageMeta';
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import MaskedPhone from '@/components/common/MaskedPhone';
 import { getCompanyDisplayPhone, getCountryTimezone } from '@/lib/countryPhoneCodes';
@@ -421,7 +422,8 @@ export default function ProductDetailPage() {
 
               {/* ── Product Info (mobile only — shown below gallery) ── */}
               <div className="md:hidden mb-5">
-                <h1 className="text-xl font-black text-foreground mb-2 leading-tight">{product.name}</h1>
+                <h2 className="text-xl font-black text-foreground mb-2 leading-tight">{product.name}</h2>
+                <LoanEligibleTag size="sm" />
 
                 {isVerified && (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1 mb-3">

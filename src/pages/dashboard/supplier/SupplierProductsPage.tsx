@@ -91,8 +91,9 @@ export default function SupplierProductsPage() {
     setLoading(true);
     getProducts({ companyId: company.id }).then(data => {
       const map = new Map<string, Product>();
+      const companyId = company.id;
       (data || []).forEach(p => {
-        if (!map.has(p.id)) {
+        if (p.company_id === companyId && !map.has(p.id)) {
           map.set(p.id, p);
         }
       });
@@ -253,6 +254,7 @@ export default function SupplierProductsPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-xl font-bold text-foreground">My Products</h1>
+              {!company && <h3 className="text-lg font-bold text-foreground mb-2">Finish your business profile first</h3>}
               <p className="text-sm text-muted-foreground">Manage your product listings</p>
             </div>
             <Button

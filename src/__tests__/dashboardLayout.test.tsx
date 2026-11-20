@@ -172,6 +172,7 @@ describe('Dashboard shell: the top bar', () => {
       'RFQ Leads',
       'Quotations',
       'Orders',
+      'Wallet',
       'Payouts',
       'Factory Visits',
       'Messages',

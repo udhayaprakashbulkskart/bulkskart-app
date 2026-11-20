@@ -373,20 +373,49 @@ export default function ManufacturersPage() {
 
   // RFQ Invitation Dialog state
   const [inviteTargetCo, setInviteTargetCo] = useState<Company | null>(null);
-  const [inviteRfqId, setInviteRfqId] = useState('BS-RFQ-1042');
+  const [inviteRfqId, setInviteRfqId] = useState('');
   const [inviteMessage, setInviteMessage] = useState('We would like to invite your factory to submit a quotation for our bulk requirement.');
   const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [myOpenReqs, setMyOpenReqs] = useState<{ id: string; title: string; req_number: string | null }[]>([]);
+  useEffect(() => {
+    if (!inviteTargetCo || !user) return;
+    import('@/db/supabase').then(({ supabase }) =>
+      supabase
+        .from('requirements')
+        .select('id,title,req_number')
+        .eq('buyer_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(20)
+        .then(({ data }) => setMyOpenReqs((data as { id: string; title: string; req_number: string | null }[]) ?? [])),
+    );
+  }, [inviteTargetCo, user]);
 
-  const handleSendInvite = () => {
+  const handleSendInvite = async () => {
     if (!inviteTargetCo) return;
+    if (!user) {
+      toast.error('Please sign in as a buyer to invite manufacturers.');
+      return;
+    }
+    if (!inviteTargetCo.owner_id) {
+      toast.error('This manufacturer cannot receive messages yet.');
+      return;
+    }
     setIsSendingInvite(true);
-    setTimeout(() => {
-      setIsSendingInvite(false);
-      toast.success(`RFQ Invitation sent to ${inviteTargetCo.company_name}!`, {
-        description: `They will receive requirement ${inviteRfqId} and notify you upon submitting quotation.`
-      });
-      setInviteTargetCo(null);
-    }, 600);
+    const { getOrCreateConversation, sendMessage } = await import('@/lib/api');
+    const { id: convId, error } = await getOrCreateConversation(user.id, inviteTargetCo.owner_id, inviteTargetCo.id);
+    const sent = convId
+      ? await sendMessage(convId, `${inviteMessage.trim()}${inviteRfqId.trim() ? `\n\nRequirement: ${inviteRfqId.trim()}` : ''}`)
+      : { error: error || 'no conversation' };
+    setIsSendingInvite(false);
+    if (sent.error) {
+      toast.error(`The invitation could not be sent: ${sent.error}`);
+      return;
+    }
+    toast.success(`Invitation sent to ${inviteTargetCo.company_name}`, {
+      description: 'They will see it in their messages, and you can follow up there.',
+    });
+    setInviteTargetCo(null);
   };
 
   // count
@@ -879,10 +908,10 @@ export default function ManufacturersPage() {
                 onChange={(e) => setInviteRfqId(e.target.value)}
                 className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-primary"
               >
-                <option value="BS-RFQ-1042">BS-RFQ-1042: Cotton Fabric – 100% Cotton (Knitted) (10,000 Metres)</option>
-                <option value="BS-RFQ-9981">BS-RFQ-9981: MS Pipe – 25mm (50,000 Pieces)</option>
-                <option value="BS-RFQ-8878">BS-RFQ-8878: Plastic Granules (HDPE) (10,000 kg)</option>
-                <option value="BS-RFQ-CUSTOM">Custom Active Buyer Requirement</option>
+                <option value="">No specific requirement</option>
+                {myOpenReqs.map(req => (
+                  <option key={req.id} value={req.req_number || req.id}>{req.req_number || 'RFQ'}: {req.title}</option>
+                ))}
               </select>
             </div>
 

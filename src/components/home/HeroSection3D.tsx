@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DesktopHomeHero from '@/components/home/desktop/DesktopHomeHero';
 import MobileHomeHero from '@/components/home/mobile/MobileHomeHero';
+import TransportBackdrop from '@/components/home/hero/TransportBackdrop';
 import type { HomeSearchType } from '@/components/home/shared/parts';
-import { MOBILE_QUERY, useMediaQuery } from '@/hooks/use-media-query';
+import { MOBILE_QUERY } from '@/hooks/use-media-query';
 
 interface HeroSection3DProps {
   onSearch?: (query: string, category: string) => void;
@@ -24,7 +25,9 @@ export default function HeroSection3D({ onSearch }: HeroSection3DProps) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<HomeSearchType>('products');
-  const isPhone = useMediaQuery(MOBILE_QUERY);
+  const isPhone = typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia(MOBILE_QUERY).matches;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +38,7 @@ export default function HeroSection3D({ onSearch }: HeroSection3DProps) {
       return;
     }
 
-    if (onSearch) {
-      onSearch(searchQuery, selectedType);
-    }
+    if (onSearch) onSearch(searchQuery, selectedType);
 
     if (selectedType === 'manufacturers') {
       navigate(`/manufacturers?q=${encodeURIComponent(searchQuery.trim())}`);
@@ -52,17 +53,32 @@ export default function HeroSection3D({ onSearch }: HeroSection3DProps) {
     navigate(`/products?q=${encodeURIComponent(tagQuery)}`);
   };
 
-  // One design, two layouts: the phone screen (under 768px wide) and the wide-screen version.
-  const Hero = isPhone ? MobileHomeHero : DesktopHomeHero;
+  if (isPhone) {
+    return (
+      <MobileHomeHero
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        selectedType={selectedType}
+        onSelectedTypeChange={setSelectedType}
+        onSubmit={handleSearchSubmit}
+        popular={POPULAR_CATEGORIES}
+        onQuickTag={handleQuickTagClick}
+      />
+    );
+  }
+
   return (
-    <Hero
-      searchQuery={searchQuery}
-      onSearchQueryChange={setSearchQuery}
-      selectedType={selectedType}
-      onSelectedTypeChange={setSelectedType}
-      onSubmit={handleSearchSubmit}
-      popular={POPULAR_CATEGORIES}
-      onQuickTag={handleQuickTagClick}
-    />
+    <>
+      <TransportBackdrop />
+      <DesktopHomeHero
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        selectedType={selectedType}
+        onSelectedTypeChange={setSelectedType}
+        onSubmit={handleSearchSubmit}
+        popular={POPULAR_CATEGORIES}
+        onQuickTag={handleQuickTagClick}
+      />
+    </>
   );
 }

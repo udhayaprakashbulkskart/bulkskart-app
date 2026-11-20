@@ -78,7 +78,9 @@ serve(async (req) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = payload;
     const type = ['promotion', 'auction_fee', 'order_payment'].includes(payload.type) ? payload.type : 'subscription';
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    const company_id = payload.company_id;
+    const missingCompany = (!company_id && type !== 'order_payment');
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || (missingCompany && type !== 'auction_fee' && type !== 'promotion')) {
       return json(400, { error: 'Missing required payment verification fields' });
     }
 

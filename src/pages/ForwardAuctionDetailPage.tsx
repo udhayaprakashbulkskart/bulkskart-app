@@ -922,7 +922,7 @@ export default function ForwardAuctionDetailPage() {
                     <span className="text-muted-foreground block font-medium">Escrow Protection</span>
                     <span className="font-bold text-orange-600 dark:text-orange-400 mt-0.5 flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                      100% Escrow Protected
+                      Escrow until delivery
                     </span>
                   </div>
                 </div>

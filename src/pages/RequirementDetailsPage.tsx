@@ -25,6 +25,7 @@ import {
 import { toast } from 'sonner';
 import MainLayout from '@/components/layouts/MainLayout';
 import PageMeta from '@/components/common/PageMeta';
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
 import AIQuotationModal from '@/components/common/AIQuotationModal';
@@ -423,6 +424,7 @@ export default function RequirementDetailsPage() {
               {req.created_at && <span className="text-xs text-muted-foreground">{postedLabel(req.created_at)}</span>}
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground leading-tight">{req.title}</h1>
+            <LoanEligibleTag size="sm" />
             <ul className="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-sm text-muted-foreground">
               <li className="flex items-center gap-1.5">
                 <Package className="w-4 h-4 text-primary" aria-hidden="true" />

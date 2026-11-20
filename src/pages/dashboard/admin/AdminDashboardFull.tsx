@@ -624,7 +624,7 @@ export default function AdminDashboardFull() {
                         <td className="px-3 py-3">
                           {w.status === 'pending' && (
                             <Link to="/dashboard/admin/payments" className="text-xs font-semibold text-primary hover:underline">
-                              Send in Payments
+                              Settle in Payments
                             </Link>
                           )}
                         </td>
