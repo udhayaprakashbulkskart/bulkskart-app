@@ -56,8 +56,8 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
   );
 
   const field = landing
-    ? 'h-11 bg-neutral-900 border-neutral-700 text-base text-white placeholder:text-neutral-500'
-    : 'h-11 bg-background text-base';
+    ? 'h-10 bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500'
+    : 'h-10 bg-background';
   const label = `text-xs font-semibold ${landing ? 'text-neutral-300' : 'text-foreground'}`;
   const hint = landing ? 'text-orange-300' : 'text-destructive';
 
@@ -116,7 +116,7 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
         Submit the amount and your details. This is a request for the team to contact you, not an approval.
       </p>
 
-      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Loan amount" className={label} error={errors.loanAmount} hint={hint} wide>
           <Input
             inputMode="decimal"

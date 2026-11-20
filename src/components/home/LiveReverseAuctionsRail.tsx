@@ -125,7 +125,7 @@ export default function LiveReverseAuctionsRail() {
       <div className="flex flex-col gap-3 mb-3 sm:mb-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           <Flame className="w-4 h-4 text-[#FF5A00] animate-bounce shrink-0" />
-          <h2 className="flex items-center gap-2 text-base font-extrabold uppercase tracking-wide text-white sm:text-lg">
+          <h2 className="text-xs sm:text-sm font-extrabold text-white tracking-wider uppercase flex items-center gap-2">
             Sell Products in 24 Hours
             <span className="text-[#FF5A00] font-black bg-[#FF5A00]/15 px-1.5 py-0.5 rounded text-[10px] border border-[#FF5A00]/30">
               HOT
@@ -158,7 +158,7 @@ export default function LiveReverseAuctionsRail() {
             type="button"
             onClick={() => setIsPaused((p) => !p)}
             aria-label={isPaused ? 'Resume 25s auto-cycle' : 'Pause 25s auto-cycle'}
-            className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-700/80 bg-neutral-800/80 text-neutral-300 transition-all hover:bg-neutral-700 hover:text-white"
+            className="w-7 h-7 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition-all border border-neutral-700/80"
             title={isPaused ? 'Resume auto rotation' : 'Pause auto rotation'}
           >
             {isPaused ? <Play className="w-3.5 h-3.5 fill-current" /> : <Pause className="w-3.5 h-3.5" />}
@@ -185,7 +185,7 @@ export default function LiveReverseAuctionsRail() {
               type="button"
               onClick={handlePrevPage}
               aria-label="Previous auction batch"
-              className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-700/80 bg-neutral-800/80 text-neutral-300 transition-all hover:bg-neutral-700 hover:text-white active:scale-95"
+              className="w-7 h-7 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition-all border border-neutral-700/80 active:scale-95"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -193,7 +193,7 @@ export default function LiveReverseAuctionsRail() {
               type="button"
               onClick={handleNextPage}
               aria-label="Next auction batch"
-              className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-700/80 bg-neutral-800/80 text-neutral-300 transition-all hover:bg-neutral-700 hover:text-white active:scale-95"
+              className="w-7 h-7 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition-all border border-neutral-700/80 active:scale-95"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -204,7 +204,7 @@ export default function LiveReverseAuctionsRail() {
           <Button
             type="button"
             onClick={() => setIsCreateOpen(true)}
-            className="flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[#FF5A00] px-3 text-sm font-bold text-white shadow-[0_2px_0_#922f00] transition-all hover:bg-[#e04e00] active:translate-y-0.5 active:shadow-none"
+            className="bg-[#FF5A00] hover:bg-[#e04e00] text-white text-xs font-bold h-8 px-3 rounded-xl shadow-[0_2px_0_#922f00] flex items-center gap-1.5 shrink-0 transition-all active:translate-y-0.5 active:shadow-none"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span className="hidden min-[420px]:inline">List Product in 24h</span>
@@ -249,7 +249,7 @@ export default function LiveReverseAuctionsRail() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible sm:pb-0"
         >
           {displayAuctions.map((auction) => {
             const phase = auctionPhase(auction, now);
@@ -272,7 +272,7 @@ export default function LiveReverseAuctionsRail() {
                     navigate(detailPath);
                   }
                 }}
-                className="group flex min-h-0 min-w-0 cursor-pointer flex-col overflow-hidden rounded-2xl border border-neutral-800/90 bg-neutral-900/85 shadow-sm transition-all duration-300 hover:border-[#FF5A00]/60 hover:bg-neutral-900 hover:shadow-md"
+                className="snap-start shrink-0 w-[78vw] max-w-[320px] sm:w-auto sm:max-w-none group bg-neutral-900/85 hover:bg-neutral-900 border border-neutral-800/90 hover:border-[#FF5A00]/60 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer min-h-0"
               >
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-neutral-950 shrink-0">
                   {auction.image ? (

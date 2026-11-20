@@ -128,14 +128,14 @@ describe('Featured Products: heading, points and filters', () => {
   it('shows the title and the line under it as printed in the design', () => {
     setup();
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Verified Bulk Products');
-    const line = screen.getByText('Verified Manufacturers').closest('p') as HTMLElement;
-    expect(line).toHaveTextContent('Verified Manufacturers•Wholesale Only•MOQ on each listing•Free Delivery');
+    const line = screen.getByText('100% Verified Manufacturers').closest('p') as HTMLElement;
+    expect(line).toHaveTextContent('100% Verified Manufacturers•Wholesale Only•Min. Order 10 Pieces•Free Delivery');
   });
 
   it('shows the four points in the strip', () => {
     setup();
     const points = within(screen.getByRole('list', { name: 'Bulk buying at a glance' }));
-    for (const text of ['Verified', 'Manufacturers', 'Bulk', 'Pricing', 'MOQ', 'On each listing', 'Free', 'Delivery']) {
+    for (const text of ['Verified', 'Manufacturers', 'Bulk', 'Pricing', 'MOQ', 'Min. 10 Pieces', 'Free', 'Delivery']) {
       expect(points.getByText(text)).toBeInTheDocument();
     }
   });

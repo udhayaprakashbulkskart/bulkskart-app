@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  Package, Send, Sparkles, ShieldCheck, CheckCircle2,
+  Package, Send, Sparkles, ShieldCheck, Clock, CheckCircle2,
   Globe2, ArrowRight, Building2, HelpCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -74,16 +74,23 @@ export default function PostRequirementsHomeSection() {
             title="Post Buying Requirement"
             subtitle="Tell verified global manufacturers what you need. Receive genuine wholesale quotations with CIF/FOB pricing within hours."
             action={
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
-                <span>Zero buyer commission</span>
+              /* Sourcing guarantee badges */
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+                  <span>Zero Buyer Commission</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 shrink-0 text-primary" />
+                  <span>Quotes in ~4 Hours</span>
+                </div>
               </div>
             }
           />
         </div>
 
         {/* Interactive Post Requirement Card */}
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-xl sm:p-6 md:p-8">
+        <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
           <form onSubmit={handleSubmit} className="fk-skin space-y-5 relative z-10">
@@ -188,7 +195,7 @@ export default function PostRequirementsHomeSection() {
                     setQuantity('10000');
                     setUnit('Pieces');
                   }}
-                  className="inline-flex min-h-11 items-center rounded-md bg-muted/70 px-3 text-sm text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+                  className="px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
                 >
                   5-Ply Shipping Boxes
                 </button>
@@ -200,7 +207,7 @@ export default function PostRequirementsHomeSection() {
                     setQuantity('500');
                     setUnit('Pieces');
                   }}
-                  className="inline-flex min-h-11 items-center rounded-md bg-muted/70 px-3 text-sm text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+                  className="px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
                 >
                   SS 304 Flanges
                 </button>
@@ -212,7 +219,7 @@ export default function PostRequirementsHomeSection() {
                     setQuantity('20');
                     setUnit('Metric Tons');
                   }}
-                  className="inline-flex min-h-11 items-center rounded-md bg-muted/70 px-3 text-sm text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+                  className="px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
                 >
                   Cotton Yarn 30s
                 </button>

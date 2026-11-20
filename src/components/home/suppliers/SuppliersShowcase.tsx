@@ -81,6 +81,14 @@ interface SuppliersShowcaseProps<T extends ShowcaseSupplier> {
 
 const FAVOURITES_KEY = 'bulkskart_fav_mfg';
 
+/** The four figures in the strip, as printed in the design. */
+const FIGURES: Array<{ icon: LucideIcon; value: string; label: string }> = [
+  { icon: Factory, value: '10,000+', label: 'Verified Suppliers' },
+  { icon: Globe, value: '120+', label: 'Countries' },
+  { icon: Layers, value: '50+', label: 'Industries' },
+  { icon: ShieldCheck, value: '100%', label: 'Verified Profiles' },
+];
+
 const TAG_ICONS: Array<[RegExp, LucideIcon]> = [
   [/pcb|circuit|semiconductor|chip|micro|electronic|sensor/i, Cpu],
   [/cable|power|electric|switchgear|transformer|battery|energy|solar|wire/i, Zap],
@@ -405,6 +413,18 @@ export default function SuppliersShowcase<T extends ShowcaseSupplier>({
             </button>
           </div>
         </header>
+
+        <ul className="vs-stats" aria-label="Verified suppliers at a glance">
+          {FIGURES.map(({ icon: Icon, value, label }) => (
+            <li key={label}>
+              <Icon aria-hidden="true" />
+              <span>
+                <b>{value}</b>
+                <span>{label}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
 
         <div className="vs-chips" role="group" aria-label="Filter suppliers by country">
           <button type="button" className={`vs-chip vs-chip-all${selectedCountry === 'all' ? ' is-selected' : ''}`} aria-pressed={selectedCountry === 'all'} onClick={() => onCountryChange('all')}>

@@ -536,7 +536,7 @@ export default function SupplierSubscriptionPage() {
                       </div>
                       <h3 className="text-base font-bold text-foreground">24 Hours Sell Products</h3>
                       <p className="text-xs text-muted-foreground mt-1 mb-4">
-                        Flash 24-hour marketplace spotlight ribbon and a notification to buyers while it is live.
+                        Flash 24-hour marketplace spotlight ribbon & push notifications broadcast to 10,000+ active global buyers.
                       </p>
                       <ul className="space-y-2 mb-5 text-xs text-muted-foreground border-t border-border pt-3">
                         <li className="flex items-center gap-2">

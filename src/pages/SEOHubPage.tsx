@@ -129,7 +129,7 @@ export const SEO_HUBS: Record<string, SEOHubConfig> = {
     canonical: 'https://www.bulkskart.com/bulk-suppliers',
     type: 'suppliers',
     introTitle: 'Engineered for High-Volume Industrial Procurement',
-    introText: 'Our bulk supplier directory lists verified production facilities. Review factory inspection scores, machinery installations, export track records, and ISO/CE/GMP compliance credentials before initiating business negotiations.',
+    introText: 'Our bulk supplier directory aggregates verified production facilities with proven monthly capacities exceeding 100+ metric tons or 50,000+ units. Review factory inspection scores, machinery installations, export track records, and ISO/CE/GMP compliance credentials before initiating business negotiations.',
     keyIndustries: ['Steel & Metal Fabrication', 'Specialty Chemicals', 'Textile Spinning & Weaving', 'Automotive Components', 'Food Commodities & Spices'],
     clusters: [
       { title: 'Audited Production Capacities', desc: 'Factories vetted for machinery count, cleanroom capabilities, and worker safety.' },

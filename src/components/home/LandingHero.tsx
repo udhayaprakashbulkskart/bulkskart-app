@@ -1,15 +1,15 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   Search, Camera, ChevronDown, ShieldCheck, Zap, Truck, ArrowRight, Sparkles,
   Settings, Box, Shirt, FlaskConical, Recycle, Layers, LayoutGrid,
-  CheckCircle2, FileText, Gavel, Calculator, Wallet, Store, BadgeCheck,
+  CheckCircle2, FileText, Gavel, Calculator, Wallet, Store, Users, Package, Globe,
+  Radio, BadgeCheck,
 } from 'lucide-react';
 import TransportScene from '@/components/home/TransportScene';
 import DiwaliBurst from '@/components/home/DiwaliBurst';
 import ProductCarouselHero from '@/components/home/hero/ProductCarouselHero';
-import LiveCountStrip from '@/components/common/LiveCountStrip';
 
 // ── Content ────────────────────────────────────────────────────────────
 const TRENDING = ['Textile', 'Steel', 'Chemicals', 'Packaging', 'Electrical'];
@@ -33,6 +33,13 @@ const QUICK_ACTIONS = [
   { label: 'Become a Supplier', sub: 'List your products', icon: Store, to: '/auth?tab=supplier', tint: 'from-[#C94400]' },
 ];
 
+const STATS = [
+  { to: 50000, suffix: '+', label: 'Verified Manufacturers', icon: Users },
+  { to: 1, suffix: 'M+', label: 'Bulk Products', icon: Package },
+  { to: 120, suffix: '+', label: 'Trade Countries', icon: Globe },
+  { to: 10000, suffix: '+', label: 'Live RFQs & Auctions', icon: Gavel },
+];
+
 const PROMO_SLIDES = [
   { tag: 'Bulk Made Easy', title: 'Source directly from', highlight: 'verified manufacturers' },
   { tag: 'Bulk Made Easy', title: 'Compare quotes from', highlight: 'factories worldwide' },
@@ -42,6 +49,39 @@ const PROMO_POINTS = ['Post requirements (RFQ) in under a minute', 'Get multiple
 
 const HEADLINE = ['The', 'Global', 'B2B', 'Marketplace', 'for'];
 const HEADLINE_ACCENT = ['Bulk', 'Buying', '&', 'Selling'];
+
+// ── Helpers ────────────────────────────────────────────────────────────
+function CountUp({ to, suffix = '' }: { to: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const reduce = useReducedMotion();
+  const [value, setValue] = useState(reduce ? to : 0);
+
+  useEffect(() => {
+    if (reduce) return;
+    const el = ref.current;
+    if (!el) return;
+    let started = false;
+    const run = () => {
+      const start = performance.now();
+      const dur = 1600;
+      const frame = (now: number) => {
+        const t = Math.min(1, (now - start) / dur);
+        const eased = 1 - Math.pow(1 - t, 3);
+        setValue(Math.round(to * eased));
+        if (t < 1) requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    };
+    const io = new IntersectionObserver(([e]) => {
+      if (e?.isIntersecting && !started) { started = true; run(); io.disconnect(); }
+    }, { threshold: 0.4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [to, reduce]);
+
+  const shown = to >= 1000 && to < 1000000 ? `${(value / 1000).toLocaleString('en-IN', { maximumFractionDigits: 0 })}K` : value.toLocaleString('en-IN');
+  return <span ref={ref}>{shown}{suffix && suffix !== 'M+' ? suffix : ''}{suffix === 'M+' ? 'M+' : ''}</span>;
+}
 
 // ── Component ──────────────────────────────────────────────────────────
 // Solid orange letters with a staggered glow-and-bounce loop (Diwali highlight).
@@ -104,7 +144,7 @@ export default function LandingHero() {
     <section className="relative isolate overflow-hidden bg-black text-white">
       {/* ═════════════ HERO ═════════════ */}
       <div className="relative">
-        <div className="relative mx-auto max-w-[1400px] px-4 pb-8 pt-6 sm:px-5 md:px-6 md:pb-12 md:pt-14">
+        <div className="relative mx-auto grid max-w-[1400px] grid-cols-1 gap-8 px-4 pb-8 pt-8 sm:px-5 md:px-6 md:pb-12 md:pt-14 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
           {/* Left column */}
           <div className="relative">
             <motion.div
@@ -115,7 +155,7 @@ export default function LandingHero() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C94400] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#C94400]" />
               </span>
-              Live marketplace
+              Live now · 52,000+ active RFQs
             </motion.div>
 
             <h1 className="max-w-[640px] text-[30px] font-black leading-[1.05] tracking-tight sm:text-[40px] md:text-[54px]">
@@ -171,7 +211,7 @@ export default function LandingHero() {
                       value={scope}
                       onChange={e => setScope(e.target.value as 'Products' | 'Suppliers')}
                       aria-label="Search in"
-                      className="h-12 cursor-pointer appearance-none border-r border-[#2A2A2A]/10 bg-transparent pl-4 pr-8 text-sm font-semibold text-white focus:outline-none md:h-14 md:text-base"
+                      className="h-12 cursor-pointer appearance-none border-r border-[#2A2A2A]/10 bg-transparent pl-4 pr-8 text-[14px] font-semibold text-white focus:outline-none md:h-14"
                     >
                       <option>Products</option>
                       <option>Suppliers</option>
@@ -185,26 +225,72 @@ export default function LandingHero() {
                     onBlur={() => setFocused(false)}
                     placeholder="Search products, suppliers, categories…"
                     aria-label="Search"
-                    className="min-w-0 flex-1 bg-[#161616] px-3 text-base text-white placeholder:text-white/45 focus:outline-none md:px-4"
+                    className="min-w-0 flex-1 bg-[#161616] px-3 text-[14px] text-white placeholder:text-white/45 focus:outline-none md:px-4 md:text-[15px]"
                   />
-                  <button type="button" aria-label="Search by image" className="flex h-12 w-12 items-center justify-center text-white/55 transition-colors hover:text-[#FF5A00] md:h-14 md:w-14">
+                  <button type="button" aria-label="Search by image" className="px-3 text-white/55 transition-colors hover:text-[#FF5A00]">
                     <Camera className="h-5 w-5" />
                   </button>
-                  <button type="submit" aria-label="Search" className="relative h-12 w-12 overflow-hidden bg-gradient-to-br from-[#FF7A2E] to-[#E84A00] transition-transform active:scale-95 md:h-14 md:w-14">
+                  <button type="submit" aria-label="Search" className="relative w-12 overflow-hidden bg-gradient-to-br from-[#FF7A2E] to-[#E84A00] transition-transform active:scale-95 md:w-14">
                     <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                     <Search className="relative mx-auto h-5 w-5 text-white" />
                   </button>
                 </div>
               </form>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-white/70">
-                <Sparkles className="h-4 w-4 text-[#FF5A00]" />
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-white/60">
+                <Sparkles className="h-3.5 w-3.5 text-[#FF5A00]" />
                 <span>Trending:</span>
                 {TRENDING.map(t => (
-                  <Link key={t} to={`/products?q=${encodeURIComponent(t)}`} className="inline-flex min-h-9 items-center rounded-full border border-white/10 bg-[#161616]/[0.04] px-3 text-sm text-white/90 transition-colors hover:border-[#FF5A00]/60 hover:text-white">
+                  <Link key={t} to={`/products?q=${encodeURIComponent(t)}`} className="rounded-full border border-white/10 bg-[#161616]/[0.04] px-2.5 py-0.5 text-white/80 transition-colors hover:border-[#FF5A00]/60 hover:text-white">
                     {t}
                   </Link>
                 ))}
               </div>
+            </motion.div>
+          </div>
+
+          {/* Right column: floating glass cards (desktop) */}
+          <div className="relative hidden h-[360px] lg:block">
+            <motion.div
+              className="absolute right-6 top-4 w-[280px] rounded-2xl border border-white/15 bg-[#161616]/[0.07] p-4 shadow-2xl backdrop-blur-xl"
+              initial={reduce ? false : { opacity: 0, x: 30 }}
+              animate={reduce ? undefined : { opacity: 1, x: 0, y: [0, -10, 0] }}
+              transition={{ opacity: { duration: 0.8, delay: 0.6 }, x: { duration: 0.8, delay: 0.6 }, y: { duration: 6, repeat: Infinity, ease: 'easeInOut' } }}
+            >
+              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-white/60">
+                <span className="flex items-center gap-1.5"><Radio className="h-3.5 w-3.5 text-[#FF7A2E]" /> Live RFQ</span>
+                <span>2 min ago</span>
+              </div>
+              <p className="mt-2 text-[15px] font-bold leading-snug">Urgent: 500 MT Stainless Steel Pipes, ASTM A312</p>
+              <div className="mt-3 flex items-center justify-between text-[12px] text-white/70">
+                <span>Visakhapatnam</span>
+                <span className="rounded-full bg-[#FF5A00]/20 px-2 py-0.5 font-semibold text-[#FF8A4C]">12 quotes</span>
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="absolute bottom-6 left-0 w-[250px] rounded-2xl border border-white/15 bg-[#0b1220]/70 p-4 shadow-2xl backdrop-blur-xl"
+              initial={reduce ? false : { opacity: 0, x: -30 }}
+              animate={reduce ? undefined : { opacity: 1, x: 0, y: [0, 8, 0] }}
+              transition={{ opacity: { duration: 0.8, delay: 0.8 }, x: { duration: 0.8, delay: 0.8 }, y: { duration: 7, repeat: Infinity, ease: 'easeInOut' } }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7A2E] to-[#E84A00]">
+                  <ShieldCheck className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold">Trade Assurance</p>
+                  <p className="text-[11px] text-white/60">Milestone escrow on every order</p>
+                </div>
+              </div>
+              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-[#FF7A2E] to-[#B33D00]"
+                  initial={reduce ? false : { width: '0%' }}
+                  animate={{ width: '86%' }}
+                  transition={{ duration: 1.6, delay: 1.1, ease: 'easeOut' }}
+                />
+              </div>
+              <p className="mt-1.5 text-[11px] text-white/60">Protected: 86% of buyer funds</p>
             </motion.div>
           </div>
         </div>
@@ -215,11 +301,10 @@ export default function LandingHero() {
 
       {/* ═════════════ CATEGORY CHIPS ═════════════ */}
       <div className="relative mx-auto mt-2 max-w-[1400px] px-4 sm:px-5 md:px-6">
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none sm:grid sm:grid-cols-4 sm:overflow-visible md:grid-cols-8">
+        <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-8">
           {CATEGORY_CHIPS.map(({ label, icon: Icon, to, tint }, i) => (
             <motion.div
               key={label}
-              className="shrink-0"
               initial={reduce ? false : { opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}
@@ -227,11 +312,11 @@ export default function LandingHero() {
             >
               <Link
                 to={to}
-                className="group relative flex min-h-11 min-w-[92px] flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl border border-white/10 bg-[#161616]/[0.04] px-3 py-2.5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:shadow-[0_18px_40px_-16px_rgba(255,90,0,0.5)] sm:min-w-0"
+                className="group relative flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-2xl border border-white/10 bg-[#161616]/[0.04] py-3.5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:shadow-[0_18px_40px_-16px_rgba(255,90,0,0.5)]"
               >
                 <span className={`pointer-events-none absolute -inset-6 bg-gradient-to-br ${tint} to-transparent opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100`} />
                 <Icon className="relative h-5 w-5 text-[#FF7A2E] transition-transform duration-300 group-hover:scale-110" />
-                <span className="relative text-sm font-semibold text-white/90">{label}</span>
+                <span className="relative text-[11px] font-semibold text-white/90 md:text-[12px]">{label}</span>
               </Link>
             </motion.div>
           ))}
@@ -240,7 +325,7 @@ export default function LandingHero() {
 
       {/* ═════════════ PROMO CAROUSEL ═════════════ */}
       <div className="relative mx-auto mt-5 max-w-[1400px] px-4 sm:px-5 md:px-6">
-        <div className="relative min-h-[220px] overflow-hidden rounded-3xl border border-white/10 sm:min-h-[260px] md:min-h-[320px]">
+        <div className="relative min-h-[300px] overflow-hidden rounded-3xl border border-white/10 md:min-h-[320px]">
           <motion.div
             className="absolute inset-0"
             initial={reduce ? false : { opacity: 0 }}
@@ -252,7 +337,7 @@ export default function LandingHero() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#070B14] via-[#070B14]/75 to-[#070B14]/15" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#070B14]/80 via-transparent to-transparent" />
 
-          <div className="relative flex min-h-[220px] flex-col justify-between p-5 sm:min-h-[260px] md:min-h-[320px] md:p-8">
+          <div className="relative flex min-h-[300px] flex-col justify-between p-5 md:min-h-[320px] md:p-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`copy-${slide}`}
@@ -276,7 +361,7 @@ export default function LandingHero() {
                       initial={reduce ? false : { opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.15 + i * 0.1 }}
-                      className="flex items-center gap-2.5 text-sm text-white/85 md:text-base"
+                      className="flex items-center gap-2.5 text-[13px] text-white/85 md:text-[14px]"
                     >
                       <CheckCircle2 className="h-4 w-4 shrink-0 text-[#FF5A00]" /> {p}
                     </motion.li>
@@ -288,11 +373,19 @@ export default function LandingHero() {
             <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
               <Link
                 to="/post-requirement"
-                className="group inline-flex h-12 items-center gap-2 rounded-xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] px-6 text-sm font-bold text-white shadow-[0_10px_30px_-8px_rgba(255,90,0,0.7)] transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+                className="group inline-flex h-12 items-center gap-2 rounded-xl bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] px-6 text-[14px] font-bold text-white shadow-[0_10px_30px_-8px_rgba(255,90,0,0.7)] transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
               >
                 Post your requirement
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
+
+              <div className="flex items-center gap-2.5 rounded-2xl border border-white/15 bg-[#070B14]/70 px-4 py-2.5 backdrop-blur-md">
+                <ShieldCheck className="h-5 w-5 text-[#FF5A00]" />
+                <div>
+                  <div className="text-[18px] font-black leading-none"><CountUp to={50000} suffix="+" /></div>
+                  <div className="mt-0.5 text-[11px] text-white/60">Verified manufacturers</div>
+                </div>
+              </div>
             </div>
 
             {/* Slide controls */}
@@ -327,10 +420,11 @@ export default function LandingHero() {
 
       {/* ═════════════ QUICK ACTIONS ═════════════ */}
       <div className="relative mx-auto mt-5 max-w-[1400px] px-4 sm:px-5 md:px-6">
-        <div className="grid grid-cols-1 gap-2.5 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5">
           {QUICK_ACTIONS.map(({ label, sub, icon: Icon, to, tint }, i) => (
             <motion.div
               key={label}
+              className={i === QUICK_ACTIONS.length - 1 ? 'col-span-2 sm:col-span-1' : ''}
               initial={reduce ? false : { opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}
@@ -357,7 +451,24 @@ export default function LandingHero() {
 
       {/* ═════════════ STATS ═════════════ */}
       <div className="relative mx-auto mb-7 mt-5 max-w-[1400px] px-4 sm:px-5 md:px-6">
-        <LiveCountStrip />
+        <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-white/10 bg-[#161616]/[0.03] backdrop-blur-md md:grid-cols-4">
+          {STATS.map(({ to, suffix, label, icon: Icon }, i) => (
+            <motion.div
+              key={label}
+              initial={reduce ? false : { opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: i * 0.08 }}
+              className={`flex flex-col items-center gap-1 px-2 py-5 text-center ${i % 2 === 0 ? 'border-r border-white/10' : ''} ${i < 2 ? 'border-b border-white/10 md:border-b-0' : ''} ${i < 3 ? 'md:border-r md:border-white/10' : 'md:border-r-0'}`}
+            >
+              <Icon className="h-5 w-5 text-[#FF7A2E]" />
+              <div className="bg-gradient-to-b from-white to-white/70 bg-clip-text text-[22px] font-black leading-none text-transparent md:text-[26px]">
+                <CountUp to={to} suffix={suffix} />
+              </div>
+              <div className="text-[11px] text-white/60 md:text-[12px]">{label}</div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
