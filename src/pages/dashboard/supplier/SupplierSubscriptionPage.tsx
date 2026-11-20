@@ -31,6 +31,7 @@ import { useRazorpay } from '@/hooks/useRazorpay';
 import { supabase } from '@/db/supabase';
 import { toast } from 'sonner';
 import type { Subscription } from '@/types/types';
+import { buildPlans, type SubscriptionPlan as Plan } from '@/lib/subscriptionPlans';
 
 interface SubscriptionInvoice {
   id: string;
@@ -51,19 +52,6 @@ interface SubscriptionInvoice {
   created_at: string;
 }
 
-interface Plan {
-  tier: string;
-  label: string;
-  basePrice: number | null;
-  priceInr: number | null;
-  priceDisplay: string;
-  tagline: string;
-  features: string[];
-  highlight: string;
-  popular: boolean;
-  enterprise: boolean;
-}
-
 const TIER_ICONS: Record<string, React.ReactNode> = {
   starter:    <Zap className="w-5 h-5" />,
   business:   <Star className="w-5 h-5" />,
@@ -79,7 +67,7 @@ const TRUST_ITEMS = [
 ];
 
 export default function SupplierSubscriptionPage() {
-  const { user, profile, company } = useAuth();
+  const { user, profile, company, refreshProfile } = useAuth();
   const {
     countryConfig,
     setCountry,
@@ -97,56 +85,7 @@ export default function SupplierSubscriptionPage() {
   const [confirmPlan, setConfirmPlan]   = useState<Plan | null>(null);
   const { startCheckout, loading: checkoutLoading } = useRazorpay();
 
-  const localizedPlans: Plan[] = [
-    {
-      tier: 'starter',
-      label: 'Starter',
-      basePrice: countryConfig.plans.starter,
-      priceInr: Math.round(countryConfig.plans.starter * (countryConfig.currency === 'INR' ? 1 : 83.5)),
-      priceDisplay: formatLocalPrice(countryConfig.plans.starter),
-      tagline: 'Perfect for new suppliers — allows only 5 post responses',
-      highlight: '5 RFQ responses / month (Strict Limit)',
-      features: ['5 product listings', '5 Post / RFQ responses / month (Strict)', 'Direct buyer messaging (within 5 quotes)', 'Standard directory visibility', 'Email support', 'Basic analytics'],
-      popular: false,
-      enterprise: false,
-    },
-    {
-      tier: 'business',
-      label: 'Business',
-      basePrice: countryConfig.plans.business,
-      priceInr: Math.round(countryConfig.plans.business * (countryConfig.currency === 'INR' ? 1 : 83.5)),
-      priceDisplay: formatLocalPrice(countryConfig.plans.business),
-      tagline: 'Most popular for growing businesses — 50 post responses + AI accessibility',
-      highlight: '50 RFQ responses/mo + AI Accessibility',
-      features: ['Full AI Accessibility Suite included', 'AI Product Matching (94%+ Spec Match)', '1-Click AI Quotation Generator', '50 Post / RFQ responses / month', 'Send Quotations to Live RFQs', '50 product listings', 'Priority visibility', 'Verified supplier badge', 'Priority chat support'],
-      popular: true,
-      enterprise: false,
-    },
-    {
-      tier: 'growth',
-      label: 'Growth',
-      basePrice: countryConfig.plans.growth,
-      priceInr: Math.round(countryConfig.plans.growth * (countryConfig.currency === 'INR' ? 1 : 83.5)),
-      priceDisplay: formatLocalPrice(countryConfig.plans.growth),
-      tagline: 'For high-volume exporters — UNLIMITED post responses',
-      highlight: 'UNLIMITED responses (No lead limits)',
-      features: ['UNLIMITED Post / RFQ responses', 'Full AI Accessibility Suite included', 'Unlimited product listings', 'Top visibility ranking', 'Featured in categories', 'Advanced analytics & export trends', '3 team members', 'VIP Phone & WhatsApp support', 'Priority badge'],
-      popular: false,
-      enterprise: false,
-    },
-    {
-      tier: 'enterprise',
-      label: 'Enterprise',
-      basePrice: null,
-      priceInr: null,
-      priceDisplay: 'Custom',
-      tagline: 'For large enterprises & OEMs',
-      highlight: 'Unlimited leads & dedicated SLA',
-      features: ['Unlimited product listings', 'Unlimited RFQ leads', 'Dedicated account manager', 'Custom branded storefront', 'API access', '10+ team members', 'SLA guarantee'],
-      popular: false,
-      enterprise: true,
-    },
-  ];
+  const localizedPlans: Plan[] = buildPlans(countryConfig, formatLocalPrice);
 
   useEffect(() => {
     if (!company?.id) { setLoadingSub(false); setLoadingInv(false); return; }
@@ -225,6 +164,8 @@ export default function SupplierSubscriptionPage() {
       user_email:    user.email ?? '',
       onSuccess: () => {
         getActiveSubscription(company.id).then(sub => setActiveSub(sub as Subscription | null));
+        // the rest of the dashboard only knows about a new plan once the account is read again
+        void refreshProfile(user.id);
         setTimeout(fetchInvoices, 4000); // allow EF time to generate
       },
     });
@@ -277,8 +218,8 @@ export default function SupplierSubscriptionPage() {
   const tierColor: Record<string, string> = {
     starter:    'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
     business:   'bg-primary/10 text-primary border-primary/20',
-    growth:     'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
-    enterprise: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+    growth:     'bg-orange-50 text-orange-700 border-orange-200',
+    enterprise: 'bg-orange-50 text-orange-700 border-orange-200',
   };
 
   return (
@@ -304,24 +245,24 @@ export default function SupplierSubscriptionPage() {
 
           {/* Active subscription status */}
           {!loadingSub && activeSub && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#FF5A00]/10 border border-[#FF5A00]/30 rounded-xl px-4 py-3.5 mb-6 text-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3.5 mb-6 text-sm">
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#FF7A2E] shrink-0" />
+                <CheckCircle className="w-5 h-5 text-orange-500 shrink-0" />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-[#FF7A2E] capitalize">{activeSub.tier} Plan</span>
-                    <Badge className="bg-[#FF5A00]/20 text-[#FF7A2E] border border-[#FF5A00]/30 text-[10px] font-bold">Active</Badge>
+                    <span className="font-bold text-orange-500 capitalize">{activeSub.tier} Plan</span>
+                    <Badge className="bg-orange-500/20 text-orange-600 border border-orange-500/30 text-[10px] font-bold">Active</Badge>
                     {activeSub.has_ai_access && (
                       <Badge className="bg-[#FF5A00]/20 text-[#FF5A00] border border-[#FF5A00]/30 text-[10px] font-bold">AI Enabled</Badge>
                     )}
                   </div>
-                  <p className="text-xs text-[#FF7A2E]/80 mt-0.5">
+                  <p className="text-xs text-orange-500/80 mt-0.5">
                     Quotation Quota: <strong>{activeSub.used_rfq_leads ?? 0} / {activeSub.max_rfq_leads >= 999999 ? '∞ Unlimited' : activeSub.max_rfq_leads}</strong> responses used this billing cycle
                     {activeSub.ends_at && ` · Renews ${new Date(activeSub.ends_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`}
                   </p>
                 </div>
               </div>
-              <div className="text-xs font-semibold text-[#FF7A2E] bg-[#FF5A00]/15 px-2.5 py-1 rounded-md">
+              <div className="text-xs font-semibold text-orange-600 bg-orange-500/15 px-2.5 py-1 rounded-md">
                 {activeSub.tier === 'starter' && '5 Total Responses Allowed'}
                 {activeSub.tier === 'business' && '50 Total Responses + AI Included'}
                 {activeSub.tier === 'growth' && 'Unlimited Responses Allowed'}
@@ -337,7 +278,7 @@ export default function SupplierSubscriptionPage() {
               <TabsTrigger value="invoices" className="text-xs gap-1.5">
                 <Receipt className="w-3.5 h-3.5" /> GST Invoices
                 {invoices.length > 0 && (
-                  <span className="ml-1 bg-[#C94400] text-primary-foreground rounded-full px-1.5 py-px text-[10px] font-semibold leading-none">
+                  <span className="ml-1 bg-primary text-primary-foreground rounded-full px-1.5 py-px text-[10px] font-semibold leading-none">
                     {invoices.length}
                   </span>
                 )}
@@ -351,19 +292,19 @@ export default function SupplierSubscriptionPage() {
                 <div className="flex items-center gap-3">
                   <span className="text-3xl leading-none">{countryConfig.flag}</span>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="text-sm font-bold text-foreground">
                         Billing Jurisdiction: {countryConfig.name}
                       </span>
-                      <Badge variant="outline" className="text-xs font-mono">
+                      <Badge variant="outline" className="text-xs font-mono whitespace-nowrap">
                         {countryConfig.currency} ({countryConfig.symbol})
                       </Badge>
                       {autoDetectedSource === 'login' ? (
-                        <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                        <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20 whitespace-nowrap">
                           Synced with Company Country
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                        <Badge variant="outline" className="text-[10px] text-muted-foreground whitespace-nowrap">
                           Auto-detected
                         </Badge>
                       )}
@@ -422,22 +363,22 @@ export default function SupplierSubscriptionPage() {
                     <div
                       key={plan.tier}
                       className={`relative flex flex-col rounded-xl border-2 bg-card transition-shadow ${
-                        current ? 'border-[#FF5A00]/40 shadow-md' : plan.popular ? 'border-primary shadow-md' : 'border-border'
+                        current ? 'border-orange-500 shadow-md' : plan.popular ? 'border-primary shadow-md' : 'border-border'
                       }`}
                     >
                       {current && (
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                          <Badge className="bg-[#C94400] text-white text-[11px] px-2.5 py-0.5 whitespace-nowrap">Current Plan</Badge>
+                          <Badge className="bg-orange-500 text-white text-[11px] px-2.5 py-0.5 whitespace-nowrap">Current Plan</Badge>
                         </div>
                       )}
                       {!current && plan.popular && (
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                          <Badge className="bg-[#C94400] text-primary-foreground text-[11px] px-2.5 py-0.5 whitespace-nowrap">Most Popular</Badge>
+                          <Badge className="bg-primary text-primary-foreground text-[11px] px-2.5 py-0.5 whitespace-nowrap">Most Popular</Badge>
                         </div>
                       )}
                       <div className={`px-5 pt-6 pb-4 rounded-t-xl ${plan.popular && !current ? 'bg-primary/5' : ''}`}>
                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${
-                          current ? 'bg-[#FF5A00]/10 text-[#FF7A2E]' : plan.popular ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                          current ? 'bg-orange-100 text-orange-600' : plan.popular ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
                         }`}>
                           {TIER_ICONS[plan.tier]}
                         </div>
@@ -491,11 +432,11 @@ export default function SupplierSubscriptionPage() {
                           disabled={current || downgrade || loading}
                           className={`w-full text-xs h-9 font-semibold ${
                             current
-                              ? 'bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/40 cursor-default'
+                              ? 'bg-orange-100 text-orange-700 border border-orange-300 cursor-default'
                               : plan.enterprise
                               ? 'bg-muted text-foreground border border-border hover:bg-muted/80'
                               : plan.popular
-                              ? 'bg-[#C94400] text-primary-foreground hover:bg-primary/90'
+                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                               : 'bg-muted text-foreground border border-border hover:bg-muted/80'
                           }`}
                         >
@@ -543,7 +484,7 @@ export default function SupplierSubscriptionPage() {
                   <div className="rounded-xl border-2 border-[#FF5A00]/40 bg-card p-5 relative shadow-sm flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <Badge className="bg-[#1A0C05] text-white text-[10px] font-bold">
+                        <Badge className="bg-[#FF5A00] text-white text-[10px] font-bold">
                           ⚡ AI Power
                         </Badge>
                         <span className="text-xl font-black text-foreground">₹7,500 <span className="text-xs font-normal text-muted-foreground">/mo (excl. GST)</span></span>
@@ -574,7 +515,7 @@ export default function SupplierSubscriptionPage() {
                     <Button
                       disabled={checkoutLoading}
                       onClick={() => handleSubscribeAddon('ai_accessibility')}
-                      className="w-full text-xs h-10 font-bold bg-[#C94400] hover:bg-[#B33D00] text-white shadow-sm"
+                      className="w-full text-xs h-10 font-bold bg-[#FF5A00] hover:bg-[#e04e00] text-white shadow-sm"
                     >
                       {checkoutLoading ? (
                         <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…</span>
@@ -585,10 +526,10 @@ export default function SupplierSubscriptionPage() {
                   </div>
 
                   {/* 24 Hours Sell Products Add-on */}
-                  <div className="rounded-xl border-2 border-[#FF5A00]/40 bg-card p-5 relative shadow-sm flex flex-col justify-between">
+                  <div className="rounded-xl border-2 border-orange-500/40 bg-card p-5 relative shadow-sm flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <Badge className="bg-[#1A0C05] text-white text-[10px] font-bold">
+                        <Badge className="bg-orange-500 text-white text-[10px] font-bold">
                           🔥 Flash Spotlight
                         </Badge>
                         <span className="text-xl font-black text-foreground">₹5,000 <span className="text-xs font-normal text-muted-foreground">/24 Hours (excl. GST)</span></span>
@@ -599,19 +540,19 @@ export default function SupplierSubscriptionPage() {
                       </p>
                       <ul className="space-y-2 mb-5 text-xs text-muted-foreground border-t border-border pt-3">
                         <li className="flex items-center gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
+                          <CheckCircle className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                           <span>Top Homepage & Marketplace 24H Spotlight Placement</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
+                          <CheckCircle className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                           <span>Direct Factory WhatsApp & Call Lead Routing</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
+                          <CheckCircle className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                           <span>High Urgency 24-Hour Deal Banner & Countdown</span>
                         </li>
                         <li className="flex items-center gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
+                          <CheckCircle className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                           <span>Zero Platform Commission on All Bulk Orders</span>
                         </li>
                       </ul>
@@ -619,7 +560,7 @@ export default function SupplierSubscriptionPage() {
                     <Button
                       disabled={checkoutLoading}
                       onClick={() => handleSubscribeAddon('flash_sell_24h')}
-                      className="w-full text-xs h-10 font-bold bg-gradient-to-r from-[#C94400] to-[#FF5A00] hover:opacity-90 text-white shadow-sm"
+                      className="w-full text-xs h-10 font-bold bg-gradient-to-r from-orange-500 to-[#FF5A00] hover:opacity-90 text-white shadow-sm"
                     >
                       {checkoutLoading ? (
                         <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…</span>
@@ -700,7 +641,7 @@ export default function SupplierSubscriptionPage() {
                         </Button>
                         <Button
                           size="sm"
-                          className="bg-[#1A0C05] text-white font-bold gap-1.5"
+                          className="bg-primary text-white font-bold gap-1.5"
                           onClick={() => executeCheckout(confirmPlan)}
                         >
                           <CreditCard className="w-3.5 h-3.5" /> Pay {formatLocalPrice(brk.totalPayable)} & Activate
@@ -832,7 +773,7 @@ export default function SupplierSubscriptionPage() {
                               </td>
                               <td className="py-3 pr-4">
                                 <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
-                                  inv.status === 'issued' ? 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40' : 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40'
+                                  inv.status === 'issued' ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-red-50 text-red-700 border-red-200'
                                 }`}>
                                   {inv.status === 'issued' ? '✓ Paid' : 'Cancelled'}
                                 </span>

@@ -3,14 +3,13 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRequirements, getQuotationsForRequirement, updateQuotationStatus, createOrder } from '@/lib/api';
 import type { Requirement, Quotation } from '@/types/types';
-import { Shield, CheckCircle, XCircle, MessageSquare, Package, RefreshCw, Edit3, Download, Clock, Truck, DollarSign, Calendar } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, MessageSquare, Package, RefreshCw, Edit3, Download, Clock, Truck, DollarSign, Calendar, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Actions, CountedTextArea, Field, FormDialog, KitButton } from '@/components/formkit';
 import { supabase } from '@/db/supabase';
 import PageMeta from '@/components/common/PageMeta';
 
@@ -25,6 +24,7 @@ export default function BuyerQuotesPage() {
   const [reviseDialogOpen, setReviseDialogOpen] = useState(false);
   const [reviseQuoteId, setReviseQuoteId] = useState<string | null>(null);
   const [reviseNote, setReviseNote] = useState('');
+  const [reviseError, setReviseError] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
@@ -106,17 +106,28 @@ export default function BuyerQuotesPage() {
     setActionLoading(null);
   };
 
-  const openRevise = (id: string) => { setReviseQuoteId(id); setReviseNote(''); setReviseDialogOpen(true); };
+  const openRevise = (id: string) => { setReviseQuoteId(id); setReviseNote(''); setReviseError(''); setReviseDialogOpen(true); };
 
   const handleRevise = async () => {
-    if (!reviseQuoteId || !reviseNote.trim()) return;
+    if (!reviseQuoteId) return;
+    const note = reviseNote.trim();
+    if (!note) {
+      setReviseError('Please describe the changes you want.');
+      document.getElementById('revise-note')?.focus();
+      return;
+    }
     const q = quotations.find(qt => qt.id === reviseQuoteId);
     setActionLoading(reviseQuoteId);
-    await updateQuotationStatus(reviseQuoteId, 'revised');
-    // Store revision note in quotation notes field
-    await supabase.from('quotations').update({ notes: `[REVISION REQUEST] ${reviseNote}` }).eq('id', reviseQuoteId);
-    if (q) await notifySupplier(q, 'revised', `Buyer requested changes: "${reviseNote}"`);
-    toast.success('Revision requested. Supplier will update the quote.');
+    const { error } = await updateQuotationStatus(reviseQuoteId, 'revised');
+    if (error) {
+      setActionLoading(null);
+      toast.error('Your request could not be sent. Please try again.');
+      return;
+    }
+    // the request is kept beside the quote, so the supplier's own notes stay as they wrote them
+    await supabase.from('quotations').update({ change_request: note }).eq('id', reviseQuoteId);
+    if (q) await notifySupplier(q, 'revised', `Buyer requested changes: "${note}"`);
+    toast.success('Change request sent to the supplier.');
     setQuotations(prev => prev.map(qt => qt.id === reviseQuoteId ? { ...qt, status: 'revised' } : qt));
     setReviseDialogOpen(false);
     setActionLoading(null);
@@ -125,9 +136,9 @@ export default function BuyerQuotesPage() {
   const selectedReq = requirements.find(r => r.id === selectedReqId);
 
   const statusColor: Record<string, string> = {
-    pending: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
-    accepted: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
-    rejected: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40',
+    pending: 'bg-orange-100 text-orange-700 border-orange-300',
+    accepted: 'bg-orange-100 text-orange-700 border-orange-300',
+    rejected: 'bg-red-100 text-red-700 border-red-300',
     revised: 'bg-orange-500/10 text-[#FF5A00] border-[#FF5A00]/30',
   };
 
@@ -175,9 +186,9 @@ export default function BuyerQuotesPage() {
           {quotations.length > 0 && (
             <div className="flex gap-3 mb-4 flex-wrap text-xs">
               <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground">{quotations.length} total</span>
-              <span className="px-2 py-1 rounded-full bg-[#FF5A00]/10 text-[#FF7A2E]">{quotations.filter(q => q.status === 'pending').length} pending</span>
-              <span className="px-2 py-1 rounded-full bg-[#FF5A00]/10 text-[#FF7A2E]">{quotations.filter(q => q.status === 'accepted').length} accepted</span>
-              <span className="px-2 py-1 rounded-full bg-[#FF5A00]/10 text-[#FF7A2E]">{quotations.filter(q => q.status === 'rejected').length} declined</span>
+              <span className="px-2 py-1 rounded-full bg-orange-100 text-orange-700">{quotations.filter(q => q.status === 'pending').length} pending</span>
+              <span className="px-2 py-1 rounded-full bg-orange-100 text-orange-700">{quotations.filter(q => q.status === 'accepted').length} accepted</span>
+              <span className="px-2 py-1 rounded-full bg-red-100 text-red-700">{quotations.filter(q => q.status === 'rejected').length} declined</span>
             </div>
           )}
 
@@ -192,7 +203,7 @@ export default function BuyerQuotesPage() {
           ) : (
             <div className="space-y-4">
               {quotations.map(q => (
-                <div key={q.id} className={`bg-card border rounded-xl p-5 transition-shadow hover:shadow-md ${q.status === 'accepted' ? 'border-[#FF5A00]/40' : q.status === 'rejected' ? 'border-muted opacity-60' : q.status === 'revised' ? 'border-[#FF5A00]/30' : 'border-border'}`}>
+                <div key={q.id} className={`bg-card border rounded-xl p-5 transition-shadow hover:shadow-md ${q.status === 'accepted' ? 'border-orange-400' : q.status === 'rejected' ? 'border-muted opacity-60' : q.status === 'revised' ? 'border-[#FF5A00]/30' : 'border-border'}`}>
                   {/* Header */}
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex items-start gap-3">
@@ -203,7 +214,7 @@ export default function BuyerQuotesPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-semibold text-foreground">{q.companies?.company_name}</p>
                           {q.companies?.verification_status === 'verified' && (
-                            <Badge className="bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40 text-[10px] px-1.5 py-0 gap-0.5">
+                            <Badge className="bg-primary/10 text-primary border-primary/30 text-[10px] px-1.5 py-0 gap-0.5">
                               <Shield className="w-2.5 h-2.5" /> Verified
                             </Badge>
                           )}
@@ -259,7 +270,7 @@ export default function BuyerQuotesPage() {
                       <Button
                         onClick={() => handleAccept(q)}
                         size="sm"
-                        className="bg-[#B33D00] hover:bg-[#1A0C05] text-white gap-1 text-xs"
+                        className="bg-orange-600 hover:bg-orange-700 text-white gap-1 text-xs"
                         disabled={actionLoading === q.id}
                       >
                         {actionLoading === q.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
@@ -278,7 +289,7 @@ export default function BuyerQuotesPage() {
                         onClick={() => handleReject(q)}
                         size="sm"
                         variant="outline"
-                        className="gap-1 text-xs border-[#FF5A00]/40 text-[#FF7A2E] hover:bg-[#B33D00]/10"
+                        className="gap-1 text-xs border-red-200 text-red-600 hover:bg-red-50"
                         disabled={actionLoading === q.id}
                       >
                         <XCircle className="w-3.5 h-3.5" /> Decline
@@ -292,8 +303,8 @@ export default function BuyerQuotesPage() {
                   )}
                   {q.status === 'accepted' && (
                     <div className="flex items-center gap-2 mt-3">
-                      <CheckCircle className="w-4 h-4 text-[#FF7A2E]" />
-                      <span className="text-sm text-[#FF7A2E] font-medium">You accepted this quote</span>
+                      <CheckCircle className="w-4 h-4 text-orange-500" />
+                      <span className="text-sm text-orange-600 font-medium">You accepted this quote</span>
                       <Link to="/dashboard/buyer/messages" className="ml-auto">
                         <Button size="sm" variant="outline" className="gap-1 text-xs">
                           <MessageSquare className="w-3.5 h-3.5" /> Continue Chat
@@ -316,31 +327,54 @@ export default function BuyerQuotesPage() {
       </div>
 
       {/* Revise dialog */}
-      <Dialog open={reviseDialogOpen} onOpenChange={setReviseDialogOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md">
-          <DialogHeader><DialogTitle>Request Revision</DialogTitle></DialogHeader>
-          <div className="py-2 space-y-3">
-            <p className="text-sm text-muted-foreground">Describe the changes you'd like the supplier to make to this quote.</p>
-            <Textarea
-              value={reviseNote}
-              onChange={e => setReviseNote(e.target.value)}
+      <FormDialog
+        open={reviseDialogOpen}
+        onOpenChange={(open) => {
+          if (actionLoading !== reviseQuoteId) setReviseDialogOpen(open);
+        }}
+        busy={actionLoading === reviseQuoteId}
+        title={
+          <>
+            Request <em>Changes</em>
+          </>
+        }
+        description="Tell the supplier what to change in this quote. They are notified straight away."
+        width={600}
+      >
+        <form
+          noValidate
+          className="fk-form fk-stack"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleRevise();
+          }}
+        >
+          <Field htmlFor="revise-note" label="What should change?" required error={reviseError}>
+            <CountedTextArea
+              id="revise-note"
+              icon={Edit3}
               rows={4}
-              placeholder="e.g. Please reduce unit price, increase delivery time to 30 days, and include GST separately…"
+              maxLength={1000}
+              value={reviseNote}
+              onChange={(e) => {
+                setReviseNote(e.target.value);
+                if (reviseError) setReviseError('');
+              }}
+              placeholder="e.g. Please reduce the unit price, allow 30 days for delivery and show GST separately…"
+              invalid={Boolean(reviseError)}
             />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReviseDialogOpen(false)}>Cancel</Button>
-            <Button
-              className="bg-[#1A0C05] hover:bg-primary/90 text-primary-foreground"
-              onClick={handleRevise}
-              disabled={!reviseNote.trim() || actionLoading === reviseQuoteId}
-            >
-              {actionLoading === reviseQuoteId ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Send Request
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </Field>
+          <Actions>
+            <KitButton type="submit" disabled={actionLoading === reviseQuoteId}>
+              {actionLoading === reviseQuoteId ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+              {actionLoading === reviseQuoteId ? 'Sending…' : 'Send Request'}
+            </KitButton>
+            <KitButton variant="ghost" onClick={() => setReviseDialogOpen(false)} disabled={actionLoading === reviseQuoteId}>
+              Cancel
+            </KitButton>
+          </Actions>
+        </form>
+      </FormDialog>
     </DashboardLayout>
   );
 }

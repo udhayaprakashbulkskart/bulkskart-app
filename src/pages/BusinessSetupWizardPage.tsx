@@ -16,12 +16,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import PageMeta from '@/components/common/PageMeta';
 import { cn } from '@/lib/utils';
+import { GSTIN_REGEX, IEC_REGEX, PAN_REGEX, PRODUCT_CATEGORIES } from '@/lib/signup/vocab';
+import '@/components/formkit/formkit.css';
 
 type FieldErrors = Record<string, string>;
-
-const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-const IEC_REGEX = /^[0-9]{10}$/;
 
 function digitCount(value: string): number {
   return (value.match(/\d/g) || []).length;
@@ -66,56 +64,9 @@ const ACCOUNT_TYPES = [
   { id: 'Exporter', label: 'Exporter', desc: 'Exports certified goods and components to international markets', role: 'supplier' },
 ];
 
-const PRODUCT_CATEGORIES = [
-  'Machinery & Industrial Equipment',
-  'Packaging & Printing',
-  'Textiles & Apparel',
-  'Chemicals & Raw Materials',
-  'Construction & Building Materials',
-  'Electronics & Electricals',
-  'Auto Parts & Vehicles',
-  'Pharmaceuticals & Healthcare',
-  'Agriculture & Food Products',
-  'Plastics & Rubber',
-  'Furniture & Home Decor',
-  'Gems & Jewellery',
-  'Handicrafts & Gifts',
-];
-
 const PAYMENT_TERMS = ['L/C (Letter of Credit)', 'T/T (Telegraphic Transfer)', 'D/P (Documents Against Payment)', 'D/A (Documents Against Acceptance)', 'Escrow Trade Assurance', 'Cash Against Documents', 'Advance Payment'];
 const SHIPPING_MODES = ['Road Freight / Full Truckload', 'Air Cargo (Express & General)', 'Sea Freight (FCL & LCL)', 'Courier / Parcel Express', 'Warehousing & Cross-Docking', 'Cold Chain Logistics'];
 const COUNTRIES_LIST = ['India', 'United States', 'United Arab Emirates', 'United Kingdom', 'Germany', 'Australia', 'Canada', 'Saudi Arabia', 'Singapore', 'Japan', 'South Africa', 'Worldwide'];
-
-// Never let a single slow database read keep the wizard on a spinner forever.
-function withTimeout<T>(promise: PromiseLike<T>, ms = 12000): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Request timed out. Please check your connection and retry.')), ms);
-    Promise.resolve(promise).then(
-      (value) => { clearTimeout(timer); resolve(value); },
-      (err) => { clearTimeout(timer); reject(err); },
-    );
-  });
-}
-
-// Adds the sample manufacturer welcome leads after navigation, so they never delay onboarding.
-async function seedWelcomeLeadsInBackground(userId: string, fallbackName: string) {
-  try {
-    const { data: co } = await withTimeout(
-      supabase.from('companies').select('id, company_name').eq('owner_id', userId).maybeSingle(),
-      8000,
-    );
-    if (!co?.id) return;
-    const { ensureManufacturerWelcomeLeads } = await import('@/lib/api');
-    const result = ensureManufacturerWelcomeLeads(co.id, co.company_name || fallbackName || 'Your Factory');
-    if (result.seeded) {
-      toast.success('5 sample buyer leads added to your Messages inbox', {
-        description: 'Open Messages to reply — this is a simulation for new manufacturers.',
-      });
-    }
-  } catch (seedErr) {
-    console.warn('Welcome lead seed skipped:', seedErr);
-  }
-}
 
 export default function BusinessSetupWizardPage() {
   const { user, profile, company, buyerProfile, refreshProfile } = useAuth();
@@ -124,8 +75,6 @@ export default function BusinessSetupWizardPage() {
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState<number>(0);
   const [saving, setSaving] = useState<boolean>(false);
   const [completing, setCompleting] = useState<boolean>(false);
 
@@ -355,29 +304,21 @@ export default function BusinessSetupWizardPage() {
   }, [currentStep, validateStep, scrollToFirstError]);
 
   // Load existing data for user
-  const userId = user?.id;
-  const userEmail = user?.email;
-
   useEffect(() => {
-    if (!userId) {
+    if (!user) {
       setLoading(false);
       return;
     }
-    let cancelled = false;
 
     const loadData = async () => {
       setLoading(true);
-      setLoadError(null);
       try {
         // Direct query to guarantee exact logged-in user profile without crosstalk
-        const { data: directProfile } = await withTimeout(
-          supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle()
-        );
-        if (cancelled) return;
+        const { data: directProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
 
         const activeProfile = directProfile || profile;
 
@@ -400,28 +341,22 @@ export default function BusinessSetupWizardPage() {
         }
 
         // Direct query company owned specifically by this user to eliminate any cross-account leakage
-        const { data: directCompany } = await withTimeout(
-          supabase
-            .from('companies')
-            .select('*')
-            .eq('owner_id', userId)
-            .maybeSingle()
-        );
-        if (cancelled) return;
+        const { data: directCompany } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('owner_id', user.id)
+          .maybeSingle();
 
-        const targetCompany = directCompany || (company?.owner_id === userId ? company : null);
+        const targetCompany = directCompany || (company?.owner_id === user.id ? company : null);
 
         // Direct query buyer profile specifically for this user
-        const { data: directBuyerProfile } = await withTimeout(
-          supabase
-            .from('buyer_profiles')
-            .select('*')
-            .eq('user_id', userId)
-            .maybeSingle()
-        );
-        if (cancelled) return;
+        const { data: directBuyerProfile } = await supabase
+          .from('buyer_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-        const targetBuyerProfile = directBuyerProfile || (buyerProfile?.user_id === userId ? buyerProfile : null);
+        const targetBuyerProfile = directBuyerProfile || (buyerProfile?.user_id === user.id ? buyerProfile : null);
 
         // Check if company exists
         if (targetCompany) {
@@ -488,26 +423,13 @@ export default function BusinessSetupWizardPage() {
         }
       } catch (err) {
         console.error('Error loading onboarding data:', err);
-        if (!cancelled) {
-          setLoadError(
-            err instanceof Error && err.message
-              ? err.message
-              : 'We could not load your saved details. You can still fill in the form.'
-          );
-        }
       } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       }
     };
 
     loadData();
-    return () => {
-      cancelled = true;
-    };
-    // Reload only when the signed-in user changes or the user presses Retry.
-    // Re-running on every profile/company object change restarted the spinner.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, userEmail, reloadKey]);
+  }, [user, profile, company, buyerProfile]);
 
   // Handle document uploads
   const handleUploadDoc = async (file: File, type: 'gst' | 'iec' | 'pan' | 'reg') => {
@@ -717,7 +639,7 @@ export default function BusinessSetupWizardPage() {
 
       // 1. Update profiles table
       const finalRole = isBuyer ? 'buyer' : 'supplier';
-      const profRes = await withTimeout(supabase.from('profiles').update({
+      await supabase.from('profiles').update({
         full_name: personal.fullName.trim(),
         phone: personal.phone.trim(),
         whatsapp_number: personal.whatsappNumber.trim() || null,
@@ -727,23 +649,19 @@ export default function BusinessSetupWizardPage() {
         role: finalRole,
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
-      }).eq('id', user.id));
-      if (profRes.error) {
-        throw new Error(`Could not save your personal details: ${profRes.error.message}`);
-      }
+      }).eq('id', user.id);
 
-      // Keep auth metadata in sync so dashboard routing never drifts after setup.
-      // Non-blocking: a slow auth call must not hold the user on "Completing Profile...".
-      void withTimeout(supabase.auth.updateUser({
-        data: {
-          role: finalRole,
-          full_name: personal.fullName.trim(),
-        },
-      }), 8000)
-        .then(metaRes => {
-          if (metaRes.error) console.warn('Auth metadata sync failed:', metaRes.error.message);
-        })
-        .catch(metaErr => console.warn('Auth metadata sync skipped:', metaErr));
+      // Keep auth metadata in sync so dashboard routing never drifts after setup
+      try {
+        await supabase.auth.updateUser({
+          data: {
+            role: finalRole,
+            full_name: personal.fullName.trim(),
+          },
+        });
+      } catch (metaErr) {
+        console.warn('Auth metadata sync skipped:', metaErr);
+      }
 
       if (isBuyer) {
         const buyerPayload = {
@@ -776,14 +694,11 @@ export default function BusinessSetupWizardPage() {
           updated_at: new Date().toISOString(),
         };
 
-        const { data: existingBuyer } = await withTimeout(
-          supabase.from('buyer_profiles').select('id').eq('user_id', user.id).maybeSingle()
-        );
-        const buyerRes = existingBuyer?.id
-          ? await withTimeout(supabase.from('buyer_profiles').update(buyerPayload).eq('user_id', user.id))
-          : await withTimeout(supabase.from('buyer_profiles').insert(buyerPayload));
-        if (buyerRes.error) {
-          throw new Error(`Could not save your business profile: ${buyerRes.error.message}`);
+        const { data: existingBuyer } = await supabase.from('buyer_profiles').select('id').eq('user_id', user.id).maybeSingle();
+        if (existingBuyer?.id) {
+          await supabase.from('buyer_profiles').update(buyerPayload).eq('user_id', user.id);
+        } else {
+          await supabase.from('buyer_profiles').insert(buyerPayload);
         }
       } else {
         const slug = business.legalName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + user.id.slice(0, 6);
@@ -823,38 +738,29 @@ export default function BusinessSetupWizardPage() {
           updated_at: new Date().toISOString(),
         };
 
-        const { data: existingCo } = await withTimeout(
-          supabase.from('companies').select('id').eq('owner_id', user.id).maybeSingle()
-        );
-        const companyRes = existingCo?.id
-          ? await withTimeout(supabase.from('companies').update(companyPayload).eq('owner_id', user.id))
-          : await withTimeout(supabase.from('companies').insert({
-              ...companyPayload,
-              slug,
-              verification_status: finalStatus,
-              is_verified: false,
-              is_featured: false,
-              total_products: 0,
-              total_quotes_sent: 0,
-            }));
-        if (companyRes.error) {
-          throw new Error(`Could not save your company profile: ${companyRes.error.message}`);
+        const { data: existingCo } = await supabase.from('companies').select('id').eq('owner_id', user.id).maybeSingle();
+        if (existingCo?.id) {
+          await supabase.from('companies').update(companyPayload).eq('owner_id', user.id);
+        } else {
+          await supabase.from('companies').insert({
+            ...companyPayload,
+            slug,
+            verification_status: finalStatus,
+            is_verified: false,
+            is_featured: false,
+            total_products: 0,
+            total_quotes_sent: 0,
+          });
         }
       }
 
-      // Refresh is capped: the saved data is already committed, so a slow read must not keep the form spinning.
-      try {
-        await withTimeout(refreshProfile(), 6000);
-      } catch (refreshErr) {
-        console.warn('Profile refresh after save did not finish:', refreshErr);
-      }
+      await refreshProfile();
       toast.success('Business profile setup completed successfully!');
       if (isBuyer) {
         navigate('/dashboard/buyer');
-        return;
+      } else {
+        navigate('/dashboard/supplier');
       }
-      navigate('/dashboard/supplier');
-      void seedWelcomeLeadsInBackground(user.id, business.legalName);
     } catch (err: any) {
       console.error('Complete profile error:', err);
       toast.error(err?.message || 'Failed to complete profile');
@@ -883,7 +789,7 @@ export default function BusinessSetupWizardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="fk-skin min-h-screen bg-background text-foreground flex flex-col">
       <PageMeta title="Business Profile Setup Wizard | BulkSkart" description="Complete your official BulkSkart business registration and trade profile." />
 
       {/* Top Header */}
@@ -922,17 +828,6 @@ export default function BusinessSetupWizardPage() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 md:p-8 space-y-6">
-        {loadError && (
-          <div role="alert" className="flex flex-col gap-3 rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">Your saved details did not load</p>
-              <p className="mt-0.5 text-xs text-muted-foreground break-words">{loadError}</p>
-            </div>
-            <Button size="sm" onClick={() => setReloadKey((k) => k + 1)} className="shrink-0">
-              Retry loading
-            </Button>
-          </div>
-        )}
         {/* Progress Bar & Steps Indicator */}
         <div className="bg-card border border-border rounded-xl p-4 sm:p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
@@ -942,7 +837,7 @@ export default function BusinessSetupWizardPage() {
 
           <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
             <div
-              className="bg-[#C94400] h-full transition-all duration-300 rounded-full"
+              className="bg-primary h-full transition-all duration-300 rounded-full"
               style={{ width: `${(currentStep / 5) * 100}%` }}
             />
           </div>
@@ -967,9 +862,9 @@ export default function BusinessSetupWizardPage() {
                 >
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs mb-1 ${
                     isActive
-                      ? 'bg-[#C94400] text-white shadow-sm'
+                      ? 'bg-primary text-white shadow-sm'
                       : isPast
-                      ? 'bg-[#FF5A00]/20 text-[#FF7A2E]'
+                      ? 'bg-orange-500/20 text-orange-500'
                       : 'bg-muted text-muted-foreground'
                   }`}>
                     {isPast ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Icon className="w-3.5 h-3.5" />}
@@ -1019,7 +914,7 @@ export default function BusinessSetupWizardPage() {
                           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{type.desc}</p>
                         </div>
                         <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                          accountType === type.id ? 'border-primary bg-[#C94400] text-white' : 'border-border'
+                          accountType === type.id ? 'border-primary bg-primary text-white' : 'border-border'
                         }`}>
                           {accountType === type.id && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
@@ -1095,8 +990,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">WhatsApp Number (For Direct RFQ Alerts)</Label>
-                    <Input
+                    <Label htmlFor="setup-whatsapp-number" className="text-xs font-semibold">WhatsApp Number (For Direct RFQ Alerts)</Label>
+                    <Input id="setup-whatsapp-number"
                       placeholder="e.g. +91 98765 43210"
                       value={personal.whatsappNumber}
                       inputMode="tel"
@@ -1193,8 +1088,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Brand / Trade Name</Label>
-                    <Input
+                    <Label htmlFor="setup-brand-trade-name" className="text-xs font-semibold">Brand / Trade Name</Label>
+                    <Input id="setup-brand-trade-name"
                       placeholder="e.g. Apex Tools (if different)"
                       value={business.brandName}
                       onChange={e => setBusiness(b => ({ ...b, brandName: e.target.value }))}
@@ -1203,8 +1098,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Business Registration / CIN / Udyam</Label>
-                    <Input
+                    <Label htmlFor="setup-business-registration-cin-udyam" className="text-xs font-semibold">Business Registration / CIN / Udyam</Label>
+                    <Input id="setup-business-registration-cin-udyam"
                       placeholder="e.g. UDYAM-MH-01-0012345"
                       value={business.registrationNumber}
                       onChange={e => setBusiness(b => ({ ...b, registrationNumber: e.target.value }))}
@@ -1213,8 +1108,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">GSTIN (India) / Tax ID</Label>
-                    <Input
+                    <Label htmlFor="setup-gstin-tax-id" className="text-xs font-semibold">GSTIN (India) / Tax ID</Label>
+                    <Input id="setup-gstin-tax-id"
                       placeholder="e.g. 27ABCDE1234F1Z5"
                       value={business.gstNumber}
                       aria-invalid={Boolean(fieldErrors.gstNumber)}
@@ -1228,8 +1123,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">PAN Number</Label>
-                    <Input
+                    <Label htmlFor="setup-pan-number" className="text-xs font-semibold">PAN Number</Label>
+                    <Input id="setup-pan-number"
                       placeholder="e.g. ABCDE1234F"
                       value={business.panNumber}
                       aria-invalid={Boolean(fieldErrors.panNumber)}
@@ -1243,8 +1138,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">IEC Code (For Import / Export)</Label>
-                    <Input
+                    <Label htmlFor="setup-iec-code" className="text-xs font-semibold">IEC Code (For Import / Export)</Label>
+                    <Input id="setup-iec-code"
                       placeholder="e.g. 0308994411 (10 Digits)"
                       value={business.iecNumber}
                       aria-invalid={Boolean(fieldErrors.iecNumber)}
@@ -1258,8 +1153,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Year of Establishment</Label>
-                    <Input
+                    <Label htmlFor="setup-year-of-establishment" className="text-xs font-semibold">Year of Establishment</Label>
+                    <Input id="setup-year-of-establishment"
                       type="number"
                       placeholder="e.g. 2012"
                       value={business.yearEstablished}
@@ -1274,8 +1169,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Company Website (Optional)</Label>
-                    <Input
+                    <Label htmlFor="setup-company-website" className="text-xs font-semibold">Company Website (Optional)</Label>
+                    <Input id="setup-company-website"
                       placeholder="https://www.yourcompany.com"
                       value={business.website}
                       aria-invalid={Boolean(fieldErrors.website)}
@@ -1289,8 +1184,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-semibold">Registered Factory / Office Address</Label>
-                    <Input
+                    <Label htmlFor="setup-registered-factory-office-address" className="text-xs font-semibold">Registered Factory / Office Address</Label>
+                    <Input id="setup-registered-factory-office-address"
                       placeholder="Plot No., Industrial Area, Phase II"
                       value={business.address}
                       onChange={e => setBusiness(b => ({ ...b, address: e.target.value }))}
@@ -1299,8 +1194,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-semibold">Business Overview & Capabilities</Label>
-                    <Textarea
+                    <Label htmlFor="setup-business-overview-capabilities" className="text-xs font-semibold">Business Overview & Capabilities</Label>
+                    <Textarea id="setup-business-overview-capabilities"
                       rows={3}
                       placeholder="Describe your manufacturing facilities, quality control standards, machinery, and wholesale specialties..."
                       value={business.description}
@@ -1353,7 +1248,7 @@ export default function BusinessSetupWizardPage() {
                           }}
                           className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                             isSelected
-                              ? 'bg-[#C94400] text-white border-primary shadow-sm'
+                              ? 'bg-primary text-white border-primary shadow-sm'
                               : 'bg-background border-border text-foreground hover:bg-muted'
                           }`}
                         >
@@ -1419,8 +1314,8 @@ export default function BusinessSetupWizardPage() {
                 {/* MOQ & Capacity */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Minimum Order Quantity (MOQ)</Label>
-                    <Input
+                    <Label htmlFor="setup-minimum-order-quantity" className="text-xs font-semibold">Minimum Order Quantity (MOQ)</Label>
+                    <Input id="setup-minimum-order-quantity"
                       placeholder="e.g. 50 Units, 500 Kilograms, 1 Container"
                       value={moq}
                       onChange={e => setMoq(e.target.value)}
@@ -1429,8 +1324,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Monthly Production / Supply Capacity</Label>
-                    <Input
+                    <Label htmlFor="setup-monthly-production-supply-capacity" className="text-xs font-semibold">Monthly Production / Supply Capacity</Label>
+                    <Input id="setup-monthly-production-supply-capacity"
                       placeholder="e.g. 25,000 Units / Month"
                       value={capacity}
                       onChange={e => setCapacity(e.target.value)}
@@ -1439,8 +1334,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Trade Scope</Label>
-                    <select
+                    <Label htmlFor="setup-trade-scope" className="text-xs font-semibold">Trade Scope</Label>
+                    <select id="setup-trade-scope"
                       value={tradeType}
                       onChange={e => setTradeType(e.target.value)}
                       className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
@@ -1453,8 +1348,8 @@ export default function BusinessSetupWizardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Key Countries / Regions Served</Label>
-                    <Input
+                    <Label htmlFor="setup-key-countries-regions-served" className="text-xs font-semibold">Key Countries / Regions Served</Label>
+                    <Input id="setup-key-countries-regions-served"
                       placeholder="e.g. India, UAE, USA, Germany, Africa"
                       value={countriesServed.join(', ')}
                       onChange={e => setCountriesServed(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
@@ -1531,9 +1426,9 @@ export default function BusinessSetupWizardPage() {
                 {/* Status Indicator Banner */}
                 <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 ${
                   verificationStatus === 'verified'
-                    ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30 text-[#FF7A2E] dark:text-[#FF7A2E]'
+                    ? 'bg-primary/10 border-primary/30 text-primary'
                     : verificationStatus === 'pending'
-                    ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30 text-[#FF7A2E] dark:text-[#FF7A2E]'
+                    ? 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400'
                     : verificationStatus === 'rejected'
                     ? 'bg-destructive/10 border-destructive/30 text-destructive'
                     : 'bg-muted/50 border-border text-muted-foreground'
@@ -1568,7 +1463,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">PDF or JPG/PNG image of Form REG-06</p>
                       </div>
                       {docs.gstDocUrl ? (
-                        <Badge className="bg-[#1A0C05] text-white text-[10px] gap-1">
+                        <Badge className="bg-orange-500 text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1602,7 +1497,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">Official Income Tax Department PAN</p>
                       </div>
                       {docs.panDocUrl ? (
-                        <Badge className="bg-[#1A0C05] text-white text-[10px] gap-1">
+                        <Badge className="bg-orange-500 text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1636,7 +1531,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">DGFT issued Certificate for foreign trade</p>
                       </div>
                       {docs.iecDocUrl ? (
-                        <Badge className="bg-[#1A0C05] text-white text-[10px] gap-1">
+                        <Badge className="bg-orange-500 text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1670,7 +1565,7 @@ export default function BusinessSetupWizardPage() {
                         <p className="text-xs text-muted-foreground">Ministry of MSME / MCA Incorporation</p>
                       </div>
                       {docs.regDocUrl ? (
-                        <Badge className="bg-[#1A0C05] text-white text-[10px] gap-1">
+                        <Badge className="bg-orange-500 text-white text-[10px] gap-1">
                           <Check className="w-3 h-3" /> Uploaded
                         </Badge>
                       ) : (
@@ -1746,7 +1641,7 @@ export default function BusinessSetupWizardPage() {
                   type="button"
                   onClick={handleNextStep}
                   disabled={saving || completing}
-                  className="flex-1 sm:flex-initial bg-[#1A0C05] text-white hover:bg-primary/90 text-xs gap-1.5"
+                  className="flex-1 sm:flex-initial bg-primary text-white hover:bg-primary/90 text-xs gap-1.5"
                 >
                   Next Step <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
@@ -1755,7 +1650,7 @@ export default function BusinessSetupWizardPage() {
                   type="button"
                   onClick={handleCompleteProfile}
                   disabled={completing || saving}
-                  className="flex-1 sm:flex-initial bg-[#B33D00] hover:bg-[#1A0C05] text-white text-xs gap-1.5 font-bold shadow-md"
+                  className="flex-1 sm:flex-initial bg-orange-600 hover:bg-orange-700 text-white text-xs gap-1.5 font-bold shadow-md"
                 >
                   {completing ? 'Completing Profile...' : 'Complete Profile & Launch'}
                   <CheckCircle2 className="w-4 h-4" />

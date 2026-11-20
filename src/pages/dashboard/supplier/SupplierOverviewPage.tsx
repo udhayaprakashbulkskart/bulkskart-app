@@ -27,7 +27,7 @@ interface SubData {
 
 function ProgressBar({ used, max, label }: { used: number; max: number; label: string }) {
   const pct = max > 0 ? Math.min(100, Math.round((used / max) * 100)) : 0;
-  const color = pct >= 90 ? 'bg-destructive' : pct >= 70 ? 'bg-[#C94400]' : 'bg-[#C94400]';
+  const color = pct >= 90 ? 'bg-destructive' : pct >= 70 ? 'bg-orange-500' : 'bg-primary';
   return (
     <div>
       <div className="flex justify-between items-center mb-1">
@@ -79,8 +79,8 @@ export default function SupplierOverviewPage() {
     : null;
 
   const tierLabel = subscription?.tier ?? 'Free';
-  const tierColor = tierLabel === 'enterprise' ? 'text-[#FF7A2E] border-[#FF5A00]/30 bg-[#FF5A00]/10'
-    : tierLabel === 'growth' ? 'text-[#FF7A2E] border-[#FF5A00]/30 bg-[#FF5A00]/10'
+  const tierColor = tierLabel === 'enterprise' ? 'text-orange-400 border-orange-400/30 bg-orange-400/10'
+    : tierLabel === 'growth' ? 'text-orange-400 border-orange-400/30 bg-orange-400/10'
     : tierLabel === 'business' ? 'text-primary border-primary/30 bg-primary/10'
     : 'text-muted-foreground border-border bg-muted';
 
@@ -97,11 +97,11 @@ export default function SupplierOverviewPage() {
     {
       label: 'Quotes Sent', value: quotesSent,
       sub: `${acceptanceRate}% acceptance rate`,
-      icon: FileText, color: 'text-[#FF7A2E]', bg: 'bg-[#FF5A00]/10',
+      icon: FileText, color: 'text-orange-400', bg: 'bg-orange-400/10',
     },
     {
       label: 'Conversations', value: activeConversations,
-      sub: 'Active chats', icon: MessageSquare, color: 'text-[#FF7A2E]', bg: 'bg-[#FF5A00]/10',
+      sub: 'Active chats', icon: MessageSquare, color: 'text-orange-400', bg: 'bg-orange-400/10',
     },
   ];
 
@@ -122,7 +122,7 @@ export default function SupplierOverviewPage() {
               <p className="text-sm text-muted-foreground">Your performance at a glance</p>
             </div>
             <Link to="/dashboard/supplier/products">
-              <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2 text-sm shrink-0">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 text-sm shrink-0">
                 <Plus className="w-4 h-4" /> Add Product
               </Button>
             </Link>
@@ -202,7 +202,7 @@ export default function SupplierOverviewPage() {
                 <div className="text-center py-4">
                   <p className="text-sm text-muted-foreground mb-3">No active subscription. Subscribe to unlock RFQ leads and direct messaging.</p>
                   <Link to="/dashboard/supplier/subscription">
-                    <Button size="sm" className="bg-[#1A0C05] text-primary-foreground text-xs">Subscribe Now</Button>
+                    <Button size="sm" className="bg-primary text-primary-foreground text-xs">Subscribe Now</Button>
                   </Link>
                 </div>
               )}
@@ -214,14 +214,14 @@ export default function SupplierOverviewPage() {
                 <Shield className="w-4 h-4 text-primary" /> Verification Status
               </h3>
               <div className={`flex items-center gap-3 rounded-lg p-3 ${
-                company?.is_verified ? 'bg-[#FF5A00]/10 border border-[#FF5A00]/25'
-                : company?.verification_status === 'pending' ? 'bg-[#FF5A00]/10 border border-[#FF5A00]/25'
+                company?.is_verified ? 'bg-primary/10 border border-primary/25'
+                : company?.verification_status === 'pending' ? 'bg-orange-500/10 border border-orange-500/25'
                 : 'bg-muted border border-border'
               }`}>
                 {company?.is_verified
-                  ? <ShieldCheck className="w-5 h-5 text-[#FF7A2E] shrink-0" />
+                  ? <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
                   : company?.verification_status === 'pending'
-                  ? <Clock className="w-5 h-5 text-[#FF7A2E] shrink-0" />
+                  ? <Clock className="w-5 h-5 text-orange-400 shrink-0" />
                   : <AlertCircle className="w-5 h-5 text-muted-foreground shrink-0" />
                 }
                 <div>
@@ -243,7 +243,7 @@ export default function SupplierOverviewPage() {
                 ].map(item => (
                   <div key={item.label} className="flex items-center gap-2 text-xs">
                     {item.done
-                      ? <CheckCircle className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
+                      ? <CheckCircle className="w-3.5 h-3.5 text-orange-400 shrink-0" />
                       : <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40 shrink-0" />
                     }
                     <span className={item.done ? 'text-foreground' : 'text-muted-foreground'}>{item.label}</span>
@@ -319,7 +319,7 @@ export default function SupplierOverviewPage() {
                         <p className="text-xs text-muted-foreground">{q.currency} {q.unit_price.toLocaleString()}</p>
                       </div>
                       <Badge variant="outline" className={`text-xs capitalize shrink-0 ${
-                        q.status === 'accepted' ? 'text-[#FF7A2E] border-[#FF5A00]/30'
+                        q.status === 'accepted' ? 'text-orange-400 border-orange-400/30'
                         : q.status === 'rejected' ? 'text-destructive border-destructive/30'
                         : 'text-muted-foreground border-border'
                       }`}>
@@ -337,11 +337,11 @@ export default function SupplierOverviewPage() {
             <h3 className="text-sm font-semibold text-foreground mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
-                { label: 'Buyer Inquiries & Chat', icon: MessageSquare, href: '/dashboard/supplier/messages', color: 'text-[#FF7A2E] bg-[#FF5A00]/10 border-[#FF5A00]/20' },
+                { label: 'Buyer Inquiries & Chat', icon: MessageSquare, href: '/dashboard/supplier/messages', color: 'text-orange-400 bg-orange-400/10 border-orange-400/20' },
                 { label: 'Add Product', icon: Plus, href: '/dashboard/supplier/products', color: 'text-primary bg-primary/10 border-primary/20' },
-                { label: 'Browse RFQ Leads', icon: TrendingUp, href: '/dashboard/supplier/rfqs', color: 'text-[#FF7A2E] bg-[#FF5A00]/10 border-[#FF5A00]/20' },
+                { label: 'Browse RFQ Leads', icon: TrendingUp, href: '/dashboard/supplier/rfqs', color: 'text-orange-400 bg-orange-400/10 border-orange-400/20' },
                 { label: 'Edit Business Profile', icon: UserCircle, href: '/dashboard/supplier/profile', color: 'text-[#FF5A00] bg-orange-500/10 border-[#FF5A00]/30/20' },
-                { label: 'View Subscription', icon: CreditCard, href: '/dashboard/supplier/subscription', color: 'text-[#FF7A2E] bg-[#FF5A00]/10 border-[#FF5A00]/20' },
+                { label: 'View Subscription', icon: CreditCard, href: '/dashboard/supplier/subscription', color: 'text-orange-400 bg-orange-400/10 border-orange-400/20' },
               ].map(action => {
                 const Icon = action.icon;
                 return (

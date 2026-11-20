@@ -1,0 +1,1622 @@
+/*
+ * The dashboard look ("glass"): a floating glass bar with a pill menu on top, frosted cards, pill-shaped bars with a hatched
+ * fill, a fan-shaped gauge, inverse pill buttons and soft glows.
+ *
+ * The colours are BulkSkart's own. Nothing here has a colour of its own except the orange: every surface, line and text uses
+ * the site's colour tokens (--background, --card, --foreground, --muted-foreground, --primary ...), so the dashboard is the
+ * site's dark navy with the brand orange, and follows the light / dark choice like the rest of the site.
+ *
+ * 1. Variables built from the site's tokens, and the page canvas.
+ * 2. Shell: the floating top bar, the pill menu, the round buttons, the mobile menu.
+ * 3. Parts: page header, panel, KPI card, chart, gauge, small stats, dark card, account card.
+ * 4. What the older pages share: cards, tabs, buttons, tables, pop-ups.
+ */
+
+/* ───────────── 1. variables ───────────── */
+html.dash-active {
+  --g-ink: hsl(var(--foreground));
+  --g-ink-2: hsl(var(--foreground) / 0.8);
+  --g-ink-3: hsl(var(--muted-foreground));
+  --g-line: hsl(var(--foreground) / 0.09);
+  --g-line-2: hsl(var(--foreground) / 0.15);
+  --g-fill: hsl(var(--foreground) / 0.05);
+  --g-fill-2: hsl(var(--foreground) / 0.09);
+  --g-accent: hsl(var(--primary));
+  --g-accent-grad: linear-gradient(180deg, #ff6d22 0%, #ff5a00 55%, #ec5000 100%);
+  --g-accent-glow: 0 10px 22px -10px hsl(var(--primary) / 0.75);
+  --g-flip: hsl(var(--foreground));
+  --g-flip-text: hsl(var(--background));
+  --g-glass-a: hsl(var(--card) / 0.88);
+  --g-glass-b: hsl(var(--card) / 0.7);
+  --g-glass-edge: hsl(var(--foreground) / 0.09);
+  --g-shine: inset 0 1px 0 hsl(var(--foreground) / 0.07);
+  --g-shadow: 0 22px 44px -26px rgba(2, 6, 20, 0.75);
+  --g-shadow-lift: 0 30px 50px -24px rgba(2, 6, 20, 0.85);
+  --g-green: #ef7939;
+  --g-green-bg: rgba(239, 121, 57, 0.14);
+  --g-red: #f87171;
+  --g-red-bg: rgba(248, 113, 113, 0.14);
+  --g-navy-a: hsl(0 0% 17%);
+  --g-navy-b: hsl(0 0% 8%);
+}
+html.dash-active.light {
+  --g-glass-a: hsl(var(--card) / 0.94);
+  --g-glass-b: hsl(var(--card) / 0.8);
+  --g-shine: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --g-shadow: 0 22px 44px -28px rgba(28, 28, 28, 0.28);
+  --g-shadow-lift: 0 30px 50px -26px rgba(28, 28, 28, 0.38);
+  --g-green: #b3480f;
+  --g-green-bg: rgba(179, 72, 15, 0.12);
+  --g-red: #b91c1c;
+  --g-red-bg: rgba(185, 28, 28, 0.1);
+}
+
+/* ───────────── 2. shell ───────────── */
+.dsh {
+  --dsh-pad: 44px; /* room left under the page */
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  padding: 10px 14px var(--dsh-pad);
+  color: hsl(var(--foreground));
+}
+/* the canvas: the site's own background with soft orange glows, like the glow under the reel's cards */
+.dsh::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 0% 0%, hsl(var(--primary) / 0.1) 0%, transparent 70%),
+    radial-gradient(70% 60% at 100% 8%, hsl(21 85% 55% / 0.07) 0%, transparent 70%),
+    radial-gradient(95% 60% at 50% 118%, hsl(var(--primary) / 0.17) 0%, transparent 66%),
+    hsl(var(--background));
+}
+
+.dsh-bar {
+  position: sticky;
+  top: 10px;
+  z-index: 40;
+  max-width: 1600px;
+  margin: 0 auto;
+  border-radius: 28px;
+  background: hsl(var(--card) / 0.74);
+  border: 1px solid var(--g-glass-edge);
+  box-shadow: var(--g-shine), 0 20px 44px -22px rgba(2, 6, 20, 0.7);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  backdrop-filter: blur(18px) saturate(1.3);
+  color: hsl(var(--foreground));
+}
+.dsh-bar-in {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 14px;
+}
+.dsh-bar-in > .dsh-brand,
+.dsh-bar-in > .dsh-tools {
+  min-height: 42px;
+}
+.dsh-brand {
+  display: flex;
+  flex: none;
+  align-items: center;
+  border-radius: 14px;
+}
+.dsh-brand img {
+  height: 28px;
+  width: auto;
+  max-width: 150px;
+}
+.dsh-burger {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-left: -4px;
+  border-radius: 50%;
+  border: 1px solid var(--g-line-2);
+  background: var(--g-fill-2);
+  color: hsl(var(--foreground));
+}
+
+/* the pill menu */
+.dsh-nav {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin-inline: auto;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--g-fill);
+  border: 1px solid var(--g-line);
+  box-shadow: var(--g-shine);
+}
+.dsh-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--g-ink-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.dsh-tab svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.dsh-tab > svg:first-child {
+  display: none;
+}
+.dsh-tab:hover {
+  background: var(--g-fill-2);
+  color: hsl(var(--foreground));
+}
+.dsh-tab.is-active {
+  background: var(--g-accent-grad);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28), var(--g-accent-glow);
+}
+.dsh-tab.is-active > svg:first-child {
+  display: block;
+}
+/* the flag on the Subscription section of a manufacturer who has not paid */
+.dsh-tab .dsh-flag {
+  margin-left: 2px;
+  padding: 0 6px;
+  font-size: 9px;
+}
+.dsh-tab.is-active .dsh-flag {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.dsh-sep {
+  align-self: center;
+  flex: none;
+  width: 1px;
+  height: 16px;
+  margin: 0 6px;
+  background: var(--g-line-2);
+}
+
+/* round buttons at the right */
+.dsh-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.dsh-ibtn {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--g-line-2);
+  background: var(--g-fill-2);
+  color: hsl(var(--foreground));
+  box-shadow: var(--g-shine);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.dsh-ibtn:hover {
+  background: hsl(var(--foreground) / 0.15);
+}
+.dsh-ibtn svg {
+  width: 17px;
+  height: 17px;
+}
+.dsh-plus {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--g-accent-grad);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), var(--g-accent-glow);
+  transition: transform 0.2s ease;
+}
+.dsh-plus:hover {
+  transform: scale(1.07);
+}
+.dsh-plus svg {
+  width: 18px;
+  height: 18px;
+}
+.dsh-ibtn.dsh-ai {
+  border-color: hsl(var(--primary) / 0.45);
+  background: radial-gradient(circle at 30% 28%, #ffd2ae 0%, #ff7a2e 52%, #e04f00 100%);
+  color: #fff;
+  box-shadow: 0 8px 18px -8px hsl(var(--primary) / 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.dsh-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: var(--g-accent-grad);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.dsh-tab:focus-visible,
+.dsh-ibtn:focus-visible,
+.dsh-plus:focus-visible,
+.dsh-avatar:focus-visible,
+.dsh-burger:focus-visible,
+.dsh-brand:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* search that opens under the bar */
+.dsh-search {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 10px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(440px, calc(100vw - 28px));
+  padding: 6px 8px 6px 14px;
+  border-radius: 999px;
+  background: hsl(var(--popover));
+  border: 1px solid var(--g-line-2);
+  box-shadow: 0 24px 50px -18px rgba(2, 6, 20, 0.7);
+  color: hsl(var(--popover-foreground));
+}
+.dsh-search svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--g-ink-3);
+}
+.dsh-search input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none;
+  color: hsl(var(--popover-foreground));
+  font-size: 13px;
+}
+.dsh-search kbd {
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: var(--g-fill-2);
+  font-size: 11px;
+  color: var(--g-ink-3);
+}
+
+/* menus that open from the bar (they live in a portal, so they use the site's popover colours) */
+html.dash-active .dsh-menu {
+  min-width: 232px;
+  padding: 6px;
+  border-radius: 20px;
+  border: 1px solid var(--g-line-2);
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  box-shadow: 0 30px 60px -20px rgba(2, 6, 20, 0.7);
+}
+html.dash-active .dsh-mi {
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+html.dash-active .dsh-mi svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  opacity: 0.75;
+}
+html.dash-active .dsh-mi.is-active {
+  background: var(--g-accent-grad);
+  color: #fff;
+}
+html.dash-active .dsh-mi.is-active svg {
+  opacity: 1;
+}
+html.dash-active .dsh-mi.is-danger {
+  color: var(--g-red);
+}
+.dsh-flag {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: hsl(var(--primary) / 0.16);
+  color: hsl(var(--primary));
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+html.dash-active .dsh-menu-label {
+  padding: 8px 12px 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--g-ink-3);
+}
+html.dash-active .dsh-who {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid var(--g-line);
+  margin-bottom: 4px;
+}
+html.dash-active .dsh-who b {
+  font-size: 13px;
+}
+html.dash-active .dsh-who span {
+  font-size: 11px;
+  color: var(--g-ink-3);
+}
+
+/* the mobile menu */
+html.dash-active .dsh-sheet {
+  width: min(310px, 88vw);
+  padding: 14px 12px 24px;
+  border: 0;
+  border-right: 1px solid var(--g-line-2);
+  background: radial-gradient(120% 55% at 0% 0%, hsl(var(--primary) / 0.14), transparent 60%), hsl(var(--background));
+  color: hsl(var(--foreground));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+html.dash-active .dsh-sheet .dsh-brand {
+  margin: 2px 0 6px 4px;
+}
+.dsh-slist {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+}
+.dsh-slink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--g-fill);
+  color: var(--g-ink-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.dsh-slink svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.dsh-slink.is-active {
+  background: var(--g-accent-grad);
+  color: #fff;
+  font-weight: 600;
+}
+.dsh-slink.is-danger {
+  color: var(--g-red);
+}
+.dsh-slabel {
+  margin: 12px 14px 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--g-ink-3);
+}
+
+/* the page itself */
+.dsh-content {
+  max-width: 1600px;
+  min-width: 0;
+  margin: 16px auto 0;
+}
+.dsh-content > * {
+  animation: dsh-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.dpage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.dpage > * {
+  animation: dsh-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.dpage > :nth-child(2) {
+  animation-delay: 0.04s;
+}
+.dpage > :nth-child(3) {
+  animation-delay: 0.08s;
+}
+.dpage > :nth-child(4) {
+  animation-delay: 0.12s;
+}
+.dpage > :nth-child(5) {
+  animation-delay: 0.16s;
+}
+.dpage > :nth-child(n + 6) {
+  animation-delay: 0.2s;
+}
+
+/* a notice: under the bar (unpaid manufacturers) and inside pages */
+.dsh-notice,
+.dnotice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  padding: 10px 14px;
+  border-radius: 22px;
+  border: 1px solid var(--g-glass-edge);
+  background: linear-gradient(180deg, var(--g-glass-a), var(--g-glass-b));
+  color: hsl(var(--foreground));
+  box-shadow: var(--g-shine), var(--g-shadow);
+}
+.dsh-notice {
+  max-width: 1600px;
+  margin: 14px auto 0;
+}
+.dsh-notice b,
+.dnotice b {
+  font-size: 13px;
+}
+.dnotice .dsh-flag,
+.dsh-notice .dsh-flag {
+  margin-left: 8px;
+}
+.dsh-notice p,
+.dnotice p {
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--g-ink-3);
+}
+.dnotice-ico,
+.dsh-notice-ico {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: hsl(var(--primary) / 0.15);
+  color: hsl(var(--primary));
+}
+.dnotice-ico svg,
+.dsh-notice-ico svg {
+  width: 16px;
+  height: 16px;
+}
+.dnotice.is-warn .dnotice-ico {
+  background: rgba(245, 158, 11, 0.16);
+  color: #f59e0b;
+}
+.dnotice.is-good .dnotice-ico {
+  background: var(--g-green-bg);
+  color: var(--g-green);
+}
+.dnotice.is-bad {
+  border-color: rgba(239, 68, 68, 0.45);
+}
+.dnotice.is-bad .dnotice-ico {
+  background: var(--g-red-bg);
+  color: var(--g-red);
+}
+
+@media (min-width: 860px) {
+  .dsh-burger {
+    display: none;
+  }
+  /* logo, menu and buttons share a grid: a short menu sits between the logo and the buttons ... */
+  .dsh-bar-in {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 12px;
+    row-gap: 8px;
+  }
+  .dsh-brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .dsh-nav {
+    display: flex;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+  }
+  .dsh-tools {
+    grid-column: 3;
+    grid-row: 1;
+    margin-left: 0;
+  }
+  /* ... and a long one has a row to itself under them, showing every section and wrapping if it has to */
+  .dsh-nav.is-stacked {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex-wrap: wrap;
+    justify-content: center;
+    justify-self: stretch;
+    gap: 4px;
+    margin: 0;
+    padding: 8px 0 2px;
+    border: 0;
+    border-top: 1px solid var(--g-line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .dsh-nav.is-stacked .dsh-tab {
+    height: 32px;
+    padding: 0 12px;
+    background: var(--g-fill);
+  }
+  .dsh-nav.is-stacked .dsh-tab:hover {
+    background: var(--g-fill-2);
+  }
+  .dsh-nav.is-stacked .dsh-tab.is-active {
+    background: var(--g-accent-grad);
+  }
+}
+/* two or three rows of pills would cover too much of a short or narrow window, so there the bar scrolls away with the page */
+@media (min-width: 860px) and (max-height: 820px), (min-width: 860px) and (max-width: 1099px) {
+  .dsh-bar.is-stacked {
+    position: relative;
+    top: 0;
+  }
+}
+@media (max-width: 859px) {
+  .dsh {
+    --dsh-pad: 40px;
+    padding: 8px 10px var(--dsh-pad);
+  }
+  .dsh-bar {
+    top: 8px;
+    border-radius: 24px;
+  }
+  .dsh-bar-in {
+    gap: 8px;
+    padding: 7px 8px 7px 12px;
+  }
+  .dsh-brand img {
+    height: 25px;
+  }
+  .dsh-ibtn.is-hide-sm {
+    display: none;
+  }
+}
+
+/* ───────────── 3. parts ───────────── */
+.dhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 4px 4px 0;
+}
+.dhead-title {
+  font-size: clamp(1.75rem, 3.2vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: hsl(var(--foreground));
+}
+.dhead-sub {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--g-ink-3);
+}
+.dhead-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* orange and ghost pill buttons */
+.dbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.dbtn svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.dbtn:hover {
+  transform: translateY(-1px);
+}
+.dbtn.is-primary {
+  background: var(--g-accent-grad);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), var(--g-accent-glow);
+}
+.dbtn.is-ghost {
+  background: var(--g-fill-2);
+  border-color: var(--g-line-2);
+  color: hsl(var(--foreground));
+}
+.dbtn:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* glass: every card the overview pages draw, and every card older pages draw with the card colour */
+.dp,
+.dk,
+.dstrip,
+.dbox,
+html.dash-active .dsh-content .bg-card {
+  border: 1px solid var(--g-glass-edge);
+  background: linear-gradient(180deg, var(--g-glass-a), var(--g-glass-b));
+  box-shadow: var(--g-shine), var(--g-shadow);
+}
+.dp,
+.dk,
+.dstrip,
+.dbox,
+html.dash-active .dsh-content .bg-card:is(.rounded-lg, .rounded-xl, .rounded-2xl) {
+  border-radius: 22px;
+}
+
+.dp {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px;
+}
+.dp-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.dp-head > div:first-child {
+  flex: 1;
+}
+.dp-head h2 {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: hsl(var(--foreground));
+}
+.dp-head p {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--g-ink-3);
+}
+.dp-go {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--g-flip);
+  color: var(--g-flip-text);
+  transition: transform 0.2s ease;
+}
+.dp-go:hover {
+  transform: scale(1.1);
+}
+.dp-go svg {
+  width: 14px;
+  height: 14px;
+}
+.dp-pill {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--g-fill-2);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--g-ink-2);
+}
+
+/* layout of the overview pages */
+.dgrid-kpi {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.dgrid-trio {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.dgrid-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.dstack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+@media (min-width: 900px) {
+  .dgrid-kpi {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .dgrid-trio {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dgrid-trio > .dgrid-wide {
+    grid-column: 1 / -1;
+  }
+  .dgrid-main {
+    grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+  }
+}
+@media (min-width: 1240px) {
+  .dgrid-trio {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 0.8fr) minmax(0, 1.3fr);
+  }
+  .dgrid-trio > .dgrid-wide {
+    grid-column: auto;
+  }
+}
+
+/* KPI card */
+.dk {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 128px;
+  padding: 14px 16px;
+  text-align: left;
+  color: hsl(var(--foreground));
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+a.dk,
+button.dk {
+  cursor: pointer;
+}
+button.dk {
+  width: 100%;
+  align-items: stretch;
+  font: inherit;
+}
+.dk:hover {
+  transform: translateY(-5px);
+  border-color: hsl(var(--primary) / 0.4);
+  box-shadow: var(--g-shine), var(--g-shadow-lift);
+}
+.dk:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+.dk-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dk-chip {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--g-line);
+  background: var(--g-fill-2);
+  color: hsl(var(--primary));
+}
+.dk-chip svg {
+  width: 15px;
+  height: 15px;
+}
+.dk-go {
+  width: 16px;
+  height: 16px;
+  color: var(--g-ink-3);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.dk:hover .dk-go {
+  color: hsl(var(--primary));
+  transform: translate(2px, -2px);
+}
+.dk-delta {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.dk-delta.is-up {
+  background: var(--g-green-bg);
+  color: var(--g-green);
+}
+.dk-delta.is-down {
+  background: var(--g-red-bg);
+  color: var(--g-red);
+}
+.dk-delta.is-flat {
+  background: var(--g-fill-2);
+  color: var(--g-ink-3);
+}
+.dk-value {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 14px;
+  min-height: 34px;
+  font-size: 1.85rem;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--foreground));
+}
+.dk-value small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--g-ink-3);
+}
+.dk-title {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+.dk-sub {
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--g-ink-3);
+}
+
+/* small stat tiles */
+.dminis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.dmini {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--g-line);
+  background: var(--g-fill);
+}
+.dmini span {
+  font-size: 10.5px;
+  color: var(--g-ink-3);
+}
+.dmini b {
+  display: inline-block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--foreground));
+}
+.dmini em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+}
+.dmini em.is-up {
+  color: var(--g-green);
+}
+.dmini em.is-down {
+  color: var(--g-red);
+}
+.dmini em.is-flat {
+  color: var(--g-ink-3);
+}
+/* the one dark tile: the site's navy, with a touch of the orange */
+.dmini.is-dark {
+  background: radial-gradient(120% 120% at 100% 0%, hsl(var(--primary) / 0.28), transparent 60%), linear-gradient(160deg, var(--g-navy-a), var(--g-navy-b));
+  border-color: hsl(var(--primary) / 0.3);
+}
+.dmini.is-dark span {
+  color: rgba(255, 255, 255, 0.62);
+}
+.dmini.is-dark b {
+  color: #fff;
+}
+
+/* the strip of small figures under the main cards */
+.dstrip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 8px;
+}
+@media (min-width: 760px) {
+  .dstrip {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+.dq {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 16px;
+  color: hsl(var(--foreground));
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.dq:hover {
+  background: var(--g-fill-2);
+  transform: translateY(-2px);
+}
+.dq:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+}
+.dq-chip {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--g-line);
+  background: var(--g-fill-2);
+  color: hsl(var(--primary));
+}
+.dq-chip svg {
+  width: 15px;
+  height: 15px;
+}
+.dq-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+.dq-text b {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.dq-text span {
+  font-size: 11px;
+  color: var(--g-ink-3);
+}
+.dq-text span:only-child {
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+/* segmented control: the open option is an inverse pill (white on dark, navy on light) */
+.dseg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--g-line);
+  background: var(--g-fill-2);
+}
+.dseg button {
+  height: 28px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--g-ink-3);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.dseg button:hover:not(.is-on) {
+  color: hsl(var(--foreground));
+}
+.dseg button.is-on {
+  background: var(--g-flip);
+  color: var(--g-flip-text);
+  box-shadow: 0 8px 14px -8px rgba(2, 6, 20, 0.6);
+}
+.dseg button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
+
+/* pill bar chart */
+.dbars {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: 232px auto;
+  column-gap: 8px;
+  margin-top: 12px;
+}
+.dbars-y {
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-top: 28px;
+  font-size: 10px;
+  color: var(--g-ink-3);
+}
+.dbars-y span {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 0;
+  line-height: 0;
+}
+.dbars-area {
+  position: relative;
+  grid-row: 1;
+  grid-column: 2;
+}
+.dbars-grid,
+.dbars-avg,
+.dbars-cols {
+  position: absolute;
+  inset: 28px 0 0 0;
+}
+.dbars-grid {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.dbars-grid i {
+  display: block;
+  height: 0;
+  border-top: 1px dashed hsl(var(--foreground) / 0.14);
+}
+.dbars-grid i:last-child {
+  border-top-style: solid;
+}
+.dbars-avg {
+  inset: auto 0 0 0;
+  height: 0;
+  border-top: 1.5px dashed hsl(var(--foreground) / 0.5);
+  pointer-events: none;
+}
+.dbars-avg span {
+  position: absolute;
+  right: 0;
+  top: -26px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--g-flip);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--g-flip-text);
+}
+.dbars-avg.is-left span {
+  right: auto;
+  left: 0;
+}
+.dbars-cols {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+.dbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.dbar:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+.dbar-tag {
+  margin-bottom: 6px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: hsl(var(--foreground));
+}
+.dbar-pill {
+  display: block;
+  width: min(100%, 26px);
+  min-width: 8px;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--foreground) / 0.14);
+  background: repeating-linear-gradient(135deg, hsl(var(--foreground) / 0.36) 0 1.4px, hsl(var(--foreground) / 0.06) 1.4px 4.6px);
+  transition: height 0.85s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.25s ease, box-shadow 0.25s ease;
+}
+.dbar:hover .dbar-pill {
+  border-color: hsl(var(--foreground) / 0.3);
+}
+.dbar.is-lit .dbar-pill {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: linear-gradient(180deg, #ff7a2e 0%, #ff5a00 55%, #e04f00 100%);
+  box-shadow: 0 12px 24px -8px hsl(var(--primary) / 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.dbar.is-zero .dbar-pill {
+  opacity: 0.5;
+}
+.dbars-x {
+  grid-row: 2;
+  grid-column: 2;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+.dbars-x span {
+  padding-top: 8px;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--g-ink-3);
+}
+.dbars-x span.is-lit {
+  font-weight: 700;
+  color: hsl(var(--foreground));
+}
+.dbars-empty {
+  display: grid;
+  place-items: center;
+  min-height: 190px;
+  margin-top: 12px;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px dashed var(--g-line-2);
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--g-ink-3);
+}
+@media (max-width: 520px) {
+  .dbars {
+    grid-template-rows: 200px auto;
+    column-gap: 4px;
+  }
+  .dbars-cols,
+  .dbars-x {
+    gap: 3px;
+  }
+  .dbars-x span {
+    font-size: 9px;
+  }
+  .dbar-pill {
+    width: min(100%, 18px);
+  }
+}
+
+/* fan gauge and ring */
+.dgauge {
+  margin-top: 8px;
+}
+.dgauge-art {
+  position: relative;
+  width: min(100%, 320px);
+  margin: 0 auto;
+}
+.dgauge-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.dgauge-center {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  line-height: 1.15;
+}
+.dgauge-center b {
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--foreground));
+}
+.dgauge-center span {
+  margin-top: 2px;
+  max-width: 70%;
+  font-size: 11px;
+  color: var(--g-ink-3);
+}
+.dgauge.is-ring .dgauge-art {
+  width: min(100%, 230px);
+}
+.dgauge.is-ring .dgauge-center {
+  inset: 0;
+  justify-content: center;
+}
+.dseg-off {
+  fill: hsl(var(--foreground) / 0.13);
+}
+line.dseg-off {
+  stroke: hsl(var(--foreground) / 0.16);
+}
+.dseg-on {
+  animation: dseg-in 0.5s ease both;
+}
+.dgauge-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--g-line);
+  background: var(--g-fill);
+  font-size: 11px;
+  text-align: center;
+  color: var(--g-ink-2);
+}
+
+/* dark card: the site's navy with a glow of the orange, in the light theme as well as the dark one */
+.ddark {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid hsl(var(--primary) / 0.32);
+  background: radial-gradient(120% 90% at 100% 0%, hsl(var(--primary) / 0.3), transparent 55%), linear-gradient(160deg, var(--g-navy-a) 0%, var(--g-navy-b) 78%);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), var(--g-shadow);
+}
+.ddark h2 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.ddark header p {
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+.ddark ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+.ddark li a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.ddark li a:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(3px);
+}
+.ddark li a:focus-visible {
+  outline: 2px solid #fff;
+}
+.ddark-chip {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  color: #e04f00;
+}
+.ddark-chip svg {
+  width: 15px;
+  height: 15px;
+}
+.ddark-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.ddark-text b {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.ddark-text small {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.62);
+}
+.ddark-go {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  opacity: 0.7;
+}
+
+/* account card */
+.dacc {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+.dacc-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 19px;
+  background: var(--g-accent-grad);
+  color: #fff;
+  font-size: 19px;
+  font-weight: 700;
+  box-shadow: 0 16px 28px -10px hsl(var(--primary) / 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.dacc-name {
+  display: block;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: hsl(var(--foreground));
+}
+.dacc-role {
+  font-size: 11px;
+  color: var(--g-ink-3);
+}
+.dacc-rows {
+  margin-top: 10px;
+}
+.dacc-rows li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--g-line);
+  font-size: 12px;
+  color: var(--g-ink-3);
+}
+.dacc-rows li:last-child {
+  border-bottom: 0;
+}
+.dacc-rows b {
+  margin-left: auto;
+  padding-left: 8px;
+  text-align: right;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+.dacc-ico {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--g-fill-2);
+  border: 1px solid var(--g-line);
+  color: hsl(var(--primary));
+}
+.dacc-ico svg {
+  width: 12px;
+  height: 12px;
+}
+.dacc-progress {
+  margin-top: auto;
+  padding-top: 12px;
+}
+.dacc-progress > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--g-ink-3);
+}
+.dacc-progress b {
+  color: hsl(var(--foreground));
+}
+.dacc-bar {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--g-fill-2);
+}
+.dacc-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--g-accent-grad);
+  transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* shimmer while figures load */
+.dskel {
+  display: block;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--g-fill) 25%, hsl(var(--foreground) / 0.14) 50%, var(--g-fill) 75%);
+  background-size: 200% 100%;
+  animation: dshimmer 1.3s linear infinite;
+}
+.dskel-value {
+  width: 76px;
+  height: 28px;
+}
+
+/* ───────────── 4. what the older pages share ───────────── */
+/* fields keep the site's colours; only the corners are rounder */
+html.dash-active :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']), textarea, select, [role='combobox']) {
+  border-radius: 12px;
+}
+
+/* buttons: round pills, and the brand orange keeps its colour with a soft light and glow */
+html.dash-active .dsh-content :is(button, a).rounded-md:not([role='combobox']):not(.dbar):not([role='tab']) {
+  border-radius: 999px;
+}
+html.dash-active :is(.bg-primary, .bg-\[\#FF5A00\]):not(.dbar-pill):not(.dsh-tab):not(.dsh-mi) {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 8px 18px -10px hsl(var(--primary) / 0.7);
+}
+
+/* tabs: a pill track; the open tab is the inverse pill */
+html.dash-active [role='tablist']:not(.dseg) {
+  border-radius: 999px;
+  padding: 4px;
+  box-shadow: var(--g-shine);
+}
+html.dash-active [role='tab'] {
+  border-radius: 999px;
+}
+html.dash-active [role='tab'][data-state='active'] {
+  background: var(--g-flip);
+  color: var(--g-flip-text);
+  box-shadow: 0 8px 14px -8px rgba(2, 6, 20, 0.6);
+}
+
+/* tables */
+html.dash-active table thead tr {
+  background: var(--g-fill);
+}
+
+/* pop-ups */
+html.dash-active :is([role='dialog'], [role='menu'], [role='listbox']) {
+  border-radius: 20px;
+  box-shadow: 0 30px 70px -20px rgba(2, 6, 20, 0.7);
+}
+
+/* a few cards are drawn dark whatever the theme (the AI sales card); in the light theme they keep the site's dark colours inside */
+html.dash-active.light [class*='from-[#1E1E1E]'] {
+  --background: 222 40% 7%;
+  --foreground: 220 14% 90%;
+  --card: 222 47% 11%;
+  --card-foreground: 220 14% 90%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 220 14% 90%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 220 14% 90%;
+  --muted: 217 33% 15%;
+  --muted-foreground: 218 11% 65%;
+  --accent: 21 95% 18%;
+  --accent-foreground: 220 14% 90%;
+  --border: 215 28% 17%;
+  --input: 215 28% 20%;
+  color: hsl(220 14% 90%);
+}
+
+/* the chat page sizes itself to the window under the old header; fit it under this bar instead, on one big glass card.
+   --dsh-top (set by the layout) is how far down the page starts, so it fits under a bar of any height and under a notice */
+html.dash-active .dsh-content .dsh-chat {
+  height: calc(100dvh - var(--dsh-top, 91px) - var(--dsh-pad, 44px)) !important;
+  min-height: 420px;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid var(--g-glass-edge);
+  background: linear-gradient(180deg, var(--g-glass-a), var(--g-glass-b));
+  box-shadow: var(--g-shine), var(--g-shadow);
+}
+html.dash-active .dsh-content .dsh-chat .bg-sidebar {
+  background-color: transparent;
+}
+
+@keyframes dsh-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes dshimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes dseg-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (hover: none) {
+  .dk:hover,
+  .dq:hover {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dsh-content > *,
+  .dpage > *,
+  .dseg-on,
+  .dskel {
+    animation: none !important;
+  }
+  .dbar-pill,
+  .dk,
+  .dq,
+  .dacc-bar i,
+  .dbtn {
+    transition: none !important;
+  }
+}

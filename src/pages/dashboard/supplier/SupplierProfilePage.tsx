@@ -22,6 +22,7 @@ import {
 import PageMeta from '@/components/common/PageMeta';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import '@/components/formkit/formkit.css';
 
 const PAYMENT_TERMS_OPTIONS = ['LC', 'TT', 'DP', 'DA', 'Cash in Advance', 'Others'];
 const EMPLOYEE_RANGES = ['1-10', '11-50', '51-200', '201-500', '500+'];
@@ -274,7 +275,7 @@ export default function SupplierProfilePage() {
         robots="noindex, nofollow"
       />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
-        <div className="max-w-4xl w-full mx-auto space-y-6">
+        <div className="fk-skin max-w-4xl w-full mx-auto space-y-6">
 
           {/* Header */}
           <div className="flex items-start justify-between flex-wrap gap-3">
@@ -282,7 +283,7 @@ export default function SupplierProfilePage() {
               <h1 className="text-xl font-bold text-foreground">Business Profile</h1>
               <p className="text-sm text-muted-foreground">Manage your verified manufacturer profile</p>
             </div>
-            <Button onClick={handleSave} disabled={saving} className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 shrink-0">
+            <Button onClick={handleSave} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
               {saving ? 'Saving…' : 'Save Changes'}
             </Button>
           </div>
@@ -294,13 +295,13 @@ export default function SupplierProfilePage() {
                 <Zap className="w-4 h-4 text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">Profile Completeness</h3>
               </div>
-              <span className={`text-sm font-bold ${completionPct >= 80 ? 'text-[#FF7A2E]' : completionPct >= 50 ? 'text-[#FF7A2E]' : 'text-destructive'}`}>
+              <span className={`text-sm font-bold ${completionPct >= 80 ? 'text-orange-500' : completionPct >= 50 ? 'text-orange-500' : 'text-destructive'}`}>
                 {completionPct}%
               </span>
             </div>
             <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden mb-3">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${completionPct >= 80 ? 'bg-[#C94400]' : completionPct >= 50 ? 'bg-[#C94400]' : 'bg-[#C94400]'}`}
+                className={`h-full rounded-full transition-all duration-500 ${completionPct >= 80 ? 'bg-orange-500' : completionPct >= 50 ? 'bg-orange-500' : 'bg-primary'}`}
                 style={{ width: `${completionPct}%` }}
               />
             </div>
@@ -315,7 +316,7 @@ export default function SupplierProfilePage() {
                 { label: 'Certifications', done: certs.length >= 1 },
                 { label: 'GST Number', done: !!company?.gst_number },
               ].map(item => (
-                <span key={item.label} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${item.done ? 'bg-[#FF5A00]/10 border-[#FF5A00]/40 text-[#FF7A2E]' : 'bg-muted border-border text-muted-foreground'}`}>
+                <span key={item.label} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${item.done ? 'bg-orange-50 border-orange-300 text-orange-700' : 'bg-muted border-border text-muted-foreground'}`}>
                   {item.done ? <CheckCircle className="w-3 h-3" /> : <Info className="w-3 h-3" />}
                   {item.label}
                 </span>
@@ -334,8 +335,8 @@ export default function SupplierProfilePage() {
               {[
                 { label: 'Response Rate', value: company?.response_rate ? `${company.response_rate}%` : '—', icon: TrendingUp, color: 'text-primary' },
                 { label: 'Avg Response', value: company?.avg_response_hours ? `${company.avg_response_hours}h` : '—', icon: Clock, color: 'text-[#FF5A00]' },
-                { label: 'Rating', value: company?.rating_avg ? `${Number(company.rating_avg).toFixed(1)} ★` : '—', icon: Star, color: 'text-[#FF7A2E]' },
-                { label: 'Reviews', value: company?.review_count ?? 0, icon: Users, color: 'text-[#FF7A2E]' },
+                { label: 'Rating', value: company?.rating_avg ? `${Number(company.rating_avg).toFixed(1)} ★` : '—', icon: Star, color: 'text-orange-500' },
+                { label: 'Reviews', value: company?.review_count ?? 0, icon: Users, color: 'text-orange-500' },
               ].map(m => (
                 <div key={m.label} className="bg-muted/50 rounded-xl p-3 text-center">
                   <m.icon className={`w-5 h-5 mx-auto mb-1 ${m.color}`} />
@@ -350,15 +351,15 @@ export default function SupplierProfilePage() {
           {company && (
             <div className={`rounded-xl border p-4 flex items-center gap-3 ${
               company.is_verified
-                ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30'
+                ? 'bg-primary/10 border-primary/30'
                 : company.verification_status === 'pending'
-                ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30'
+                ? 'bg-orange-500/10 border-orange-500/30'
                 : 'bg-muted border-border'
             }`}>
               {company.is_verified ? (
-                <ShieldCheck className="w-5 h-5 text-[#FF7A2E] shrink-0" />
+                <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
               ) : company.verification_status === 'pending' ? (
-                <Clock className="w-5 h-5 text-[#FF7A2E] shrink-0" />
+                <Clock className="w-5 h-5 text-orange-400 shrink-0" />
               ) : (
                 <ShieldCheck className="w-5 h-5 text-muted-foreground shrink-0" />
               )}
@@ -368,7 +369,9 @@ export default function SupplierProfilePage() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {company.is_verified
-                    ? `Verified on ${new Date(company.verified_at!).toLocaleDateString('en-GB', { day:'2-digit',month:'short',year:'numeric' })}`
+                    ? (company.verified_at && !Number.isNaN(new Date(company.verified_at).getTime())
+                      ? `Verified on ${new Date(company.verified_at).toLocaleDateString('en-GB', { day:'2-digit',month:'short',year:'numeric' })}`
+                      : 'Your business documents have been checked by BulkSkart.')
                     : company.verification_status === 'pending'
                     ? 'Admin is reviewing your documents. This may take 1–2 business days.'
                     : 'Upload GST, IEC and company registration documents for verification.'
@@ -376,7 +379,7 @@ export default function SupplierProfilePage() {
                 </p>
               </div>
               {company.is_verified && (
-                <Badge className="bg-[#FF5A00]/20 text-[#FF7A2E] border-[#FF5A00]/30 text-xs shrink-0">
+                <Badge className="bg-primary/15 text-primary border-primary/30 text-xs shrink-0">
                   <ShieldCheck className="w-3 h-3 mr-1" /> Verified
                 </Badge>
               )}
@@ -439,8 +442,8 @@ export default function SupplierProfilePage() {
             {/* Basic Info Inputs */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-border">
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Company Legal Name *</Label>
-                <Input
+                <Label htmlFor="supplier-company-legal-name" className="text-xs text-muted-foreground">Company Legal Name *</Label>
+                <Input id="supplier-company-legal-name"
                   value={form.company_name}
                   onChange={e => { setForm(f => ({ ...f, company_name: e.target.value })); setFieldErrors(prev => ({ ...prev, company_name: '' })); }}
                   placeholder="e.g. Apex Industrial Solutions Ltd"
@@ -449,15 +452,15 @@ export default function SupplierProfilePage() {
                 {fieldErrors.company_name && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {fieldErrors.company_name}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Tagline</Label>
-                <Input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
+                <Label htmlFor="supplier-tagline" className="text-xs text-muted-foreground">Tagline</Label>
+                <Input id="supplier-tagline" value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
                   placeholder="e.g. Premium Textile Manufacturer Since 2001"
                   className="h-9 text-sm bg-background border-border" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Business Type *</Label>
+                <Label htmlFor="supplier-business-type" className="text-xs text-muted-foreground">Business Type *</Label>
                 <Select value={form.business_type} onValueChange={v => { setForm(f => ({ ...f, business_type: v })); setFieldErrors(prev => ({ ...prev, business_type: '' })); }}>
-                  <SelectTrigger className={`h-9 text-sm bg-background ${fieldErrors.business_type ? 'border-destructive ring-1 ring-destructive' : 'border-border'}`}>
+                  <SelectTrigger id="supplier-business-type" className={`h-9 text-sm bg-background ${fieldErrors.business_type ? 'border-destructive ring-1 ring-destructive' : 'border-border'}`}>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -491,16 +494,16 @@ export default function SupplierProfilePage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Year Established</Label>
-                <Input type="number" min="1900" max={new Date().getFullYear()}
+                <Label htmlFor="supplier-year-established" className="text-xs text-muted-foreground">Year Established</Label>
+                <Input id="supplier-year-established" type="number" min="1900" max={new Date().getFullYear()}
                   value={form.year_established}
                   onChange={e => setForm(f => ({ ...f, year_established: e.target.value }))}
                   placeholder="e.g. 2005" className="h-9 text-sm bg-background border-border" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Employees</Label>
+                <Label htmlFor="supplier-employees" className="text-xs text-muted-foreground">Employees</Label>
                 <Select value={form.employee_count_range} onValueChange={v => setForm(f => ({ ...f, employee_count_range: v }))}>
-                  <SelectTrigger className="h-9 text-sm bg-background border-border">
+                  <SelectTrigger id="supplier-employees" className="h-9 text-sm bg-background border-border">
                     <SelectValue placeholder="Select range" />
                   </SelectTrigger>
                   <SelectContent>
@@ -509,9 +512,9 @@ export default function SupplierProfilePage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Annual Turnover</Label>
+                <Label htmlFor="supplier-annual-turnover" className="text-xs text-muted-foreground">Annual Turnover</Label>
                 <Select value={form.annual_turnover_range} onValueChange={v => setForm(f => ({ ...f, annual_turnover_range: v }))}>
-                  <SelectTrigger className="h-9 text-sm bg-background border-border">
+                  <SelectTrigger id="supplier-annual-turnover" className="h-9 text-sm bg-background border-border">
                     <SelectValue placeholder="Select range" />
                   </SelectTrigger>
                   <SelectContent>
@@ -564,13 +567,13 @@ export default function SupplierProfilePage() {
                 const isPending = pendingCerts.some(c => c.cert_type === badge.certType);
                 return (
                   <div key={badge.label} className={`rounded-lg border p-3 flex items-center gap-3 ${
-                    isVerified ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30' :
-                    isPending ? 'bg-[#FF5A00]/10 border-[#FF5A00]/30' : 'bg-muted border-border'
+                    isVerified ? 'bg-primary/10 border-primary/30' :
+                    isPending ? 'bg-orange-500/10 border-orange-500/30' : 'bg-muted border-border'
                   }`}>
                     {isVerified
-                      ? <CheckCircle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
+                      ? <CheckCircle className="w-4 h-4 text-primary shrink-0" />
                       : isPending
-                      ? <Clock className="w-4 h-4 text-[#FF7A2E] shrink-0" />
+                      ? <Clock className="w-4 h-4 text-orange-400 shrink-0" />
                       : <ShieldCheck className="w-4 h-4 text-muted-foreground shrink-0" />
                     }
                     <div>
@@ -589,9 +592,9 @@ export default function SupplierProfilePage() {
               <div key={cert.id} className="flex gap-3 items-start p-3 border border-border rounded-lg bg-muted/20">
                 <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Type</Label>
+                    <Label htmlFor={`supplier-type-${cert.id}`} className="text-xs text-muted-foreground">Type</Label>
                     <Select value={cert.cert_type} onValueChange={v => updateCertField(cert.id, 'cert_type', v)}>
-                      <SelectTrigger className="h-8 text-xs bg-background border-border">
+                      <SelectTrigger id={`supplier-type-${cert.id}`} className="h-8 text-xs bg-background border-border">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -601,21 +604,21 @@ export default function SupplierProfilePage() {
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Certificate Name</Label>
-                    <Input value={cert.cert_name}
+                    <Label htmlFor={`supplier-certificate-name-${cert.id}`} className="text-xs text-muted-foreground">Certificate Name</Label>
+                    <Input id={`supplier-certificate-name-${cert.id}`} value={cert.cert_name}
                       onChange={e => updateCertField(cert.id, 'cert_name', e.target.value)}
                       className="h-8 text-xs bg-background border-border" placeholder="e.g. ISO 9001:2015" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Certificate Number</Label>
-                    <Input value={cert.cert_number ?? ''}
+                    <Label htmlFor={`supplier-certificate-number-${cert.id}`} className="text-xs text-muted-foreground">Certificate Number</Label>
+                    <Input id={`supplier-certificate-number-${cert.id}`} value={cert.cert_number ?? ''}
                       onChange={e => updateCertField(cert.id, 'cert_number', e.target.value)}
                       className="h-8 text-xs bg-background border-border" placeholder="Cert number" />
                   </div>
                 </div>
                 <div className="flex items-center gap-2 pt-5 shrink-0">
-                  {cert.is_verified && <Badge className="bg-[#FF5A00]/20 text-[#FF7A2E] border-[#FF5A00]/30 text-xs">Verified</Badge>}
-                  {cert.pending_review && !cert.is_verified && <Badge className="bg-[#FF5A00]/20 text-[#FF7A2E] border-[#FF5A00]/30 text-xs">Pending</Badge>}
+                  {cert.is_verified && <Badge className="bg-primary/15 text-primary border-primary/30 text-xs">Verified</Badge>}
+                  {cert.pending_review && !cert.is_verified && <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs">Pending</Badge>}
                   <button type="button" onClick={() => removeCert(cert.id)}
                     className="text-muted-foreground hover:text-destructive transition-colors">
                     <Trash2 className="w-4 h-4" />
@@ -631,20 +634,20 @@ export default function SupplierProfilePage() {
               <Users className="w-4 h-4 text-primary" /> Trade Capabilities
             </h3>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Production Capacity</Label>
-              <Input value={form.production_capacity}
+              <Label htmlFor="supplier-production-capacity" className="text-xs text-muted-foreground">Production Capacity</Label>
+              <Input id="supplier-production-capacity" value={form.production_capacity}
                 onChange={e => setForm(f => ({ ...f, production_capacity: e.target.value }))}
                 placeholder="e.g. 50,000 meters/month" className="h-9 text-sm bg-background border-border" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Minimum Order Quantity Policy</Label>
-              <Input value={form.moq_policy}
+              <Label htmlFor="supplier-minimum-order-quantity-policy" className="text-xs text-muted-foreground">Minimum Order Quantity Policy</Label>
+              <Input id="supplier-minimum-order-quantity-policy" value={form.moq_policy}
                 onChange={e => setForm(f => ({ ...f, moq_policy: e.target.value }))}
                 placeholder="e.g. Minimum 500 kg per order" className="h-9 text-sm bg-background border-border" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Packaging & Shipping Details</Label>
-              <Textarea value={form.packaging_details}
+              <Label htmlFor="supplier-packaging-shipping-details" className="text-xs text-muted-foreground">Packaging & Shipping Details</Label>
+              <Textarea id="supplier-packaging-shipping-details" value={form.packaging_details}
                 onChange={e => setForm(f => ({ ...f, packaging_details: e.target.value }))}
                 placeholder="Describe your packaging standards and shipping capabilities..."
                 rows={3} className="text-sm bg-background border-border resize-none" />
@@ -690,8 +693,8 @@ export default function SupplierProfilePage() {
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">New Password (min 8 chars)</Label>
-                  <Input
+                  <Label htmlFor="supplier-new-password" className="text-xs text-muted-foreground">New Password (min 8 chars)</Label>
+                  <Input id="supplier-new-password"
                     type="password"
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
@@ -700,8 +703,8 @@ export default function SupplierProfilePage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Confirm New Password</Label>
-                  <Input
+                  <Label htmlFor="supplier-confirm-new-password" className="text-xs text-muted-foreground">Confirm New Password</Label>
+                  <Input id="supplier-confirm-new-password"
                     type="password"
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
@@ -732,7 +735,7 @@ export default function SupplierProfilePage() {
                 <AlertTriangle className="w-3.5 h-3.5" /> Delete Manufacturer Account
               </Button>
             </Link>
-            <Button onClick={handleSave} disabled={saving} className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90">
+            <Button onClick={handleSave} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
               {saving ? 'Saving…' : 'Save All Changes'}
             </Button>
           </div>

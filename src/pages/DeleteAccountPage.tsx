@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import PageMeta from '@/components/common/PageMeta';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
+import '@/components/formkit/formkit.css';
 import { toast } from 'sonner';
 import {
   AlertTriangle, ShieldAlert, Trash2, ArrowLeft,
@@ -83,7 +84,7 @@ export default function DeleteAccountPage() {
           <h2 className="text-xl font-bold text-foreground">Sign In Required</h2>
           <p className="text-sm text-muted-foreground">You must be signed in to manage or delete your account.</p>
           <Link to="/auth">
-            <Button className="bg-[#1A0C05] text-white">Go to Sign In</Button>
+            <Button className="bg-primary text-white">Go to Sign In</Button>
           </Link>
         </div>
       </MainLayout>
@@ -123,47 +124,29 @@ export default function DeleteAccountPage() {
         }
       }
 
-      // 2. Mark / Archive company and products if supplier
-      if (company?.id) {
-        await supabase
-          .from('products')
-          .update({ is_active: false })
-          .eq('company_id', company.id);
-
-        await supabase
-          .from('companies')
-          .update({
-            description: '[Account Deleted by User]',
-            tagline: null,
-            logo_url: null,
-            banner_url: null,
-            verification_status: 'deactivated',
-            is_verified: false,
-          })
-          .eq('id', company.id);
+      // 2. The server removes the personal details, closes the listings, frees the e-mail and blocks the login
+      const { data, error } = await supabase.functions.invoke('delete-account', { body: { reason } });
+      let problem: string | null = typeof data?.error === 'string' ? data.error : null;
+      if (error && !problem) {
+        const context = (error as { context?: Response }).context;
+        try {
+          const body = context ? await context.json() : null;
+          problem = typeof body?.error === 'string' ? body.error : error.message;
+        } catch {
+          problem = error.message;
+        }
+      }
+      if (problem || !data?.success) {
+        toast.error(problem || 'Your account could not be deleted. Please try again or contact support.');
+        return;
       }
 
-      // 3. Mark buyer profile as deleted if buyer
-      await supabase
-        .from('buyer_profiles')
-        .delete()
-        .eq('user_id', user.id);
-
-      // 4. Update or clear profile data
-      await supabase
-        .from('profiles')
-        .update({
-          full_name: 'Deleted User',
-          phone: null,
-          company_name: null,
-          avatar_url: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
-
-      // 5. Invalidate auth and sign out
-      await signOut();
-      toast.success('Your BulkSkart account has been successfully deleted.');
+      // 3. Sign out on this device too
+      await signOut().catch(() => undefined);
+      toast.success('Your account is deleted.', {
+        description: 'Your details are removed and this login no longer works. You can sign up again with the same e-mail.',
+        duration: 10000,
+      });
       navigate('/', { replace: true });
     } catch (err: unknown) {
       const e = err as { message?: string };
@@ -203,8 +186,9 @@ export default function DeleteAccountPage() {
             </div>
           </div>
           <p className="text-xs md:text-sm text-muted-foreground">
-            Deleting your account will permanently disconnect your email <strong className="text-foreground">{user.email}</strong>,
-            remove all active product catalogues, unlist your company storefront, cancel open RFQ matches, and revoke your verified trust badge.
+            Deleting your account removes your name, phone and the e-mail <strong className="text-foreground">{user.email}</strong> from BulkSkart,
+            hides your products and company details, closes your open requirements and live auctions, and blocks this login. Quotations,
+            orders and messages other people have with you stay in their history, shown as from a deleted user.
           </p>
         </div>
 
@@ -214,10 +198,10 @@ export default function DeleteAccountPage() {
             <Loader2 className="w-4 h-4 animate-spin text-primary" /> Checking ongoing trade orders...
           </div>
         ) : hasActiveOrders ? (
-          <div className="bg-[#FF5A00]/10 border border-[#FF5A00]/30 rounded-xl p-4 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-[#FF7A2E] shrink-0 mt-0.5" />
+          <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
             <div className="space-y-1 text-xs">
-              <p className="font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">
+              <p className="font-bold text-orange-600 dark:text-orange-400">
                 Ongoing Orders Detected ({activeOrderCount} active orders)
               </p>
               <p className="text-muted-foreground">
@@ -225,7 +209,7 @@ export default function DeleteAccountPage() {
               </p>
               <div className="pt-2">
                 <Link to={profile?.role === 'supplier' ? '/dashboard/supplier/orders' : '/dashboard/buyer/orders'}>
-                  <Button size="sm" variant="outline" className="border-[#FF5A00]/30 text-[#FF7A2E] dark:text-[#FF7A2E] h-8 text-xs">
+                  <Button size="sm" variant="outline" className="border-orange-500/30 text-orange-600 dark:text-orange-400 h-8 text-xs">
                     View Active Orders
                   </Button>
                 </Link>
@@ -245,11 +229,11 @@ export default function DeleteAccountPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleDeleteAccount} className="space-y-5">
+            <form onSubmit={handleDeleteAccount} className="fk-skin space-y-5">
               {/* Reason selection */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-foreground">Reason for Leaving *</Label>
-                <select
+                <Label htmlFor="delete-reason-for-leaving" className="text-xs font-semibold text-foreground">Reason for Leaving *</Label>
+                <select id="delete-reason-for-leaving"
                   value={reason}
                   onChange={e => setReason(e.target.value)}
                   required
@@ -264,8 +248,8 @@ export default function DeleteAccountPage() {
 
               {/* Optional Feedback */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground">Additional Feedback / Suggestions (Optional)</Label>
-                <Textarea
+                <Label htmlFor="delete-additional-feedback-suggestions" className="text-xs font-semibold text-muted-foreground">Additional Feedback / Suggestions (Optional)</Label>
+                <Textarea id="delete-additional-feedback-suggestions"
                   value={feedback}
                   onChange={e => setFeedback(e.target.value)}
                   placeholder="How could we have improved your experience?"
@@ -276,8 +260,8 @@ export default function DeleteAccountPage() {
 
               {/* Password Re-confirmation */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-foreground">Current Password Verification</Label>
-                <Input
+                <Label htmlFor="delete-current-password-verification" className="text-xs font-semibold text-foreground">Current Password Verification</Label>
+                <Input id="delete-current-password-verification"
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -289,10 +273,11 @@ export default function DeleteAccountPage() {
 
               {/* Confirm Text Box */}
               <div className="space-y-2 pt-2 border-t border-border">
-                <Label className="text-xs font-semibold text-foreground">
+                <Label htmlFor="delete-confirm-text" className="text-xs font-semibold text-foreground">
                   To confirm, type <span className="text-destructive font-mono font-bold bg-destructive/10 px-1.5 py-0.5 rounded">DELETE</span> in the box below *
                 </Label>
                 <Input
+                  id="delete-confirm-text"
                   type="text"
                   value={confirmText}
                   onChange={e => setConfirmText(e.target.value)}

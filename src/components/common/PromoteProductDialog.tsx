@@ -19,44 +19,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Star, Zap, BarChart2, Check, ChevronRight, ArrowLeft,
-  Eye, MousePointerClick, TrendingUp, Users, CreditCard,
+  TrendingUp, CreditCard,
   CheckCircle, Globe, Tag, Clock, ShieldCheck, Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRazorpay } from '@/hooks/useRazorpay';
 import { toast } from 'sonner';
 import type { Product } from '@/types/types';
+import { PROMOTION_PLANS, promotionTotal, type DurationDays, type PlanOption, type PromotionType } from '@/lib/promotionPlans';
 
-type PromotionType = 'featured' | 'boost' | 'campaign';
-type DurationDays  = 7 | 15 | 30;
-
-interface PlanOption {
-  days: DurationDays;
-  label: string;
-  basePrice: number;           // INR
-  est_impressions: number;
-  est_views: number;
-  est_clicks: number;
-  est_leads: number;
-}
-
-const PLANS: Record<PromotionType, PlanOption[]> = {
-  featured: [
-    { days: 7,  label: '7 Days',  basePrice:  999, est_impressions:  5000, est_views:  800, est_clicks: 120, est_leads: 15 },
-    { days: 15, label: '15 Days', basePrice: 1799, est_impressions: 12000, est_views: 2000, est_clicks: 300, est_leads: 35 },
-    { days: 30, label: '30 Days', basePrice: 2999, est_impressions: 28000, est_views: 4500, est_clicks: 680, est_leads: 80 },
-  ],
-  boost: [
-    { days: 7,  label: '7 Days',  basePrice:  799, est_impressions:  4000, est_views:  600, est_clicks:  90, est_leads: 10 },
-    { days: 15, label: '15 Days', basePrice: 1399, est_impressions:  9000, est_views: 1500, est_clicks: 220, est_leads: 25 },
-    { days: 30, label: '30 Days', basePrice: 2299, est_impressions: 21000, est_views: 3500, est_clicks: 520, est_leads: 60 },
-  ],
-  campaign: [
-    { days: 7,  label: '7 Days',  basePrice: 1499, est_impressions:  8000, est_views: 1200, est_clicks: 180, est_leads: 22 },
-    { days: 15, label: '15 Days', basePrice: 2499, est_impressions: 18000, est_views: 3000, est_clicks: 450, est_leads: 55 },
-    { days: 30, label: '30 Days', basePrice: 3999, est_impressions: 42000, est_views: 7000, est_clicks: 1050,est_leads: 130 },
-  ],
-};
+const PLANS = PROMOTION_PLANS;
 
 const PROMOTION_TYPES: {
   type: PromotionType;
@@ -71,28 +43,28 @@ const PROMOTION_TYPES: {
     type: 'featured',
     icon: <Star className="w-5 h-5 text-[#FF5A00]" />,
     label: 'Featured Product',
-    tagline: 'Homepage & Search Spotlight',
-    desc: 'Showcase in the Featured Products section with a prominent "Featured" badge. Maximum visibility across the marketplace.',
+    tagline: 'Featured Products Spotlight',
+    desc: 'Your product is shown in the Featured Products sections and carries a "Featured" badge on product listings.',
     badge: 'Featured',
     badgeColor: 'bg-[#FF5A00]/15 text-[#FF5A00] border-[#FF5A00]/30',
   },
   {
     type: 'boost',
-    icon: <Zap className="w-5 h-5 text-[#FF7A2E]" />,
+    icon: <Zap className="w-5 h-5 text-orange-500" />,
     label: 'Boost Product',
-    tagline: 'Top Category Ranking',
-    desc: 'Rank higher in category search results with a verified "Sponsored" badge, attracting buyers specifically searching for your item.',
+    tagline: 'Sponsored Badge',
+    desc: 'Your product carries a "Sponsored" badge on product listings, so buyers browsing the category notice it.',
     badge: 'Sponsored',
-    badgeColor: 'bg-[#FF5A00]/15 text-[#FF7A2E] border-[#FF5A00]/30',
+    badgeColor: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
   },
   {
     type: 'campaign',
-    icon: <BarChart2 className="w-5 h-5 text-[#FF7A2E]" />,
+    icon: <BarChart2 className="w-5 h-5 text-orange-400" />,
     label: 'Promotion Campaign',
-    tagline: 'Custom Targeted Exposure',
-    desc: 'Targeted multi-channel promotion with custom geographic country filters, target industry categories, and automated conversion tracking.',
+    tagline: 'Featured + Sponsored',
+    desc: 'Both together: Featured Products placement and the "Sponsored" badge. The country and category you aim at are saved with the campaign.',
     badge: 'Campaign',
-    badgeColor: 'bg-[#FF5A00]/15 text-[#FF7A2E] border-[#FF5A00]/30',
+    badgeColor: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
   },
 ];
 
@@ -126,8 +98,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
 
   // Tax calculations (18% GST)
   const basePrice = selectedPlan.basePrice;
-  const gstAmount = Math.round(basePrice * 0.18);
-  const totalPayable = basePrice + gstAmount;
+  const { gst: gstAmount, total: totalPayable } = promotionTotal(basePrice);
 
   const reset = () => {
     setStep(1);
@@ -207,9 +178,9 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all shrink-0 ${
                     isActive
-                      ? 'bg-[#C94400] text-white shadow-md'
+                      ? 'bg-[#FF5A00] text-white shadow-md'
                       : isDone
-                        ? 'bg-[#FF5A00]/20 text-[#FF7A2E] border border-[#FF5A00]/40'
+                        ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
                         : 'bg-muted text-muted-foreground'
                   }`}
                 >
@@ -272,10 +243,10 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
                     <div className="shrink-0 mt-1">
                       <div
                         className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          isSelected ? 'border-[#FF5A00] bg-[#C94400]' : 'border-muted-foreground/40'
+                          isSelected ? 'border-[#FF5A00] bg-[#FF5A00]' : 'border-muted-foreground/40'
                         }`}
                       >
-                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#161616]" />}
+                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                       </div>
                     </div>
                   </div>
@@ -285,7 +256,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
 
             <Button
               onClick={() => setStep(2)}
-              className="w-full h-10 bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs sm:text-sm mt-3 gap-2 rounded-xl"
+              className="w-full h-10 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs sm:text-sm mt-3 gap-2 rounded-xl"
             >
               Continue to Duration &amp; Budget <ChevronRight className="w-4 h-4" />
             </Button>
@@ -324,53 +295,22 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
               </div>
             </div>
 
-            {/* Estimated Reach (Accurately Labeled) */}
-            <div className="bg-muted/40 border border-border rounded-xl p-3.5 space-y-2">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5 text-[#FF5A00]" /> Projected Reach ({selectedPlan.days} Days)
-                </p>
-                <Badge variant="outline" className="text-[10px] text-muted-foreground border-border bg-card">
-                  Estimated
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center pt-1">
-                <div className="bg-card border border-border rounded-lg p-2">
-                  <div className="flex items-center justify-center gap-1 text-muted-foreground text-[10px]">
-                    <Eye className="w-3 h-3" /> Impressions
-                  </div>
-                  <p className="text-xs sm:text-sm font-bold text-foreground mt-0.5">
-                    ~{selectedPlan.est_impressions.toLocaleString('en-IN')}
-                  </p>
-                </div>
-                <div className="bg-card border border-border rounded-lg p-2">
-                  <div className="flex items-center justify-center gap-1 text-muted-foreground text-[10px]">
-                    <Eye className="w-3 h-3" /> Views
-                  </div>
-                  <p className="text-xs sm:text-sm font-bold text-foreground mt-0.5">
-                    ~{selectedPlan.est_views.toLocaleString('en-IN')}
-                  </p>
-                </div>
-                <div className="bg-card border border-border rounded-lg p-2">
-                  <div className="flex items-center justify-center gap-1 text-muted-foreground text-[10px]">
-                    <MousePointerClick className="w-3 h-3" /> Clicks
-                  </div>
-                  <p className="text-xs sm:text-sm font-bold text-foreground mt-0.5">
-                    ~{selectedPlan.est_clicks.toLocaleString('en-IN')}
-                  </p>
-                </div>
-                <div className="bg-card border border-border rounded-lg p-2">
-                  <div className="flex items-center justify-center gap-1 text-muted-foreground text-[10px]">
-                    <Users className="w-3 h-3" /> RFQ Leads
-                  </div>
-                  <p className="text-xs sm:text-sm font-bold text-[#FF7A2E] mt-0.5">
-                    ~{selectedPlan.est_leads}+
-                  </p>
-                </div>
-              </div>
-              <p className="text-[10px] text-muted-foreground text-center">
-                *Projections are estimated from marketplace category averages and active buyer demand.
+            {/* What the promotion changes. No reach numbers: views and leads are not promised or estimated. */}
+            <div className="bg-muted/40 border border-border rounded-xl p-3.5 space-y-1.5">
+              <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-[#FF5A00]" /> What you get for {selectedPlan.days} days
+              </p>
+              <ul className="text-[11px] text-muted-foreground space-y-1 list-disc pl-4">
+                {(promoType === 'featured' || promoType === 'campaign') && (
+                  <li>Shown in the Featured Products sections, with a "Featured" badge.</li>
+                )}
+                {(promoType === 'boost' || promoType === 'campaign') && (
+                  <li>A "Sponsored" badge on your product in product listings.</li>
+                )}
+                <li>Starts as soon as the payment is confirmed.</li>
+              </ul>
+              <p className="text-[10px] text-muted-foreground">
+                We do not estimate or promise a number of views, clicks or leads.
               </p>
             </div>
 
@@ -441,7 +381,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
               </Button>
               <Button
                 onClick={() => setStep(3)}
-                className="flex-1 h-9 bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs gap-2 rounded-xl"
+                className="flex-1 h-9 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs gap-2 rounded-xl"
               >
                 Review Order &amp; Pay <ChevronRight className="w-3.5 h-3.5" />
               </Button>
@@ -454,7 +394,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
           <div className="space-y-4">
             {paidSuccess ? (
               <div className="flex flex-col items-center justify-center py-8 text-center space-y-3">
-                <div className="w-14 h-14 rounded-full bg-[#FF5A00]/20 text-[#FF7A2E] flex items-center justify-center border border-[#FF5A00]/30">
+                <div className="w-14 h-14 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center border border-orange-500/30">
                   <CheckCircle className="w-7 h-7" />
                 </div>
                 <h3 className="text-base font-bold text-foreground">Promotion Activated!</h3>
@@ -526,7 +466,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
 
                 {/* Gateway Assurance */}
                 <div className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-[#FF5A00]/10 text-[#FF7A2E] border border-[#FF5A00]/20 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/20 flex items-center justify-center shrink-0">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -551,7 +491,7 @@ export default function PromoteProductDialog({ open, onOpenChange, product, comp
                   <Button
                     onClick={handlePayWithRazorpay}
                     disabled={rzpLoading}
-                    className="flex-1 h-10 bg-[#C94400] hover:bg-[#B33D00] text-white font-bold text-xs sm:text-sm gap-2 rounded-xl shadow-md"
+                    className="flex-1 h-10 bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold text-xs sm:text-sm gap-2 rounded-xl shadow-md"
                   >
                     {rzpLoading ? (
                       <>

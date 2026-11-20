@@ -1,4 +1,4 @@
--- Minimal copy of the production schema the wallet migrations (00064, 00065) touch (from the earlier migrations).
+-- Minimal copy of the production schema migrations 00064, 00065 and 00066 touch.
 CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
 CREATE SCHEMA auth;
 CREATE TABLE auth.users (id uuid PRIMARY KEY);

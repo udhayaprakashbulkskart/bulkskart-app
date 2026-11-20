@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -6,10 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRequirements } from '@/lib/api';
 import type { Requirement } from '@/types/types';
-import { FileText, MessageSquare, Package, TrendingUp, Plus, ArrowRight, Shield, Calendar, Eye, Heart, Bell, AlertTriangle, ShieldCheck, CreditCard, CheckCircle2, Building2, Wallet } from 'lucide-react';
+import { FileText, MessageSquare, Package, TrendingUp, Plus, Heart, Bell, AlertTriangle, ShieldCheck, CheckCircle2, Building2, Eye, Settings, Wallet } from 'lucide-react';
 import { money } from '@/lib/orderPayments';
 import { supabase } from '@/db/supabase';
 import PageMeta from '@/components/common/PageMeta';
+import { AccountCard, ActionsCard, BarsChart, Gauge, Kpi, Mini, Notice, PageHeader, Panel, QuickLink, Segmented } from '@/components/dashboard/parts';
+import { fetchMonthly, lastMonths, percentChange, sum } from '@/components/dashboard/series';
 
 type BuyerStats = {
   totalReqs: number; totalQuotes: number; activeConvs: number;
@@ -18,32 +20,36 @@ type BuyerStats = {
 };
 
 export default function BuyerDashboard() {
-  const { user, profile, buyerProfile, resolvedRole, displayName, loading: authLoading } = useAuth();
+  const { user, buyerProfile, resolvedRole, loading: authLoading, displayName } = useAuth();
   const navigate = useNavigate();
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [loading, setLoading] = useState(true);
-  // Money paid online that BulkSkart is holding for this buyer until the goods arrive
+  // Money paid online that BulkSkart is holding for this buyer until they confirm delivery
   const [held, setHeld] = useState<{ total: number; count: number }>({ total: 0, count: 0 });
   useEffect(() => {
     if (!user) return;
-    let cancelled = false;
     supabase
       .from('orders')
       .select('paid_amount,total_amount,order_status')
       .eq('buyer_id', user.id)
       .eq('payment_status', 'escrow')
       .then(({ data }) => {
-        if (cancelled) return;
         const rows = ((data ?? []) as { paid_amount: number | null; total_amount: number; order_status: string | null }[]).filter((o) => o.order_status !== 'cancelled');
         setHeld({ total: rows.reduce((s, o) => s + Number(o.paid_amount ?? o.total_amount), 0), count: rows.length });
       });
-    return () => { cancelled = true; };
   }, [user]);
+
   const [stats, setStats] = useState<BuyerStats>({
     totalReqs: 0, totalQuotes: 0, activeConvs: 0,
     activeOrders: 0, completedOrders: 0, savedMfrs: 0,
     unreadNotifs: 0, openDisputes: 0, buyerVerified: false,
   });
+
+  // The twelve months the chart covers, and what the buyer posted and received in each
+  const slots = useMemo(() => lastMonths(12), []);
+  const [postedByMonth, setPostedByMonth] = useState<number[]>(() => slots.map(() => 0));
+  const [quotesByMonth, setQuotesByMonth] = useState<number[]>(() => slots.map(() => 0));
+  const [series, setSeries] = useState<'posted' | 'quotes'>('posted');
 
   // Suppliers who land here by race/stale link get sent to the supplier dashboard
   useEffect(() => {
@@ -89,19 +95,31 @@ export default function BuyerDashboard() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
+    // The chart is filled in after the page, from the dates on the buyer's own rows
+    Promise.all([
+      fetchMonthly(slots, (since) => supabase.from('requirements').select('created_at').eq('buyer_id', user.id).gte('created_at', since).limit(5000)),
+      fetchMonthly(slots, (since) => supabase.from('quotations').select('created_at').eq('buyer_id', user.id).gte('created_at', since).limit(5000)),
+    ]).then(([posted, quotes]) => {
+      if (cancelled) return;
+      setPostedByMonth(posted);
+      setQuotesByMonth(quotes);
+    });
+
     return () => {
       cancelled = true;
     };
-  }, [user, resolvedRole]);
+  }, [user, resolvedRole, slots]);
 
-  const statsCards = [
-    { label: 'Requirements Posted', value: stats.totalReqs, icon: FileText, color: 'text-primary', to: '/dashboard/buyer/requirements' },
-    { label: 'Quotes Received', value: stats.totalQuotes, icon: Package, color: 'text-[#FF7A2E]', to: '/dashboard/buyer/quotes' },
-    { label: 'Active Orders', value: stats.activeOrders, icon: TrendingUp, color: 'text-[#FF5A00]', to: '/dashboard/buyer/orders' },
-    { label: 'Completed Orders', value: stats.completedOrders, icon: CheckCircle2, color: 'text-[#FF7A2E]', to: '/dashboard/buyer/orders' },
-    { label: 'Saved Manufacturers', value: stats.savedMfrs, icon: Heart, color: 'text-[#FF7A2E]', to: '/dashboard/buyer/saved-manufacturers' },
-    { label: 'Active Chats', value: stats.activeConvs, icon: MessageSquare, color: 'text-[#FF7A2E]', to: '/dashboard/buyer/messages' },
-  ];
+  const last = slots.length - 1;
+  const postedDelta = percentChange(postedByMonth[last], postedByMonth[last - 1]);
+  const quotesDelta = percentChange(quotesByMonth[last], quotesByMonth[last - 1]);
+  const withQuotes = requirements.filter((req) => (req.quote_count ?? 0) > 0).length;
+  const coverage = requirements.length > 0 ? Math.round((withQuotes / requirements.length) * 1000) / 10 : null;
+  const firstName = (displayName || '').trim().split(/\s+/)[0] || 'there';
+  const initials = (displayName || 'U').trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('') || 'U';
+  const completion = Number((buyerProfile as { profile_completion?: number } | null)?.profile_completion);
+  const shown = series === 'posted' ? postedByMonth : quotesByMonth;
 
   return (
     <DashboardLayout>
@@ -110,207 +128,232 @@ export default function BuyerDashboard() {
         description="BulkSkart dashboard — manage your account, orders and trade activity."
         robots="noindex, nofollow"
       />
-      <div className="flex-1 min-w-0 p-3 md:p-6 overflow-y-auto">
-        <div className="max-w-5xl w-full mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-            <div>
-              <h1 className="text-base md:text-xl font-bold text-foreground">Welcome back, {displayName.split(' ')[0] || profile?.full_name?.split(' ')[0] || 'Buyer'}</h1>
-              <p className="text-xs md:text-sm text-muted-foreground">Manage your bulk requirements and received quotes</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {stats.unreadNotifs > 0 && (
-                <Link to="/dashboard/buyer/notifications">
-                  <Button variant="outline" size="sm" className="gap-1.5 relative">
-                    <Bell className="w-4 h-4" />
-                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#C94400] text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold">{stats.unreadNotifs}</span>
-                  </Button>
-                </Link>
-              )}
-              <Link to="/post-requirement">
-                <Button className="bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2 hidden md:flex">
-                  <Plus className="w-4 h-4" /> Post Requirement
-                </Button>
+      <div className="dpage">
+        <PageHeader
+          title={authLoading ? 'Welcome back' : `Hi, ${firstName}!`}
+          subtitle="Welcome back. Here is how your sourcing is going."
+          actions={
+            <>
+              <Link to="/dashboard/buyer/requirements" className="dbtn is-ghost">
+                My requirements
               </Link>
-            </div>
-          </div>
-
-          {/* Verification banner */}
-          {!stats.buyerVerified && (
-            <div className="mb-4 flex items-start gap-3 bg-primary/5 border border-primary/20 rounded-xl p-3 md:p-4 text-sm">
-              <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5 text-primary" />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground">Get Verified Buyer Badge</p>
-                <p className="text-xs mt-0.5 text-muted-foreground">Verified buyers get priority responses from manufacturers and stand out in the marketplace.</p>
-              </div>
-              <Link to="/dashboard/buyer/verification" className="shrink-0">
-                <Button size="sm" className="bg-[#1A0C05] text-primary-foreground text-xs">Verify Now</Button>
+              <Link to="/post-requirement" className="dbtn is-primary">
+                <Plus aria-hidden="true" /> Post requirement
               </Link>
-            </div>
-          )}
+            </>
+          }
+        />
 
-          {/* Online payments BulkSkart is holding for this buyer */}
-          {held.count > 0 && (
-            <div className="mb-4 flex items-center gap-3 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-xl p-3 md:p-4 text-sm flex-wrap">
-              <Wallet className="w-5 h-5 text-[#FF7A2E] shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground">{money(held.total)} held safely by BulkSkart</p>
-                <p className="text-xs mt-0.5 text-muted-foreground">
-                  Paid online for {held.count} order{held.count === 1 ? '' : 's'}. The manufacturer is paid only after the goods arrive and you release it.
-                </p>
-              </div>
-              <Link to="/dashboard/buyer/orders" className="shrink-0">
-                <Button size="sm" variant="outline" className="text-xs border-[#FF5A00]/40 text-[#FF7A2E]">View orders</Button>
+        {/* Verification banner: only once it is known, so a verified buyer never sees it flash */}
+        {!loading && !stats.buyerVerified && (
+          <Notice
+            icon={ShieldCheck}
+            title="Get Verified Buyer Badge"
+            action={
+              <Link to="/dashboard/buyer/verification" className="dbtn is-primary">
+                Verify Now
               </Link>
-            </div>
-          )}
+            }
+          >
+            Verified buyers get priority responses from manufacturers and stand out in the marketplace.
+          </Notice>
+        )}
 
-          {/* Open dispute alert */}
-          {stats.openDisputes > 0 && (
-            <div className="mb-4 flex items-center gap-3 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-xl p-3 text-sm">
-              <AlertTriangle className="w-4 h-4 text-[#FF7A2E] shrink-0" />
-              <span className="text-[#FF7A2E]">{stats.openDisputes} open dispute{stats.openDisputes > 1 ? 's' : ''} pending resolution</span>
-              <Link to="/dashboard/buyer/disputes" className="ml-auto shrink-0">
-                <Button variant="outline" size="sm" className="text-xs border-[#FF5A00]/40 text-[#FF7A2E] hover:bg-[#B33D00]/10">View</Button>
+        {/* Open dispute alert */}
+        {stats.openDisputes > 0 && (
+          <Notice
+            icon={AlertTriangle}
+            tone="bad"
+            title={`${stats.openDisputes} open dispute${stats.openDisputes > 1 ? 's' : ''} pending resolution`}
+            action={
+              <Link to="/dashboard/buyer/disputes" className="dbtn is-ghost">
+                View
               </Link>
-            </div>
-          )}
+            }
+          />
+        )}
 
-          {/* Mandatory Business Details Onboarding Banner for Buyers */}
-          {(!(buyerProfile as any)?.onboarding_completed) && (
-            <div className="mb-4 bg-gradient-to-r from-primary/10 via-orange-500/10 to-[#B33D00]/5 border-2 border-primary/40 rounded-xl p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5">
-                  <Building2 className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-bold text-foreground text-xs sm:text-sm truncate">
-                    Complete Business Procurement Profile ({(buyerProfile as any)?.profile_completion || 30}% Completed)
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                    Enter your procurement business details and categories to receive customized wholesale discounts and factory-direct pricing.
-                  </p>
-                </div>
-              </div>
-              <Link to="/business-setup" className="shrink-0 w-full sm:w-auto">
-                <Button size="sm" className="w-full bg-[#C94400] text-white hover:bg-primary/90 font-bold text-xs h-8 px-3 rounded-lg shadow-sm gap-1.5">
-                  Complete Profile
-                </Button>
+        {/* Mandatory Business Details Onboarding Banner for Buyers */}
+        {!(buyerProfile as { onboarding_completed?: boolean } | null)?.onboarding_completed && (
+          <Notice
+            icon={Building2}
+            tone="warn"
+            title={`Complete Business Procurement Profile (${completion || 30}% Completed)`}
+            action={
+              <Link to="/business-setup" className="dbtn is-primary">
+                Complete Profile
               </Link>
-            </div>
-          )}
+            }
+          >
+            Enter your procurement business details and categories to receive customized wholesale discounts and factory-direct pricing.
+          </Notice>
+        )}
 
-          {/* Stats grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3 mb-4 md:mb-5">
-            {statsCards.map(s => {
-              const Icon = s.icon;
-              return (
-                <Link key={s.label} to={s.to} className="bg-card border border-border rounded-xl p-3 md:p-4 hover:shadow-md transition-shadow block">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
-                      <p className="text-2xl font-bold text-foreground">{loading ? '—' : s.value}</p>
-                    </div>
-                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                      <Icon className={`w-5 h-5 ${s.color}`} />
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Quick actions */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3 md:mb-5">
-            <Link to="/dashboard/buyer/verification">
-              <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
-                <ShieldCheck className="w-3.5 h-3.5" /> KYC Verification
-              </Button>
-            </Link>
-            <Link to="/dashboard/buyer/saved-manufacturers">
-              <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
-                <Heart className="w-3.5 h-3.5" /> Saved Manufacturers
-              </Button>
-            </Link>
-            <Link to="/dashboard/buyer/notifications">
-              <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
-                <Bell className="w-3.5 h-3.5" /> Notifications
-              </Button>
-            </Link>
-            <Link to="/dashboard/buyer/disputes">
-              <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
-                <AlertTriangle className="w-3.5 h-3.5" /> Disputes
-              </Button>
-            </Link>
-          </div>
-
-          {/* Mobile post requirement button */}
-          <Link to="/post-requirement" className="md:hidden block mb-4">
-            <Button className="w-full bg-[#1A0C05] text-primary-foreground hover:bg-primary/90 gap-2">
-              <Plus className="w-4 h-4" /> Post a New Requirement
-            </Button>
-          </Link>
-
-          {/* Recent requirements */}
-          <div className="bg-card border border-border rounded-xl overflow-hidden min-w-0">
-            <div className="flex items-center justify-between px-4 md:px-5 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">Recent Requirements</h2>
-              <Link to="/dashboard/buyer/requirements">
-                <Button variant="ghost" size="sm" className="text-xs text-primary gap-1">View All <ArrowRight className="w-3 h-3" /></Button>
-              </Link>
-            </div>
-            {loading ? (
-              <div className="p-4 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-12 bg-muted rounded animate-pulse" />)}</div>
-            ) : requirements.length === 0 ? (
-              <div className="p-8 text-center">
-                <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground mb-3">No requirements posted yet.</p>
-                <Link to="/post-requirement">
-                  <Button size="sm" className="bg-[#1A0C05] text-primary-foreground">Post Your First Requirement</Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-muted/50">
-                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-2">Requirement</th>
-                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-2">Qty</th>
-                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-2">Deadline</th>
-                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-2">Status</th>
-                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-2">Quotes</th>
-                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {requirements.slice(0, 5).map(req => (
-                      <tr key={req.id} className="border-t border-border hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-3 text-sm font-medium text-foreground">{req.title}</td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">{req.quantity} {req.quantity_unit}</td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {req.deadline ? new Date(req.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'text-[#FF7A2E] border-[#FF5A00]/30' : 'text-muted-foreground'}`}>
-                            {req.status}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-sm font-semibold text-foreground">{req.quote_count}</td>
-                        <td className="px-4 py-3">
-                          <Link to={`/dashboard/buyer/quotes?req=${req.id}`}>
-                            <Button size="sm" variant="ghost" className="text-xs text-primary gap-1 h-7">
-                              <Eye className="w-3 h-3" /> View
-                            </Button>
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+        {/* The four main figures */}
+        <div className="dgrid-kpi">
+          <Kpi title="Requirements Posted" value={stats.totalReqs} loading={loading} icon={FileText} tone="orange" to="/dashboard/buyer/requirements" delta={{ pct: postedDelta, label: 'vs last month' }} />
+          <Kpi title="Quotes Received" value={stats.totalQuotes} loading={loading} icon={Package} tone="purple" to="/dashboard/buyer/quotes" delta={{ pct: quotesDelta, label: 'vs last month' }} />
+          <Kpi title="Active Orders" value={stats.activeOrders} loading={loading} icon={TrendingUp} tone="green" to="/dashboard/buyer/orders" hint="Being made or on the way" />
+          <Kpi title="Completed Orders" value={stats.completedOrders} loading={loading} icon={CheckCircle2} tone="blue" to="/dashboard/buyer/orders" hint="Delivered and closed" />
         </div>
+
+        {held.count > 0 && (
+          <Notice
+            icon={Wallet}
+            title={`${money(held.total)} held by BulkSkart for you`}
+            action={
+              <Button asChild size="sm">
+                <Link to="/dashboard/buyer/orders">View orders</Link>
+              </Button>
+            }
+          >
+            Paid online for {held.count} order{held.count === 1 ? '' : 's'}. The manufacturer gets it only when you confirm the goods arrived.
+          </Notice>
+        )}
+
+        <div className="dgrid-trio">
+          <AccountCard
+            initials={initials}
+            name={displayName || 'Your account'}
+            role="Buyer"
+            to="/dashboard/buyer/profile"
+            rows={[
+              { icon: ShieldCheck, label: 'Verification', value: loading ? '—' : stats.buyerVerified ? 'Verified' : 'Not verified' },
+              { icon: FileText, label: 'Requirements', value: loading ? '—' : stats.totalReqs },
+              { icon: Package, label: 'Quotes received', value: loading ? '—' : stats.totalQuotes },
+              { icon: TrendingUp, label: 'Orders in progress', value: loading ? '—' : stats.activeOrders },
+              { icon: Heart, label: 'Saved manufacturers', value: loading ? '—' : stats.savedMfrs },
+              { icon: MessageSquare, label: 'Active chats', value: loading ? '—' : stats.activeConvs },
+            ]}
+            progress={Number.isFinite(completion) && completion > 0 ? { label: 'Profile completion', value: completion } : undefined}
+          />
+
+          <div className="dstack">
+            <Panel title="Quote coverage" subtitle="Requirements that have received a quote" to="/dashboard/buyer/quotes">
+              <Gauge
+                value={coverage}
+                label="Requirements with quotes"
+                emptyText="Post a requirement to start"
+                footer={requirements.length > 0 ? `${withQuotes} of ${requirements.length} requirements have a quote` : undefined}
+              />
+            </Panel>
+            <ActionsCard
+              title="Jump back in"
+              subtitle="Where buyers usually go next"
+              items={[
+                { to: '/post-requirement', icon: Plus, label: 'Post a requirement', hint: 'Tell manufacturers what you need' },
+                { to: '/dashboard/buyer/quotes', icon: Package, label: 'Compare quotes', hint: `${stats.totalQuotes} received so far` },
+                { to: '/dashboard/buyer/messages', icon: MessageSquare, label: 'Open messages', hint: `${stats.activeConvs} active chats` },
+              ]}
+            />
+          </div>
+
+          <Panel
+            className="dgrid-wide"
+            title="Activity"
+            subtitle="By month, for the last 12 months"
+            right={
+              <Segmented
+                label="Chart shows"
+                value={series}
+                onChange={setSeries}
+                options={[
+                  { value: 'posted', label: 'Requirements' },
+                  { value: 'quotes', label: 'Quotes' },
+                ]}
+              />
+            }
+          >
+            <BarsChart
+              months={slots.map((slot) => slot.label)}
+              bars={shown}
+              barLabel={series === 'posted' ? 'requirements' : 'quotes'}
+              emptyText={series === 'posted' ? 'No requirements posted in the last 12 months yet.' : 'No quotes received in the last 12 months yet.'}
+              ariaLabel={series === 'posted' ? 'Requirements posted in each of the last 12 months' : 'Quotes received in each of the last 12 months'}
+            />
+            <div className="dminis">
+              <Mini label="Posted this month" value={postedByMonth[last]} pct={postedDelta} />
+              <Mini label="Quotes this month" value={quotesByMonth[last]} pct={quotesDelta} />
+              <Mini dark label="Last 12 months" value={sum(shown)} />
+            </div>
+          </Panel>
+        </div>
+
+        {/* Small figures that lead to the pages behind them */}
+        <div className="dstrip">
+          <QuickLink to="/dashboard/buyer/saved-manufacturers" icon={Heart} label="Saved Manufacturers" count={stats.savedMfrs} />
+          <QuickLink to="/dashboard/buyer/messages" icon={MessageSquare} label="Active Chats" count={stats.activeConvs} />
+          <QuickLink to="/dashboard/buyer/notifications" icon={Bell} label="Notifications" count={stats.unreadNotifs} />
+          <QuickLink to="/dashboard/buyer/disputes" icon={AlertTriangle} label="Disputes" count={stats.openDisputes} />
+          <QuickLink to="/dashboard/buyer/profile" icon={Settings} label="Profile settings" />
+        </div>
+
+        {/* Recent requirements */}
+        <Panel
+          title="Recent Requirements"
+          subtitle="Your five newest"
+          right={
+            <div className="flex shrink-0 items-center gap-2">
+              <Link to="/post-requirement" className="dbtn is-primary hidden md:inline-flex">
+                <Plus aria-hidden="true" /> Post Requirement
+              </Link>
+              <Link to="/dashboard/buyer/requirements" className="dbtn is-ghost">
+                View All
+              </Link>
+            </div>
+          }
+        >
+          {loading ? (
+            <div className="mt-3 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-12 animate-pulse rounded-2xl bg-muted" />)}</div>
+          ) : requirements.length === 0 ? (
+            <div className="p-6 text-center">
+              <FileText className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+              <p className="mb-3 text-sm text-muted-foreground">No requirements posted yet.</p>
+              <Link to="/post-requirement">
+                <Button size="sm" className="bg-primary text-primary-foreground">Post Your First Requirement</Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="-mx-1 mt-3 overflow-x-auto">
+              <table className="w-full whitespace-nowrap">
+                <thead>
+                  <tr className="bg-muted/50">
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Requirement</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Qty</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Deadline</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Quotes</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {requirements.slice(0, 5).map((req) => (
+                    <tr key={req.id} className="border-t border-border transition-colors hover:bg-muted/30">
+                      <td className="px-4 py-3 text-sm font-medium text-foreground">{req.title}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{req.quantity} {req.quantity_unit}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {req.deadline ? new Date(req.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'border-orange-600/40 text-orange-700' : 'text-muted-foreground'}`}>
+                          {req.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm font-semibold text-foreground">{req.quote_count}</td>
+                      <td className="px-4 py-3">
+                        <Link to={`/dashboard/buyer/quotes?req=${req.id}`}>
+                          <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-primary">
+                            <Eye className="h-3 w-3" /> View
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
       </div>
     </DashboardLayout>
   );

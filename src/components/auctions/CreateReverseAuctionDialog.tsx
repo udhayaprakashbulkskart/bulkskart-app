@@ -1,30 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import {
-  Clock, Flame, ShieldCheck, Tag, Package, AlertCircle,
-  CreditCard, CheckCircle2, FileText, ArrowRight, ArrowLeft,
-  Building2, Globe, Receipt, Lock, Sparkles, RefreshCw,
-  ExternalLink, Check, Download, AlertTriangle
-} from 'lucide-react';
+import React, { useEffect, useId, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertTriangle, ArrowRight, Building2, Clock, CreditCard, FileText, Flame, Globe2, Hash, Layers, ListChecks, Loader2, LogIn, MapPin, Receipt, ShieldCheck, Tag, Timer, TrendingUp, Truck, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  SUPPORTED_COUNTRIES, getCountryTaxConfig, calculateSubscriptionBill
-} from '@/lib/countryTaxConfig';
+import { SUPPORTED_COUNTRIES, calculateSubscriptionBill } from '@/lib/countryTaxConfig';
+import { SUPPORT_EMAIL } from '@/lib/supportContact';
 import MultiImageUploader from '@/components/common/MultiImageUploader';
-import { PRE_CACHED_PIXABAY_IMAGES } from '@/lib/pixabay';
+import {
+  Actions,
+  Callout,
+  CountedTextArea,
+  Done,
+  Field,
+  FormDialog,
+  IconBox,
+  KitButton,
+  NativeSelect,
+  SectionTitle,
+  Stepper,
+  TextInput,
+  optionsWith,
+  type FormPoint,
+} from '@/components/formkit';
 
 interface CreateReverseAuctionDialogProps {
+  /** kept for older callers; the dialog is opened with `open` */
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -50,7 +51,19 @@ const CATEGORIES = [
   'Chemicals & Solvents',
   'Industrial Machinery',
   'Packaging Materials',
-  'Construction & Building'
+  'Construction & Building',
+];
+const UNITS = ['Pieces / Units', 'Metre (m)', 'Kilograms (kg)', 'Metric Tonnes (MT)', 'Barrels'];
+const DISPATCH = [
+  { value: 'Ready for Immediate Dispatch', label: 'Ready for immediate dispatch (24h)' },
+  { value: 'Ready within 48 Hours', label: 'Ready within 48 hours' },
+  { value: 'Ready within 3 to 5 Days', label: 'Ready within 3 to 5 days' },
+];
+
+const POINTS: FormPoint[] = [
+  { icon: Flame, title: 'Sell a bulk lot fast', detail: '24-hour or 60-minute bidding' },
+  { icon: ShieldCheck, title: 'Anti-sniping built in', detail: 'A late bid adds 2 minutes' },
+  { icon: Receipt, title: 'One posting fee', detail: 'Shown with tax before you pay' },
 ];
 
 // Helper to load Razorpay Checkout JS dynamically
@@ -69,46 +82,43 @@ function loadRazorpaySdk(): Promise<boolean> {
   });
 }
 
-export default function CreateReverseAuctionDialog({
-  trigger,
-  open: controlledOpen,
-  onOpenChange: setControlledOpen,
-  onSuccess,
-  initialData
-}: CreateReverseAuctionDialogProps) {
-  const { user } = useAuth();
+type Errors = Partial<Record<'title' | 'quantity' | 'start' | 'reserve' | 'billingName' | 'taxId', string>>;
+
+/**
+ * Post a bulk lot for timed bidding: the lot, then the posting fee and billing details, then payment through Razorpay.
+ * The auction is published only after a payment comes back, and only a saved auction is shown as live.
+ */
+export default function CreateReverseAuctionDialog({ open: controlledOpen, onOpenChange: setControlledOpen, onSuccess, initialData }: CreateReverseAuctionDialogProps) {
+  const { user, company } = useAuth();
   const navigate = useNavigate();
+  const ids = useId();
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
   const setOpen = (val: boolean) => {
-    if (isControlled) {
-      setControlledOpen?.(val);
-    } else {
-      setInternalOpen(val);
-    }
+    if (isControlled) setControlledOpen?.(val);
+    else setInternalOpen(val);
   };
 
-  // Step 1: Details, Step 2: Compulsory Subscription & Country Tax, Step 3: Receipt / Success
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
 
-  // Step 1 Fields: 24-Hour Sell Products Bidding Form
+  // the lot
   const [title, setTitle] = useState(initialData?.title || '');
   const [category, setCategory] = useState(initialData?.category || CATEGORIES[0]);
   const [auctionDuration, setAuctionDuration] = useState<'24h' | '60m'>('24h');
   const [totalQuantity, setTotalQuantity] = useState(initialData?.total_quantity ? String(initialData.total_quantity) : '');
-  const [quantityUnit, setQuantityUnit] = useState(initialData?.quantity_unit || 'Metre (m)');
+  const [quantityUnit, setQuantityUnit] = useState(initialData?.quantity_unit || UNITS[0]);
   const [startingPrice, setStartingPrice] = useState(initialData?.starting_price ? String(initialData.starting_price) : '');
   const [reservePrice, setReservePrice] = useState(initialData?.reserve_price ? String(initialData.reserve_price) : '');
   const [minBidIncrement, setMinBidIncrement] = useState(initialData?.min_bid_increment ? String(initialData.min_bid_increment) : '2');
-  const [deliveryLocation, setDeliveryLocation] = useState(initialData?.delivery_location || 'Ahmedabad, Gujarat');
-  const [leadTime, setLeadTime] = useState('Ready for Immediate Dispatch');
+  const [deliveryLocation, setDeliveryLocation] = useState(initialData?.delivery_location || '');
+  const [leadTime, setLeadTime] = useState(DISPATCH[0].value);
   const [description, setDescription] = useState(initialData?.description || '');
-  const [specs, setSpecs] = useState('Purity: 99.9%, Grade: Industrial Standard');
+  const [specs, setSpecs] = useState('');
   const [lotImages, setLotImages] = useState<string[]>([]);
 
-  // Sync initialData when passed or changed
   useEffect(() => {
     if (initialData) {
       if (initialData.title) setTitle(initialData.title);
@@ -123,796 +133,570 @@ export default function CreateReverseAuctionDialog({
     }
   }, [initialData]);
 
-  // Step 2 Fields: Country-wise Subscription Tax
+  // billing: started from the seller's own company profile
   const [selectedCountryCode, setSelectedCountryCode] = useState('IN');
-  const [companyBillingName, setCompanyBillingName] = useState('Apex Conductors India Ltd.');
-  const [taxIdGstin, setTaxIdGstin] = useState('24AABCA1234F1Z5');
-  const [billingAddress, setBillingAddress] = useState('GIDC Phase 2, Vatva, Ahmedabad, Gujarat 382445');
-  const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'instant_escrow'>('razorpay');
+  const [companyBillingName, setCompanyBillingName] = useState('');
+  const [taxIdGstin, setTaxIdGstin] = useState('');
+  const [billingAddress, setBillingAddress] = useState('');
+  useEffect(() => {
+    if (!company) return;
+    setCompanyBillingName((prev) => prev || company.company_name || '');
+    setTaxIdGstin((prev) => prev || company.gst_number || '');
+    setBillingAddress((prev) => prev || company.address || '');
+  }, [company]);
 
-  // Step 3 Confirmation State
+  // the result
   const [createdAuctionId, setCreatedAuctionId] = useState('');
-  const [invoiceNumber, setInvoiceNumber] = useState('');
   const [paymentReferenceId, setPaymentReferenceId] = useState('');
+  const [publishFailed, setPublishFailed] = useState(false);
+  const lastPayment = useRef<{ razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string } | null>(null);
 
   const bill = calculateSubscriptionBill(selectedCountryCode);
+  const paysOnline = selectedCountryCode === 'IN';
 
-  // Pre-load Razorpay SDK in background
   useEffect(() => {
     loadRazorpaySdk();
   }, []);
 
-  const handleFillTestLot = () => {
-    setTitle('Industrial DIN 933 Stainless Steel Hex Bolts (Grade 304 - M12x50)');
-    setCategory('Metals & Mining');
-    setTotalQuantity('10000');
-    setQuantityUnit('Pieces (pcs)');
-    setStartingPrice('18');
-    setReservePrice('14');
-    setMinBidIncrement('1');
-    setDeliveryLocation('Mundra Port, Gujarat, India');
-    setLeadTime('Ready for Immediate Dispatch');
-    setDescription('10,000 pieces of premium M12x50 DIN 933 Grade 304 stainless steel hexagonal bolts. Packaged in 500-pc export-grade seaworthy cartons with complete Mill Test Certificates (EN 10204 3.1). Ready for immediate loading.');
-    setSpecs('Tensile Strength: 700 MPa, Tolerance: ISO 965-2, Passivated Finish');
-    setLotImages([
-      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&q=80&w=800'
-    ]);
-    toast.success('Test inventory lot data auto-filled!');
+  // start again after a finished posting
+  useEffect(() => {
+    if (open && currentStep === 3) {
+      setCurrentStep(1);
+      setPublishFailed(false);
+      setCreatedAuctionId('');
+      setPaymentReferenceId('');
+    }
+    // only when the dialog is opened again
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const clear = (key: keyof Errors) => setErrors((prev) => ({ ...prev, [key]: undefined }));
+  const focusFirst = (found: Errors, order: Array<keyof Errors>) => {
+    const first = order.find((key) => found[key]);
+    if (first) document.getElementById(`${ids}-${first}`)?.focus();
+    return Boolean(first);
   };
 
   const handleProceedToPayment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      toast.error('Please enter the bulk product lot title');
-      return;
-    }
+    const found: Errors = {};
     const qty = parseInt(totalQuantity, 10);
-    if (!qty || qty <= 0) {
-      toast.error('Please enter a valid bulk lot quantity');
-      return;
-    }
     const startP = parseFloat(startingPrice);
-    if (!startP || startP <= 0) {
-      toast.error('Please enter a valid starting base price');
-      return;
-    }
-    if (reservePrice && parseFloat(reservePrice) < startP) {
-      toast.error('Reserve price cannot be less than starting base price');
-      return;
-    }
+    if (!title.trim()) found.title = 'Please enter a title for the lot.';
+    if (!qty || qty <= 0) found.quantity = 'Please enter the quantity in the lot.';
+    if (!startP || startP <= 0) found.start = 'Please enter a starting price greater than 0.';
+    else if (reservePrice && parseFloat(reservePrice) < startP) found.reserve = 'The reserve price cannot be lower than the starting price.';
+    setErrors(found);
+    if (focusFirst(found, ['title', 'quantity', 'start', 'reserve'])) return;
     setCurrentStep(2);
   };
 
-  // Helper to publish auction to Supabase once payment is verified
-  const publishAuctionToDatabase = async (paymentRef: string) => {
-    const now = new Date();
-    // 24 hours standard or 60 minutes
-    const durationHours = auctionDuration === '24h' ? 24 : 1;
-    const endTime = new Date(now.getTime() + durationHours * 60 * 60 * 1000);
-    // Time-based and random together, so two listings never share a number (4 random digits soon collide).
-    const uniquePart = `${now.getTime().toString(36)}${Math.floor(Math.random() * 1296).toString(36).padStart(2, '0')}`.toUpperCase();
-    const auctionNumber = `BS-REV-${uniquePart}`;
-    const invNum = `BS-INV-${now.getFullYear()}-${uniquePart}`;
+  /** The lot as entered. The server checks it, keeps it with the payment order and publishes it once the payment is verified. */
+  const auctionDraft = () => ({
+    title: title.trim(),
+    description: description.trim(),
+    total_quantity: parseInt(totalQuantity, 10),
+    quantity_unit: quantityUnit,
+    starting_price: parseFloat(startingPrice),
+    reserve_price: reservePrice ? parseFloat(reservePrice) : null,
+    min_bid_increment: parseFloat(minBidIncrement) || 2,
+    duration: auctionDuration === '24h' ? '24h' : '1h',
+    delivery_location: deliveryLocation.trim() || null,
+    lead_time: leadTime,
+    specs: specs.trim(),
+    billing_name: companyBillingName.trim(),
+    tax_id: taxIdGstin.trim(),
+    images: lotImages,
+  });
 
-    const qty = parseInt(totalQuantity, 10);
-    const startP = parseFloat(startingPrice);
-
-    const auctionData = {
-      auction_number: auctionNumber,
-      auction_type: 'reverse',
-      title: title.trim(),
-      description: description.trim() || `Manufacturer bulk product lot of ${qty} ${quantityUnit} ready for ${auctionDuration === '24h' ? '24-hour' : '60-minute'} sell bidding.`,
-      total_quantity: qty,
-      moq: Math.max(1, Math.floor(qty * 0.1)),
-      quantity_unit: quantityUnit,
-      starting_price: startP,
-      reserve_price: reservePrice ? parseFloat(reservePrice) : startP,
-      min_bid_increment: parseFloat(minBidIncrement) || 2,
-      current_highest_bid: startP,
-      total_bids: 0,
-      currency: bill.country.currency,
-      duration_minutes: durationHours * 60,
-      start_time: now.toISOString(),
-      end_time: endTime.toISOString(),
-      anti_sniping_enabled: true,
-      anti_sniping_trigger_seconds: 120,
-      anti_sniping_extend_seconds: 120,
-      status: 'live',
-      delivery_location: deliveryLocation,
-      freight_terms: leadTime,
-      seller_id: user?.id || null,
-      specifications: {
-        "Lot Quantity": `${qty} ${quantityUnit}`,
-        "Specs Note": specs,
-        "Auction Window": auctionDuration === '24h' ? "24-Hour Sell Products Bidding" : "60-Minute Real-Time Bidding",
-        "Dispatch Time": leadTime,
-        "Subscription Paid": `${bill.formattedTotal} (${bill.country.name} with ${bill.country.taxName})`,
-        "Tax Invoice": invNum,
-        "Payment Ref": paymentRef,
-        "Seller Billing Name": companyBillingName,
-        "Tax ID / GSTIN": taxIdGstin
-      },
-      images: lotImages.length > 0
-        ? lotImages
-        : [
-            category === 'Electrical & Cable'
-              ? PRE_CACHED_PIXABAY_IMAGES.electrical?.url || PRE_CACHED_PIXABAY_IMAGES.default.url
-              : category === 'Textiles & Yarn'
-              ? PRE_CACHED_PIXABAY_IMAGES.textiles?.url || PRE_CACHED_PIXABAY_IMAGES.default.url
-              : category === 'Metals & Mining'
-              ? PRE_CACHED_PIXABAY_IMAGES.metals?.url || PRE_CACHED_PIXABAY_IMAGES.default.url
-              : category === 'Plastics & Polymers'
-              ? PRE_CACHED_PIXABAY_IMAGES.chemicals?.url || PRE_CACHED_PIXABAY_IMAGES.default.url
-              : category === 'Industrial Machinery'
-              ? PRE_CACHED_PIXABAY_IMAGES.machinery?.url || PRE_CACHED_PIXABAY_IMAGES.default.url
-              : category === 'Packaging Materials'
-              ? PRE_CACHED_PIXABAY_IMAGES.packaging?.url || PRE_CACHED_PIXABAY_IMAGES.default.url
-              : PRE_CACHED_PIXABAY_IMAGES.default?.url || 'https://cdn.pixabay.com/photo/2017/04/02/09/08/bulldozer-2195329_1280.jpg'
-          ]
-    };
-
-    const { data, error } = await supabase
-      .from('auctions')
-      .insert(auctionData)
-      .select()
-      .single();
-
-    if (error || !data?.id) {
-      console.error('Auction creation error:', error);
-      // The fee was paid but the listing was not saved: say so, with the payment reference, instead of a fake success.
-      toast.error(`Your payment went through (ref ${paymentRef}), but the auction could not be saved. Please e-mail info@bulkskart.com with this reference.`, { duration: 15000 });
-      return;
+  /** Error text from a function call, whether it came back in the body or as an HTTP error. */
+  const functionError = async (error: unknown, data: unknown): Promise<string | null> => {
+    const fromBody = (data as { error?: unknown } | null)?.error;
+    if (typeof fromBody === 'string') return fromBody;
+    const context = (error as { context?: Response } | null)?.context;
+    if (context && typeof context.json === 'function') {
+      try {
+        const body = await context.json();
+        if (typeof body?.error === 'string') return body.error;
+      } catch {
+        /* not JSON */
+      }
     }
-
-    const newId = data.id;
-    setCreatedAuctionId(newId);
-    setInvoiceNumber(invNum);
-    setPaymentReferenceId(paymentRef);
-    setCurrentStep(3);
-
-    toast.success(`₹${bill.totalAmount.toLocaleString()} paid. Your ${auctionDuration === '24h' ? '24-hour' : '60-minute'} auction is live.`);
-    if (onSuccess) onSuccess(newId);
+    return error ? (error as Error).message || 'Something went wrong' : null;
   };
 
-  // Launch Razorpay Payment Gateway
+  // After Razorpay reports the payment, the server checks its signature and only then publishes the auction.
+  const confirmPaymentAndPublish = async (response: { razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string }) => {
+    const payId = response?.razorpay_payment_id ?? '';
+    lastPayment.current = response;
+    setPaymentReferenceId(payId);
+    setPublishFailed(false);
+    const { data, error } = await supabase.functions.invoke('razorpay-verify-payment', {
+      body: {
+        type: 'auction_fee',
+        razorpay_order_id: response?.razorpay_order_id,
+        razorpay_payment_id: payId,
+        razorpay_signature: response?.razorpay_signature,
+      },
+    });
+    setCurrentStep(3);
+    const problem = await functionError(error, data);
+    if (problem || !data?.success || !data?.auction_id) {
+      console.error('Auction publish after payment failed:', problem);
+      setPublishFailed(true);
+      return;
+    }
+    setCreatedAuctionId(data.auction_id);
+    toast.success('Payment verified. Your auction is live.');
+    onSuccess?.(data.auction_id);
+  };
+
   const handlePayAndLaunchAuction = async () => {
-    if (!companyBillingName.trim()) {
-      toast.error('Please enter your company billing name for the tax invoice');
-      return;
-    }
-    if (!taxIdGstin.trim()) {
-      toast.error('Please enter your GSTIN / Tax Identification Number');
-      return;
-    }
+    if (!user) return;
+    const found: Errors = {};
+    if (!companyBillingName.trim()) found.billingName = 'Please enter the company name for the invoice.';
+    if (!taxIdGstin.trim()) found.taxId = 'Please enter your GSTIN or tax number.';
+    setErrors(found);
+    if (focusFirst(found, ['billingName', 'taxId'])) return;
+    if (!paysOnline) return;
 
     setLoading(true);
-
     try {
       const sdkReady = await loadRazorpaySdk();
-
-      // Check if Razorpay checkout is available on window
-      if (sdkReady && (window as any).Razorpay && selectedCountryCode === 'IN') {
-        const totalPaise = Math.round(bill.totalAmount * 100); // 5900 * 100 = 590000 paise
-
-        const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TZ1W7USRc0Injp',
-          amount: totalPaise,
-          currency: 'INR',
-          name: 'BulkSkart B2B Marketplace',
-          description: `24-Hour Bulk Product Bidding Participation Fee (${bill.formattedTotal})`,
-          image: '/brand/bulkskart-icon.png',
-          prefill: {
-            name: companyBillingName || (user?.user_metadata as any)?.full_name || '',
-            email: user?.email || '',
-            contact: user?.phone || (user?.user_metadata as any)?.phone || ''
-          },
-          notes: {
-            service: '24-hour-auction-participation-fee',
-            base_fee: '5000',
-            gst_amount: '900',
-            total_fee: '5900',
-            lot_title: title.substring(0, 40)
-          },
-          theme: {
-            color: '#FF5A1F'
-          },
-          handler: async (response: any) => {
-            const payId = response?.razorpay_payment_id;
-            if (!payId) {
-              setLoading(false);
-              toast.error('The payment was not confirmed, so the auction was not published. Please try again.');
-              return;
-            }
-            await publishAuctionToDatabase(payId);
-            setLoading(false);
-          },
-          modal: {
-            ondismiss: () => {
-              setLoading(false);
-              toast.info('Payment window closed. Complete payment whenever you are ready to post your auction.');
-            }
-          }
-        };
-
-        const rzpInstance = new (window as any).Razorpay(options);
-        rzpInstance.on('payment.failed', (resp: any) => {
-          setLoading(false);
-          toast.error(`Payment failed: ${resp.error?.description || 'Transaction declined'}`);
-        });
-        rzpInstance.open();
-      } else {
-        // No payment window (blocked script or a non-rupee bill): never publish without a real payment.
+      if (!sdkReady || !(window as any).Razorpay) {
         setLoading(false);
-        toast.error('Online payment is not available right now, so the auction was not published. Please try again, or e-mail info@bulkskart.com.');
+        toast.error('The payment window could not be loaded. Please check your connection and try again.');
+        return;
       }
+
+      // The server sets the fee and keeps the lot with the order
+      const { data: order, error: orderError } = await supabase.functions.invoke('razorpay-create-order', {
+        body: { type: 'auction_fee', auction: auctionDraft() },
+      });
+      const orderProblem = await functionError(orderError, order);
+      if (orderProblem || !order?.order_id) {
+        setLoading(false);
+        toast.error(orderProblem || 'The payment could not be started. Please try again.');
+        return;
+      }
+
+      const options = {
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency || 'INR',
+        order_id: order.order_id,
+        name: 'BulkSkart B2B Marketplace',
+        description: `Auction posting fee (${bill.formattedTotal})`,
+        image: '/brand/bulkskart-icon.png',
+        prefill: {
+          name: companyBillingName.trim() || (user.user_metadata as any)?.full_name || '',
+          email: user.email || '',
+          contact: user.phone || (user.user_metadata as any)?.phone || '',
+        },
+        notes: {
+          service: 'auction-posting-fee',
+          lot_title: title.substring(0, 40),
+        },
+        theme: { color: '#FF5A1F' },
+        handler: async (response: any) => {
+          if (!response?.razorpay_payment_id) {
+            setLoading(false);
+            toast.error('The payment did not complete. You have not been charged for this auction.');
+            return;
+          }
+          await confirmPaymentAndPublish(response);
+          setLoading(false);
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            toast.info('Payment window closed. Your auction has not been posted yet.');
+          },
+        },
+      };
+      const rzpInstance = new (window as any).Razorpay(options);
+      rzpInstance.on('payment.failed', (resp: any) => {
+        setLoading(false);
+        toast.error(`Payment failed: ${resp.error?.description || 'Transaction declined'}`);
+      });
+      rzpInstance.open();
     } catch (err: any) {
-      toast.error('Payment checkout error: ' + (err?.message || 'Please retry'));
+      toast.error(`Payment could not start: ${err?.message || 'please try again'}`);
       setLoading(false);
     }
   };
 
-  const handleViewLiveAuction = () => {
-    setOpen(false);
-    navigate(`/auctions/reverse/${createdAuctionId}`);
-  };
+  const qtyNumber = parseInt(totalQuantity, 10) || 0;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-2xl max-h-[92dvh] overflow-y-auto p-4 sm:p-6 rounded-3xl bg-[#070B13] border border-[#2A2A2A] text-white shadow-2xl">
-        {/* Modal Header */}
-        <DialogHeader className="pb-3 border-b border-[#2A2A2A]/80">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 flex items-center justify-center text-[#FF5A1F] shrink-0">
-              <Flame className="w-5 h-5 fill-[#FF5A1F]" />
+    <FormDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!loading) setOpen(next);
+      }}
+      busy={loading}
+      title={
+        currentStep === 1 ? (
+          <>
+            Sell a <em>Bulk Lot</em>
+          </>
+        ) : currentStep === 2 ? (
+          <>
+            Posting Fee & <em>Billing</em>
+          </>
+        ) : publishFailed ? (
+          <>
+            Auction <em>Not Posted</em>
+          </>
+        ) : (
+          <>
+            Auction <em>Live</em>
+          </>
+        )
+      }
+      description={
+        currentStep === 1
+          ? 'Step 1 of 2: the lot buyers will bid on.'
+          : currentStep === 2
+            ? `Step 2 of 2: a fixed posting fee of ${bill.formattedBase} plus ${bill.country.taxName}.`
+            : undefined
+      }
+      points={POINTS}
+      width={1080}
+    >
+      {currentStep === 3 ? (
+        publishFailed ? (
+          <div className="fk-done" role="alert">
+            <span className="fk-done-ico">
+              <AlertTriangle aria-hidden="true" />
+            </span>
+            <h3>Your payment went through, but the auction was not posted yet</h3>
+            <p>Try again in a moment. If it still does not post, please write to <a href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Auction not posted: ${paymentReferenceId}`)}`}>{SUPPORT_EMAIL}</a> with your payment reference{' '}
+              <b>{paymentReferenceId}</b> so the team can sort it out.
+            </p>
+            <Actions>
+              <KitButton
+                disabled={loading}
+                onClick={async () => {
+                  if (!lastPayment.current) return;
+                  setLoading(true);
+                  await confirmPaymentAndPublish(lastPayment.current);
+                  setLoading(false);
+                }}
+              >
+                {loading ? 'Trying again…' : 'Try again'}
+              </KitButton>
+              <KitButton variant="ghost" onClick={() => setOpen(false)}>Close</KitButton>
+            </Actions>
+          </div>
+        ) : (
+          <Done
+            title="Payment received. Your auction is live."
+            actions={
+              <Actions>
+                <KitButton
+                  onClick={() => {
+                    setOpen(false);
+                    navigate(`/auctions/reverse/${createdAuctionId}`);
+                  }}
+                >
+                  Open the Auction <ArrowRight aria-hidden="true" />
+                </KitButton>
+                <KitButton variant="ghost" onClick={() => setOpen(false)}>
+                  Close
+                </KitButton>
+              </Actions>
+            }
+          >
+            <p>
+              <b>{title.trim()}</b> is open for bidding for {auctionDuration === '24h' ? '24 hours' : '60 minutes'}.
+            </p>
+            <p>
+              Fee paid: <b>{bill.formattedTotal}</b> · Payment reference <b>{paymentReferenceId}</b>. Keep it for your records.
+            </p>
+          </Done>
+        )
+      ) : currentStep === 1 ? (
+        <form onSubmit={handleProceedToPayment} noValidate className="fk-form fk-stack">
+          <SectionTitle>The Lot</SectionTitle>
+          <Field htmlFor={`${ids}-title`} label="Lot Title" required error={errors.title}>
+            <IconBox icon={Tag}>
+              <TextInput
+                id={`${ids}-title`}
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  clear('title');
+                }}
+                placeholder="e.g. Pure Copper Wire 2.5mm Industrial Grade (surplus lot)"
+                invalid={Boolean(errors.title)}
+                iconPadding
+              />
+            </IconBox>
+          </Field>
+          <div className="fk-grid">
+            <Field htmlFor={`${ids}-category`} label="Category">
+              <IconBox icon={Layers}>
+                <NativeSelect id={`${ids}-category`} value={category} onChange={(e) => setCategory(e.target.value)} iconPadding>
+                  {optionsWith(CATEGORIES, category).map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </IconBox>
+            </Field>
+            <Field htmlFor={`${ids}-dispatch`} label="Dispatch Time">
+              <IconBox icon={Truck}>
+                <NativeSelect id={`${ids}-dispatch`} value={leadTime} onChange={(e) => setLeadTime(e.target.value)} iconPadding>
+                  {DISPATCH.map((d) => (
+                    <option key={d.value} value={d.value}>
+                      {d.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </IconBox>
+            </Field>
+            <Field htmlFor={`${ids}-quantity`} label="Quantity in the Lot" required error={errors.quantity}>
+              <Stepper
+                id={`${ids}-quantity`}
+                value={totalQuantity}
+                onChange={(value) => {
+                  setTotalQuantity(value);
+                  clear('quantity');
+                }}
+                min={1}
+                unitName={quantityUnit}
+                invalid={Boolean(errors.quantity)}
+                required
+              />
+            </Field>
+            <Field htmlFor={`${ids}-unit`} label="Unit">
+              <IconBox icon={Hash}>
+                <NativeSelect id={`${ids}-unit`} value={quantityUnit} onChange={(e) => setQuantityUnit(e.target.value)} iconPadding>
+                  {optionsWith(UNITS, quantityUnit).map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </IconBox>
+            </Field>
+          </div>
+
+          <SectionTitle>Bidding</SectionTitle>
+          <div className="fk-grid">
+            <Field htmlFor={`${ids}-start`} label="Starting Price (₹ per unit)" required error={errors.start} hint="The opening bid.">
+              <IconBox icon={Wallet} accent>
+                <TextInput
+                  id={`${ids}-start`}
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="any"
+                  value={startingPrice}
+                  onChange={(e) => {
+                    setStartingPrice(e.target.value);
+                    clear('start');
+                  }}
+                  placeholder="e.g. 140"
+                  invalid={Boolean(errors.start)}
+                  iconPadding
+                />
+              </IconBox>
+            </Field>
+            <Field htmlFor={`${ids}-reserve`} label="Reserve Price (₹ per unit)" optional error={errors.reserve} hint="The lowest price you will sell at.">
+              <IconBox icon={TrendingUp}>
+                <TextInput
+                  id={`${ids}-reserve`}
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="any"
+                  value={reservePrice}
+                  onChange={(e) => {
+                    setReservePrice(e.target.value);
+                    clear('reserve');
+                  }}
+                  placeholder="e.g. 165"
+                  invalid={Boolean(errors.reserve)}
+                  iconPadding
+                />
+              </IconBox>
+            </Field>
+            <div className="fk-field">
+              <span className="text-[0.93rem] font-bold leading-tight text-foreground" id={`${ids}-window-label`}>
+                Bidding Window
+              </span>
+              <div className="fk-segment" role="group" aria-labelledby={`${ids}-window-label`}>
+                <button type="button" className="is-add" aria-pressed={auctionDuration === '24h'} onClick={() => setAuctionDuration('24h')}>
+                  <Clock aria-hidden="true" /> 24 hours
+                </button>
+                <button type="button" className="is-add" aria-pressed={auctionDuration === '60m'} onClick={() => setAuctionDuration('60m')}>
+                  <Timer aria-hidden="true" /> 60 minutes
+                </button>
+              </div>
+            </div>
+            <Field htmlFor={`${ids}-increment`} label="Minimum Bid Step (₹)">
+              <IconBox icon={TrendingUp}>
+                <TextInput id={`${ids}-increment`} type="number" inputMode="decimal" min="0" step="any" value={minBidIncrement} onChange={(e) => setMinBidIncrement(e.target.value)} iconPadding />
+              </IconBox>
+            </Field>
+          </div>
+
+          <SectionTitle>Details</SectionTitle>
+          <div className="fk-grid">
+            <Field htmlFor={`${ids}-location`} label="Factory / Delivery Location" optional>
+              <IconBox icon={MapPin} accent>
+                <TextInput id={`${ids}-location`} value={deliveryLocation} onChange={(e) => setDeliveryLocation(e.target.value)} placeholder="e.g. Ahmedabad, Gujarat" iconPadding />
+              </IconBox>
+            </Field>
+            <Field htmlFor={`${ids}-specs`} label="Grade & Test Specs" optional>
+              <IconBox icon={ListChecks}>
+                <TextInput id={`${ids}-specs`} value={specs} onChange={(e) => setSpecs(e.target.value)} placeholder="e.g. Purity 99.9%, commercial grade" iconPadding />
+              </IconBox>
+            </Field>
+          </div>
+          <Field htmlFor={`${ids}-description`} label="Description & Packing" optional>
+            <CountedTextArea
+              id={`${ids}-description`}
+              icon={FileText}
+              rows={3}
+              maxLength={1500}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Certification, packing, inspection details…"
+            />
+          </Field>
+          <MultiImageUploader
+            images={lotImages}
+            onChange={setLotImages}
+            maxImages={6}
+            label="Lot Photos"
+            description="Photos of the real lot help buyers bid with confidence."
+            folder="auctions"
+            defaultSearchTerm={title || category}
+            defaultCategory={category}
+          />
+
+          <Callout icon={ShieldCheck}>A bid in the last 2 minutes adds 2 more minutes, so nobody can win by bidding at the last second.</Callout>
+
+          <Actions>
+            <KitButton type="submit">
+              Continue to Fee & Billing <ArrowRight aria-hidden="true" />
+            </KitButton>
+            <KitButton variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </KitButton>
+          </Actions>
+        </form>
+      ) : (
+        <div className="fk-form fk-stack">
+          <SectionTitle>Posting Fee</SectionTitle>
+          <dl className="fk-summary">
+            <div>
+              <dt>
+                {qtyNumber > 0 ? `${qtyNumber.toLocaleString('en-IN')} ${quantityUnit} · ` : ''}
+                {auctionDuration === '24h' ? '24-hour' : '60-minute'} auction
+              </dt>
+              <dd>{bill.formattedBase}</dd>
             </div>
             <div>
-              <DialogTitle className="text-base sm:text-lg font-extrabold text-white leading-tight">
-                {currentStep === 1 && '24-Hour Bulk Bidding: Sell Bulk Product'}
-                {currentStep === 2 && 'Compulsory Participation Fee & Tax'}
-                {currentStep === 3 && 'Payment Confirmed & Auction Published!'}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-neutral-400 mt-0.5">
-                {currentStep === 1 && 'Manufacturers liquidate bulk inventory lots in 24 hours with live competitive bidding.'}
-                {currentStep === 2 && 'Compulsory ₹5,000 fixed participation fee with statutory 18% GST (₹5,900 Total).'}
-                {currentStep === 3 && 'Your 24-hour auction is now streaming live with real-time bidding.'}
-              </DialogDescription>
+              <dt>{bill.country.taxName}</dt>
+              <dd>{bill.formattedTax}</dd>
             </div>
-          </div>
-
-          {/* Stepper Progress */}
-          <div className="flex items-center justify-between mt-3 pt-2 text-[11px] font-semibold text-neutral-400 border-t border-[#2A2A2A]/80">
-            <span className={`flex items-center gap-1.5 ${currentStep === 1 ? 'text-[#FF5A1F]' : 'text-slate-300'}`}>
-              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-bold ${currentStep >= 1 ? 'bg-[#C94400]' : 'bg-[#0A0A0A]'}`}>1</span>
-              <span>Product Lot Details</span>
-            </span>
-            <span className="text-neutral-300">• • •</span>
-            <span className={`flex items-center gap-1.5 ${currentStep === 2 ? 'text-[#FF5A1F]' : currentStep > 2 ? 'text-slate-300' : 'text-neutral-400'}`}>
-              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-bold ${currentStep >= 2 ? 'bg-[#C94400]' : 'bg-[#0A0A0A]'}`}>2</span>
-              <span>Compulsory Subscription & Tax</span>
-            </span>
-            <span className="text-neutral-300">• • •</span>
-            <span className={`flex items-center gap-1.5 ${currentStep === 3 ? 'text-[#FF7A2E]' : 'text-neutral-400'}`}>
-              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-bold ${currentStep === 3 ? 'bg-[#C94400]' : 'bg-[#0A0A0A]'}`}>3</span>
-              <span>Live & Invoice</span>
-            </span>
-          </div>
-        </DialogHeader>
-
-        {/* ── STEP 1: Product Lot Specifications ── */}
-        {currentStep === 1 && (
-          <form onSubmit={handleProceedToPayment} className="space-y-4 pt-3 pb-4">
-            <div className="flex items-center justify-between pb-1">
-              <span className="text-[11px] text-neutral-400">Fill in your inventory lot specifications:</span>
-              <Button
-                type="button"
-                onClick={handleFillTestLot}
-                className="bg-[#C94400] hover:bg-[#B33D00] text-white text-[11px] font-bold h-7 px-3 rounded-lg shadow-[0_2px_0_#922f00] flex items-center gap-1 transition-all active:translate-y-0.5"
-              >
-                <Sparkles className="w-3 h-3" />
-                <span>⚡ Auto-Fill Test Lot</span>
-              </Button>
+            <div className="is-total">
+              <dt>Total to pay</dt>
+              <dd>{bill.formattedTotal}</dd>
             </div>
+          </dl>
 
-            {/* Title */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-200">Bulk Product Lot Title *</Label>
-              <Input
-                placeholder="e.g. Pure Copper Wire 2.5mm Industrial Grade (Surplus Factory Lot)"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                required
-                className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
-              />
-            </div>
-
-            {/* Category & Dispatch Lead Time */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-200">Category</Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white focus:border-[#FF5A1F]">
-                    <SelectValue placeholder="Select Category" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#0A0A0A] border-[#2A2A2A] text-white">
-                    {CATEGORIES.map(cat => (
-                      <SelectItem key={cat} value={cat} className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">{cat}</SelectItem>
+          {!user ? (
+            <>
+              <Callout icon={LogIn}>Log in to your BulkSkart account to pay and post the auction. What you entered stays here.</Callout>
+              <Actions>
+                <Link to={`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`} className="fk-btn is-primary">
+                  <LogIn aria-hidden="true" /> Log In
+                </Link>
+                <KitButton variant="ghost" onClick={() => setCurrentStep(1)}>
+                  Back
+                </KitButton>
+              </Actions>
+            </>
+          ) : (
+            <>
+              <SectionTitle>Billing Details</SectionTitle>
+              <Field htmlFor={`${ids}-country`} label="Billing Country">
+                <IconBox icon={Globe2}>
+                  <NativeSelect id={`${ids}-country`} value={selectedCountryCode} onChange={(e) => setSelectedCountryCode(e.target.value)} iconPadding>
+                    {SUPPORTED_COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.flag} {c.name} — {c.currency} ({c.taxName})
+                      </option>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </NativeSelect>
+                </IconBox>
+              </Field>
+              <div className="fk-grid">
+                <Field htmlFor={`${ids}-billingName`} label="Company Name" required error={errors.billingName}>
+                  <IconBox icon={Building2}>
+                    <TextInput
+                      id={`${ids}-billingName`}
+                      value={companyBillingName}
+                      onChange={(e) => {
+                        setCompanyBillingName(e.target.value);
+                        clear('billingName');
+                      }}
+                      invalid={Boolean(errors.billingName)}
+                      autoComplete="organization"
+                      iconPadding
+                    />
+                  </IconBox>
+                </Field>
+                <Field htmlFor={`${ids}-taxId`} label={selectedCountryCode === 'IN' ? 'GSTIN' : 'Tax / VAT Number'} required error={errors.taxId}>
+                  <IconBox icon={Receipt}>
+                    <TextInput
+                      id={`${ids}-taxId`}
+                      value={taxIdGstin}
+                      onChange={(e) => {
+                        setTaxIdGstin(e.target.value);
+                        clear('taxId');
+                      }}
+                      placeholder={selectedCountryCode === 'IN' ? '15-character GSTIN' : 'VAT or tax number'}
+                      invalid={Boolean(errors.taxId)}
+                      iconPadding
+                    />
+                  </IconBox>
+                </Field>
+                <Field htmlFor={`${ids}-address`} label="Billing Address" optional wide>
+                  <IconBox icon={MapPin}>
+                    <TextInput id={`${ids}-address`} value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} placeholder="Street, city, state, PIN code" autoComplete="street-address" iconPadding />
+                  </IconBox>
+                </Field>
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-200">Dispatch Lead Time</Label>
-                <Select value={leadTime} onValueChange={setLeadTime}>
-                  <SelectTrigger className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white focus:border-[#FF5A1F]">
-                    <SelectValue placeholder="Select Lead Time" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#0A0A0A] border-[#2A2A2A] text-white">
-                    <SelectItem value="Ready for Immediate Dispatch" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Ready for Immediate Dispatch (24h)</SelectItem>
-                    <SelectItem value="Ready within 48 Hours" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Ready within 48 Hours</SelectItem>
-                    <SelectItem value="Ready within 3 to 5 Days" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Ready within 3 to 5 Days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+              {paysOnline ? (
+                <Callout icon={CreditCard}>You will pay securely with Razorpay (UPI, cards or net banking). The auction goes live as soon as the payment comes through.</Callout>
+              ) : (
+                <Callout icon={Globe2}>
+                  Online payment is available for Indian billing (INR) right now. To post an auction from {bill.country.name}, write to{' '}
+                  <a href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Posting an auction from ' + bill.country.name)}`}>{SUPPORT_EMAIL}</a>.
+                </Callout>
+              )}
 
-            {/* Total Bulk Quantity & Quantity Unit */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-200">Total Bulk Quantity *</Label>
-                <Input
-                  type="number"
-                  placeholder="e.g. 10000"
-                  value={totalQuantity}
-                  onChange={e => setTotalQuantity(e.target.value)}
-                  required
-                  min={1}
-                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-200">Quantity Unit</Label>
-                <Select value={quantityUnit} onValueChange={setQuantityUnit}>
-                  <SelectTrigger className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white focus:border-[#FF5A1F]">
-                    <SelectValue placeholder="Unit" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#0A0A0A] border-[#2A2A2A] text-white">
-                    <SelectItem value="Metre (m)" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Metres (m)</SelectItem>
-                    <SelectItem value="Kilograms (kg)" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Kilograms (kg)</SelectItem>
-                    <SelectItem value="Metric Tonnes (MT)" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Metric Tonnes (MT)</SelectItem>
-                    <SelectItem value="Pieces / Units" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Pieces / Units</SelectItem>
-                    <SelectItem value="Barrels" className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">Barrels</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Starting Base Price & Reserve Price */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-slate-200">Starting Base Price (₹) *</Label>
-                  <span className="text-[10px] text-neutral-400">Opening bid floor</span>
-                </div>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    placeholder="e.g. 140"
-                    value={startingPrice}
-                    onChange={e => setStartingPrice(e.target.value)}
-                    required
-                    min={0.1}
-                    step="any"
-                    className="text-xs h-10 pl-7 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
-                  />
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-400">₹</span>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-slate-200">Reserve Price (₹)</Label>
-                  <span className="text-[10px] text-neutral-400">Target minimum</span>
-                </div>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    placeholder="e.g. 165"
-                    value={reservePrice}
-                    onChange={e => setReservePrice(e.target.value)}
-                    min={0}
-                    step="any"
-                    className="text-xs h-10 pl-7 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
-                  />
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-400">₹</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Auction Duration & Min Increment */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-200">Bidding Window Duration</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAuctionDuration('24h')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                      auctionDuration === '24h'
-                        ? 'border-[#FF5A1F] bg-[#FF5A1F]/20 text-[#FF8A3D] shadow-sm'
-                        : 'border-[#2A2A2A] bg-[#0A0A0A] text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <Clock className="w-3.5 h-3.5 text-[#FF5A1F]" />
-                    <span>24 Hours (Standard)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAuctionDuration('60m')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                      auctionDuration === '60m'
-                        ? 'border-[#FF5A1F] bg-[#FF5A1F]/20 text-[#FF8A3D] shadow-sm'
-                        : 'border-[#2A2A2A] bg-[#0A0A0A] text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <Flame className="w-3.5 h-3.5 text-[#FF5A1F]" />
-                    <span>60 Minutes (Flash)</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-200">Min Bid Increment (₹)</Label>
-                <Input
-                  type="number"
-                  placeholder="e.g. 2"
-                  value={minBidIncrement}
-                  onChange={e => setMinBidIncrement(e.target.value)}
-                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
-                />
-              </div>
-            </div>
-
-            {/* Factory Location & Product Grade */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-200">Factory / Delivery Location</Label>
-                <Input
-                  placeholder="e.g. Ahmedabad, Gujarat"
-                  value={deliveryLocation}
-                  onChange={e => setDeliveryLocation(e.target.value)}
-                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-200">Product Grade & Test Specs</Label>
-                <Input
-                  placeholder="e.g. Purity: 99.9%, Grade: Commercial"
-                  value={specs}
-                  onChange={e => setSpecs(e.target.value)}
-                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
-                />
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-200">Lot Description & Packaging Details</Label>
-              <Textarea
-                placeholder="Include certification, packaging standards, and inspection details..."
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                rows={2}
-                className="text-xs rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
-              />
-            </div>
-
-            {/* Multi Image Upload with Pixabay API Integration */}
-            <div className="p-3.5 rounded-2xl bg-[#0A0A0A] border border-[#2A2A2A] space-y-2">
-              <MultiImageUploader
-                images={lotImages}
-                onChange={setLotImages}
-                maxImages={6}
-                label="Product Lot Photos"
-                description="Upload original factory photos, or click 'Search Pixabay Photos' to fetch verified representative images from the Pixabay API."
-                folder="auctions"
-                defaultSearchTerm={title || category}
-                defaultCategory={category}
-              />
-            </div>
-
-            {/* Guarantee Callout */}
-            <div className="p-3.5 rounded-2xl bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 flex items-center justify-between text-xs text-white">
-              <div className="flex items-center gap-2.5">
-                <Clock className="w-4 h-4 text-[#FF5A1F] shrink-0" />
-                <span>
-                  <strong>24-Hour Verified Auction Window:</strong> Postings run for 24 hours with live competitive bidding and +2 min anti-sniping protection.
-                </span>
-              </div>
-            </div>
-
-            {/* Padded Action Footer (Sticky or Bottom Docked with Safe Zone) */}
-            <div className="pt-3 border-t border-[#2A2A2A] flex items-center justify-end gap-2.5">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-                className="text-xs h-10 px-4 rounded-xl border border-[#FF5A00]/40 text-[#FF5A00] hover:bg-[#B33D00]/15 hover:text-white font-bold"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="bg-[#C94400] hover:bg-[#B33D00] text-white text-xs h-10 px-5 font-bold rounded-xl flex items-center gap-2 shadow-[0_3px_0_#922f00] transition-all active:translate-y-0.5 active:shadow-none"
-              >
-                <span>Continue to Subscription & Tax</span>
-                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-              </Button>
-            </div>
-          </form>
-        )}
-
-        {/* ── STEP 2: Compulsory ₹5000 Subscription & Country Tax Checkout ── */}
-        {currentStep === 2 && (
-          <div className="space-y-4 pt-3 pb-4">
-            {/* Compulsory Policy Callout */}
-            <div className="p-3.5 rounded-2xl bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 flex items-start gap-3 text-xs text-slate-200">
-              <ShieldCheck className="w-5 h-5 text-[#FF5A1F] shrink-0 mt-0.5" />
-              <div>
-                <strong className="block text-white font-bold text-sm">
-                  Compulsory 24-Hour Bidding Subscription (₹5,000 Fixed Fee)
-                </strong>
-                <span className="text-slate-300 text-xs leading-relaxed block mt-0.5">
-                  To ensure 100% verified authentic bulk lots, every manufacturer posting in the 24-Hour Sell Products Bidding arena must pay a fixed participation fee of ₹5,000 plus 18% statutory GST (₹900), totaling ₹5,900.
-                </span>
-              </div>
-            </div>
-
-            {/* Country Selector with Dynamic Tax Engine */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-[#FF5A1F]" />
-                Select Billing Country & Tax Jurisdiction *
-              </Label>
-              <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
-                <SelectTrigger className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white focus:border-[#FF5A1F]">
-                  <SelectValue placeholder="Select Country" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 bg-[#0A0A0A] border-[#2A2A2A] text-white">
-                  {SUPPORTED_COUNTRIES.map(c => (
-                    <SelectItem key={c.code} value={c.code} className="text-xs hover:bg-[#0A0A0A] focus:bg-[#0A0A0A]">
-                      {c.flag} {c.name} — {c.currency} ({c.taxName})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Itemized Tax Invoice Breakdown Card */}
-            <div className="p-4 rounded-2xl bg-[#0A0A0A]/80 border border-[#2A2A2A] shadow-md space-y-2.5">
-              <div className="flex items-center justify-between text-xs font-bold text-white border-b border-[#2A2A2A] pb-2">
-                <span className="flex items-center gap-1.5">
-                  <Receipt className="w-4 h-4 text-[#FF5A1F]" />
-                  <span>Itemized Tax Invoice Breakdown</span>
-                </span>
-                <Badge className="bg-[#FF5A1F]/20 text-[#FF8A3D] border border-[#FF5A1F]/30 text-[10px] font-bold">
-                  Fixed ₹5,000 Base
-                </Badge>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-neutral-400">
-                <span>24-Hour Sell Product Posting Fee (Fixed Base)</span>
-                <span className="font-semibold text-white">{bill.formattedBase}</span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-neutral-400">
-                <div className="flex flex-col">
-                  <span className="text-slate-300 font-medium">{bill.country.taxName}</span>
-                  <span className="text-[10px] text-neutral-400">{bill.country.taxDescription}</span>
-                </div>
-                <span className="font-semibold text-[#FF7A2E]">{bill.formattedTax}</span>
-              </div>
-
-              <div className="pt-2.5 border-t border-[#2A2A2A] flex items-center justify-between text-sm font-bold text-white">
-                <span className="text-[#FF5A1F]">Total Amount Payable</span>
-                <span className="text-lg font-extrabold text-[#FF5A1F]">{bill.formattedTotal}</span>
-              </div>
-            </div>
-
-            {/* Company Invoicing Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-200">Company / Manufacturer Name *</Label>
-                <Input
-                  placeholder="e.g. Apex Conductors India Ltd."
-                  value={companyBillingName}
-                  onChange={e => setCompanyBillingName(e.target.value)}
-                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-200">Tax ID / GSTIN / VAT Number *</Label>
-                <Input
-                  placeholder={selectedCountryCode === 'IN' ? 'e.g. 24AABCA1234F1Z5 (15-digit GSTIN)' : 'e.g. VAT / Federal EIN ID'}
-                  value={taxIdGstin}
-                  onChange={e => setTaxIdGstin(e.target.value)}
-                  className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-200">Registered Billing Address</Label>
-              <Input
-                placeholder="Industrial Estate, City, State / Province, Postal Code"
-                value={billingAddress}
-                onChange={e => setBillingAddress(e.target.value)}
-                className="text-xs h-10 rounded-xl bg-[#0A0A0A] border-[#2A2A2A]/80 text-white placeholder:text-neutral-400 focus:border-[#FF5A1F]"
-              />
-            </div>
-
-            {/* Payment Gateway Options */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-200 block">Select Payment Gateway</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <div
-                  onClick={() => setPaymentMethod('razorpay')}
-                  className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2.5 ${
-                    paymentMethod === 'razorpay'
-                      ? 'border-[#FF5A1F] bg-[#FF5A1F]/15 text-white shadow-sm'
-                      : 'border-[#2A2A2A] bg-[#0A0A0A] text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  <CreditCard className="w-5 h-5 text-[#FF5A1F] shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold leading-tight text-white">Razorpay Gateway</div>
-                    <div className="text-[10px] text-neutral-400">UPI / Cards / NetBanking</div>
-                  </div>
-                </div>
-
-                <div
-                  onClick={() => setPaymentMethod('instant_escrow')}
-                  className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2.5 ${
-                    paymentMethod === 'instant_escrow'
-                      ? 'border-[#FF5A1F] bg-[#FF5A1F]/15 text-white shadow-sm'
-                      : 'border-[#2A2A2A] bg-[#0A0A0A] text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  <Lock className="w-5 h-5 text-[#FF5A1F] shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold leading-tight text-white">Corporate Escrow</div>
-                    <div className="text-[10px] text-neutral-400">Verified Factory Credit</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 2 Padded Action Footer */}
-            <div className="pt-3 border-t border-[#2A2A2A] flex items-center justify-between gap-2.5">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setCurrentStep(1)}
-                className="text-xs h-10 px-4 rounded-xl border border-[#FF5A00]/40 text-[#FF5A00] hover:bg-[#B33D00]/15 hover:text-white font-bold"
-              >
-                <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-                <span>Back</span>
-              </Button>
-              <Button
-                type="button"
-                disabled={loading}
-                onClick={handlePayAndLaunchAuction}
-                className="bg-[#C94400] hover:bg-[#B33D00] text-white text-xs h-10 px-5 font-bold rounded-xl flex items-center gap-2 shadow-[0_3px_0_#922f00] transition-all active:translate-y-0.5 active:shadow-none"
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                    <span>Connecting Payment Gateway...</span>
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4" />
-                    <span>Pay {bill.formattedTotal} & Post Auction</span>
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* ── STEP 3: Payment Success & Official Tax Invoice Receipt ── */}
-        {currentStep === 3 && (
-          <div className="space-y-4 pt-3 pb-4">
-            {/* Matching Image 2 Success Card */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-[#B33D00]/30 border border-[#FF5A00]/40 flex flex-col sm:flex-row items-center sm:items-start gap-3.5 text-center sm:text-left">
-              <div className="w-12 h-12 rounded-full bg-[#C94400] text-white flex items-center justify-center shrink-0 shadow-lg shadow-[#FF5A00]/50">
-                <CheckCircle2 className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-extrabold text-white">
-                  Subscription Payment Successful & Auction Published!
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">
-                  Your compulsory 24-hour reverse auction fee of <strong className="text-[#FF7A2E] font-bold">{bill.formattedTotal}</strong> has been received and verified.
-                </p>
-                {paymentReferenceId && (
-                  <p className="text-[11px] text-neutral-400 mt-1 font-mono">
-                    Gateway Ref: {paymentReferenceId}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Official Tax Invoice Card matching Image 2 */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-[#0A0A0A] border border-[#2A2A2A] shadow-xl space-y-3.5">
-              <div className="flex items-center justify-between border-b border-[#2A2A2A] pb-3">
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-slate-300">Official Tax Invoice</div>
-                  <div className="text-xs text-neutral-400 font-mono mt-0.5">{invoiceNumber}</div>
-                </div>
-                <Badge className="bg-[#B33D00] text-white font-bold text-[10px] px-2.5 py-1 uppercase tracking-wider">
-                  PAID IN FULL
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                  <span className="text-neutral-400 text-[11px] block mb-0.5">Billed To:</span>
-                  <p className="font-bold text-white truncate">{companyBillingName}</p>
-                  <p className="text-[11px] text-neutral-400 font-mono mt-0.5">{taxIdGstin}</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-neutral-400 text-[11px] block mb-0.5">Tax Jurisdiction:</span>
-                  <p className="font-bold text-white">{bill.country.name} ({bill.country.currency})</p>
-                  <p className="text-[11px] text-[#FF8A3D] font-semibold mt-0.5">{bill.country.taxName}</p>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[#0A0A0A]/80 border border-[#2A2A2A] flex items-center justify-between text-xs">
-                <span className="text-slate-300 font-medium">Total Amount Paid (Inclusive of Taxes)</span>
-                <span className="text-base sm:text-lg font-extrabold text-[#FF5A1F]">{bill.formattedTotal}</span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  toast.success(`Tax Invoice ${invoiceNumber} downloaded as PDF`);
-                  try {
-                    const textContent = `BULKSKART B2B MARKETPLACE\nOFFICIAL TAX INVOICE\nInvoice: ${invoiceNumber}\nStatus: PAID IN FULL\nBilled To: ${companyBillingName}\nTax ID: ${taxIdGstin}\nAmount: ${bill.formattedTotal}\nLot: ${title}`;
-                    const blob = new Blob([textContent], { type: 'text/plain' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${invoiceNumber}.txt`;
-                    a.click();
-                  } catch {}
-                }}
-                className="text-xs h-10 rounded-xl border border-[#FF5A00]/40 bg-[#0A0A0A] text-[#FF5A00] hover:text-white hover:bg-[#B33D00]/20 font-bold flex items-center justify-center gap-2"
-              >
-                <FileText className="w-4 h-4 text-[#FF5A00]" />
-                <span>Download Tax Invoice</span>
-              </Button>
-              <Button
-                type="button"
-                onClick={handleViewLiveAuction}
-                className="bg-[#C94400] hover:bg-[#B33D00] text-white text-xs h-10 font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_3px_0_#922f00] transition-all active:translate-y-0.5 active:shadow-none"
-              >
-                <span>Enter Live 24-Hour Auction Room</span>
-                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-      </DialogContent>
-    </Dialog>
+              <Actions>
+                <KitButton onClick={handlePayAndLaunchAuction} disabled={loading || !paysOnline}>
+                  {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <CreditCard aria-hidden="true" />}
+                  {loading ? 'Opening payment…' : `Pay ${bill.formattedTotal} & Post`}
+                </KitButton>
+                <KitButton variant="ghost" onClick={() => setCurrentStep(1)} disabled={loading}>
+                  Back
+                </KitButton>
+              </Actions>
+            </>
+          )}
+        </div>
+      )}
+    </FormDialog>
   );
 }

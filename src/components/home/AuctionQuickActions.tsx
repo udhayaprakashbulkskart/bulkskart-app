@@ -106,7 +106,7 @@ export default function AuctionQuickActions() {
   }, []);
 
   return (
-    <section className="py-5 sm:py-6 bg-[#0B0F17] text-white">
+    <section className="py-5 sm:py-6 bg-[#111111] text-white">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-5 md:px-6">
         
         {/* ══════════════════════════════════════════════════════════════════
@@ -135,7 +135,7 @@ export default function AuctionQuickActions() {
             </div>
 
             {/* Orange Circular Navigation Button with Chevron */}
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#C94400] text-white flex items-center justify-center shrink-0 ml-2 group-hover:bg-[#FF773D] group-hover:translate-x-0.5 transition-all shadow-md">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FF5A1F] text-white flex items-center justify-center shrink-0 ml-2 group-hover:bg-[#FF773D] group-hover:translate-x-0.5 transition-all shadow-md">
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
             </div>
           </Link>
@@ -143,7 +143,7 @@ export default function AuctionQuickActions() {
           {/* Card 2: MANUFACTURERS DIRECTORY */}
           <Link
             to="/manufacturers"
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0D1526] to-[#080E1A] border border-[#FF5A00]/25 hover:border-[#FF5A00]/60 p-4 sm:p-5 flex items-center justify-between transition-all duration-200 hover:shadow-[0_4px_24px_rgba(255,90,0,0.18)] active:scale-[0.99]"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1A1A1A] to-[#111111] border border-[#FF5A00]/25 hover:border-[#FF5A00]/60 p-4 sm:p-5 flex items-center justify-between transition-all duration-200 hover:shadow-[0_4px_24px_rgba(255,90,0,0.18)] active:scale-[0.99]"
           >
             <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
               {/* Factory Icon in Rounded Square */}
@@ -161,7 +161,7 @@ export default function AuctionQuickActions() {
             </div>
 
             {/* Orange Circular Navigation Button with Chevron */}
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#C94400] text-white flex items-center justify-center shrink-0 ml-2 group-hover:bg-[#FF7700] group-hover:translate-x-0.5 transition-all shadow-md">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FF5A00] text-white flex items-center justify-center shrink-0 ml-2 group-hover:bg-[#FF7700] group-hover:translate-x-0.5 transition-all shadow-md">
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
             </div>
           </Link>
@@ -169,11 +169,11 @@ export default function AuctionQuickActions() {
           {/* Card 3: 24-HOUR BULK BIDDING */}
           <Link
             to="/auctions"
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0D1526] to-[#080E1A] border border-[#FF5A00]/25 hover:border-[#FF5A00]/60 p-4 sm:p-5 flex items-center justify-between transition-all duration-200 hover:shadow-[0_4px_24px_rgba(255,90,0,0.18)] active:scale-[0.99]"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1A1A1A] to-[#111111] border border-[#FF5A00]/25 hover:border-[#FF5A00]/60 p-4 sm:p-5 flex items-center justify-between transition-all duration-200 hover:shadow-[0_4px_24px_rgba(255,90,0,0.18)] active:scale-[0.99]"
           >
             <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
               {/* Gavel Icon in Rounded Square */}
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#0A0A0A]/60 border border-[#2A2A2A]/60 flex items-center justify-center text-[#FF5A1F] shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-neutral-800/60 border border-neutral-700/60 flex items-center justify-center text-[#FF5A1F] shrink-0 group-hover:scale-105 transition-transform shadow-inner">
                 <Gavel className="w-6 h-6 sm:w-7 sm:h-7 text-[#FF5A1F]" />
               </div>
               <div className="min-w-0">
@@ -187,7 +187,7 @@ export default function AuctionQuickActions() {
             </div>
 
             {/* Orange Circular Navigation Button with Chevron */}
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#C94400] text-white flex items-center justify-center shrink-0 ml-2 group-hover:bg-[#FF773D] group-hover:translate-x-0.5 transition-all shadow-md">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FF5A1F] text-white flex items-center justify-center shrink-0 ml-2 group-hover:bg-[#FF773D] group-hover:translate-x-0.5 transition-all shadow-md">
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
             </div>
           </Link>
@@ -213,7 +213,7 @@ export default function AuctionQuickActions() {
             </div>
 
             {/* Orange Circular Navigation Button with Chevron */}
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#C94400] text-white flex items-center justify-center shrink-0 ml-2 group-hover:bg-[#FF773D] group-hover:translate-x-0.5 transition-all shadow-md">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FF5A1F] text-white flex items-center justify-center shrink-0 ml-2 group-hover:bg-[#FF773D] group-hover:translate-x-0.5 transition-all shadow-md">
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
             </div>
           </Link>
@@ -225,7 +225,7 @@ export default function AuctionQuickActions() {
            ══════════════════════════════════════════════════════════════════ */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#C94400] animate-pulse shrink-0" />
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
             <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
               Live Reverse Auctions
             </h2>
@@ -251,19 +251,19 @@ export default function AuctionQuickActions() {
               <Link
                 key={item.id}
                 to={`/auctions/reverse/${item.id}`}
-                className="group block bg-[#1A0C05] border border-[#2A2A2A]/80 hover:border-[#FF5A1F]/70 rounded-2xl p-3 sm:p-4 transition-all duration-200 hover:shadow-lg active:scale-[0.99] relative overflow-hidden"
+                className="group block bg-[#1A1A1A] border border-neutral-800/80 hover:border-[#FF5A1F]/70 rounded-2xl p-3 sm:p-4 transition-all duration-200 hover:shadow-lg active:scale-[0.99] relative overflow-hidden"
               >
                 <div className="flex flex-col sm:flex-row gap-3.5 sm:gap-4 items-start sm:items-center">
                   
                   {/* Left Product Image with Category Pill in Lower-Left Corner */}
-                  <div className="w-full sm:w-36 h-36 sm:h-28 rounded-xl overflow-hidden bg-[#0A0A0A] shrink-0 relative">
+                  <div className="w-full sm:w-36 h-36 sm:h-28 rounded-xl overflow-hidden bg-neutral-900 shrink-0 relative">
                     <SafeImage
                       src={item.image}
                       alt={item.title}
                       category={item.category}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 text-[10px] font-semibold bg-[#0A0A0A]/80 text-white rounded-md backdrop-blur-xs">
+                    <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 text-[10px] font-semibold bg-black/80 text-white rounded-md backdrop-blur-xs">
                       {item.category}
                     </span>
                   </div>
@@ -273,11 +273,11 @@ export default function AuctionQuickActions() {
                     
                     {/* Top Row: LIVE Badge, Countdown Pill, RFQ ID */}
                     <div className="flex items-center gap-2 flex-wrap text-xs">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#B33D00] text-white uppercase tracking-wider flex items-center gap-1">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black bg-red-600 text-white uppercase tracking-wider flex items-center gap-1">
                         LIVE
                       </span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#0A0A0A] text-slate-200 flex items-center gap-1 border border-[#2A2A2A]">
-                        <Clock className="w-3 h-3 text-[#FF7A2E]" />
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-neutral-800 text-neutral-200 flex items-center gap-1 border border-neutral-700">
+                        <Clock className="w-3 h-3 text-red-400" />
                         {timeStr}
                       </span>
                       <span className="text-[11px] font-mono text-neutral-400 font-semibold ml-auto">
@@ -291,7 +291,7 @@ export default function AuctionQuickActions() {
                     </h3>
 
                     {/* Quantity */}
-                    <p className="text-xs sm:text-sm text-slate-300 font-medium">
+                    <p className="text-xs sm:text-sm text-neutral-300 font-medium">
                       {item.quantity}
                     </p>
 
@@ -301,13 +301,13 @@ export default function AuctionQuickActions() {
                     </p>
 
                     {/* Bottom Metadata: Location on Left, Quoted Count on Right */}
-                    <div className="pt-2 border-t border-[#2A2A2A]/80 flex items-center justify-between text-xs text-neutral-400">
+                    <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
                       <span className="flex items-center gap-1.5 truncate max-w-[200px] sm:max-w-none">
-                        <MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                        <MapPin className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
                         <span className="truncate">{item.location}</span>
                       </span>
 
-                      <span className="flex items-center gap-1 font-bold text-white bg-[#0A0A0A]/60 px-2 py-0.5 rounded-md border border-[#2A2A2A]/50">
+                      <span className="flex items-center gap-1 font-bold text-white bg-neutral-800/60 px-2 py-0.5 rounded-md border border-neutral-700/50">
                         <Users className="w-3.5 h-3.5 text-[#FF5A1F]" />
                         <span>{item.quotedCount} Quoted</span>
                       </span>
@@ -322,7 +322,7 @@ export default function AuctionQuickActions() {
         </div>
 
         {/* Anti-Sniping & Instant Launch Footer Toolbar */}
-        <div className="mt-4 p-3 rounded-2xl bg-[#0D1526]/80 border border-[#2A2A2A] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-400">
+        <div className="mt-4 p-3 rounded-2xl bg-[#1A1A1A]/80 border border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-400">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-[#FF5A1F] shrink-0" />
             <span>
@@ -334,13 +334,13 @@ export default function AuctionQuickActions() {
             <Button
               size="sm"
               onClick={() => setCreateDialogOpen(true)}
-              className="h-8 px-3 bg-[#C94400] hover:bg-[#FF773D] text-white font-bold text-xs rounded-xl shadow-sm"
+              className="h-8 px-3 bg-[#FF5A1F] hover:bg-[#FF773D] text-white font-bold text-xs rounded-xl shadow-sm"
             >
               <Plus className="w-3.5 h-3.5 mr-1" /> Post 60-Min Auction
             </Button>
             <Link
               to="/post-requirement"
-              className="text-xs font-semibold text-slate-300 hover:text-white underline underline-offset-2"
+              className="text-xs font-semibold text-neutral-300 hover:text-white underline underline-offset-2"
             >
               Post Buyer RFQ
             </Link>

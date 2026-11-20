@@ -19,9 +19,9 @@ import {
 } from '@/lib/orderPayments';
 
 const STATUS_STYLE: Record<VisitStatus, string> = {
-  requested: 'bg-[#FF5A00]/10 text-[#C94400] dark:text-[#FF7A2E] border-[#FF5A00]/35',
-  confirmed: 'bg-[#FF5A00] text-white border-[#FF5A00]',
-  completed: 'bg-[#FF5A00]/15 text-[#B33D00] dark:text-[#FF9A5C] border-[#FF5A00]/50',
+  requested: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
+  confirmed: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
+  completed: 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30',
   declined: 'bg-muted text-muted-foreground border-border',
   cancelled: 'bg-muted text-muted-foreground border-border',
 };
@@ -104,7 +104,7 @@ export default function FactoryVisitsPage() {
   return (
     <DashboardLayout>
       <PageMeta title="Factory Visits | BulkSkart" description="Visits buyers have booked to manufacturers' factories." robots="noindex, nofollow" />
-      <div className="max-w-4xl mx-auto space-y-5 p-4 md:p-6">
+      <div className="max-w-4xl mx-auto space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-foreground flex items-center gap-2">

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { trackRFQPosted } from '@/lib/analytics';
 import SingleImageUploader from '@/components/common/SingleImageUploader';
+import '@/components/formkit/formkit.css';
 
 const UNITS = ['Pcs', 'Metres', 'Kilograms (kg)', 'Metric Tons (MT)', 'Boxes', 'Cartons', 'Liters', 'Pairs', 'Sets', 'Units'];
 const COUNTRIES = ['India', 'UAE', 'USA', 'UK', 'Germany', 'Singapore', 'Australia', 'Canada', 'China', 'Japan', 'France', 'Italy', 'Saudi Arabia', 'South Africa', 'Kenya', 'Nigeria', 'Other'];
@@ -156,6 +157,7 @@ export default function PostRequirementPage() {
       computedDeadline = new Date(now.getTime() + durationHours * 3600 * 1000).toISOString().split('T')[0];
     }
 
+    const uniqueRfqNumber = `BS-RFQ-${Math.floor(1000 + Math.random() * 9000)}`;
 
     try {
       const buyerId = user.id;
@@ -226,7 +228,7 @@ export default function PostRequirementPage() {
       <MainLayout>
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
           <div className="p-8 rounded-3xl bg-card border border-border shadow-md space-y-5">
-            <div className="w-16 h-16 rounded-2xl bg-[#FF5A00]/15 border border-[#FF5A00]/30 flex items-center justify-center mx-auto text-[#FF7A2E]">
+            <div className="w-16 h-16 rounded-2xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center mx-auto text-orange-600">
               <CheckCircle2 className="w-9 h-9" />
             </div>
 
@@ -245,8 +247,7 @@ export default function PostRequirementPage() {
             {/* Sourcing Timeline Card */}
             <div className="p-4 rounded-2xl bg-muted/40 border border-border text-left text-xs space-y-2">
               <div className="flex justify-between items-center text-foreground font-semibold">
-                <span>Next Steps & Notification Alerts:</span>
-                <span className="text-[#FF5A1F] font-bold">Within 24 Hours</span>
+                <span>What happens next</span>
               </div>
               <ul className="text-muted-foreground space-y-1 list-disc list-inside">
                 <li>Automated broadcast sent to registered factories matching category.</li>
@@ -258,7 +259,7 @@ export default function PostRequirementPage() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
               <Button
                 onClick={() => navigate(`/auctions/reverse`)}
-                className="bg-[#C94400] hover:bg-[#e04f1a] text-white font-bold h-11 px-6 rounded-xl shadow-sm"
+                className="bg-[#FF5A1F] hover:bg-[#e04f1a] text-white font-bold h-11 px-6 rounded-xl shadow-sm"
               >
                 View in Live Reverse Auctions <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
@@ -368,7 +369,7 @@ export default function PostRequirementPage() {
                 </Button>
               </Link>
               <Link to="/register?redirect=/post-requirement" className="flex-1 sm:flex-initial">
-                <Button size="sm" className="w-full text-xs font-bold bg-[#C94400] hover:bg-[#B33D00] text-white h-8.5 rounded-lg shadow-xs">
+                <Button size="sm" className="w-full text-xs font-bold bg-[#FF5A00] hover:bg-[#e04e00] text-white h-8.5 rounded-lg shadow-xs">
                   <UserPlus className="w-3.5 h-3.5 mr-1" /> Create Free Account
                 </Button>
               </Link>
@@ -376,7 +377,7 @@ export default function PostRequirementPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="fk-skin space-y-6">
           
           {/* Card 1: Product Identity & Reference Upload */}
           <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
@@ -402,8 +403,8 @@ export default function PostRequirementPage() {
 
             {/* Title */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Product Name / Requirement Title *</Label>
-              <Input
+              <Label htmlFor="rfq-product-name-requirement-title" className="text-xs font-bold text-foreground">Product Name / Requirement Title *</Label>
+              <Input id="rfq-product-name-requirement-title"
                 value={form.title}
                 onChange={e => { set('title', e.target.value); setFieldErrors(prev => ({ ...prev, title: '' })); }}
                 placeholder="e.g. Cotton Fabric – 100% Cotton (Knitted) or MS Pipe 25mm"
@@ -416,12 +417,12 @@ export default function PostRequirementPage() {
 
             {/* Category */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Industry Category *</Label>
+              <Label htmlFor="rfq-industry-category" className="text-xs font-bold text-foreground">Industry Category *</Label>
               <Select
                 value={form.categoryId}
                 onValueChange={v => { set('categoryId', v); setFieldErrors(prev => ({ ...prev, categoryId: '' })); }}
               >
-                <SelectTrigger className={`bg-background h-10 rounded-xl text-xs sm:text-sm ${
+                <SelectTrigger id="rfq-industry-category" className={`bg-background h-10 rounded-xl text-xs sm:text-sm ${
                   fieldErrors.categoryId ? 'border-destructive ring-1 ring-destructive' : 'border-border'
                 }`}>
                   <SelectValue placeholder="Select primary manufacturing category" />
@@ -442,8 +443,8 @@ export default function PostRequirementPage() {
 
             {/* Description */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Detailed Requirement Description *</Label>
-              <Textarea
+              <Label htmlFor="rfq-detailed-requirement-description" className="text-xs font-bold text-foreground">Detailed Requirement Description *</Label>
+              <Textarea id="rfq-detailed-requirement-description"
                 value={form.description}
                 onChange={e => { set('description', e.target.value); setFieldErrors(prev => ({ ...prev, description: '' })); }}
                 placeholder="State your required grade, certifications (e.g. ISO/BIS/CE), tolerances, and packaging preferences..."
@@ -457,8 +458,8 @@ export default function PostRequirementPage() {
 
             {/* Technical Specifications */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Technical Specifications / Tolerances</Label>
-              <Textarea
+              <Label htmlFor="rfq-technical-specifications-tolerances" className="text-xs font-bold text-foreground">Technical Specifications / Tolerances</Label>
+              <Textarea id="rfq-technical-specifications-tolerances"
                 value={form.specifications}
                 onChange={e => set('specifications', e.target.value)}
                 placeholder="e.g. Dimensions: 25mm diameter x 3mm thickness; Tensile strength: 410 MPa; Finish: Hot-dip galvanized."
@@ -478,8 +479,8 @@ export default function PostRequirementPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Total Quantity Required *</Label>
-                <Input
+                <Label htmlFor="rfq-total-quantity-required" className="text-xs font-bold text-foreground">Total Quantity Required *</Label>
+                <Input id="rfq-total-quantity-required"
                   type="number"
                   min="1"
                   value={form.quantity}
@@ -493,9 +494,9 @@ export default function PostRequirementPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Measurement Unit *</Label>
+                <Label htmlFor="rfq-measurement-unit" className="text-xs font-bold text-foreground">Measurement Unit *</Label>
                 <Select value={form.quantityUnit} onValueChange={v => set('quantityUnit', v)}>
-                  <SelectTrigger className="bg-background h-10 rounded-xl text-xs sm:text-sm border-border">
+                  <SelectTrigger id="rfq-measurement-unit" className="bg-background h-10 rounded-xl text-xs sm:text-sm border-border">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
@@ -511,9 +512,9 @@ export default function PostRequirementPage() {
             <div className="pt-2 border-t border-border/60">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">Currency</Label>
+                  <Label htmlFor="rfq-currency" className="text-xs font-bold text-foreground">Currency</Label>
                   <Select value={form.currency} onValueChange={v => set('currency', v)}>
-                    <SelectTrigger className="bg-background h-10 rounded-xl text-xs sm:text-sm border-border">
+                    <SelectTrigger id="rfq-currency" className="bg-background h-10 rounded-xl text-xs sm:text-sm border-border">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border">
@@ -527,8 +528,8 @@ export default function PostRequirementPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">Target Min Price / Unit</Label>
-                  <Input
+                  <Label htmlFor="rfq-target-min-price-unit" className="text-xs font-bold text-foreground">Target Min Price / Unit</Label>
+                  <Input id="rfq-target-min-price-unit"
                     type="number"
                     value={form.budgetMin}
                     onChange={e => set('budgetMin', e.target.value)}
@@ -538,8 +539,8 @@ export default function PostRequirementPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">Target Max Price / Unit</Label>
-                  <Input
+                  <Label htmlFor="rfq-target-max-price-unit" className="text-xs font-bold text-foreground">Target Max Price / Unit</Label>
+                  <Input id="rfq-target-max-price-unit"
                     type="number"
                     value={form.budgetMax}
                     onChange={e => set('budgetMax', e.target.value)}
@@ -564,12 +565,12 @@ export default function PostRequirementPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Destination Country *</Label>
+                <Label htmlFor="rfq-destination-country" className="text-xs font-bold text-foreground">Destination Country *</Label>
                 <Select
                   value={form.destinationCountry}
                   onValueChange={v => { set('destinationCountry', v); setFieldErrors(prev => ({ ...prev, destination: '' })); }}
                 >
-                  <SelectTrigger className="bg-background h-10 rounded-xl text-xs sm:text-sm border-border">
+                  <SelectTrigger id="rfq-destination-country" className="bg-background h-10 rounded-xl text-xs sm:text-sm border-border">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border max-h-56">
@@ -579,8 +580,8 @@ export default function PostRequirementPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">City / Delivery Hub *</Label>
-                <Input
+                <Label htmlFor="rfq-city-delivery-hub" className="text-xs font-bold text-foreground">City / Delivery Hub *</Label>
+                <Input id="rfq-city-delivery-hub"
                   value={form.destinationCity}
                   onChange={e => { set('destinationCity', e.target.value); setFieldErrors(prev => ({ ...prev, destinationCity: '' })); }}
                   placeholder="e.g. Tiruppur, Chennai, Ahmedabad"
@@ -592,8 +593,8 @@ export default function PostRequirementPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Pincode / Postal Code</Label>
-                <Input
+                <Label htmlFor="rfq-pincode-postal-code" className="text-xs font-bold text-foreground">Pincode / Postal Code</Label>
+                <Input id="rfq-pincode-postal-code"
                   value={form.pincode}
                   onChange={e => set('pincode', e.target.value)}
                   placeholder="e.g. 641604"
@@ -605,9 +606,9 @@ export default function PostRequirementPage() {
             {/* Closing Schedule */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border/60">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">RFQ Closing Window (Reverse Auction Duration)</Label>
+                <Label htmlFor="rfq-rfq-closing-window" className="text-xs font-bold text-foreground">RFQ Closing Window (Reverse Auction Duration)</Label>
                 <Select value={form.closingDuration} onValueChange={v => set('closingDuration', v)}>
-                  <SelectTrigger className="bg-background h-10 rounded-xl text-xs sm:text-sm border-border">
+                  <SelectTrigger id="rfq-rfq-closing-window" className="bg-background h-10 rounded-xl text-xs sm:text-sm border-border">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
@@ -619,8 +620,8 @@ export default function PostRequirementPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Expected Delivery By Date (Optional)</Label>
-                <Input
+                <Label htmlFor="rfq-expected-delivery-by-date" className="text-xs font-bold text-foreground">Expected Delivery By Date (Optional)</Label>
+                <Input id="rfq-expected-delivery-by-date"
                   type="date"
                   value={form.requiredDate}
                   min={new Date().toISOString().split('T')[0]}
@@ -633,8 +634,8 @@ export default function PostRequirementPage() {
             {/* Contact details for guest / new buyers */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border/60">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Buyer / Company Name</Label>
-                <Input
+                <Label htmlFor="rfq-buyer-company-name" className="text-xs font-bold text-foreground">Buyer / Company Name</Label>
+                <Input id="rfq-buyer-company-name"
                   value={form.buyerName}
                   onChange={e => set('buyerName', e.target.value)}
                   placeholder="e.g. Metro Fabrics Ltd"
@@ -643,8 +644,8 @@ export default function PostRequirementPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Contact Email / Phone for Quotations *</Label>
-                <Input
+                <Label htmlFor="rfq-contact-email-phone-for-quotations" className="text-xs font-bold text-foreground">Contact Email / Phone for Quotations *</Label>
+                <Input id="rfq-contact-email-phone-for-quotations"
                   value={form.buyerContact}
                   onChange={e => { set('buyerContact', e.target.value); setFieldErrors(prev => ({ ...prev, buyerContact: '' })); }}
                   placeholder="e.g. procurement@metrofabrics.com or +91 98765 43210"
@@ -677,7 +678,7 @@ export default function PostRequirementPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="flex-1 sm:flex-none h-11 px-6 rounded-xl bg-[#C94400] hover:bg-[#e04f1a] text-white font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2"
+                className="flex-1 sm:flex-none h-11 px-6 rounded-xl bg-[#FF5A1F] hover:bg-[#e04f1a] text-white font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2"
               >
                 {loading ? (
                   <>

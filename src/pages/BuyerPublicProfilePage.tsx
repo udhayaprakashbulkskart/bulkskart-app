@@ -172,7 +172,7 @@ export default function BuyerPublicProfilePage() {
           <Building2 className="mx-auto mb-3 h-10 w-10 text-[#FF5A00]" />
           <h1 className="text-xl font-bold text-foreground">Buyer profile not found</h1>
           <p className="mt-2 text-sm text-muted-foreground">This link does not match a public buyer profile.</p>
-          <Link to="/requirements" className="mt-5 inline-flex h-10 items-center rounded-xl bg-[#C94400] px-4 text-sm font-bold text-white">
+          <Link to="/requirements" className="mt-5 inline-flex h-10 items-center rounded-xl bg-[#FF5A00] px-4 text-sm font-bold text-white">
             Browse buying requests
           </Link>
         </div>
@@ -209,7 +209,7 @@ export default function BuyerPublicProfilePage() {
               {portrait ? (
                 <img src={portrait} alt="" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-[#1A0C05] text-2xl font-bold text-white">
+                <div className="flex h-full w-full items-center justify-center bg-[#FF5A00] text-2xl font-bold text-white">
                   {displayName.slice(0, 1).toUpperCase()}
                 </div>
               )}
@@ -218,7 +218,7 @@ export default function BuyerPublicProfilePage() {
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold text-foreground sm:text-2xl">{displayName}</h1>
                 {verified && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#FF5A00]/15 px-2 py-0.5 text-[11px] font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-bold text-primary">
                     <ShieldCheck className="h-3.5 w-3.5" /> Verified buyer
                   </span>
                 )}
@@ -236,7 +236,7 @@ export default function BuyerPublicProfilePage() {
               type="button"
               onClick={() => { void openChat(); }}
               disabled={openingChat}
-              className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#C94400] px-4 text-sm font-bold text-white disabled:opacity-60 sm:w-auto"
+              className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#FF5A00] px-4 text-sm font-bold text-white disabled:opacity-60 sm:w-auto"
             >
               {openingChat ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
               Chat
@@ -322,13 +322,13 @@ export default function BuyerPublicProfilePage() {
           type="button"
           onClick={() => { void openChat(); }}
           disabled={openingChat}
-          className="inline-flex h-9 items-center gap-1 rounded-lg bg-[#C94400] px-3 text-xs font-bold text-white disabled:opacity-60"
+          className="inline-flex h-9 items-center gap-1 rounded-lg bg-[#FF5A00] px-3 text-xs font-bold text-white disabled:opacity-60"
         >
           {openingChat ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
           Chat
         </button>
         {phone && <a href={telLink(phone)} className="inline-flex h-9 items-center rounded-lg border border-border px-3 text-xs font-bold">Call</a>}
-        {whatsapp && <a href={waLink(whatsapp)} className="inline-flex h-9 items-center rounded-lg border border-[#FF5A00]/40 px-3 text-xs font-bold text-[#FF7A2E] dark:text-[#FF7A2E]">WhatsApp</a>}
+        {whatsapp && <a href={waLink(whatsapp)} className="inline-flex h-9 items-center rounded-lg border border-orange-500/40 px-3 text-xs font-bold text-orange-700 dark:text-orange-300">WhatsApp</a>}
         {email && !phone && !whatsapp && <a href={`mailto:${email}`} className="inline-flex h-9 items-center rounded-lg border border-border px-3 text-xs font-bold">Email</a>}
       </div>
     </MainLayout>

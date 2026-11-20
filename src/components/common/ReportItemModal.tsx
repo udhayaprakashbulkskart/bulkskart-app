@@ -1,25 +1,23 @@
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { AlertTriangle, CheckCircle, ShieldAlert, Loader2 } from 'lucide-react';
+import React, { useId, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { EyeOff, FileText, Flag, Loader2, LogIn, Mail, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Actions,
+  CountedTextArea,
+  Done,
+  EntityCard,
+  Field,
+  FormDialog,
+  IconBox,
+  KitButton,
+  NativeSelect,
+  SectionTitle,
+  type FormPoint,
+} from '@/components/formkit';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
+import { SUPPORT_EMAIL } from '@/lib/supportContact';
 
 interface ReportItemModalProps {
   open: boolean;
@@ -39,202 +37,185 @@ const REPORT_REASONS = [
   { value: 'other', label: 'Other Regulatory or Policy Violation' },
 ];
 
-export default function ReportItemModal({
-  open,
-  onOpenChange,
-  targetType,
-  targetId,
-  targetTitle,
-}: ReportItemModalProps) {
+const POINTS: FormPoint[] = [
+  { icon: ShieldCheck, title: 'Sent to the BulkSkart team' },
+  { icon: FileText, title: 'Say what is wrong', detail: 'A reason and a few details' },
+  { icon: EyeOff, title: 'Not shown to the seller', detail: 'Only the BulkSkart team sees it' },
+];
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const NAMES: Record<ReportItemModalProps['targetType'], string> = {
+  product: 'Product',
+  company: 'Supplier',
+  requirement: 'Requirement',
+  auction: 'Auction',
+};
+
+/**
+ * Report a listing. A signed-in person's report is saved to the `reports` table, where the admin panel lists it;
+ * someone who is not signed in can e-mail it instead (a report always has a reporter).
+ */
+export default function ReportItemModal({ open, onOpenChange, targetType, targetId, targetTitle }: ReportItemModalProps) {
   const { user } = useAuth();
-  const [reason, setReason] = useState<string>('');
+  const ids = useId();
+  const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
-  const [contactEmail, setContactEmail] = useState(user?.email || '');
+  const [errors, setErrors] = useState<{ reason?: string; notes?: string }>({});
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [ticketId, setTicketId] = useState('');
+  const [sent, setSent] = useState(false);
+  const [reference, setReference] = useState('');
+
+  const name = NAMES[targetType];
+  const reasonLabel = REPORT_REASONS.find((r) => r.value === reason)?.label ?? reason;
+  const mailto = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Report: ${name} "${targetTitle}"`)}&body=${encodeURIComponent(
+    `${name}: ${targetTitle}\nID: ${targetId}\nPage: ${typeof window !== 'undefined' ? window.location.href : ''}\n\nReason: ${reasonLabel || ''}\n\nDetails:\n${notes}`,
+  )}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reason) {
-      toast.error('Please select a violation reason.');
+    const found: typeof errors = {};
+    if (!reason) found.reason = 'Please select a reason.';
+    if (notes.trim().length < 10) found.notes = 'Please describe the issue in at least 10 characters.';
+    setErrors(found);
+    if (found.reason || found.notes) {
+      document.getElementById(found.reason ? `${ids}-reason` : `${ids}-notes`)?.focus();
       return;
     }
-    if (!notes.trim() || notes.trim().length < 10) {
-      toast.error('Please provide at least 10 characters describing the issue.');
-      return;
-    }
-
-    // Signed-in visitors: the report is saved for the BulkSkart team (Admin reports).
-    // Visitors who are not signed in: their e-mail app opens with the report ready to send to us.
-    if (!user) {
-      const subject = `Report: ${targetType} "${targetTitle}"`;
-      const body = `${targetType}: ${targetTitle}\nID: ${targetId}\nPage: ${window.location.href}\n\nReason: ${reason}\n\nDetails:\n${notes.trim()}\n\nReply to: ${contactEmail || ''}`;
-      window.location.href = `mailto:info@bulkskart.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      setTicketId('');
-      setSubmitted(true);
-      return;
-    }
+    if (!user) return;
 
     setLoading(true);
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
     const { data, error } = await supabase
       .from('reports')
       .insert({
         reporter_id: user.id,
         reason,
-        description: `[${targetType}] ${targetTitle} (${targetId})\n\n${notes.trim()}`,
-        reported_product_id: targetType === 'product' && isUuid ? targetId : null,
-        reported_company_id: targetType === 'company' && isUuid ? targetId : null,
+        description: `[${name}] ${targetTitle} (${targetId})\n\n${notes.trim()}`,
+        reported_product_id: targetType === 'product' && UUID.test(targetId) ? targetId : null,
+        reported_company_id: targetType === 'company' && UUID.test(targetId) ? targetId : null,
       })
       .select('id')
       .maybeSingle();
     setLoading(false);
     if (error) {
-      toast.error('Your report could not be sent. Please try again, or e-mail info@bulkskart.com.');
+      toast.error('Your report could not be sent. Please try again, or e-mail it to us.');
       return;
     }
-    const reference = String(data?.id ?? '').slice(0, 8).toUpperCase();
-    setTicketId(reference);
-    setSubmitted(true);
-    toast.success(reference ? `Report sent (Ref #${reference}).` : 'Report sent.');
+    setReference(String(data?.id ?? '').slice(0, 8).toUpperCase());
+    setSent(true);
   };
 
   const handleClose = () => {
     onOpenChange(false);
     setTimeout(() => {
-      setSubmitted(false);
+      setSent(false);
+      setReference('');
       setReason('');
       setNotes('');
-      setTicketId('');
+      setErrors({});
     }, 300);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-lg bg-[#1A0C05] border-[#2A2A2A] text-white p-6 rounded-2xl shadow-2xl">
-        <DialogHeader className="mb-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#FF5A00]/15 border border-[#FF5A00]/30 flex items-center justify-center shrink-0">
-              <ShieldAlert className="w-5 h-5 text-[#FF7A2E]" />
-            </div>
-            <div>
-              <DialogTitle className="text-base sm:text-lg font-bold text-white">
-                Report {targetType === 'company' ? 'Supplier' : 'Product'}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-neutral-400 mt-0.5">
-                BulkSkart Trust &amp; Safety Compliance Division
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+    <FormDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) handleClose();
+      }}
+      busy={loading}
+      title={
+        <>
+          Report <em>{name}</em>
+        </>
+      }
+      description="Tell us what is wrong with this listing."
+      points={POINTS}
+      width={980}
+    >
+      {sent ? (
+        <Done
+          title="Report received"
+          actions={
+            <Actions single>
+              <KitButton onClick={handleClose}>Done</KitButton>
+            </Actions>
+          }
+        >
+          <p>Thank you. Your report has been sent to the BulkSkart team.</p>
+          {reference && (
+            <p>
+              Your reference: <b>{reference}</b>
+            </p>
+          )}
+        </Done>
+      ) : (
+        <form onSubmit={handleSubmit} noValidate className="fk-form fk-stack">
+          <EntityCard fallbackIcon={Flag} name={targetTitle} byLabel="Reporting:" by={name} />
 
-        {submitted ? (
-          <div className="py-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-[#FF5A00]/20 border border-[#FF5A00]/40 text-[#FF7A2E] flex items-center justify-center mx-auto">
-              <CheckCircle className="w-7 h-7" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white mb-1">{ticketId ? 'Report sent' : 'Send the e-mail to finish'}</h3>
-              <p className="text-xs text-slate-300 max-w-sm mx-auto">
-                {ticketId
-                  ? 'Thank you. The BulkSkart team will review your report.'
-                  : 'Your e-mail app opened with the report filled in. Send it to info@bulkskart.com and we will review it. Signed-in users can report directly.'}
-              </p>
-              {ticketId && (
-                <div className="mt-3 inline-block px-3 py-1.5 rounded-lg bg-[#0A0A0A]/80 border border-[#2A2A2A] text-xs text-slate-300 font-mono">
-                  Reference: <span className="text-[#FF5A1F] font-bold">{ticketId}</span>
-                </div>
-              )}
-            </div>
-            <div className="pt-2">
-              <Button
-                onClick={handleClose}
-                className="w-full bg-[#C94400] hover:bg-[#e04f1a] text-white font-semibold text-xs h-10 rounded-xl"
+          <SectionTitle>What is wrong</SectionTitle>
+
+          <Field htmlFor={`${ids}-reason`} label="Reason for reporting" required error={errors.reason}>
+            <IconBox icon={ShieldAlert}>
+              <NativeSelect
+                id={`${ids}-reason`}
+                value={reason}
+                onChange={(e) => {
+                  setReason(e.target.value);
+                  setErrors((prev) => ({ ...prev, reason: undefined }));
+                }}
+                invalid={Boolean(errors.reason)}
+                iconPadding
               >
-                Done
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 pt-1">
-            <div className="p-3 rounded-xl bg-[#0A0A0A]/60 border border-[#2A2A2A] text-xs">
-              <span className="text-neutral-400 block mb-0.5">Target Entity:</span>
-              <p className="font-semibold text-white truncate">{targetTitle}</p>
-            </div>
+                <option value="">Select a reason…</option>
+                {REPORT_REASONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </NativeSelect>
+            </IconBox>
+          </Field>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Reason for reporting <span className="text-[#FF7A2E]">*</span>
-              </label>
-              <Select value={reason} onValueChange={setReason}>
-                <SelectTrigger className="w-full bg-[#070D1F] border-[#2A2A2A] text-slate-200 text-xs h-10 rounded-xl">
-                  <SelectValue placeholder="Select a violation category..." />
-                </SelectTrigger>
-                <SelectContent className="bg-[#1A0C05] border-[#2A2A2A] text-slate-200 text-xs">
-                  {REPORT_REASONS.map((r) => (
-                    <SelectItem key={r.value} value={r.value} className="hover:bg-[#0A0A0A] cursor-pointer py-2">
-                      {r.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <Field htmlFor={`${ids}-notes`} label="Details & Evidence" required error={errors.notes} hint="At least 10 characters.">
+            <CountedTextArea
+              id={`${ids}-notes`}
+              icon={FileText}
+              rows={4}
+              maxLength={1000}
+              value={notes}
+              onChange={(e) => {
+                setNotes(e.target.value);
+                setErrors((prev) => ({ ...prev, notes: undefined }));
+              }}
+              placeholder="Please describe why this listing breaks BulkSkart policies (e.g. inaccurate specs, fake certification, price gouging)..."
+              invalid={Boolean(errors.notes)}
+            />
+          </Field>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Details &amp; Evidence <span className="text-[#FF7A2E]">*</span>
-              </label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Please describe why this listing violates BulkSkart policies (e.g., inaccurate specs, fake certification, price gouging)..."
-                className="bg-[#070D1F] border-[#2A2A2A] text-slate-200 text-xs rounded-xl min-h-[90px] focus:ring-1 focus:ring-[#FF5A1F]"
-              />
-              <span className="text-[10px] text-neutral-400">Min 10 characters</span>
-            </div>
-
-            {!user && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">
-                  Your Contact Email (for updates)
-                </label>
-                <Input
-                  type="email"
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  placeholder="yourname@company.com"
-                  className="bg-[#070D1F] border-[#2A2A2A] text-slate-200 text-xs h-10 rounded-xl"
-                />
-              </div>
-            )}
-
-            <div className="pt-2 flex items-center justify-end gap-2.5">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="border-[#2A2A2A] bg-transparent text-slate-300 hover:bg-[#0A0A0A] text-xs h-10 rounded-xl"
-              >
+          {user ? (
+            <Actions>
+              <KitButton type="submit" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Flag aria-hidden="true" />}
+                {loading ? 'Sending…' : 'Submit Report'}
+              </KitButton>
+              <KitButton variant="ghost" onClick={handleClose} disabled={loading}>
                 Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="bg-[#B33D00] hover:bg-[#B33D00] text-white font-semibold text-xs h-10 rounded-xl px-5"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Submitting...
-                  </>
-                ) : (
-                  'Submit Report'
-                )}
-              </Button>
-            </div>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
+              </KitButton>
+            </Actions>
+          ) : (
+            <>
+              <p className="fk-note">Reports are sent from a BulkSkart account. Log in to send it here, or e-mail it to us.</p>
+              <Actions>
+                <Link to="/auth?tab=login" className="fk-btn is-primary">
+                  <LogIn aria-hidden="true" /> Log in to report
+                </Link>
+                <a href={mailto} className="fk-btn is-ghost">
+                  <Mail aria-hidden="true" /> E-mail it
+                </a>
+              </Actions>
+            </>
+          )}
+        </form>
+      )}
+    </FormDialog>
   );
 }

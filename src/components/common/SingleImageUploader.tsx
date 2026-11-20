@@ -122,8 +122,8 @@ export default function SingleImageUploader({
     <div className={`space-y-2 ${className}`}>
       {label && <label className="text-xs sm:text-sm font-medium text-foreground block">{label}</label>}
 
-      {/* Banners are full width, so they always stack; square/circle previews sit beside their text on larger screens. */}
-      <div className={`flex flex-col ${shape === 'banner' || shape === 'rectangle' ? '' : 'sm:flex-row sm:items-center'} items-start gap-4 w-full min-w-0`}>
+      {/* a wide banner takes the whole row, so its notes go under it instead of being squeezed beside it */}
+      <div className={`flex flex-col items-start gap-4 ${shape === 'banner' ? '' : 'sm:flex-row sm:items-center'}`}>
         {/* Visual Box */}
         <div
           onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
@@ -146,7 +146,7 @@ export default function SingleImageUploader({
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
               {!disabled && (
-                <div className="absolute inset-0 bg-[#0A0A0A]/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs font-medium p-2 text-center">
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-xs font-medium p-2 text-center">
                   <Camera className="w-5 h-5 mb-0.5" />
                   <span>Change Image</span>
                 </div>

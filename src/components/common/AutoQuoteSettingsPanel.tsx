@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Zap, Clock, RefreshCw, Info } from 'lucide-react';
+import '@/components/formkit/formkit.css';
 
 interface Settings {
   id?: string;
@@ -116,7 +117,7 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="fk-skin space-y-6">
       {/* Toggle row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Auto-send */}
@@ -142,9 +143,9 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
         </div>
 
         {/* Require approval */}
-        <div className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${settings.require_approval && !settings.auto_send_enabled ? 'border-[#FF5A00]/40 bg-[#FF5A00]/30' : 'border-border bg-muted/20'}`}>
-          <div className="w-9 h-9 rounded-full bg-[#FF5A00]/10 flex items-center justify-center shrink-0">
-            <Clock className="w-4 h-4 text-[#FF7A2E]" />
+        <div className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${settings.require_approval && !settings.auto_send_enabled ? 'border-orange-400/40 bg-orange-50/30' : 'border-border bg-muted/20'}`}>
+          <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+            <Clock className="w-4 h-4 text-orange-600" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
@@ -177,8 +178,8 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
       {/* Default values */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Validity (days)</Label>
-          <Input
+          <Label htmlFor="autoquote-validity" className="text-xs text-muted-foreground">Validity (days)</Label>
+          <Input id="autoquote-validity"
             type="number" min={1}
             value={settings.default_validity_days}
             onChange={e => set('default_validity_days', Number(e.target.value))}
@@ -186,8 +187,8 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Delivery (days)</Label>
-          <Input
+          <Label htmlFor="autoquote-delivery" className="text-xs text-muted-foreground">Delivery (days)</Label>
+          <Input id="autoquote-delivery"
             type="number" min={1}
             value={settings.default_delivery_days}
             onChange={e => set('default_delivery_days', Number(e.target.value))}
@@ -195,8 +196,8 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Shipping % of subtotal</Label>
-          <Input
+          <Label htmlFor="autoquote-shipping-of-subtotal" className="text-xs text-muted-foreground">Shipping % of subtotal</Label>
+          <Input id="autoquote-shipping-of-subtotal"
             type="number" min={0} max={100} step={0.5}
             value={settings.shipping_rate_pct}
             onChange={e => set('shipping_rate_pct', Number(e.target.value))}
@@ -204,8 +205,8 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Tax (GST %)</Label>
-          <Input
+          <Label htmlFor="autoquote-tax" className="text-xs text-muted-foreground">Tax (GST %)</Label>
+          <Input id="autoquote-tax"
             type="number" min={0} max={100} step={0.5}
             value={settings.tax_rate_pct}
             onChange={e => set('tax_rate_pct', Number(e.target.value))}
@@ -216,8 +217,8 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Other Fixed Charges (₹)</Label>
-          <Input
+          <Label htmlFor="autoquote-other-fixed-charges" className="text-xs text-muted-foreground">Other Fixed Charges (₹)</Label>
+          <Input id="autoquote-other-fixed-charges"
             type="number" min={0}
             value={settings.other_charges}
             onChange={e => set('other_charges', Number(e.target.value))}
@@ -225,8 +226,8 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Default Payment Terms</Label>
-          <Input
+          <Label htmlFor="autoquote-default-payment-terms" className="text-xs text-muted-foreground">Default Payment Terms</Label>
+          <Input id="autoquote-default-payment-terms"
             value={settings.default_payment_terms}
             onChange={e => set('default_payment_terms', e.target.value)}
             placeholder="e.g. T/T 30% advance"
@@ -236,8 +237,8 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Terms & Conditions (included in every auto-quote)</Label>
-        <Textarea
+        <Label htmlFor="autoquote-terms-conditions" className="text-xs text-muted-foreground">Terms & Conditions (included in every auto-quote)</Label>
+        <Textarea id="autoquote-terms-conditions"
           value={settings.terms_and_conditions}
           onChange={e => set('terms_and_conditions', e.target.value)}
           rows={3}
@@ -249,7 +250,7 @@ export default function AutoQuoteSettingsPanel({ companyId }: Props) {
       <Button
         onClick={handleSave}
         disabled={saving}
-        className="bg-[#C94400] text-primary-foreground hover:bg-primary/90 gap-2 h-9 px-5"
+        className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 h-9 px-5"
       >
         {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
         {saving ? 'Saving…' : 'Save Auto-Quote Settings'}

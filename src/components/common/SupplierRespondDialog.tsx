@@ -4,22 +4,37 @@
  * Lets a supplier submit a quotation/response to a requirement.
  * Completely additive — does not touch any existing page code.
  */
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Send, Upload } from 'lucide-react';
+import React, { useId, useState } from 'react';
+import { BadgeIndianRupee, Bell, Box, CalendarClock, Clock, FileText, Loader2, MapPin, Paperclip, Send, Truck, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Actions,
+  CountedTextArea,
+  EntityCard,
+  Field,
+  FormDialog,
+  IconBox,
+  KitButton,
+  NativeSelect,
+  SectionTitle,
+  Stepper,
+  TextInput,
+  DELIVERY_TERMS,
+  PAYMENT_TERMS,
+  type EntityMeta,
+  type FormPoint,
+} from '@/components/formkit';
 import { createQuotation } from '@/lib/api';
 import { supabase } from '@/db/supabase';
 import type { Requirement, Quotation } from '@/types/types';
 
 const UNITS = ['Pcs', 'KG', 'Tons', 'MT', 'Litre', 'Box', 'Carton', 'Dozen', 'Set', 'Pair', 'Metre', 'Yard'];
-const PAYMENT_TERMS = ['100% Advance', '50% Advance', 'LC 30 Days', 'LC 60 Days', 'Net 30', 'Net 60', 'CAD', 'TT'];
-const DELIVERY_TERMS = ['Ex-Works', 'FOB', 'CIF', 'C&F', 'DAP', 'DDP'];
+
+const POINTS: FormPoint[] = [
+  { icon: BadgeIndianRupee, title: 'Your price and terms', detail: 'Unit price, MOQ, delivery' },
+  { icon: Bell, title: 'The buyer is notified', detail: 'As soon as you send it' },
+  { icon: Paperclip, title: 'Photos or documents', detail: 'Up to 5 files' },
+];
 
 interface Props {
   open: boolean;
@@ -31,6 +46,8 @@ interface Props {
 }
 
 export default function SupplierRespondDialog({ open, onClose, requirement, supplierId, supplierCompanyId, onResponded }: Props) {
+  const ids = useId();
+  const [priceError, setPriceError] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [attachmentUrls, setAttachmentUrls] = useState<string[]>([]);
@@ -73,8 +90,11 @@ export default function SupplierRespondDialog({ open, onClose, requirement, supp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.unit_price || isNaN(Number(form.unit_price)) || Number(form.unit_price) <= 0) {
-      toast.error('Enter a valid unit price'); return;
+      setPriceError('Enter a valid unit price');
+      document.getElementById(`${ids}-price`)?.focus();
+      return;
     }
+    setPriceError('');
     setLoading(true);
     // Use unknown cast so extended DB columns (shipping_cost, available_quantity) pass through
     const payload = {
@@ -105,130 +125,153 @@ export default function SupplierRespondDialog({ open, onClose, requirement, supp
     onClose();
   };
 
+  const meta: EntityMeta[] = [{ icon: Box, children: `Needs ${requirement.quantity.toLocaleString('en-IN')} ${requirement.quantity_unit}` }];
+  const place = [requirement.destination_city, requirement.destination_country].filter(Boolean).join(', ');
+  if (place) meta.push({ icon: MapPin, children: place });
+
   return (
-    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-2xl max-h-[90dvh] overflow-y-auto bg-card">
-        <DialogHeader>
-          <DialogTitle className="text-[17px] font-black text-foreground flex items-center gap-2">
-            <Send className="w-4 h-4 text-[#FF5A00]" /> Respond to Requirement
-          </DialogTitle>
-          <DialogDescription className="text-[12px] text-muted-foreground">
-            <span className="font-semibold text-foreground">{requirement.title}</span> · {requirement.quantity.toLocaleString()} {requirement.quantity_unit}
-          </DialogDescription>
-        </DialogHeader>
+    <FormDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+      busy={loading || uploading}
+      title={
+        <>
+          Respond to <em>Requirement</em>
+        </>
+      }
+      description="Send the buyer your price and terms for this requirement."
+      points={POINTS}
+      sheetArt="quote"
+    >
+      <form onSubmit={handleSubmit} noValidate className="fk-form fk-stack">
+        <EntityCard fallbackIcon={FileText} name={requirement.title} meta={meta} />
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
-          {/* Available Qty + Unit */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-foreground">Available Quantity</Label>
-              <Input type="number" min="1" value={form.available_quantity} onChange={e => set('available_quantity', e.target.value)}
-                placeholder={`e.g. ${requirement.quantity}`} className="border-border text-[13px] h-9" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-foreground">Unit</Label>
-              <Select value={form.moq_unit} onValueChange={v => set('moq_unit', v)}>
-                <SelectTrigger className="border-border text-[13px] h-9"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-popover border-border">{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
+        <SectionTitle>Your Quote</SectionTitle>
 
-          {/* Price + Currency */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-foreground">Unit Price <span className="text-[#FF7A2E]">*</span></Label>
-              <Input type="number" min="0.01" step="0.01" value={form.unit_price} onChange={e => set('unit_price', e.target.value)}
-                placeholder="e.g. 85.00" className="border-border text-[13px] h-9" required />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-foreground">Currency</Label>
-              <Select value={form.currency} onValueChange={v => set('currency', v)}>
-                <SelectTrigger className="border-border text-[13px] h-9"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-popover border-border">
-                  {['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        <div className="fk-grid">
+          <Field htmlFor={`${ids}-price`} label="Unit Price" required error={priceError}>
+            <IconBox icon={Wallet} accent>
+              <TextInput
+                id={`${ids}-price`}
+                type="number"
+                inputMode="decimal"
+                min="0.01"
+                step="0.01"
+                value={form.unit_price}
+                onChange={(e) => {
+                  set('unit_price', e.target.value);
+                  if (priceError) setPriceError('');
+                }}
+                placeholder="e.g. 85.00"
+                invalid={Boolean(priceError)}
+                iconPadding
+              />
+            </IconBox>
+          </Field>
+          <Field htmlFor={`${ids}-currency`} label="Currency">
+            <NativeSelect id={`${ids}-currency`} value={form.currency} onChange={(e) => set('currency', e.target.value)}>
+              {['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD'].map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Field htmlFor={`${ids}-available`} label="Available Quantity">
+            <Stepper id={`${ids}-available`} value={form.available_quantity} onChange={(v) => set('available_quantity', v)} min={1} unitName={form.moq_unit} />
+          </Field>
+          <Field htmlFor={`${ids}-unit`} label="Unit">
+            <IconBox icon={Box}>
+              <NativeSelect id={`${ids}-unit`} value={form.moq_unit} onChange={(e) => set('moq_unit', e.target.value)} iconPadding>
+                {(UNITS.includes(form.moq_unit) ? UNITS : [form.moq_unit, ...UNITS]).map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </NativeSelect>
+            </IconBox>
+          </Field>
+          <Field htmlFor={`${ids}-moq`} label="MOQ">
+            <Stepper id={`${ids}-moq`} value={form.moq} onChange={(v) => set('moq', v)} min={1} unitName={form.moq_unit} />
+          </Field>
+          <Field htmlFor={`${ids}-days`} label="Delivery Time (days)">
+            <IconBox icon={Clock}>
+              <TextInput id={`${ids}-days`} type="number" inputMode="numeric" min="1" value={form.delivery_days} onChange={(e) => set('delivery_days', e.target.value)} placeholder="e.g. 14" iconPadding />
+            </IconBox>
+          </Field>
+          <Field htmlFor={`${ids}-shipping`} label="Shipping Cost" optional>
+            <IconBox icon={Truck}>
+              <TextInput
+                id={`${ids}-shipping`}
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                value={form.shipping_cost}
+                onChange={(e) => set('shipping_cost', e.target.value)}
+                placeholder="e.g. 2500"
+                iconPadding
+              />
+            </IconBox>
+          </Field>
+          <Field htmlFor={`${ids}-valid`} label="Quote Valid For (days)">
+            <IconBox icon={CalendarClock}>
+              <TextInput id={`${ids}-valid`} type="number" inputMode="numeric" min="1" value={form.validity_days} onChange={(e) => set('validity_days', e.target.value)} iconPadding />
+            </IconBox>
+          </Field>
+          <Field htmlFor={`${ids}-payment`} label="Payment Terms">
+            <NativeSelect id={`${ids}-payment`} value={form.payment_terms} onChange={(e) => set('payment_terms', e.target.value)}>
+              <option value="">Select…</option>
+              {PAYMENT_TERMS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Field htmlFor={`${ids}-delivery`} label="Delivery Terms">
+            <NativeSelect id={`${ids}-delivery`} value={form.delivery_terms} onChange={(e) => set('delivery_terms', e.target.value)}>
+              {DELIVERY_TERMS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+        </div>
 
-          {/* MOQ + Delivery days */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-foreground">MOQ</Label>
-              <Input type="number" min="1" value={form.moq} onChange={e => set('moq', e.target.value)}
-                placeholder="Min order qty" className="border-border text-[13px] h-9" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-foreground">Delivery Time (days)</Label>
-              <Input type="number" min="1" value={form.delivery_days} onChange={e => set('delivery_days', e.target.value)}
-                placeholder="e.g. 14" className="border-border text-[13px] h-9" />
-            </div>
-          </div>
+        <Field htmlFor={`${ids}-notes`} label="Additional Message" optional>
+          <CountedTextArea
+            id={`${ids}-notes`}
+            icon={FileText}
+            rows={3}
+            maxLength={1000}
+            value={form.notes}
+            onChange={(e) => set('notes', e.target.value)}
+            placeholder="Introduce your company, highlight USPs, mention certifications..."
+          />
+        </Field>
 
-          {/* Shipping Cost + Validity */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-foreground">Shipping Cost (optional)</Label>
-              <Input type="number" min="0" step="0.01" value={form.shipping_cost} onChange={e => set('shipping_cost', e.target.value)}
-                placeholder="e.g. 2500" className="border-border text-[13px] h-9" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-foreground">Quote Valid For (days)</Label>
-              <Input type="number" min="1" value={form.validity_days} onChange={e => set('validity_days', e.target.value)}
-                className="border-border text-[13px] h-9" />
-            </div>
-          </div>
+        <Field label="Product Images / Documents" optional hint="Up to 5 files, 10 MB each.">
+          <label className="fk-upload">
+            <Paperclip aria-hidden="true" />
+            <span>{uploading ? 'Uploading…' : attachmentUrls.length > 0 ? `${attachmentUrls.length} file(s) uploaded` : 'Choose files'}</span>
+            <input type="file" className="sr-only" multiple accept="image/*,.pdf,.doc,.docx" onChange={handleFileUpload} disabled={uploading} />
+          </label>
+        </Field>
 
-          {/* Payment + Delivery terms */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-foreground">Payment Terms</Label>
-              <Select value={form.payment_terms} onValueChange={v => set('payment_terms', v)}>
-                <SelectTrigger className="border-border text-[13px] h-9"><SelectValue placeholder="Select…" /></SelectTrigger>
-                <SelectContent className="bg-popover border-border">{PAYMENT_TERMS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-foreground">Delivery Terms</Label>
-              <Select value={form.delivery_terms} onValueChange={v => set('delivery_terms', v)}>
-                <SelectTrigger className="border-border text-[13px] h-9"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-popover border-border">{DELIVERY_TERMS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Message */}
-          <div className="space-y-1.5">
-            <Label className="text-[12px] font-semibold text-foreground">Additional Message</Label>
-            <Textarea value={form.notes} onChange={e => set('notes', e.target.value)}
-              placeholder="Introduce your company, highlight USPs, mention certifications..."
-              className="border-border text-[13px] min-h-[80px] resize-none" />
-          </div>
-
-          {/* File upload */}
-          <div className="space-y-1.5">
-            <Label className="text-[12px] font-semibold text-foreground">Product Images / Documents (optional, up to 5 files, 10 MB each)</Label>
-            <label className="flex items-center gap-2 border border-dashed border-border rounded-lg px-4 py-3 cursor-pointer hover:border-[#FF5A00] transition-colors group">
-              <Upload className="w-4 h-4 text-muted-foreground group-hover:text-[#FF5A00]" />
-              <span className="text-[12px] text-muted-foreground group-hover:text-[#FF5A00]">
-                {uploading ? 'Uploading…' : attachmentUrls.length > 0 ? `${attachmentUrls.length} file(s) uploaded` : 'Choose files'}
-              </span>
-              <input type="file" className="hidden" multiple accept="image/*,.pdf,.doc,.docx" onChange={handleFileUpload} disabled={uploading} />
-            </label>
-          </div>
-
-          <div className="flex gap-3 pt-1">
-            <Button type="button" variant="ghost" onClick={onClose} className="flex-1 border border-border text-muted-foreground hover:bg-muted">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || uploading}
-              className="flex-1 bg-[#1A0C05] hover:bg-[#1A0C05] text-white font-bold gap-2 shadow-[0_2px_0_#b83c00]">
-              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : <><Send className="w-4 h-4" /> Submit Response</>}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <Actions>
+          <KitButton type="submit" disabled={loading || uploading}>
+            {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+            {loading ? 'Submitting…' : 'Submit Response'}
+          </KitButton>
+          <KitButton variant="ghost" onClick={onClose} disabled={loading}>
+            Cancel
+          </KitButton>
+        </Actions>
+      </form>
+    </FormDialog>
   );
 }

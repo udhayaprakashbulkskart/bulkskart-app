@@ -41,6 +41,11 @@ export interface PromotionCheckoutOptions {
   onError?: (err: string) => void;
 }
 
+/** "Business" becomes "Business Plan"; a label that already says what it is ("Business Plan", "AI Accessibility Add-on") is left as it is. */
+export function planDisplayName(label: string): string {
+  return /\b(?:plan|add-on)\b/i.test(label) ? label : `${label} Plan`;
+}
+
 declare global {
   interface Window {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -106,7 +111,7 @@ export function useRazorpay() {
         currency,
         order_id,
         name: 'BulkSkart B2B Marketplace',
-        description: `${opts.plan_label} Plan — ${opts.billing_cycle}`,
+        description: `${planDisplayName(opts.plan_label)} — ${opts.billing_cycle}`,
         image: '/logo-mark.png',
         prefill: {
           name: opts.user_name ?? '',
@@ -139,7 +144,7 @@ export function useRazorpay() {
             return;
           }
 
-          toast.success(`🎉 ${opts.plan_label} plan activated! Welcome to BulkSkart.`);
+          toast.success(`🎉 ${planDisplayName(opts.plan_label)} activated! Welcome to BulkSkart.`);
           opts.onSuccess?.();
           setLoading(false);
           navigate(`/payment-success?plan=${encodeURIComponent(opts.plan_tier)}`);

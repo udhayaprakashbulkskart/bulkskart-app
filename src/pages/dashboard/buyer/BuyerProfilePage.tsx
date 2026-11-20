@@ -19,6 +19,7 @@ import PageMeta from '@/components/common/PageMeta';
 import { Link } from 'react-router-dom';
 import { buyerPublicUrl, copyText } from '@/lib/supplierPublicProfile';
 import SingleImageUploader from '@/components/common/SingleImageUploader';
+import '@/components/formkit/formkit.css';
 
 const BUSINESS_TYPES = [
   'Wholesaler / Distributor',
@@ -263,7 +264,7 @@ export default function BuyerProfilePage() {
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Header with Avatar Uploader */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border bg-card/40 p-4 rounded-xl border">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-4 min-w-0">
             <SingleImageUploader
               value={formData.avatarUrl}
               onChange={url => setFormData(p => ({ ...p, avatarUrl: url || '' }))}
@@ -273,8 +274,8 @@ export default function BuyerProfilePage() {
               className="shrink-0"
               placeholderIcon={<User className="w-7 h-7 text-primary/70" />}
             />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 min-w-0">
                 <h1 className="text-xl md:text-2xl font-bold text-foreground truncate">{formData.fullName || 'Buyer Account'}</h1>
                 <Badge variant="outline" className="text-xs capitalize font-semibold border-primary/30 text-primary shrink-0">
                   Buyer
@@ -288,8 +289,8 @@ export default function BuyerProfilePage() {
           <div className="flex items-center gap-2 shrink-0">
             <Link to="/dashboard/buyer/verification">
               <Badge className={`text-xs px-3 py-1 gap-1 cursor-pointer hover:opacity-90 transition-opacity ${
-                kycStatus === 'verified' ? 'bg-[#B33D00] text-white' :
-                kycStatus === 'pending' ? 'bg-[#FF5A00]/20 text-[#FF7A2E] border border-[#FF5A00]/40' :
+                kycStatus === 'verified' ? 'bg-primary text-primary-foreground' :
+                kycStatus === 'pending' ? 'bg-orange-500/20 text-orange-500 border border-orange-500/40' :
                 'bg-muted text-muted-foreground border border-border'
               }`}>
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -317,7 +318,7 @@ export default function BuyerProfilePage() {
                   if (ok) toast.success('Public profile link copied');
                   else toast.error('Select the link and copy it');
                 }}
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-[#C94400] px-3 text-xs font-bold text-white"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-[#FF5A00] px-3 text-xs font-bold text-white"
               >
                 Copy
               </button>
@@ -329,7 +330,7 @@ export default function BuyerProfilePage() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSaveProfile} className="space-y-6">
+        <form onSubmit={handleSaveProfile} className="fk-skin space-y-6">
           {/* Personal & Account Info */}
           <Card>
             <CardHeader className="pb-3">
@@ -528,7 +529,7 @@ export default function BuyerProfilePage() {
           <div className="flex justify-end gap-3">
             <Button
               type="submit"
-              className="bg-[#C94400] hover:bg-primary/90 text-primary-foreground h-10 px-6 font-semibold"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 px-6 font-semibold"
               disabled={saving}
             >
               {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
@@ -546,7 +547,7 @@ export default function BuyerProfilePage() {
             <CardDescription>Update your account password</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handlePasswordChange} className="space-y-4">
+            <form onSubmit={handlePasswordChange} className="fk-skin space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="newPassword">New Password</Label>
@@ -599,7 +600,7 @@ export default function BuyerProfilePage() {
               </div>
             </div>
             <Link to="/dashboard/buyer/verification" className="shrink-0">
-              <Button size="sm" className="bg-[#1A0C05] text-primary-foreground gap-1.5">
+              <Button size="sm" className="bg-primary text-primary-foreground gap-1.5">
                 Go to KYC Verification <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </Link>

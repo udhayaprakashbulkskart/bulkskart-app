@@ -10,6 +10,7 @@ import { supabase } from '@/db/supabase';
 import { toast } from 'sonner';
 import { ShieldCheck, Upload, FileText, CheckCircle2, Clock, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
+import '@/components/formkit/formkit.css';
 
 const toHex = (s: string) =>
   Array.from(new TextEncoder().encode(s), (b) => b.toString(16).padStart(2, '0')).join('');
@@ -119,9 +120,9 @@ export default function SupplierVerificationPage() {
 
   const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
     unverified: { label: 'Not Submitted', color: 'bg-muted text-muted-foreground', icon: <FileText className="w-4 h-4" /> },
-    pending: { label: 'Under Review', color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40', icon: <Clock className="w-4 h-4" /> },
-    verified: { label: 'Verified', color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40', icon: <CheckCircle2 className="w-4 h-4" /> },
-    rejected: { label: 'Rejected', color: 'bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40', icon: <XCircle className="w-4 h-4" /> },
+    pending: { label: 'Under Review', color: 'bg-orange-100 text-orange-700 border-orange-300', icon: <Clock className="w-4 h-4" /> },
+    verified: { label: 'Verified', color: 'bg-primary/10 text-primary border-primary/30', icon: <CheckCircle2 className="w-4 h-4" /> },
+    rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700 border-red-300', icon: <XCircle className="w-4 h-4" /> },
   };
 
   const status = companyData?.verification_status || 'unverified';
@@ -178,23 +179,23 @@ export default function SupplierVerificationPage() {
                   {sc.icon} {sc.label}
                 </div>
                 {expiry && status === 'verified' && (
-                  <p className={`text-xs mt-1 ${isExpired ? 'text-[#FF7A2E]' : isExpiringSoon ? 'text-[#FF7A2E]' : 'text-muted-foreground'}`}>
+                  <p className={`text-xs mt-1 ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-orange-600' : 'text-muted-foreground'}`}>
                     Verification {isExpired ? 'expired' : `expires`}: {expiry.toLocaleDateString()}
                     {isExpiringSoon && !isExpired && ` (${daysToExpiry} days left)`}
                   </p>
                 )}
               </div>
               {status === 'verified' && (
-                <Badge className="bg-[#B33D00] text-white gap-1 shrink-0 text-xs sm:text-sm">
+                <Badge className="bg-primary text-primary-foreground gap-1 shrink-0 text-xs sm:text-sm">
                   <ShieldCheck className="w-3.5 h-3.5" /> Verified Manufacturer
                 </Badge>
               )}
             </div>
             {(isExpiringSoon || isExpired) && (
-              <div className={`mt-3 p-3 rounded-lg border ${isExpired ? 'bg-destructive/10 border-destructive/20' : 'bg-[#FF5A00]/10 border-[#FF5A00]/30'}`}>
+              <div className={`mt-3 p-3 rounded-lg border ${isExpired ? 'bg-destructive/10 border-destructive/20' : 'bg-orange-500/10 border-orange-500/30'}`}>
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className={`w-4 h-4 shrink-0 ${isExpired ? 'text-destructive' : 'text-[#FF7A2E]'}`} />
-                  <p className={`text-xs sm:text-sm font-medium ${isExpired ? 'text-destructive' : 'text-[#FF7A2E]'}`}>
+                  <AlertTriangle className={`w-4 h-4 shrink-0 ${isExpired ? 'text-destructive' : 'text-orange-500'}`} />
+                  <p className={`text-xs sm:text-sm font-medium ${isExpired ? 'text-destructive' : 'text-orange-500'}`}>
                     {isExpired ? 'Verification expired — re-verify to accept new orders' : `Verification expiring soon — re-verify before ${expiry?.toLocaleDateString()}`}
                   </p>
                 </div>
@@ -210,7 +211,7 @@ export default function SupplierVerificationPage() {
         </Card>
 
         {(canEdit || isExpiringSoon || isExpired) && (
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 w-full min-w-0">
+          <form onSubmit={handleSubmit} className="fk-skin space-y-4 sm:space-y-5 w-full min-w-0">
             {/* Business documents */}
             <Card className="w-full overflow-hidden">
               <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
@@ -220,8 +221,8 @@ export default function SupplierVerificationPage() {
               <CardContent className="p-4 sm:p-6 pt-2 sm:pt-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 w-full min-w-0">
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">GST Number</Label>
-                    <Input
+                    <Label htmlFor="sverify-gst-number" className="text-xs sm:text-sm font-medium">GST Number</Label>
+                    <Input id="sverify-gst-number"
                       value={form.gst_number}
                       placeholder="e.g. 22AAAAA0000A1Z5"
                       onChange={e => setForm(p => ({ ...p, gst_number: e.target.value }))}
@@ -229,8 +230,8 @@ export default function SupplierVerificationPage() {
                     />
                   </div>
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">PAN Number</Label>
-                    <Input
+                    <Label htmlFor="sverify-pan-number" className="text-xs sm:text-sm font-medium">PAN Number</Label>
+                    <Input id="sverify-pan-number"
                       value={form.pan_number}
                       placeholder="e.g. AAAAA0000A"
                       onChange={e => setForm(p => ({ ...p, pan_number: e.target.value }))}
@@ -249,8 +250,8 @@ export default function SupplierVerificationPage() {
               <CardContent className="p-4 sm:p-6 pt-2 sm:pt-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 w-full min-w-0">
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">Account Holder Name</Label>
-                    <Input
+                    <Label htmlFor="sverify-account-holder-name" className="text-xs sm:text-sm font-medium">Account Holder Name</Label>
+                    <Input id="sverify-account-holder-name"
                       value={form.bank_account_name}
                       placeholder="As per bank passbook / cheque"
                       onChange={e => setForm(p => ({ ...p, bank_account_name: e.target.value }))}
@@ -258,8 +259,8 @@ export default function SupplierVerificationPage() {
                     />
                   </div>
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">Account Number</Label>
-                    <Input
+                    <Label htmlFor="sverify-account-number" className="text-xs sm:text-sm font-medium">Account Number</Label>
+                    <Input id="sverify-account-number"
                       value={form.bank_account_number}
                       placeholder="Bank account number"
                       onChange={e => setForm(p => ({ ...p, bank_account_number: e.target.value }))}
@@ -267,8 +268,8 @@ export default function SupplierVerificationPage() {
                     />
                   </div>
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">IFSC Code</Label>
-                    <Input
+                    <Label htmlFor="sverify-ifsc-code" className="text-xs sm:text-sm font-medium">IFSC Code</Label>
+                    <Input id="sverify-ifsc-code"
                       value={form.bank_ifsc}
                       placeholder="e.g. SBIN0001234"
                       onChange={e => setForm(p => ({ ...p, bank_ifsc: e.target.value }))}
@@ -276,8 +277,8 @@ export default function SupplierVerificationPage() {
                     />
                   </div>
                   <div className="space-y-1.5 min-w-0 w-full">
-                    <Label className="text-xs sm:text-sm font-medium">Bank Name</Label>
-                    <Input
+                    <Label htmlFor="sverify-bank-name" className="text-xs sm:text-sm font-medium">Bank Name</Label>
+                    <Input id="sverify-bank-name"
                       value={form.bank_name}
                       placeholder="Bank name and branch"
                       onChange={e => setForm(p => ({ ...p, bank_name: e.target.value }))}
@@ -301,9 +302,9 @@ export default function SupplierVerificationPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-xs sm:text-sm font-medium truncate">{label}</p>
                         {docs[key] ? (
-                          <p className="text-[11px] sm:text-xs text-[#FF7A2E] truncate font-medium">{docs[key]!.name}</p>
+                          <p className="text-[11px] sm:text-xs text-orange-600 truncate font-medium">{docs[key]!.name}</p>
                         ) : existing ? (
-                          <p className="text-[11px] sm:text-xs text-[#FF7A2E] font-medium">Uploaded ✓</p>
+                          <p className="text-[11px] sm:text-xs text-orange-600 font-medium">Uploaded ✓</p>
                         ) : (
                           <p className="text-[11px] sm:text-xs text-muted-foreground">No file selected</p>
                         )}
@@ -328,7 +329,7 @@ export default function SupplierVerificationPage() {
               </CardContent>
             </Card>
 
-            <Button type="submit" className="w-full bg-[#C94400] hover:bg-primary/90 text-primary-foreground h-11 mb-6 md:mb-0" disabled={saving}>
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 mb-6 md:mb-0" disabled={saving}>
               {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
               {saving ? 'Submitting…' : isExpiringSoon || isExpired ? 'Submit Re-verification' : 'Submit for Verification'}
             </Button>
@@ -338,7 +339,7 @@ export default function SupplierVerificationPage() {
         {status === 'pending' && !isExpiringSoon && !isExpired && (
           <Card>
             <CardContent className="text-center py-10">
-              <Clock className="w-10 h-10 text-[#FF7A2E] mx-auto mb-3" />
+              <Clock className="w-10 h-10 text-orange-500 mx-auto mb-3" />
               <h3 className="font-semibold text-foreground">Documents under review</h3>
               <p className="text-sm text-muted-foreground mt-1">Admin typically reviews within 1–2 business days. You'll be notified.</p>
             </CardContent>
@@ -348,7 +349,7 @@ export default function SupplierVerificationPage() {
         {status === 'verified' && !isExpiringSoon && !isExpired && (
           <Card>
             <CardContent className="text-center py-10">
-              <CheckCircle2 className="w-10 h-10 text-[#FF7A2E] mx-auto mb-3" />
+              <CheckCircle2 className="w-10 h-10 text-primary mx-auto mb-3" />
               <h3 className="font-semibold text-foreground">Your business is fully verified!</h3>
               <p className="text-sm text-muted-foreground mt-1">Verified Manufacturer badge is active. You can accept orders.</p>
             </CardContent>

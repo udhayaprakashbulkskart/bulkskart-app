@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -23,15 +22,15 @@ import Breadcrumbs from '@/components/common/Breadcrumbs';
 import CompanyReviewsAndRatingSection from '@/components/common/CompanyReviewsAndRatingSection';
 import ReportItemModal from '@/components/common/ReportItemModal';
 import BookFactoryVisitDialog from '@/components/common/BookFactoryVisitDialog';
+import { formatPriceRange, productCurrency } from '@/lib/productPrice';
 
-const FALLBACK_BANNER = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80';
 
 function StarRating({ rating, count }: { rating: number; count: number }) {
   return (
     <div className="flex items-center gap-1.5">
       <div className="flex items-center gap-0.5">
         {[1,2,3,4,5].map(i => (
-          <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-[#FF7A2E] fill-[#FF5A00]' : 'text-muted-foreground'}`} />
+          <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-orange-400 fill-orange-400' : 'text-muted-foreground'}`} />
         ))}
       </div>
       <span className="text-xs text-muted-foreground">({count} {count === 1 ? 'review' : 'reviews'})</span>
@@ -44,10 +43,10 @@ function CertBadge({ cert }: { cert: CompanyCertification }) {
   const label = cert.cert_type === 'iso' || cert.cert_type === 'other' ? cert.cert_name : labels[cert.cert_type];
   if (!label) return null;
   return (
-    <div className="flex items-center gap-1.5 bg-[#FF5A00]/10 border border-[#FF5A00]/25 rounded-lg px-3 py-1.5">
-      <CheckCircle className="w-3.5 h-3.5 text-[#FF7A2E] shrink-0" />
+    <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/25 rounded-lg px-3 py-1.5">
+      <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
       <div>
-        <p className="text-xs font-medium text-[#FF7A2E]">{label}</p>
+        <p className="text-xs font-medium text-primary">{label}</p>
         {cert.cert_number && <p className="text-xs text-muted-foreground">{cert.cert_number}</p>}
       </div>
     </div>
@@ -124,7 +123,7 @@ export default function CompanyProfilePage() {
         <h2 className="text-xl font-bold text-foreground">Manufacturer Not Found</h2>
         <p className="text-sm text-muted-foreground">The requested company profile does not exist or may have been unlisted.</p>
         <Link to="/manufacturers">
-          <Button className="bg-[#C94400] hover:bg-[#B33D00] text-white font-bold h-10 px-5 rounded-xl">
+          <Button className="bg-[#FF5A00] hover:bg-[#e04f00] text-white font-bold h-10 px-5 rounded-xl">
             Browse Verified Manufacturers
           </Button>
         </Link>
@@ -151,6 +150,7 @@ export default function CompanyProfilePage() {
     }
     setVisitOpen(true);
   };
+
   const copyProfileLink = async () => {
     publicLinkRef.current?.focus();
     publicLinkRef.current?.select();
@@ -227,8 +227,7 @@ export default function CompanyProfilePage() {
               description: prod.description,
               url: `https://www.bulkskart.com/products/${prod.slug || prod.id}`,
             },
-            price: prod.price_min || prod.price_max || '0',
-            priceCurrency: prod.price_currency || 'USD',
+            ...(prod.price_min || prod.price_max ? { price: prod.price_min || prod.price_max, priceCurrency: productCurrency(prod.price_currency) } : {}),
           })),
         },
       } : {}),
@@ -280,14 +279,19 @@ export default function CompanyProfilePage() {
         {/* ── Hero / Banner ── */}
         <div className="bg-card border border-border rounded-xl overflow-hidden mb-6 shadow-sm">
           <div className="relative aspect-[21/9] md:h-56 max-h-56 w-full overflow-hidden bg-muted">
-            <SafeImage
-              src={company.cover_url || company.banner_url || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80'}
-              alt={company.company_name}
-              category={company.business_type}
-              isRepresentativeImage={true}
-              type="banner"
-              className="w-full h-full object-cover"
-            />
+            {company.cover_url || company.banner_url ? (
+              <SafeImage
+                src={(company.cover_url || company.banner_url) as string}
+                alt={company.company_name}
+                category={company.business_type}
+                isRepresentativeImage={true}
+                type="banner"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              // No cover photo added: a plain brand backdrop instead of a stock picture
+              <div className="w-full h-full bg-gradient-to-br from-[#242424] via-[#2e2e2e] to-[#FF5A00]/40" aria-hidden="true" />
+            )}
             {/* gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           </div>
@@ -308,7 +312,7 @@ export default function CompanyProfilePage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-xl md:text-2xl font-bold text-foreground break-words">{company.company_name}</h1>
                     {(company.is_verified || company.verification_status === 'verified') && (
-                      <Badge className="bg-[#FF5A00]/20 text-[#FF7A2E] border-[#FF5A00]/30 text-xs gap-1">
+                      <Badge className="bg-primary/15 text-primary border-primary/30 text-xs gap-1">
                         <ShieldCheck className="w-3 h-3" /> Verified Business
                       </Badge>
                     )}
@@ -343,7 +347,7 @@ export default function CompanyProfilePage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowReportModal(true)}
-                  className="border-[#FF5A00]/40 text-[#FF7A2E] hover:bg-[#B33D00]/10 gap-1.5 h-9"
+                  className="border-red-500/40 text-red-500 hover:bg-red-500/10 gap-1.5 h-9"
                   title="Report this Supplier"
                 >
                   <Flag className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Report</span>
@@ -369,7 +373,7 @@ export default function CompanyProfilePage() {
                     setDirectChatProduct(null);
                     setChatOpen(true);
                   }}
-                  className="bg-[#C94400] text-primary-foreground hover:bg-primary/90 gap-1.5 h-9 font-bold shadow-sm"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 h-9 font-bold shadow-sm"
                 >
                   <MessageSquare className="w-3.5 h-3.5" /> Chat with Supplier
                 </Button>
@@ -401,7 +405,7 @@ export default function CompanyProfilePage() {
           <button
             type="button"
             onClick={copyProfileLink}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#C94400] px-3 text-xs font-bold text-white"
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#FF5A00] px-3 text-xs font-bold text-white"
           >
             {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             {linkCopied ? 'Copied' : 'Copy'}
@@ -411,8 +415,8 @@ export default function CompanyProfilePage() {
         {/* ── Quick Stats ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
-            { label: 'Products Listed', value: company.total_products, icon: Package },
-            { label: 'Quotes Sent', value: company.total_quotes_sent, icon: FileText },
+            { label: 'Products Listed', value: company.total_products ?? products.length, icon: Package },
+            { label: 'Quotes Sent', value: company.total_quotes_sent ?? 0, icon: FileText },
             { label: 'Export Countries', value: company.export_destinations?.length ?? 0, icon: Globe },
             { label: 'Member Since', value: new Date(company.created_at).getFullYear(), icon: Calendar },
           ].map(stat => {
@@ -463,18 +467,16 @@ export default function CompanyProfilePage() {
                 {(!(company as any).gallery_images || (company as any).gallery_images.length === 0) && !company.cover_url ? (
                   <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground text-sm">
                     <Camera className="w-8 h-8 mx-auto mb-2 opacity-40 text-primary" />
-                    Facility photos are being auto-synced. Check back in a moment!
+                    This company has not added facility photos yet.
                   </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-xs text-muted-foreground pb-1 border-b border-border">
                       <span className="flex items-center gap-1.5 font-medium text-foreground">
-                        <Sparkles className="w-3.5 h-3.5 text-primary" />
-                        Verified Facility & Production Showcase
+                        <Camera className="w-3.5 h-3.5 text-primary" />
+                        Facility & production photos
                       </span>
-                      <span className="text-[11px] text-[#FF7A2E] font-mono">
-                        Auto-refreshed via 1-Min Image Engine
-                      </span>
+                      <span className="text-[11px] text-muted-foreground">Added by the company</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                       {Array.from(new Set([
@@ -526,12 +528,11 @@ export default function CompanyProfilePage() {
                               {p.name}
                             </Link>
                             <p className="text-xs text-muted-foreground mt-0.5">MOQ: {p.moq.toLocaleString()} {p.moq_unit}</p>
-                            {p.price_min && (
+                            {(p.price_min || p.price_max) && (
                               <p className="text-xs text-primary font-semibold mt-1">
-                                {p.price_currency} {p.price_min.toLocaleString()}{p.price_max ? ` – ${p.price_max.toLocaleString()}` : '+'}
+                                {formatPriceRange(p.price_min, p.price_max, p.price_currency, productCurrency(p.price_currency))}
                               </p>
                             )}
-                            <LoanEligibleTag size="sm" link className="mt-1.5" />
                           </div>
                           <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center gap-2">
                             <Button
@@ -607,7 +608,7 @@ export default function CompanyProfilePage() {
                   companyName={company.company_name}
                   reviews={reviews}
                   onReviewAdded={(newRev) => setReviews((prev) => [newRev, ...prev])}
-                  avgRating={company.rating_avg || 4.9}
+                  avgRating={Number(company.rating_avg) || 0}
                 />
               </TabsContent>
             </Tabs>
@@ -667,7 +668,7 @@ export default function CompanyProfilePage() {
                   </a>
                 ) : null}
                 {whatsapp ? (
-                  <a href={waLink(whatsapp)} target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-2 rounded-lg border border-[#FF5A00]/30 bg-[#FF5A00]/10 px-3 text-sm font-semibold text-[#FF7A2E] dark:text-[#FF7A2E]">
+                  <a href={waLink(whatsapp)} target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-2 rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 text-sm font-semibold text-orange-700 dark:text-orange-300">
                     <MessageSquare className="w-4 h-4 shrink-0" />
                     <span className="truncate">WhatsApp {whatsapp}</span>
                   </a>
@@ -696,7 +697,7 @@ export default function CompanyProfilePage() {
                     setDirectChatProduct(null);
                     setChatOpen(true);
                   }}
-                  className="w-full bg-[#C94400] text-primary-foreground hover:bg-primary/90 h-10 font-bold text-xs gap-1.5 shadow-sm"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 font-bold text-xs gap-1.5 shadow-sm"
                 >
                   <MessageSquare className="w-4 h-4" /> Chat with Supplier
                 </Button>
@@ -742,9 +743,8 @@ export default function CompanyProfilePage() {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border px-4 py-2.5 flex items-center justify-between gap-3 shadow-lg">
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold text-foreground truncate">{company.company_name}</p>
-          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#C94400] inline-block" />
-            Online • Ready for quotes
+          <p className="text-[11px] text-muted-foreground truncate">
+            {[company.city, company.country].filter(Boolean).join(', ') || 'Send an enquiry'}
           </p>
         </div>
         <Button
@@ -753,7 +753,7 @@ export default function CompanyProfilePage() {
             setDirectChatProduct(null);
             setChatOpen(true);
           }}
-          className="bg-[#C94400] text-primary-foreground hover:bg-primary/90 h-9 px-4 font-bold gap-1.5 text-xs shadow-md shrink-0"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 font-bold gap-1.5 text-xs shadow-md shrink-0"
         >
           <MessageSquare className="w-3.5 h-3.5" /> Chat
         </Button>

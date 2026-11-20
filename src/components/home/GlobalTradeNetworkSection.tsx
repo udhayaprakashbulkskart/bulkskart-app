@@ -5,17 +5,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown, Globe, Ship, ArrowRight, ChevronRight, MapPin, Circle } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-/** Reference routes for display. Distances and transit times are approximate and must be verified before quoting. */
-const POPULAR_ROUTES = [
-  { from: 'Los Angeles', fromFlag: '🇺🇸', to: 'New York & NJ', toFlag: '🇺🇸', approx: '~ 5,483 km', days: '6–8 Days' },
-  { from: 'New York & NJ', fromFlag: '🇺🇸', to: 'Singapore', toFlag: '🇸🇬', approx: '~ 15,349 km', days: '18–22 Days' },
-  { from: 'Los Angeles', fromFlag: '🇺🇸', to: 'Shanghai', toFlag: '🇨🇳', approx: '~ 10,473 km', days: '12–16 Days' },
-  { from: 'Mumbai', fromFlag: '🇮🇳', to: 'Dubai', toFlag: '🇦🇪', approx: '~ 1,930 km', days: '3–5 Days' },
-  { from: 'Chennai', fromFlag: '🇮🇳', to: 'Singapore', toFlag: '🇸🇬', approx: '~ 4,928 km', days: '7–10 Days' },
-];
+import { ChevronDown } from 'lucide-react';
 
 export default function GlobalTradeNetworkSection() {
   const [selectedRegion, setSelectedRegion] = useState('Select Region');
@@ -31,10 +21,10 @@ export default function GlobalTradeNetworkSection() {
   return (
     <section className="relative z-20 max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 mb-6 sm:mb-10">
       {/* ── Main Glassmorphism Rounded Container (Exact Reference Style) ── */}
-      <div className="relative rounded-3xl bg-[#060B18] border border-[#FF5A00] p-4 sm:p-6 md:p-8 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+      <div className="relative rounded-3xl bg-[#060B18] border border-[#262626] p-4 sm:p-6 md:p-8 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
         
         {/* Subtle Ambient Glowing Halos */}
-        <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-[#C94400] blur-[140px] pointer-events-none rounded-full" />
+        <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-[#FF5900]/5 blur-[140px] pointer-events-none rounded-full" />
         <div className="absolute bottom-0 left-10 w-[400px] h-[400px] bg-[#FF5A1F]/5 blur-[140px] pointer-events-none rounded-full" />
 
         {/* ── Header Row: Orange Anchor Icon + Title + Region Dropdown ── */}
@@ -42,15 +32,30 @@ export default function GlobalTradeNetworkSection() {
           <div className="flex items-center gap-3 sm:gap-3.5">
             {/* Orange Harbor/Anchor Glyph Container */}
             <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-gradient-to-br from-[#FF5A1F]/25 to-[#FF3B00]/10 border border-[#FF5A1F]/35 flex items-center justify-center shrink-0 shadow-lg shadow-[#FF5A1F]/15">
-              <Globe className="w-6 h-6 text-[#FF5A1F]" strokeWidth={2} />
+              <svg
+                className="w-6 h-6 text-[#FF5A1F]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {/* Custom Maritime Anchor / Port Terminal Icon */}
+                <circle cx="12" cy="5" r="2.5" />
+                <path d="M12 7.5v9.5" />
+                <path d="M5 11h14" />
+                <path d="M5 14a7 7 0 0 0 14 0" />
+                <path d="M4 19h16" />
+              </svg>
             </div>
 
             <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
-                Global Trade <span className="text-[#FF5A1F]">Routes</span>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
+                Global Trade Routes
               </h2>
               <p className="text-xs sm:text-sm text-neutral-400 font-normal mt-0.5">
-                Discover major ports, shipping routes and global trade opportunities
+                Discover major ports and shipping routes
               </p>
             </div>
           </div>
@@ -61,21 +66,21 @@ export default function GlobalTradeNetworkSection() {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-xl border border-[#2A2A2A]/80 bg-[#0B1528]/90 hover:bg-[#C94400] text-slate-200 hover:text-white font-medium text-xs sm:text-sm flex items-center gap-2 transition-all shadow-sm focus:outline-none"
+                  className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-xl border border-neutral-700/80 bg-[#1A1A1A]/90 hover:bg-[#272727] text-neutral-200 hover:text-white font-medium text-xs sm:text-sm flex items-center gap-2 transition-all shadow-sm focus:outline-none"
                 >
                   <span>{selectedRegion}</span>
                   <ChevronDown className="w-4 h-4 text-neutral-400" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-[#0B1528] border-[#2A2A2A] text-slate-200 text-xs">
+              <DropdownMenuContent align="end" className="w-48 bg-[#1A1A1A] border-neutral-700 text-neutral-200 text-xs">
                 {regions.map((region) => (
                   <DropdownMenuItem
                     key={region}
                     onClick={() => setSelectedRegion(region)}
-                    className="cursor-pointer hover:bg-[#0A0A0A] hover:text-white flex items-center justify-between py-2"
+                    className="cursor-pointer hover:bg-neutral-800 hover:text-white flex items-center justify-between py-2"
                   >
                     <span>{region}</span>
-                    {selectedRegion === region && <span className="w-1.5 h-1.5 rounded-full bg-[#C94400]" />}
+                    {selectedRegion === region && <span className="w-1.5 h-1.5 rounded-full bg-[#FF5A1F]" />}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -83,20 +88,19 @@ export default function GlobalTradeNetworkSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* ── Proportionally Scaled SVG World Map Canvas (Exact to Reference Photo) ── */}
-        <div className="trade-map-in relative w-full h-[380px] md:h-auto md:aspect-[1000/540] rounded-2xl bg-[#040813] border border-[#2A2A2A]/80 overflow-x-auto md:overflow-hidden shadow-2xl flex items-center justify-start md:justify-center select-none">
-
+        <div className="relative w-full aspect-[1000/540] rounded-2xl bg-[#040813] border border-neutral-800/80 overflow-hidden shadow-2xl flex items-center justify-center select-none">
+          
           <svg
-            className="w-full h-full block min-w-[720px] md:min-w-0"
+            className="w-full h-full block"
             viewBox="0 0 1000 540"
             preserveAspectRatio="xMidYMid meet"
           >
             <defs>
               {/* Electric Cyan & Soft Blue Gradients for Routes */}
               <linearGradient id="routeCyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#00D2FF" stopOpacity="0.95" />
-                <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.95" />
+                <stop offset="0%" stopColor="#FF5900" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#F87B38" stopOpacity="0.95" />
               </linearGradient>
 
               {/* Glowing Warm Orange Gradient for India/Asia Corridors */}
@@ -154,41 +158,11 @@ export default function GlobalTradeNetworkSection() {
               .nhava-pulse {
                 animation: nhavaPulseRing 2.2s ease-in-out infinite;
               }
-              @keyframes tradeMapIn {
-                from { opacity: 0; transform: scale(0.97); }
-                to { opacity: 1; transform: none; }
-              }
-              @keyframes tradeRowIn {
-                from { opacity: 0; transform: translateX(18px); }
-                to { opacity: 1; transform: none; }
-              }
-              .trade-map-in { animation: tradeMapIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
-              .trade-row { animation: tradeRowIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; transition: box-shadow 0.3s, border-color 0.3s; }
-              .trade-row:hover { box-shadow: 0 0 22px -6px rgba(255, 90, 31, 0.65); }
-              @media (prefers-reduced-motion: reduce) {
-                .route-dotted-cyan, .route-dotted-orange, .port-pulse, .nhava-pulse, .trade-row, .trade-map-in { animation: none !important; }
-              }
             `}</style>
-
-            {/* Light trails travelling along the main routes */}
-            {[
-              { d: 'M 95,230 Q 170,185 245,220', dur: '5s', begin: '0s' },
-              { d: 'M 245,220 Q 365,130 485,185', dur: '6s', begin: '1.6s' },
-              { d: 'M 485,185 Q 545,220 575,235 Q 600,250 625,275', dur: '5.5s', begin: '3.2s' },
-            ].map((c, i) => (
-              <g key={`trail-${i}`}>
-                <circle r="6" fill="#00D2FF" fillOpacity="0.22">
-                  <animateMotion dur={c.dur} begin={c.begin} repeatCount="indefinite" path={c.d} />
-                </circle>
-                <circle r="2.8" fill="#E6FBFF" filter="url(#routeGlow)">
-                  <animateMotion dur={c.dur} begin={c.begin} repeatCount="indefinite" path={c.d} />
-                </circle>
-              </g>
-            ))}
 
             {/* ── 1. DOTTED CONTINENTAL LANDMASSES MATRIX ── */}
             {/* North America Dotted Cloud */}
-            <g fill="#00D2FF" fillOpacity="0.22">
+            <g fill="#FF5900" fillOpacity="0.22">
               {/* Canada & Alaska */}
               {[
                 [70,80],[85,75],[100,75],[115,70],[130,70],[145,65],[160,70],[175,70],[190,75],[205,75],
@@ -224,7 +198,7 @@ export default function GlobalTradeNetworkSection() {
             </g>
 
             {/* South America Dotted Cloud */}
-            <g fill="#00D2FF" fillOpacity="0.22">
+            <g fill="#FF5900" fillOpacity="0.22">
               {[
                 [220,315],[235,310],[250,310],[265,315],[280,320],
                 [215,330],[230,325],[245,325],[260,330],[275,335],[290,340],[305,345],
@@ -243,7 +217,7 @@ export default function GlobalTradeNetworkSection() {
             </g>
 
             {/* Europe Dotted Cloud */}
-            <g fill="#00D2FF" fillOpacity="0.25">
+            <g fill="#FF5900" fillOpacity="0.25">
               {[
                 // UK & Scandinavia
                 [440,110],[455,105],[470,105],[485,110],
@@ -260,7 +234,7 @@ export default function GlobalTradeNetworkSection() {
             </g>
 
             {/* Africa Dotted Cloud */}
-            <g fill="#00D2FF" fillOpacity="0.22">
+            <g fill="#FF5900" fillOpacity="0.22">
               {[
                 // North Africa
                 [440,210],[455,205],[470,205],[485,210],[500,210],[515,215],[530,215],[545,220],[560,220],
@@ -285,7 +259,7 @@ export default function GlobalTradeNetworkSection() {
             </g>
 
             {/* South Africa Yellow/Orange Accent Dots (as in Reference) */}
-            <g fill="#FFB800" fillOpacity="0.45">
+            <g fill="#FF5900" fillOpacity="0.45">
               {[
                 [520,350],[535,355],[525,370],[540,375],[530,390],[545,395],[535,405]
               ].map(([x, y], i) => (
@@ -294,7 +268,7 @@ export default function GlobalTradeNetworkSection() {
             </g>
 
             {/* Asia Dotted Cloud */}
-            <g fill="#00D2FF" fillOpacity="0.25">
+            <g fill="#FF5900" fillOpacity="0.25">
               {[
                 // Russia & North Asia
                 [560,105],[580,100],[600,100],[620,95],[640,95],[660,95],[680,100],[700,100],[720,95],[740,95],[760,100],[780,100],[800,105],[820,105],[840,110],[860,110],
@@ -323,7 +297,7 @@ export default function GlobalTradeNetworkSection() {
             </g>
 
             {/* India Subcontinent Dotted Cloud */}
-            <g fill="#00D2FF" fillOpacity="0.32">
+            <g fill="#FF5900" fillOpacity="0.32">
               {[
                 [610,195],[625,190],[640,190],[655,195],[670,195],
                 [605,210],[620,205],[635,205],[650,210],[665,210],[680,215],
@@ -341,7 +315,7 @@ export default function GlobalTradeNetworkSection() {
             </g>
 
             {/* Australia Dotted Cloud */}
-            <g fill="#00D2FF" fillOpacity="0.22">
+            <g fill="#FF5900" fillOpacity="0.22">
               {[
                 [780,360],[795,355],[810,355],[825,360],[840,360],[855,365],
                 [775,375],[790,370],[805,370],[820,375],[835,375],[850,380],[865,385],
@@ -518,13 +492,13 @@ export default function GlobalTradeNetworkSection() {
             {/* PORT 1: Port of Los Angeles (95, 230) */}
             <g id="portLA">
               {/* Outer Subtle Pulse */}
-              <circle cx="95" cy="230" r="14" fill="#00D2FF" fillOpacity="0.25" className="port-pulse" />
+              <circle cx="95" cy="230" r="14" fill="#FF5900" fillOpacity="0.25" className="port-pulse" />
               {/* Blue Beacon Pin */}
-              <circle cx="95" cy="230" r="11" fill="#0077FF" stroke="#00D2FF" strokeWidth="2.5" filter="url(#portGlow)" />
+              <circle cx="95" cy="230" r="11" fill="#FF5900" stroke="#FF5900" strokeWidth="2.5" filter="url(#portGlow)" />
               <circle cx="95" cy="230" r="4" fill="#FFFFFF" />
               {/* Label Pill: "Port of Los Angeles" */}
               <g transform="translate(112, 217)">
-                <rect width="118" height="26" rx="6" fill="#061229" fillOpacity="0.9" stroke="#1E3A5F" strokeWidth="1" />
+                <rect width="118" height="26" rx="6" fill="#181818" fillOpacity="0.9" stroke="#3F3F3F" strokeWidth="1" />
                 <text x="10" y="17" fill="#FFFFFF" fontSize="11" fontWeight="600" fontFamily="sans-serif">
                   Port of Los Angeles
                 </text>
@@ -534,13 +508,13 @@ export default function GlobalTradeNetworkSection() {
             {/* PORT 2: Port of New York & NJ (245, 220) */}
             <g id="portNY">
               {/* Outer Subtle Pulse */}
-              <circle cx="245" cy="220" r="14" fill="#00D2FF" fillOpacity="0.25" className="port-pulse" />
+              <circle cx="245" cy="220" r="14" fill="#FF5900" fillOpacity="0.25" className="port-pulse" />
               {/* Blue Beacon Pin */}
-              <circle cx="245" cy="220" r="11" fill="#0077FF" stroke="#00D2FF" strokeWidth="2.5" filter="url(#portGlow)" />
+              <circle cx="245" cy="220" r="11" fill="#FF5900" stroke="#FF5900" strokeWidth="2.5" filter="url(#portGlow)" />
               <circle cx="245" cy="220" r="4" fill="#FFFFFF" />
               {/* Label Pill: "Port of New York & NJ" */}
               <g transform="translate(262, 207)">
-                <rect width="130" height="26" rx="6" fill="#061229" fillOpacity="0.9" stroke="#1E3A5F" strokeWidth="1" />
+                <rect width="130" height="26" rx="6" fill="#181818" fillOpacity="0.9" stroke="#3F3F3F" strokeWidth="1" />
                 <text x="10" y="17" fill="#FFFFFF" fontSize="11" fontWeight="600" fontFamily="sans-serif">
                   Port of New York &amp; NJ
                 </text>
@@ -550,13 +524,13 @@ export default function GlobalTradeNetworkSection() {
             {/* PORT 3: Port of Rotterdam (485, 185) */}
             <g id="portRotterdam">
               {/* Outer Subtle Pulse */}
-              <circle cx="485" cy="185" r="14" fill="#00D2FF" fillOpacity="0.25" className="port-pulse" />
+              <circle cx="485" cy="185" r="14" fill="#FF5900" fillOpacity="0.25" className="port-pulse" />
               {/* Blue Beacon Pin */}
-              <circle cx="485" cy="185" r="11" fill="#0077FF" stroke="#00D2FF" strokeWidth="2.5" filter="url(#portGlow)" />
+              <circle cx="485" cy="185" r="11" fill="#FF5900" stroke="#FF5900" strokeWidth="2.5" filter="url(#portGlow)" />
               <circle cx="485" cy="185" r="4" fill="#FFFFFF" />
               {/* Label Pill: "Port of Rotterdam" */}
               <g transform="translate(502, 172)">
-                <rect width="114" height="26" rx="6" fill="#061229" fillOpacity="0.9" stroke="#1E3A5F" strokeWidth="1" />
+                <rect width="114" height="26" rx="6" fill="#181818" fillOpacity="0.9" stroke="#3F3F3F" strokeWidth="1" />
                 <text x="10" y="17" fill="#FFFFFF" fontSize="11" fontWeight="600" fontFamily="sans-serif">
                   Port of Rotterdam
                 </text>
@@ -566,13 +540,13 @@ export default function GlobalTradeNetworkSection() {
             {/* PORT 4: Ningbo Zhoushan & Shanghai (755, 240) */}
             <g id="portNingbo">
               {/* Outer Subtle Pulse */}
-              <circle cx="755" cy="240" r="14" fill="#00D2FF" fillOpacity="0.25" className="port-pulse" />
+              <circle cx="755" cy="240" r="14" fill="#FF5900" fillOpacity="0.25" className="port-pulse" />
               {/* Blue Beacon Pin */}
-              <circle cx="755" cy="240" r="11" fill="#0077FF" stroke="#00D2FF" strokeWidth="2.5" filter="url(#portGlow)" />
+              <circle cx="755" cy="240" r="11" fill="#FF5900" stroke="#FF5900" strokeWidth="2.5" filter="url(#portGlow)" />
               <circle cx="755" cy="240" r="4" fill="#FFFFFF" />
               {/* Label Pill: "Ningbo Zhoushan & Shanghai" */}
               <g transform="translate(772, 227)">
-                <rect width="170" height="26" rx="6" fill="#061229" fillOpacity="0.9" stroke="#1E3A5F" strokeWidth="1" />
+                <rect width="170" height="26" rx="6" fill="#181818" fillOpacity="0.9" stroke="#3F3F3F" strokeWidth="1" />
                 <text x="10" y="17" fill="#FFFFFF" fontSize="11" fontWeight="600" fontFamily="sans-serif">
                   Ningbo Zhoushan &amp; Shanghai
                 </text>
@@ -582,13 +556,13 @@ export default function GlobalTradeNetworkSection() {
             {/* PORT 5: Chennai Port (625, 370) */}
             <g id="portChennai">
               {/* Outer Subtle Pulse */}
-              <circle cx="625" cy="370" r="14" fill="#00D2FF" fillOpacity="0.25" className="port-pulse" />
+              <circle cx="625" cy="370" r="14" fill="#FF5900" fillOpacity="0.25" className="port-pulse" />
               {/* Blue Beacon Pin */}
-              <circle cx="625" cy="370" r="11" fill="#0077FF" stroke="#00D2FF" strokeWidth="2.5" filter="url(#portGlow)" />
+              <circle cx="625" cy="370" r="11" fill="#FF5900" stroke="#FF5900" strokeWidth="2.5" filter="url(#portGlow)" />
               <circle cx="625" cy="370" r="4" fill="#FFFFFF" />
               {/* Label Pill: "Chennai Port" */}
               <g transform="translate(642, 357)">
-                <rect width="90" height="26" rx="6" fill="#061229" fillOpacity="0.9" stroke="#1E3A5F" strokeWidth="1" />
+                <rect width="90" height="26" rx="6" fill="#181818" fillOpacity="0.9" stroke="#3F3F3F" strokeWidth="1" />
                 <text x="10" y="17" fill="#FFFFFF" fontSize="11" fontWeight="600" fontFamily="sans-serif">
                   Chennai Port
                 </text>
@@ -598,13 +572,13 @@ export default function GlobalTradeNetworkSection() {
             {/* PORT 6: PSA Singapore (795, 350) */}
             <g id="portSingapore">
               {/* Outer Subtle Pulse */}
-              <circle cx="795" cy="350" r="14" fill="#00D2FF" fillOpacity="0.25" className="port-pulse" />
+              <circle cx="795" cy="350" r="14" fill="#FF5900" fillOpacity="0.25" className="port-pulse" />
               {/* Blue Beacon Pin */}
-              <circle cx="795" cy="350" r="11" fill="#0077FF" stroke="#00D2FF" strokeWidth="2.5" filter="url(#portGlow)" />
+              <circle cx="795" cy="350" r="11" fill="#FF5900" stroke="#FF5900" strokeWidth="2.5" filter="url(#portGlow)" />
               <circle cx="795" cy="350" r="4" fill="#FFFFFF" />
               {/* Label Pill: "PSA Singapore" */}
               <g transform="translate(812, 337)">
-                <rect width="102" height="26" rx="6" fill="#061229" fillOpacity="0.9" stroke="#1E3A5F" strokeWidth="1" />
+                <rect width="102" height="26" rx="6" fill="#181818" fillOpacity="0.9" stroke="#3F3F3F" strokeWidth="1" />
                 <text x="10" y="17" fill="#FFFFFF" fontSize="11" fontWeight="600" fontFamily="sans-serif">
                   PSA Singapore
                 </text>
@@ -653,44 +627,11 @@ export default function GlobalTradeNetworkSection() {
           </svg>
         </div>
 
-        {/* Popular trade routes panel */}
-        <aside className="flex flex-col rounded-2xl border border-[#2A2A2A]/80 bg-[#0a1222]/90 p-4 shadow-xl">
-          <div className="mb-4 flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF5A1F]/15">
-              <Ship className="h-5 w-5 text-[#FF5A1F]" />
-            </span>
-            <h3 className="text-[16px] font-black text-white">Popular Trade Routes</h3>
-          </div>
-          <div className="space-y-2.5">
-            {POPULAR_ROUTES.map((r, i) => (
-              <div key={`${r.from}-${r.to}`} className="trade-row flex items-center justify-between gap-2 rounded-xl border border-[#2A2A2A] bg-[#0c1526] px-3 py-2.5 hover:border-[#FF5A1F]/60" style={{ animationDelay: `${0.15 + i * 0.1}s` }}>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 text-[13px] font-bold text-white">
-                    <span className="truncate">{r.fromFlag} {r.from}</span>
-                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[#FF5A1F]" />
-                    <span className="truncate">{r.toFlag} {r.to}</span>
-                  </div>
-                  <div className="mt-1 text-[11px] text-neutral-400">{r.approx} <span className="text-neutral-300">|</span> {r.days}</div>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-[#FF5A1F]" />
-              </div>
-            ))}
-          </div>
-          <Link
-            to="/products"
-            className="mt-4 flex h-11 items-center justify-center gap-2 rounded-xl border border-[#FF5A1F]/60 text-[13px] font-bold text-[#FF7A2E] transition-colors hover:bg-[#B33D00]/10"
-          >
-            View All Trade Routes <ArrowRight className="h-4 w-4" />
-          </Link>
-          <p className="mt-3 text-[10px] leading-snug text-neutral-400">Distances and transit times are approximate reference values.</p>
-        </aside>
-        </div>
-
         {/* ── Bottom Map Legend (Exact from Reference Photo) ── */}
-        <div className="flex flex-wrap items-center justify-start gap-6 sm:gap-10 pt-4 px-2 text-xs text-slate-300 select-none">
+        <div className="flex flex-wrap items-center justify-start gap-6 sm:gap-10 pt-4 px-2 text-xs text-neutral-300 select-none">
           {/* Major Ports Indicator */}
           <div className="flex items-center gap-2.5">
-            <span className="w-3.5 h-3.5 rounded-full bg-[#C94400] shadow-[0_0_10px_rgba(255,90,31,0.9)] ring-2 ring-[#FF5A1F]/30" />
+            <span className="w-3.5 h-3.5 rounded-full bg-[#FF5A1F] shadow-[0_0_10px_rgba(255,90,31,0.9)] ring-2 ring-[#FF5A1F]/30" />
             <span className="font-semibold text-white tracking-wide text-xs sm:text-sm">
               Major Ports
             </span>
@@ -698,10 +639,10 @@ export default function GlobalTradeNetworkSection() {
 
           {/* Shipping Routes Indicator */}
           <div className="flex items-center gap-2.5">
-            <span className="inline-flex items-center gap-1 font-mono text-[#00D2FF]">
-              <span className="w-2.5 h-0.5 bg-[#C94400] inline-block shadow-[0_0_6px_#00D2FF]" />
-              <span className="w-1 h-0.5 bg-[#C94400] inline-block shadow-[0_0_6px_#00D2FF]" />
-              <span className="w-2.5 h-0.5 bg-[#C94400] inline-block shadow-[0_0_6px_#00D2FF]" />
+            <span className="inline-flex items-center gap-1 font-mono text-[#FF5900]">
+              <span className="w-2.5 h-0.5 bg-[#FF5900] inline-block shadow-[0_0_6px_#FF5900]" />
+              <span className="w-1 h-0.5 bg-[#FF5900] inline-block shadow-[0_0_6px_#FF5900]" />
+              <span className="w-2.5 h-0.5 bg-[#FF5900] inline-block shadow-[0_0_6px_#FF5900]" />
             </span>
             <span className="font-semibold text-white tracking-wide text-xs sm:text-sm">
               Shipping Routes
@@ -721,18 +662,6 @@ export default function GlobalTradeNetworkSection() {
             <span className="font-semibold text-white tracking-wide text-xs sm:text-sm">
               Cargo Movement
             </span>
-          </div>
-
-          {/* Trade Hub Indicator */}
-          <div className="flex items-center gap-2.5">
-            <MapPin className="h-5 w-5 shrink-0 text-[#FF5A1F] drop-shadow-[0_0_6px_rgba(255,90,31,0.8)]" />
-            <span className="font-semibold text-white tracking-wide text-xs sm:text-sm">Trade Hub</span>
-          </div>
-
-          {/* Active Route Indicator */}
-          <div className="flex items-center gap-2.5">
-            <Circle className="h-5 w-5 shrink-0 text-[#00D2FF] drop-shadow-[0_0_6px_rgba(0,210,255,0.8)]" />
-            <span className="font-semibold text-white tracking-wide text-xs sm:text-sm">Active Route</span>
           </div>
         </div>
 

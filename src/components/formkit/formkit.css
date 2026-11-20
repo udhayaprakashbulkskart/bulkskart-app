@@ -29,7 +29,7 @@
   --fk-ink: hsl(var(--foreground));
   --fk-ink-2: hsl(var(--muted-foreground));
   --fk-surface: hsl(var(--card));
-  --fk-night: #0e1014;
+  --fk-night: #111111;
 
   position: fixed;
   z-index: 50;
@@ -813,7 +813,7 @@
   color: #d97706;
 }
 .dark .fk-rating > button.is-on {
-  color: #fbbf24;
+  color: #fb6f24;
 }
 .fk-rating > button.is-on svg {
   fill: currentColor;
@@ -1094,11 +1094,11 @@
   width: 68px;
   height: 68px;
   border-radius: 50%;
-  background: hsl(152 60% 42% / 0.14);
-  color: hsl(152 62% 36%);
+  background: hsl(21 85% 42% / 0.14);
+  color: hsl(21 85% 38%);
 }
 .dark .fk-done-ico {
-  color: hsl(152 60% 55%);
+  color: hsl(21 85% 55%);
 }
 .fk-done-ico svg {
   width: 36px;
@@ -1130,7 +1130,7 @@
     padding: 10px;
     border: 1px solid var(--fk-line);
     background: var(--fk-surface);
-    box-shadow: 0 6px 20px -10px rgba(16, 24, 40, 0.28);
+    box-shadow: 0 6px 20px -10px rgba(28, 28, 28, 0.28);
   }
   .fk-entity-img {
     width: 172px;

@@ -108,7 +108,7 @@ export default function AdminPaymentsPage() {
       return;
     }
     toast.success(
-      dialog.kind === 'release' ? 'Released to the manufacturer.' : dialog.kind === 'refund' ? 'Refund sent through Razorpay.' : dialog.kind === 'pay' ? 'Payout recorded as sent.' : 'Payout rejected; the amount is back in their wallet.',
+      dialog.kind === 'release' ? 'Released to the manufacturer.' : dialog.kind === 'refund' ? 'Refund sent through Razorpay.' : dialog.kind === 'pay' ? 'Payout recorded as sent.' : 'Payout rejected; the amount is back in their balance.',
     );
     setDialog(null);
     load();
@@ -145,7 +145,7 @@ export default function AdminPaymentsPage() {
   return (
     <DashboardLayout>
       <PageMeta title="Payments | BulkSkart Admin" description="Held order payments, refunds and payouts." robots="noindex, nofollow" />
-      <div className="max-w-5xl mx-auto space-y-5 p-4 md:p-6">
+      <div className="max-w-5xl mx-auto space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -199,7 +199,7 @@ export default function AdminPaymentsPage() {
                         </span>
                       )}
                       {p.notes && <span>“{p.notes}”</span>}
-                      {p.status === 'approved' && <span className="text-[#C94400] dark:text-[#FF7A2E]">Sent {date(p.processed_at)}, ref {p.payout_reference}</span>}
+                      {p.status === 'approved' && <span className="text-orange-600">Sent {date(p.processed_at)}, ref {p.payout_reference}</span>}
                       {p.status === 'rejected' && <span>Rejected{p.admin_note ? `: ${p.admin_note}` : ''}</span>}
                     </p>
                   </div>
@@ -221,7 +221,7 @@ export default function AdminPaymentsPage() {
 
         <section className="rounded-2xl border border-border bg-card p-4">
           <h2 className="text-sm font-semibold text-foreground">Held for buyers</h2>
-          <p className="text-xs text-muted-foreground">Buyers release these when the goods arrive. Release one here when the order is delivered and the buyer has not released it, or after a dispute is decided.</p>
+          <p className="text-xs text-muted-foreground">Buyers release these themselves. Release or refund here only after a dispute is decided.</p>
           {holding.length === 0 ? <p className="text-xs text-muted-foreground mt-2">Nothing held.</p> : <ul className="divide-y divide-border">{holding.map((o) => orderRow(o, false))}</ul>}
           <Link to="/dashboard/admin" className="text-xs text-primary hover:underline">Disputes are in the Control Panel</Link>
         </section>
@@ -243,7 +243,7 @@ export default function AdminPaymentsPage() {
               : dialog?.kind === 'pay'
                 ? `Record the bank transfer of ${money(dialog.payout.amount)} to ${dialog.payout.companies?.company_name || 'the manufacturer'}.`
                 : dialog?.kind === 'reject'
-                  ? `The ${money(dialog.payout.amount)} goes back to their wallet.`
+                  ? `The ${money(dialog.payout.amount)} goes back to their balance.`
                   : undefined
         }
       >

@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import PageMeta from '@/components/common/PageMeta';
+import { Field, KitButton, NativeSelect, TextArea } from '@/components/formkit';
+import '@/components/formkit/formkit.css';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminCountReports, adminGetReports, adminUpdateReport, type AdminReport, type ReportStatus } from '@/lib/api';
 
@@ -17,8 +19,8 @@ const STATUS_LABEL: Record<ReportStatus, string> = {
 
 const STATUS_STYLE: Record<ReportStatus, string> = {
   open: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30',
-  under_review: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
-  resolved: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+  under_review: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30',
+  resolved: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30',
   dismissed: 'bg-muted text-muted-foreground border-border',
 };
 
@@ -119,40 +121,24 @@ function ReportCard({ report, onSaved }: { report: AdminReport; onSaved: (update
         {about.notes || <span className="text-muted-foreground">No details were given.</span>}
       </div>
 
-      <div className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-[200px_1fr] items-start">
-          <label htmlFor={`${ids}-status`} className="block space-y-1.5">
-            <span className="text-xs font-semibold text-foreground">Status</span>
-            <select
-              id={`${ids}-status`}
-              value={status}
-              onChange={(e) => setStatus(e.target.value as ReportStatus)}
-              className="w-full h-10 rounded-xl border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/40"
-            >
-              {(Object.keys(STATUS_LABEL) as ReportStatus[]).map((key) => (
-                <option key={key} value={key}>{STATUS_LABEL[key]}</option>
-              ))}
-            </select>
-          </label>
-          <label htmlFor={`${ids}-notes`} className="block space-y-1.5">
-            <span className="text-xs font-semibold text-foreground">
-              Admin notes <span className="font-normal text-muted-foreground">(optional, only admins see these)</span>
-            </span>
-            <textarea
-              id={`${ids}-notes`}
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="What was checked, and what was done"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/40"
-            />
-          </label>
-        </div>
-        <div className="flex justify-end">
-          <Button onClick={save} disabled={!changed || saving} className="min-w-[140px] bg-[#C94400] hover:bg-[#B33D00] text-white">
-            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : 'Save'}
-          </Button>
-        </div>
+      <div className="fk-skin space-y-3">
+      <div className="grid gap-3 sm:grid-cols-[200px_1fr] items-start">
+        <Field htmlFor={`${ids}-status`} label="Status">
+          <NativeSelect id={`${ids}-status`} value={status} onChange={(e) => setStatus(e.target.value as ReportStatus)}>
+            {(Object.keys(STATUS_LABEL) as ReportStatus[]).map((key) => (
+              <option key={key} value={key}>{STATUS_LABEL[key]}</option>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Field htmlFor={`${ids}-notes`} label="Admin notes" optional hint="Only admins see these notes.">
+          <TextArea id={`${ids}-notes`} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What was checked, and what was done" />
+        </Field>
+      </div>
+      <div className="flex justify-end">
+        <KitButton onClick={save} disabled={!changed || saving} className="min-w-[140px]">
+          {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : 'Save'}
+        </KitButton>
+      </div>
       </div>
     </article>
   );
@@ -201,7 +187,7 @@ export default function AdminReportsPage() {
   return (
     <DashboardLayout>
       <PageMeta title="Reports | BulkSkart Admin" description="Reports sent by BulkSkart users." robots="noindex, nofollow" />
-      <div className="max-w-5xl mx-auto space-y-5 p-4 md:p-6">
+      <div className="max-w-5xl mx-auto space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-foreground flex items-center gap-2">

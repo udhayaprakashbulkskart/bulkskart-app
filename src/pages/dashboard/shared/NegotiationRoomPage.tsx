@@ -32,7 +32,7 @@ const toHex = (s: string) =>
   Array.from(new TextEncoder().encode(s), (b) => b.toString(16).padStart(2, '0')).join('');
 
 const FILE_ICONS: Record<string, React.ReactNode> = {
-  'application/pdf': <FileText className="w-4 h-4 text-[#FF7A2E]" />,
+  'application/pdf': <FileText className="w-4 h-4 text-red-500" />,
   'image/': <Image className="w-4 h-4 text-[#FF5A00]" />,
 };
 
@@ -228,7 +228,7 @@ export default function NegotiationRoomPage() {
             <div className="flex items-center gap-2">
               <span className="font-semibold text-sm truncate">{otherName}</span>
               {conv?.companies?.is_verified && (
-                <Badge className="bg-[#FF5A00]/10 text-[#FF7A2E] border-[#FF5A00]/40 text-[10px] px-1.5 py-0 gap-0.5">
+                <Badge className="bg-primary/10 text-primary border-primary/30 text-[10px] px-1.5 py-0 gap-0.5">
                   <ShieldCheck className="w-2.5 h-2.5" /> Verified
                 </Badge>
               )}
@@ -259,7 +259,7 @@ export default function NegotiationRoomPage() {
                 <DropdownMenuItem onClick={handleExportTranscript} className="gap-2">
                   <Download className="w-4 h-4" /> Export Transcript
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleBlock} className="text-[#FF7A2E]">Block User</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleBlock} className="text-red-600">Block User</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
                   const reportPath = profile?.role === 'buyer' ? '/dashboard/buyer/disputes' : '/dashboard/supplier/disputes';
                   navigate(reportPath);
@@ -304,7 +304,7 @@ export default function NegotiationRoomPage() {
                       {displayName}
                     </span>
                     {isUrgent && (
-                      <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase px-1.5 py-0.2 rounded-full bg-[#B33D00] text-white animate-pulse">
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase px-1.5 py-0.2 rounded-full bg-red-600 text-white animate-pulse">
                         🚨 URGENT
                       </span>
                     )}
@@ -312,9 +312,9 @@ export default function NegotiationRoomPage() {
                 )}
                 <div className={`max-w-[78%] rounded-xl px-3.5 py-2.5 shadow-xs ${
                   isMine
-                    ? 'bg-[#C94400] text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground'
                     : isUrgent
-                    ? 'bg-card border-2 border-[#FF5A00]/80 text-foreground ring-2 ring-[#FF5A00]/20'
+                    ? 'bg-card border-2 border-red-500/80 text-foreground ring-2 ring-red-500/20'
                     : 'bg-muted text-foreground'
                 }`}>
                   {msg.is_file && msg.attachment_url ? (
@@ -365,7 +365,7 @@ export default function NegotiationRoomPage() {
               <Button
                 onClick={() => text.trim() && sendMessage(text.trim())}
                 disabled={sending || !text.trim()}
-                className="bg-[#1A0C05] hover:bg-primary/90 text-primary-foreground"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 size="icon"
               >
                 <Send className="w-4 h-4" />
