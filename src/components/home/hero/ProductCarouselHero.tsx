@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BadgeCheck, ChevronLeft, ChevronRight, Pause, Play, Truck, Wallet } from 'lucide-react';
+import { BadgeCheck, Truck, Wallet } from 'lucide-react';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatPriceRange } from '@/lib/productPrice';
 import { fromCatalogue, heroLists, loadHeroProducts, type HeroProduct } from './heroProducts';
@@ -8,13 +8,11 @@ import './product-carousel.css';
 
 /**
  * Product scroll under the landing hero: a curved 3D ring of product cards that drifts slowly. Drag it, scroll it
- * sideways, tap a card to bring it to the front (tap the front card to open it), or use the arrows and dots below.
+ * sideways, or tap a card to bring it to the front (tap the front card to open it).
  * Every card shows Free Delivery and Loan Eligible; the bottom bar names the product in front and has both as
  * buttons to the free delivery and loan page. Transforms only; still for people who ask for reduced motion and
  * paused while off screen.
  */
-
-type Tab = 'featured' | 'top';
 
 interface Geometry {
   cardW: number;
@@ -50,9 +48,9 @@ export default function ProductCarouselHero() {
   const { currencyInfo, rates } = useCurrency();
   const currency = currencyInfo.currency;
   const [lists, setLists] = useState<ReturnType<typeof heroLists> | null>(null);
-  const [tab, setTab] = useState<Tab>('featured');
   const [active, setActive] = useState(0);
-  const [auto, setAuto] = useState(() => !prefersReducedMotion());
+  // Always drifts slowly, except for people who ask for reduced motion
+  const [auto] = useState(() => !prefersReducedMotion());
   const [geo, setGeo] = useState<Geometry>(() => geometryFor(typeof window === 'undefined' ? 1280 : window.innerWidth));
 
   const stageRef = useRef<HTMLDivElement>(null);
@@ -87,7 +85,7 @@ export default function ProductCarouselHero() {
     };
   }, []);
 
-  const unique: HeroProduct[] = lists ? (tab === 'top' ? lists.top : lists.featured) : NO_PRODUCTS;
+  const unique: HeroProduct[] = lists ? lists.featured : NO_PRODUCTS;
   // Short lists are repeated so the ring stays full on both sides.
   const slots: Array<HeroProduct | null> = useMemo(() => {
     if (!unique.length) return Array.from({ length: 16 }, () => null);
@@ -209,14 +207,14 @@ export default function ProductCarouselHero() {
     layout();
   }, [layout, slots, geo]);
 
-  // Switching between Featured and Top Sellers starts from the first card
+  // When the products arrive, start from the first card
   useEffect(() => {
     pos.current = 0;
     target.current = null;
     vel.current = 0;
     activeRef.current = -1;
     layout();
-  }, [tab, lists, layout]);
+  }, [lists, layout]);
 
   const goTo = useCallback(
     (i: number) => {
@@ -232,7 +230,6 @@ export default function ProductCarouselHero() {
     },
     [layout],
   );
-  const step = (by: number) => goTo(Math.round(target.current ?? pos.current) + by);
 
   // ── pointer: drag to turn, tap to choose ──
   const pxPerCard = () => Math.max(60, geoRef.current.rx * Math.sin(STEP));
@@ -318,46 +315,10 @@ export default function ProductCarouselHero() {
     cardRefs.current[((next % n) + n) % n]?.focus({ preventScroll: true });
   };
 
-  // Start loading the other list's photos when someone points at its tab, so switching shows them at once.
-  const prefetched = useRef(new Set<Tab>());
-  const prefetch = (key: Tab) => {
-    if (!lists || prefetched.current.has(key)) return;
-    prefetched.current.add(key);
-    for (const item of key === 'top' ? lists.top : lists.featured) {
-      const img = new Image();
-      img.decoding = 'async';
-      img.src = item.img;
-    }
-  };
-
   const price = (p: HeroProduct, compact = true) => formatPriceRange(p.priceMin, p.priceMax, p.currency, currency, rates, { compact });
 
-  const tabs = (
-    <div role="tablist" aria-label="Products to show" className="inline-flex shrink-0 rounded-full border border-white/12 bg-white/[0.04] p-1 text-[12px]">
-      {(
-        [
-          ['featured', 'Featured'],
-          ['top', 'Top Sellers'],
-        ] as const
-      ).map(([key, label]) => (
-        <button
-          key={key}
-          type="button"
-          role="tab"
-          aria-selected={tab === key}
-          onClick={() => setTab(key)}
-          onPointerEnter={() => prefetch(key)}
-          onFocus={() => prefetch(key)}
-          className={`rounded-full px-3 py-1 font-semibold transition-colors ${tab === key ? 'bg-[#FF5A00] text-black' : 'text-white/70 hover:text-white'}`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
-    <section className="pc-hero" aria-label={tab === 'top' ? 'Top sellers' : 'Featured products'}>
+    <section className="pc-hero" aria-label="Featured products">
       {/* ── the ring ── */}
       <div
         ref={stageRef}
@@ -370,7 +331,7 @@ export default function ProductCarouselHero() {
         }}
         role="group"
         aria-roledescription="carousel"
-        aria-label={tab === 'top' ? 'Top sellers' : 'Featured products'}
+        aria-label="Featured products"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
@@ -383,7 +344,7 @@ export default function ProductCarouselHero() {
         }}
         onKeyDown={onKeyDown}
       >
-        <div className="pc-ring" key={`${tab}-${lists ? 'ready' : 'loading'}`}>
+        <div className="pc-ring" key={lists ? 'ready' : 'loading'}>
           {slots.map((p, i) => {
             const isFront = p !== null && i === active;
             if (!p) {
@@ -473,52 +434,6 @@ export default function ProductCarouselHero() {
                 <Wallet className="h-4 w-4" aria-hidden="true" /> Loan Eligible
               </Link>
             </div>
-          </div>
-
-          {/* room on the right for the floating "AI Trade Help" button, which sits over this row on laptop screens */}
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 lg:pr-[124px] min-[1620px]:pr-0">
-            {tabs}
-            <div className="order-last flex w-full items-center justify-center gap-1.5 md:order-none md:w-auto" role="group" aria-label="Choose a product">
-              {unique.map((p, i) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className="pc-dot"
-                  aria-label={`Show ${p.name}`}
-                  aria-current={current?.id === p.id ? 'true' : undefined}
-                  onClick={() => {
-                    const n = countRef.current;
-                    const base = Math.round(pos.current);
-                    // the nearest copy of this product on the ring
-                    let best = i;
-                    for (let k = i; k < n; k += unique.length) if (Math.abs(wrap(k - base)) < Math.abs(wrap(best - base))) best = k;
-                    goTo(best);
-                  }}
-                />
-              ))}
-            </div>
-            <span className="flex items-center gap-1.5">
-              <button type="button" onClick={() => step(-1)} aria-label="Previous product" className="grid h-8 w-8 place-items-center rounded-full border border-white/15 text-white/80 transition-colors hover:border-[#FF5A00] hover:text-white">
-                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-              </button>
-              <button type="button" onClick={() => step(1)} aria-label="Next product" className="grid h-8 w-8 place-items-center rounded-full border border-white/15 text-white/80 transition-colors hover:border-[#FF5A00] hover:text-white">
-                <ChevronRight className="h-4 w-4" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setAuto((a) => !a)}
-                aria-pressed={auto}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/15 px-3 text-[11px] font-semibold uppercase tracking-wide text-white/75 transition-colors hover:border-[#FF5A00] hover:text-white"
-              >
-                {auto ? <Pause className="h-3.5 w-3.5" aria-hidden="true" /> : <Play className="h-3.5 w-3.5" aria-hidden="true" />}
-                Auto {auto ? 'on' : 'off'}
-              </button>
-              {current && (
-                <Link to={current.to} className="inline-flex h-8 items-center gap-1 rounded-full bg-white px-3 text-[12px] font-bold text-black transition-colors hover:bg-[#FF5A00]">
-                  View <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </Link>
-              )}
-            </span>
           </div>
         </div>
       </div>
