@@ -56,12 +56,20 @@ export default function SupplierProductsPage() {
   const [discountProduct, setDiscountProduct] = useState<Product | null>(null);
 
   const fetchProducts = () => {
-    if (!company) return;
+    // A new account (or one switching company) never keeps the previous list on screen.
+    if (!company) {
+      setProducts([]);
+      setLoading(false);
+      return;
+    }
+    const companyId = company.id;
+    setProducts([]);
     setLoading(true);
-    getProducts({ companyId: company.id }).then(data => {
+    getProducts({ companyId }).then(data => {
       const map = new Map<string, Product>();
       (data || []).forEach(p => {
-        if (!map.has(p.id)) {
+        // Only this company's own products.
+        if (p.company_id === companyId && !map.has(p.id)) {
           map.set(p.id, p);
         }
       });
@@ -366,6 +374,19 @@ export default function SupplierProductsPage() {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[...Array(3)].map((_, i) => <div key={i} className="h-48 bg-muted rounded-xl animate-pulse" />)}
+            </div>
+          ) : !company ? (
+            <div className="bg-card border border-border rounded-2xl p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-sm my-4">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 border border-primary/20">
+                <Package className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">Finish your business profile first</h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto leading-relaxed">
+                Your products are listed under your company. Add your company details, then come back here to list your products.
+              </p>
+              <Button onClick={() => navigate('/business-setup')} className="bg-[#C94400] text-primary-foreground hover:bg-primary/90 gap-2 font-bold px-6">
+                Complete business profile
+              </Button>
             </div>
           ) : products.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-sm my-4">

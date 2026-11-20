@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProducts, getRequirements, getMyQuotations, ensureManufacturerWelcomeLeads } from '@/lib/api';
 import { toast } from 'sonner';
+import { commissionSplit, money } from '@/lib/orderPayments';
 import { supabase } from '@/db/supabase';
 import { Package, FileText, TrendingUp, Plus, ArrowRight, Shield, CreditCard, AlertCircle, BarChart3, Bell, ShieldCheck, CheckCircle2, MessageSquare, Clock, Wallet, AlertTriangle, RefreshCw, Sparkles, Building2 } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
@@ -20,7 +21,7 @@ import {
 type MfrStats = {
   totalProducts: number; rfqLeads: number; quotesSent: number; leadsLeft: number; maxLeads: number;
   activeOrders: number; completedOrders: number; responseRate: number; avgResponseHours: number;
-  totalRevenue: number; walletBalance: number; withdrawableBalance: number;
+  totalRevenue: number; walletBalance: number; withdrawableBalance: number; heldBalance: number;
   unreadNotifs: number; openDisputes: number;
 };
 
@@ -29,7 +30,7 @@ export default function SupplierDashboard() {
   const [stats, setStats] = useState<MfrStats>({
     totalProducts: 0, rfqLeads: 0, quotesSent: 0, leadsLeft: 0, maxLeads: 10,
     activeOrders: 0, completedOrders: 0, responseRate: 0, avgResponseHours: 0,
-    totalRevenue: 0, walletBalance: 0, withdrawableBalance: 0,
+    totalRevenue: 0, walletBalance: 0, withdrawableBalance: 0, heldBalance: 0,
     unreadNotifs: 0, openDisputes: 0,
   });
   const [subscription, setSubscription] = useState<{
@@ -72,7 +73,9 @@ export default function SupplierDashboard() {
       supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_read', false),
       supabase.from('disputes').select('id', { count: 'exact', head: true }).eq('raised_by', user.id).eq('status', 'open'),
       supabase.from('companies').select('response_rate,avg_response_hours,total_revenue,wallet_balance,withdrawable_balance').eq('id', company.id).maybeSingle(),
-    ]).then(([prodRes, quotRes, subRes, activeOrdRes, compOrdRes, notifRes, dispRes, companyRes]) => {
+      // Buyers' online payments BulkSkart holds until delivery
+      supabase.from('orders').select('paid_amount,total_amount,commission_pct,order_status').eq('supplier_company_id', company.id).eq('payment_status', 'escrow'),
+    ]).then(([prodRes, quotRes, subRes, activeOrdRes, compOrdRes, notifRes, dispRes, companyRes, heldRes]) => {
       if (cancelled) return;
       const sub = subRes.data;
       const comp = companyRes.data as { response_rate?: number; avg_response_hours?: number; total_revenue?: number; wallet_balance?: number; withdrawable_balance?: number } | null;
@@ -92,8 +95,12 @@ export default function SupplierDashboard() {
         responseRate: Number(comp?.response_rate ?? 0),
         avgResponseHours: Number(comp?.avg_response_hours ?? 0),
         totalRevenue: Number(comp?.total_revenue ?? 0),
-        walletBalance: Number(comp?.wallet_balance ?? 0),
+        // The wallet holds released order payments, ready to withdraw
+        walletBalance: Number(comp?.withdrawable_balance ?? 0),
         withdrawableBalance: Number(comp?.withdrawable_balance ?? 0),
+        heldBalance: ((heldRes.data ?? []) as { paid_amount: number | null; total_amount: number; commission_pct: number | null; order_status: string | null }[])
+          .filter((o) => o.order_status !== 'cancelled')
+          .reduce((s, o) => s + commissionSplit(Number(o.paid_amount ?? o.total_amount), o.commission_pct ?? undefined).payout, 0),
         unreadNotifs: notifRes.count ?? 0,
         openDisputes: dispRes.count ?? 0,
       });
@@ -122,7 +129,7 @@ export default function SupplierDashboard() {
     { label: 'Completed Orders', value: stats.completedOrders, icon: CheckCircle2, color: 'text-[#FF7A2E]', to: '/dashboard/supplier/orders' },
     { label: 'Response Rate', value: `${stats.responseRate}%`, icon: BarChart3, color: 'text-[#FF7A2E]', to: '/dashboard/supplier/analytics' },
     { label: 'Avg Response Time', value: stats.avgResponseHours > 0 ? `${stats.avgResponseHours}h` : '—', icon: Clock, color: 'text-orange-500', to: '/dashboard/supplier/analytics' },
-    { label: 'Wallet Balance', value: `₹${Number(stats.walletBalance).toLocaleString()}`, icon: Wallet, color: 'text-[#FF7A2E]', to: '/dashboard/supplier/wallet' },
+    { label: 'Wallet Balance', value: money(stats.walletBalance), icon: Wallet, color: 'text-[#FF7A2E]', to: '/dashboard/supplier/wallet' },
     { label: 'RFQ Leads Left', value: stats.leadsLeft, sub: `/ ${stats.maxLeads}`, icon: BarChart3, color: 'text-[#FF7A2E]', to: '/dashboard/supplier/rfqs' },
   ];
 
@@ -263,18 +270,18 @@ export default function SupplierDashboard() {
           )}
 
           {/* Wallet summary */}
-          {stats.walletBalance > 0 && (
+          {(stats.walletBalance > 0 || stats.heldBalance > 0) && (
             <div className="mb-4 flex items-center gap-4 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-xl p-3 md:p-4 text-sm flex-wrap">
               <Wallet className="w-5 h-5 text-[#FF7A2E] shrink-0" />
               <div className="flex-1 min-w-0">
-                <span className="font-semibold text-[#FF7A2E]">Wallet: ₹{Number(stats.walletBalance).toLocaleString()}</span>
-                <span className="text-[#FF7A2E] ml-3">Withdrawable: ₹{Number(stats.withdrawableBalance).toLocaleString()}</span>
+                <span className="font-semibold text-[#FF7A2E]">Wallet: {money(stats.walletBalance)} ready to withdraw</span>
+                {stats.heldBalance > 0 && (
+                  <span className="text-[#FF7A2E] ml-3">{money(stats.heldBalance)} held until your orders are delivered</span>
+                )}
               </div>
-              {stats.withdrawableBalance > 0 && (
-                <Link to="/dashboard/supplier/wallet" className="shrink-0">
-                  <Button size="sm" variant="outline" className="text-xs border-[#FF5A00]/40 text-[#FF7A2E]">Withdraw</Button>
-                </Link>
-              )}
+              <Link to="/dashboard/supplier/wallet" className="shrink-0">
+                <Button size="sm" variant="outline" className="text-xs border-[#FF5A00]/40 text-[#FF7A2E]">{stats.withdrawableBalance > 0 ? 'Withdraw' : 'Open wallet'}</Button>
+              </Link>
             </div>
           )}
 

@@ -45,11 +45,11 @@ export default function CareersPage() {
       <section className="bg-[#C94400] text-white py-14 px-4 text-center">
         <div className="max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-5">
-            <Briefcase className="w-3.5 h-3.5 text-primary" />
+            <Briefcase className="w-3.5 h-3.5 text-white" />
             <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">We're Hiring</span>
           </div>
           <h1 className="text-[28px] md:text-[40px] font-black leading-tight mb-4">
-            Build the Future of <span className="text-primary">B2B Trade</span>
+            Build the Future of <span className="text-black">B2B Trade</span>
           </h1>
           <p className="text-white/70 text-[14px] md:text-[16px] leading-relaxed">
             BulkSkart is a fast-growing B2B marketplace on a mission to connect India's manufacturers with the world. We're looking for curious, driven people who want to build things that matter.

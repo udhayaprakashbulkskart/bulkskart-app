@@ -46,11 +46,11 @@ export default function AboutPage() {
       <section className="bg-[#C94400] text-white py-14 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 mb-5">
-            <Globe className="w-3.5 h-3.5 text-primary" />
+            <Globe className="w-3.5 h-3.5 text-white" />
             <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">Our Story</span>
           </div>
           <h1 className="text-[28px] md:text-[44px] font-black leading-tight mb-4">
-            Connecting the World's <span className="text-primary">Manufacturers</span> with Global Buyers
+            Connecting the World's <span className="text-black">Manufacturers</span> with Global Buyers
           </h1>
           <p className="text-white/70 text-[14px] md:text-[16px] leading-relaxed max-w-2xl mx-auto">
             BulkSkart is operated by <strong className="text-white">Tech Pod AI Database Private Limited</strong> — a technology company on a mission to make bulk B2B trade transparent, efficient, and accessible for businesses of every size.

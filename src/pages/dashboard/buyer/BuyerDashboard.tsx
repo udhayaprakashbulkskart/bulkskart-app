@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRequirements } from '@/lib/api';
 import type { Requirement } from '@/types/types';
-import { FileText, MessageSquare, Package, TrendingUp, Plus, ArrowRight, Shield, Calendar, Eye, Heart, Bell, AlertTriangle, ShieldCheck, CreditCard, CheckCircle2, Building2 } from 'lucide-react';
+import { FileText, MessageSquare, Package, TrendingUp, Plus, ArrowRight, Shield, Calendar, Eye, Heart, Bell, AlertTriangle, ShieldCheck, CreditCard, CheckCircle2, Building2, Wallet } from 'lucide-react';
+import { money } from '@/lib/orderPayments';
 import { supabase } from '@/db/supabase';
 import PageMeta from '@/components/common/PageMeta';
 
@@ -21,6 +22,23 @@ export default function BuyerDashboard() {
   const navigate = useNavigate();
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [loading, setLoading] = useState(true);
+  // Money paid online that BulkSkart is holding for this buyer until the goods arrive
+  const [held, setHeld] = useState<{ total: number; count: number }>({ total: 0, count: 0 });
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    supabase
+      .from('orders')
+      .select('paid_amount,total_amount,order_status')
+      .eq('buyer_id', user.id)
+      .eq('payment_status', 'escrow')
+      .then(({ data }) => {
+        if (cancelled) return;
+        const rows = ((data ?? []) as { paid_amount: number | null; total_amount: number; order_status: string | null }[]).filter((o) => o.order_status !== 'cancelled');
+        setHeld({ total: rows.reduce((s, o) => s + Number(o.paid_amount ?? o.total_amount), 0), count: rows.length });
+      });
+    return () => { cancelled = true; };
+  }, [user]);
   const [stats, setStats] = useState<BuyerStats>({
     totalReqs: 0, totalQuotes: 0, activeConvs: 0,
     activeOrders: 0, completedOrders: 0, savedMfrs: 0,
@@ -127,6 +145,22 @@ export default function BuyerDashboard() {
               </div>
               <Link to="/dashboard/buyer/verification" className="shrink-0">
                 <Button size="sm" className="bg-[#1A0C05] text-primary-foreground text-xs">Verify Now</Button>
+              </Link>
+            </div>
+          )}
+
+          {/* Online payments BulkSkart is holding for this buyer */}
+          {held.count > 0 && (
+            <div className="mb-4 flex items-center gap-3 bg-[#FF5A00]/10 border border-[#FF5A00]/40 rounded-xl p-3 md:p-4 text-sm flex-wrap">
+              <Wallet className="w-5 h-5 text-[#FF7A2E] shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground">{money(held.total)} held safely by BulkSkart</p>
+                <p className="text-xs mt-0.5 text-muted-foreground">
+                  Paid online for {held.count} order{held.count === 1 ? '' : 's'}. The manufacturer is paid only after the goods arrive and you release it.
+                </p>
+              </div>
+              <Link to="/dashboard/buyer/orders" className="shrink-0">
+                <Button size="sm" variant="outline" className="text-xs border-[#FF5A00]/40 text-[#FF7A2E]">View orders</Button>
               </Link>
             </div>
           )}

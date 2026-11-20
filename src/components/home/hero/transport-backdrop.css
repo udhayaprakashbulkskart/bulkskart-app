@@ -1,0 +1,207 @@
+/* Hero background: plane, ship and truck moving across a night port. Transforms only. */
+
+.tb-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.tb-sky {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 55% 42% at 80% 74%, rgba(255, 90, 0, 0.2), transparent 72%),
+    radial-gradient(ellipse 40% 30% at 60% 20%, rgba(255, 255, 255, 0.04), transparent 70%),
+    linear-gradient(180deg, #08090d 0%, #0b0b0e 55%, #121014 100%);
+}
+
+.tb-sun {
+  position: absolute;
+  right: 12%;
+  bottom: 24%;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 106, 20, 0.35), rgba(255, 90, 0, 0) 68%);
+  filter: blur(6px);
+}
+
+.tb-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Lanes span the hero; the vehicle inside moves from just off the left edge to past the right edge. */
+.tb-lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.tb-lane > div {
+  position: relative;
+  will-change: transform;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* Plane */
+.tb-lane-plane { top: 9%; }
+.tb-plane {
+  width: clamp(110px, 12vw, 200px);
+  animation-name: tb-fly;
+  animation-duration: 26s;
+  animation-delay: -9s;
+}
+.tb-trail {
+  position: absolute;
+  right: 92%;
+  top: 50%;
+  width: 180%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.32));
+}
+@keyframes tb-fly {
+  from { transform: translate(-200%, 34px); }
+  to { transform: translate(calc(100vw + 20%), -26px); }
+}
+
+/* Port skyline on the horizon */
+.tb-port {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 21%;
+  height: 26%;
+  opacity: 0.6;
+}
+.tb-port-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Sea */
+.tb-sea {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8%;
+  height: 14%;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 90, 0, 0.12), rgba(9, 9, 11, 0.96) 85%);
+  border-top: 1px solid rgba(255, 140, 60, 0.22);
+}
+.tb-waves {
+  position: absolute;
+  left: 0;
+  top: 32%;
+  width: calc(100% + 140px);
+  height: 1px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.16) 0 22px, transparent 22px 70px);
+  animation: tb-waves 4s linear infinite;
+}
+.tb-waves-b {
+  top: 68%;
+  opacity: 0.6;
+  animation-duration: 6.5s;
+  animation-direction: reverse;
+}
+@keyframes tb-waves {
+  from { transform: translateX(0); }
+  to { transform: translateX(-70px); }
+}
+
+/* Ship */
+.tb-lane-ship { bottom: 9.5%; }
+.tb-ship {
+  width: clamp(240px, 34vw, 540px);
+  animation-name: tb-sail;
+  animation-duration: 72s;
+  animation-delay: -40s;
+}
+.tb-ship .tb-art { animation: tb-bob 5s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes tb-sail {
+  from { transform: translateX(-105%); }
+  to { transform: translateX(100vw); }
+}
+@keyframes tb-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(-0.35deg); }
+}
+
+/* Road and truck */
+.tb-road {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8%;
+  background: linear-gradient(180deg, #151418, #0a0a0c);
+  border-top: 1px solid rgba(255, 90, 0, 0.3);
+}
+.tb-road-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 55%;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.26) 0 34px, transparent 34px 80px);
+}
+.tb-lane-truck { bottom: 1.2%; }
+.tb-truck {
+  width: clamp(130px, 14vw, 230px);
+  animation-name: tb-drive;
+  animation-duration: 17s;
+  animation-delay: -6s;
+}
+@keyframes tb-drive {
+  from { transform: translateX(-105%); }
+  to { transform: translateX(100vw); }
+}
+.tb-wheel {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tb-spin 0.55s linear infinite;
+}
+@keyframes tb-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Lights */
+.tb-blink { animation: tb-blink 1.6s steps(1, end) infinite; }
+.tb-blink-b { animation-delay: 0.8s; }
+@keyframes tb-blink {
+  0%, 60% { opacity: 1; }
+  61%, 100% { opacity: 0.15; }
+}
+
+/* Phones: smaller port, lower sky traffic */
+@media (max-width: 767.98px) {
+  .tb-port { height: 18%; opacity: 0.45; }
+  .tb-lane-plane { top: 5%; }
+  .tb-sun { width: 180px; height: 180px; right: 4%; }
+}
+
+/* Off screen: stop everything */
+.tb-scene[data-paused='true'] *,
+.tb-scene[data-paused='true'] *::before,
+.tb-scene[data-paused='true'] *::after {
+  animation-play-state: paused !important;
+}
+
+/* Reduced motion: a still picture with each vehicle in view */
+@media (prefers-reduced-motion: reduce) {
+  .tb-scene *,
+  .tb-scene *::before,
+  .tb-scene *::after {
+    animation: none !important;
+  }
+  .tb-plane { transform: translate(62vw, 0); }
+  .tb-ship { transform: translateX(46vw); }
+  .tb-truck { transform: translateX(72vw); }
+}

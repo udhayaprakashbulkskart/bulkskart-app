@@ -61,6 +61,14 @@ export default function MessagesPage() {
     return true;
   }, [canReplyAsSupplier]);
 
+  // Defined before the suggestions below use it while rendering.
+  const getContactName = (conv: Conversation) => {
+    if (!user) return 'Unknown';
+    return conv.buyer_id === user.id
+      ? conv.companies?.company_name ?? conv.supplier?.full_name ?? 'Supplier'
+      : conv.buyer?.full_name ?? 'Buyer';
+  };
+
   // AI Chat Assistant: Suggested replies for manufacturers
   const aiChatSuggestions = useMemo(() => {
     const prodName = selectedConv?.product?.name || selectedInquiry?.product_name || 'our products';
@@ -198,13 +206,6 @@ export default function MessagesPage() {
       return;
     }
     setInput('');
-  };
-
-  const getContactName = (conv: Conversation) => {
-    if (!user) return 'Unknown';
-    return conv.buyer_id === user.id
-      ? conv.companies?.company_name ?? conv.supplier?.full_name ?? 'Supplier'
-      : conv.buyer?.full_name ?? 'Buyer';
   };
 
   const getUnreadCount = (conv: Conversation) => {

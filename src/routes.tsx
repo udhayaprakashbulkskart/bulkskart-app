@@ -69,6 +69,10 @@ const DisputeCenterPage     = lazy(() => import('./pages/dashboard/shared/Disput
 
 // ─── Lazy: admin dashboard ────────────────────────────────────────────────────
 const AdminDashboardFull    = lazy(() => import('./pages/dashboard/admin/AdminDashboardFull'));
+const AdminReportsPage      = lazy(() => import('./pages/dashboard/admin/AdminReportsPage'));
+const AdminPaymentsPage     = lazy(() => import('./pages/dashboard/admin/AdminPaymentsPage'));
+const SupplierWalletPage    = lazy(() => import('./pages/dashboard/supplier/SupplierWalletPage'));
+const FactoryVisitsPage     = lazy(() => import('./pages/dashboard/shared/FactoryVisitsPage'));
 const AIMatchAnalyticsPage  = lazy(() => import('./pages/dashboard/admin/AIMatchAnalyticsPage'));
 
 // ─── Lazy: footer / company pages ─────────────────────────────────────────────
@@ -168,6 +172,7 @@ export const routes: RouteConfig[] = [
   { name: 'Buyer Disputes', path: '/dashboard/buyer/disputes', element: <DisputeCenterPage /> },
   { name: 'Buyer Orders', path: '/dashboard/buyer/orders', element: <BuyerOrdersPage /> },
   { name: 'Buyer Order Tracking', path: '/dashboard/buyer/orders/:orderId', element: <OrderTrackingPage /> },
+  { name: 'Buyer Factory Visits', path: '/dashboard/buyer/visits', element: <FactoryVisitsPage /> },
   { name: 'Buyer RFQ Match', path: '/dashboard/buyer/rfq/:id', element: <BuyerRFQMatchPage /> },
   { name: 'Buyer Negotiation', path: '/dashboard/buyer/negotiation/:conversationId', element: <NegotiationRoomPage /> },
 
@@ -186,6 +191,9 @@ export const routes: RouteConfig[] = [
   { name: 'Supplier Disputes', path: '/dashboard/supplier/disputes', element: <DisputeCenterPage /> },
   { name: 'Supplier Orders', path: '/dashboard/supplier/orders', element: <SupplierOrdersPage /> },
   { name: 'Supplier Order Tracking', path: '/dashboard/supplier/orders/:orderId', element: <OrderTrackingPage /> },
+  { name: 'Supplier Wallet', path: '/dashboard/supplier/wallet', element: <SupplierWalletPage /> },
+  { name: 'Supplier Payouts Alias', path: '/dashboard/supplier/payouts', element: <SupplierWalletPage /> },
+  { name: 'Supplier Factory Visits', path: '/dashboard/supplier/visits', element: <FactoryVisitsPage /> },
   { name: 'Supplier Negotiation', path: '/dashboard/supplier/negotiation/:conversationId', element: <NegotiationRoomPage /> },
   { name: 'Supplier Analytics', path: '/dashboard/supplier/analytics', element: <SupplierAnalyticsPage /> },
   { name: 'Supplier Inventory', path: '/dashboard/supplier/inventory', element: <SupplierInventoryPage /> },
@@ -208,6 +216,8 @@ export const routes: RouteConfig[] = [
   { name: 'Manufacturer Disputes', path: '/dashboard/manufacturer/disputes', element: <DisputeCenterPage /> },
   { name: 'Manufacturer Orders', path: '/dashboard/manufacturer/orders', element: <SupplierOrdersPage /> },
   { name: 'Manufacturer Order Tracking', path: '/dashboard/manufacturer/orders/:orderId', element: <OrderTrackingPage /> },
+  { name: 'Manufacturer Wallet', path: '/dashboard/manufacturer/wallet', element: <SupplierWalletPage /> },
+  { name: 'Manufacturer Factory Visits', path: '/dashboard/manufacturer/visits', element: <FactoryVisitsPage /> },
   { name: 'Manufacturer Negotiation', path: '/dashboard/manufacturer/negotiation/:conversationId', element: <NegotiationRoomPage /> },
   { name: 'Manufacturer Analytics', path: '/dashboard/manufacturer/analytics', element: <SupplierAnalyticsPage /> },
   { name: 'Manufacturer Inventory', path: '/dashboard/manufacturer/inventory', element: <SupplierInventoryPage /> },
@@ -226,17 +236,18 @@ export const routes: RouteConfig[] = [
   { name: 'Order Details Shortcut', path: '/orders/:orderId', element: <OrderTrackingPage /> },
   { name: 'Order Pay Shortcut', path: '/orders/:orderId/pay', element: <OrderTrackingPage /> },
   { name: 'Buyer Requirements Shortcut', path: '/buyer/requirements', element: <BuyerRequirementsOverviewPage /> },
-  { name: 'Supplier Wallet Alias', path: '/dashboard/supplier/wallet', element: <SupplierLeadCreditsPage /> },
   { name: 'Supplier Credits Alias', path: '/dashboard/supplier/credits', element: <SupplierLeadCreditsPage /> },
   { name: 'Supplier Company Profile Alias', path: '/dashboard/supplier/company', element: <SupplierProfilePage /> },
   { name: 'Messages Shortcut', path: '/messages', element: <MessagesPage /> },
   { name: 'Chat Shortcut', path: '/chat', element: <MessagesPage /> },
   { name: 'Notifications Shortcut', path: '/notifications', element: <NotificationsPage /> },
-  { name: 'Wallet Shortcut', path: '/wallet', element: <SupplierLeadCreditsPage /> },
+  { name: 'Wallet Shortcut', path: '/wallet', element: <SupplierWalletPage /> },
 
   // ── Admin ─────────────────────────────────────────────────────
   { name: 'Admin Dashboard', path: '/dashboard/admin', element: <AdminDashboardFull /> },
   { name: 'AI Match Analytics', path: '/dashboard/admin/ai-match-analytics', element: <AIMatchAnalyticsPage /> },
+  { name: 'Admin Reports', path: '/dashboard/admin/reports', element: <AdminReportsPage /> },
+  { name: 'Admin Payments', path: '/dashboard/admin/payments', element: <AdminPaymentsPage /> },
 
   // ── Company / Legal ───────────────────────────────────────────
   { name: 'About Us',      path: '/about',         element: <AboutPage />,        public: true },

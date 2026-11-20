@@ -89,6 +89,22 @@ export default function ProtectedContact({
     ? 'Buyer Contact Number' 
     : 'Direct Contact Number';
 
+  // Nothing to unlock when no number was shared: a made-up number would send calls to a stranger.
+  if (!(phone && String(phone).trim())) {
+    return variant === 'card' ? (
+      <div className={`p-3.5 rounded-2xl bg-muted/30 border border-dashed border-border space-y-1 text-xs ${className}`}>
+        <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
+          <Phone className="w-3.5 h-3.5 text-primary" /> {contactLabel}
+        </span>
+        <p className="text-muted-foreground">No phone number shared. Use the quotation or chat on this page.</p>
+      </div>
+    ) : (
+      <span className={`inline-flex items-center gap-1.5 text-xs text-muted-foreground ${className}`}>
+        <Phone className="w-3.5 h-3.5 shrink-0" /> No phone number shared
+      </span>
+    );
+  }
+
   // ── 1. Unlocked View: ONLY Post Owner with Active Paid Subscription ──
   if (canView) {
     if (variant === 'pill') {
@@ -252,7 +268,7 @@ export default function ProtectedContact({
               Unlock Buyer Contact Details
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Activate your manufacturer subscription to view unmasked buyer phone numbers and start direct negotiations on RFQ leads.
+              With an active supplier plan you can see the phone numbers buyers share on their requirements and contact them directly.
             </DialogDescription>
           </DialogHeader>
 
@@ -262,10 +278,9 @@ export default function ProtectedContact({
               <span>Paid Subscription Privileges:</span>
             </div>
             <ul className="space-y-1.5 text-muted-foreground pl-6 list-disc text-[11px]">
-              <li><strong className="text-foreground">Unmasked Direct Phone & WhatsApp</strong> for all active RFQ buyers</li>
-              <li><strong className="text-foreground">Full Bidding Contact Numbers</strong> across 24h & reverse auction rooms</li>
-              <li><strong className="text-foreground">Unlimited Quotation Submissions</strong> directly to corporate buyers</li>
-              <li><strong className="text-foreground">Priority Supplier Placement</strong> & Verified Manufacturer Badge</li>
+              <li><strong className="text-foreground">Phone & WhatsApp</strong> of buyers who shared a number on their requirement</li>
+              <li><strong className="text-foreground">Bidder contact numbers</strong> in auction rooms</li>
+              <li><strong className="text-foreground">Quotations to buyers</strong>, as many a month as your plan allows</li>
             </ul>
           </div>
 

@@ -223,12 +223,12 @@ export default function TradeAssistantPage() {
   ]);
 
   // ── Tab 4: Shipment Coordination Form ──
-  const [coordOrigin, setCoordOrigin] = useState('Mumbai, India');
-  const [coordDest, setCoordDest] = useState('Los Angeles, CA, USA');
-  const [coordCargoDesc, setCoordCargoDesc] = useState('3.5 Ton Industrial Electric Forklifts');
-  const [coordReadyDate, setCoordReadyDate] = useState('2026-11-15');
+  const [coordOrigin, setCoordOrigin] = useState('');
+  const [coordDest, setCoordDest] = useState('');
+  const [coordCargoDesc, setCoordCargoDesc] = useState('');
+  const [coordReadyDate, setCoordReadyDate] = useState('');
   const [coordContainerType, setCoordContainerType] = useState('40ft High Cube Container');
-  const [coordNotes, setCoordNotes] = useState('Need door-to-door freight quotation including customs clearance at Port of LA.');
+  const [coordNotes, setCoordNotes] = useState('');
   const [coordSubmitted, setCoordSubmitted] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState('');
 
@@ -330,10 +330,19 @@ export default function TradeAssistantPage() {
       return;
     }
 
-    const newRef = `BK-SHIP-${Math.floor(100000 + Math.random() * 900000)}`;
-    setTrackingNumber(newRef);
+    // There is no shipment desk in the app yet: the request goes to the BulkSkart team by e-mail.
+    const body = [
+      `Pickup: ${coordOrigin}`,
+      `Destination: ${coordDest}`,
+      `Cargo: ${coordCargoDesc}`,
+      `Ready date: ${coordReadyDate}`,
+      `Container: ${coordContainerType}`,
+      '',
+      coordNotes,
+    ].join('\n');
+    window.location.href = `mailto:info@bulkskart.com?subject=${encodeURIComponent(`Shipment request: ${coordCargoDesc.trim()}`)}&body=${encodeURIComponent(body)}`;
+    setTrackingNumber('');
     setCoordSubmitted(true);
-    toast.success('Shipment coordination request submitted! Partner logistics team notified.');
   };
 
   return (
@@ -1168,9 +1177,9 @@ export default function TradeAssistantPage() {
                     <div className="w-12 h-12 rounded-full bg-[#FF5A00]/20 text-[#FF7A2E] flex items-center justify-center mx-auto">
                       <CheckCircle2 className="w-6 h-6" />
                     </div>
-                    <h3 className="text-lg font-bold text-white">Shipment Request Dispatched!</h3>
+                    <h3 className="text-lg font-bold text-white">Send the e-mail to finish</h3>
                     <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                      Your coordination dossier has been assigned reference ID <strong className="text-[#FF7A2E] font-mono">{trackingNumber}</strong>. A dedicated logistics officer from our verified partner network will contact you within 4 business hours.
+                      Your e-mail app opened with the shipment details filled in. Send it to info@bulkskart.com and the BulkSkart team will reply.{trackingNumber ? ` Reference: ${trackingNumber}.` : ''}
                     </p>
                     <div className="pt-2">
                       <Button

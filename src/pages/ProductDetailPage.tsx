@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layouts/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -79,17 +80,20 @@ function parseSpecifications(raw: string | null): [string, string][] {
 /** Format a price display string from the product */
 function formatPrice(product: Product, isIndia: boolean, rate: number): string {
   if (!product.price_min) return 'Price on request';
-  const cur = product.price_currency ?? (isIndia ? 'INR' : 'USD');
-  const isUsd = !cur || cur.toUpperCase() === 'USD' || product.price_min < 1000;
+  // In the currency the supplier saved (rupees when none is given); only US-dollar prices are converted.
+  const cur = (product.price_currency || 'INR').toUpperCase();
+  const isUsd = cur === 'USD' || cur === '$';
   const convertedMin = isIndia && isUsd ? product.price_min * (rate || 83.5) : product.price_min;
   const convertedMax = product.price_max
     ? (isIndia && isUsd ? product.price_max * (rate || 83.5) : product.price_max)
     : null;
-  const symbol = isIndia ? '₹' : (cur === 'USD' ? '$' : cur);
-  const minStr = Math.round(convertedMin).toLocaleString(isIndia ? 'en-IN' : 'en-US');
+  const symbol = cur === 'INR' || (isIndia && isUsd) ? '₹' : isUsd ? '$' : cur;
+  const locale = symbol === '₹' ? 'en-IN' : 'en-US';
+  const show = (v: number) => v.toLocaleString(locale, { maximumFractionDigits: v < 100 ? 2 : 0 });
+  const minStr = show(convertedMin);
 
   if (convertedMax && convertedMax !== convertedMin) {
-    const maxStr = Math.round(convertedMax).toLocaleString(isIndia ? 'en-IN' : 'en-US');
+    const maxStr = show(convertedMax);
     return `${symbol} ${minStr} – ${maxStr}`;
   }
   return `${symbol} ${minStr}+`;
@@ -225,6 +229,13 @@ export default function ProductDetailPage() {
     product.companies?.country === 'India';
   const rate = currencyInfo.rate || 83.5;
   const priceDisplay = formatPrice(product, isIndia, rate);
+  // The supplier's real rating from buyer reviews (none until buyers have reviewed them).
+  const supplierRating = Number(product.companies?.rating_avg) || 0;
+  // Bulk calculator: the supplier's own currency (rupees when none is given); only US-dollar prices are converted for India.
+  const savedCurrency = (product.price_currency || 'INR').toUpperCase();
+  const convertUsd = isIndia && savedCurrency === 'USD';
+  const calcCurrency = convertUsd ? 'INR' : savedCurrency;
+  const calcPrice = (v: number | null | undefined) => (v == null ? null : convertUsd ? v * rate : v);
   const companyName = product.companies?.company_name ?? 'Supplier';
   const companySlug = product.companies?.slug ?? '#';
   const city = product.companies?.city ?? '';
@@ -483,7 +494,11 @@ export default function ProductDetailPage() {
                     onClick={() => setActiveTab('Reviews')}
                     className="flex items-center gap-1 text-xs hover:opacity-80 transition-opacity"
                   >
-                    <InteractiveStarRating value={4.8} readOnly size="sm" showNumber />
+                    {supplierRating > 0 ? (
+                      <InteractiveStarRating value={supplierRating} readOnly size="sm" showNumber />
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground">No reviews yet</span>
+                    )}
                   </button>
                   <button
                     type="button"
@@ -509,6 +524,7 @@ export default function ProductDetailPage() {
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Price Range</p>
                     <p className="text-base font-black text-primary leading-tight">{priceDisplay}</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">Excl. GST</p>
+                    <LoanEligibleTag size="sm" link className="mt-1.5" />
                     <button
                       type="button"
                       onClick={() => setShowCountryTaxesModal(true)}
@@ -867,6 +883,7 @@ export default function ProductDetailPage() {
                             <p className="text-xs font-bold text-foreground leading-tight mb-1 line-clamp-2">{p.name}</p>
                             <p className="text-xs font-black text-primary mb-0.5">{simPrice}</p>
                             <p className="text-[10px] text-muted-foreground">MOQ: {p.moq ?? 1} {p.moq_unit ?? 'pcs'}</p>
+                            <LoanEligibleTag size="xs" className="mt-1" />
                             {p.companies?.company_name && (
                               <p className="text-[10px] text-muted-foreground/60 truncate mt-0.5">{p.companies.company_name}</p>
                             )}
@@ -981,7 +998,11 @@ export default function ProductDetailPage() {
                       onClick={() => setActiveTab('Reviews')}
                       className="flex items-center gap-1 text-xs hover:opacity-80 transition-opacity cursor-pointer"
                     >
-                      <InteractiveStarRating value={4.8} readOnly size="sm" showNumber />
+                      {supplierRating > 0 ? (
+                      <InteractiveStarRating value={supplierRating} readOnly size="sm" showNumber />
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground">No reviews yet</span>
+                    )}
                       <span className="text-[11px] text-primary hover:underline ml-1">Write Review</span>
                     </button>
                     <div className="ml-auto flex items-center gap-1.5">
@@ -1016,6 +1037,7 @@ export default function ProductDetailPage() {
                       </button>
                     </div>
                     <p className="text-xs text-primary mt-1 font-medium">Better pricing for bulk orders</p>
+                    <LoanEligibleTag size="md" link className="mt-2" />
                   </div>
 
                   {/* MOQ */}
@@ -1057,21 +1079,11 @@ export default function ProductDetailPage() {
                 {/* Bulk Price Calculator — uses current product's actual price */}
                 <BulkPriceCalculator
                   productId={product.id}
-                  priceMin={
-                    isIndia && (!product.price_currency || product.price_currency === 'USD' || (product.price_min ?? 0) < 1000)
-                      ? (product.price_min ?? 0) * rate
-                      : (product.price_min ?? null)
-                  }
-                  priceMax={
-                    product.price_max
-                      ? (isIndia && (!product.price_currency || product.price_currency === 'USD' || product.price_max < 1000)
-                          ? product.price_max * rate
-                          : product.price_max)
-                      : null
-                  }
+                  priceMin={calcPrice(product.price_min)}
+                  priceMax={product.price_max ? calcPrice(product.price_max) : null}
                   moq={product.moq ?? 1}
                   moqUnit={product.moq_unit ?? 'Pcs'}
-                  currency={isIndia ? 'INR' : (product.price_currency ?? 'USD')}
+                  currency={calcCurrency}
                 />
 
                 {/* Supplier card — from product.companies */}

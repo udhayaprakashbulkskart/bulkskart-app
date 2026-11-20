@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import TransportScene from '@/components/home/TransportScene';
 import DiwaliBurst from '@/components/home/DiwaliBurst';
+import ProductCarouselHero from '@/components/home/hero/ProductCarouselHero';
 
 // ── Content ────────────────────────────────────────────────────────────
 const TRENDING = ['Textile', 'Steel', 'Chemicals', 'Packaging', 'Electrical'];
@@ -294,6 +295,9 @@ export default function LandingHero() {
           </div>
         </div>
       </div>
+
+      {/* ═════════════ PRODUCT SCROLL: curved product carousel ═════════════ */}
+      <ProductCarouselHero />
 
       {/* ═════════════ CATEGORY CHIPS ═════════════ */}
       <div className="relative mx-auto mt-2 max-w-[1400px] px-4 sm:px-5 md:px-6">

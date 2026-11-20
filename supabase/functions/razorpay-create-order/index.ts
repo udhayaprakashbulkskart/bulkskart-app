@@ -4,8 +4,10 @@
  * Creates a Razorpay order for:
  * 1. Subscription plans (subscription_orders)
  * 2. Product Promotions (product_promotions)
+ * 3. Paying for an order online; razorpay-verify-payment then holds the money until the order is delivered
  *
  * POST body for subscription: { type: 'subscription', plan_tier, plan_label, price_inr, billing_cycle, company_id }
+ * POST body for an order:     { type: 'order_payment', order_id }   (the amount is the order's own total)
  * POST body for promotion:    { type: 'promotion', product_id, promotion_type, duration_days, base_amount, gst_amount, total_amount, target_category, target_country, company_id }
  */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
@@ -53,6 +55,55 @@ serve(async (req) => {
 
     const body = await req.json();
     const { type = 'subscription', company_id } = body;
+
+    // ========================================================
+    // Paying for an order (the buyer of that order). The money is held by
+    // BulkSkart and reaches the manufacturer's wallet only after delivery.
+    // ========================================================
+    if (type === 'order_payment') {
+      const credentials = btoa(`${keyId}:${keySecret}`);
+      const reply = (status: number, payload: unknown) =>
+        new Response(JSON.stringify(payload), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
+      const { data: order } = await supabase
+        .from('orders')
+        .select('id, order_number, buyer_id, total_amount, currency, payment_status, order_status, supplier_company_id')
+        .eq('id', String(body.order_id || ''))
+        .maybeSingle();
+      if (!order || order.buyer_id !== user.id) return reply(404, { error: 'Order not found' });
+      if ((order.payment_status ?? 'pending') !== 'pending') return reply(409, { error: 'This order is already paid' });
+      if (order.order_status === 'cancelled') return reply(409, { error: 'This order is cancelled' });
+      if ((order.currency ?? 'INR') !== 'INR') {
+        return reply(400, { error: 'Online payment is available for orders in rupees. Pay at the factory, or ask the manufacturer to quote in INR.' });
+      }
+      const amountPaise = Math.round(Number(order.total_amount) * 100);
+      if (!Number.isFinite(amountPaise) || amountPaise < 100) return reply(400, { error: 'This order has no amount to pay' });
+
+      const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amountPaise,
+          currency: 'INR',
+          receipt: `ord_${String(order.order_number).slice(0, 30)}`,
+          notes: { type: 'order_payment', order_id: order.id, order_number: order.order_number, buyer_id: user.id },
+        }),
+      });
+      if (!rzpRes.ok) {
+        const err = await rzpRes.text();
+        console.error('Razorpay order creation failed for order payment:', err);
+        return reply(502, { error: 'The payment could not be started. Large amounts may need netbanking, or a higher limit on the Razorpay account.', details: err });
+      }
+      const rzpOrder = await rzpRes.json();
+      const { error: saveErr } = await supabase
+        .from('orders')
+        .update({ razorpay_order_id: rzpOrder.id, payment_method: 'online' })
+        .eq('id', order.id);
+      if (saveErr) {
+        console.error('Could not record the payment order on the order:', saveErr);
+        return reply(500, { error: 'Could not start the payment. Please try again.' });
+      }
+      return reply(200, { order_id: rzpOrder.id, amount: rzpOrder.amount, currency: rzpOrder.currency, key_id: keyId });
+    }
 
     if (!company_id) {
       return new Response(JSON.stringify({ error: 'Missing company_id' }), {

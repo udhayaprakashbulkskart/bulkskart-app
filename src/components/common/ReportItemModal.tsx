@@ -19,6 +19,7 @@ import {
 import { AlertTriangle, CheckCircle, ShieldAlert, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/db/supabase';
 
 interface ReportItemModalProps {
   open: boolean;
@@ -53,7 +54,7 @@ export default function ReportItemModal({
   const [submitted, setSubmitted] = useState(false);
   const [ticketId, setTicketId] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason) {
       toast.error('Please select a violation reason.');
@@ -64,31 +65,39 @@ export default function ReportItemModal({
       return;
     }
 
-    setLoading(true);
-    const newTicketId = `REP-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    setTimeout(() => {
-      // Save report in local storage for platform tracking
-      const existingReports = JSON.parse(localStorage.getItem('bs_reports') || '[]');
-      existingReports.push({
-        ticketId: newTicketId,
-        targetType,
-        targetId,
-        targetTitle,
-        reason,
-        notes: notes.trim(),
-        reporterEmail: contactEmail || user?.email || 'anonymous@bulkskart.com',
-        reporterUserId: user?.id || null,
-        createdAt: new Date().toISOString(),
-        status: 'pending_review',
-      });
-      localStorage.setItem('bs_reports', JSON.stringify(existingReports));
-
-      setLoading(false);
+    // Signed-in visitors: the report is saved for the BulkSkart team (Admin reports).
+    // Visitors who are not signed in: their e-mail app opens with the report ready to send to us.
+    if (!user) {
+      const subject = `Report: ${targetType} "${targetTitle}"`;
+      const body = `${targetType}: ${targetTitle}\nID: ${targetId}\nPage: ${window.location.href}\n\nReason: ${reason}\n\nDetails:\n${notes.trim()}\n\nReply to: ${contactEmail || ''}`;
+      window.location.href = `mailto:info@bulkskart.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      setTicketId('');
       setSubmitted(true);
-      setTicketId(newTicketId);
-      toast.success(`Report submitted successfully (Ref #${newTicketId}).`);
-    }, 600);
+      return;
+    }
+
+    setLoading(true);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+    const { data, error } = await supabase
+      .from('reports')
+      .insert({
+        reporter_id: user.id,
+        reason,
+        description: `[${targetType}] ${targetTitle} (${targetId})\n\n${notes.trim()}`,
+        reported_product_id: targetType === 'product' && isUuid ? targetId : null,
+        reported_company_id: targetType === 'company' && isUuid ? targetId : null,
+      })
+      .select('id')
+      .maybeSingle();
+    setLoading(false);
+    if (error) {
+      toast.error('Your report could not be sent. Please try again, or e-mail info@bulkskart.com.');
+      return;
+    }
+    const reference = String(data?.id ?? '').slice(0, 8).toUpperCase();
+    setTicketId(reference);
+    setSubmitted(true);
+    toast.success(reference ? `Report sent (Ref #${reference}).` : 'Report sent.');
   };
 
   const handleClose = () => {
@@ -126,13 +135,17 @@ export default function ReportItemModal({
               <CheckCircle className="w-7 h-7" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white mb-1">Report Received</h3>
+              <h3 className="text-base font-bold text-white mb-1">{ticketId ? 'Report sent' : 'Send the e-mail to finish'}</h3>
               <p className="text-xs text-slate-300 max-w-sm mx-auto">
-                Thank you for helping keep BulkSkart a safe B2B trade marketplace. Our compliance team will review your report within 24 hours.
+                {ticketId
+                  ? 'Thank you. The BulkSkart team will review your report.'
+                  : 'Your e-mail app opened with the report filled in. Send it to info@bulkskart.com and we will review it. Signed-in users can report directly.'}
               </p>
-              <div className="mt-3 inline-block px-3 py-1.5 rounded-lg bg-[#0A0A0A]/80 border border-[#2A2A2A] text-xs text-slate-300 font-mono">
-                Tracking Ref: <span className="text-[#FF5A1F] font-bold">{ticketId}</span>
-              </div>
+              {ticketId && (
+                <div className="mt-3 inline-block px-3 py-1.5 rounded-lg bg-[#0A0A0A]/80 border border-[#2A2A2A] text-xs text-slate-300 font-mono">
+                  Reference: <span className="text-[#FF5A1F] font-bold">{ticketId}</span>
+                </div>
+              )}
             </div>
             <div className="pt-2">
               <Button

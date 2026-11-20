@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { claimBrowserStorageFor } from '@/lib/userScopedStorage';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/db/supabase';
 import type { Profile, Company, BuyerProfile, Subscription } from '@/types/types';
@@ -249,6 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(s);
         setUser(s?.user ?? null);
         if (s?.user) {
+          claimBrowserStorageFor(s.user.id);
           fetchProfile(s.user.id, s.user)
             .catch(() => {})
             .finally(() => {
@@ -289,6 +291,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
+        claimBrowserStorageFor(s.user.id);
         await fetchProfile(s.user.id, s.user).catch(() => {});
       }
       if (isMounted) setLoading(false);
