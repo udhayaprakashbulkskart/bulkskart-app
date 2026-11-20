@@ -841,8 +841,13 @@ function isOwnStorageImage(url?: string | null): boolean {
 }
 
 function coverFor(s: DisplaySupplier, index: number): string {
-  if (isOwnStorageImage(s.img)) return s.img;
-  // tower and factory take turns, as in the design, so neighbouring cards differ
+  // Each supplier keeps its own photo (its upload, or the photo matched to its industry),
+  // so cards don't repeat; the design covers are only used when there is no photo at all
+  if (s.img && (isOwnStorageImage(s.img) || /^https:\/\//.test(s.img))) return s.img;
+  return designCoverFor(index);
+}
+
+function designCoverFor(index: number): string {
   return index % 2 === 0 ? DESIGN_COVERS.tower : DESIGN_COVERS.factory;
 }
 
@@ -879,7 +884,7 @@ function SupplierCardDesign({
       }`}
     >
       <div className="relative aspect-[2/1] w-full cursor-pointer overflow-hidden bg-[#0A0A0A]" onClick={onOpen}>
-        <img src={coverFor(s, index)} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" loading={index < 4 ? 'eager' : 'lazy'} decoding="async" />
+        <img src={coverFor(s, index)} alt="" onError={(e) => { const fb = designCoverFor(index); if (!e.currentTarget.src.endsWith(fb)) e.currentTarget.src = fb; }} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" loading={index < 4 ? 'eager' : 'lazy'} decoding="async" />
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#121826] to-transparent" />
         <span className="absolute left-1.5 top-1.5 z-10 inline-flex items-center gap-1 rounded-full bg-gradient-to-b from-[#FF7A1A] to-[#F25600] px-1.5 py-[3px] text-[8px] font-bold text-white shadow-lg md:left-3 md:top-3 md:px-2.5 md:py-1 md:text-[11px]">
           <BadgeCheck className="h-2.5 w-2.5 md:h-3.5 md:w-3.5" aria-hidden="true" />
