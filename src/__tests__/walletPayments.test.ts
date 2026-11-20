@@ -30,6 +30,10 @@ describe('wallet: buyer pays BulkSkart, manufacturer is paid after the order is 
     expect(create).toContain('const amountPaise = Math.round(Number(order.total_amount) * 100);');
     // the order case runs before the company check that subscriptions need
     expect(create.indexOf("if (type === 'order_payment') {")).toBeLessThan(create.indexOf('if (!company_id) {'));
+    // a signed-in supplier can pay for a plan before a company profile exists; the server opens a blank one they own
+    expect(create).toContain('async function supplierCompanyForPayment');
+    expect(create).toContain('onboarding_completed: false');
+    expect(create).toContain('Forbidden: You do not own this company profile');
 
     const verify = src('supabase/functions/razorpay-verify-payment/index.ts');
     expect(verify).toContain("(!company_id && type !== 'order_payment')");

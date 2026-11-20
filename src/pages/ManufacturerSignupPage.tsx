@@ -184,8 +184,8 @@ export default function ManufacturerSignupPage() {
   const owner = user ? { id: user.id, email: user.email ?? account.email } : created;
 
   const pay = (plan: (typeof plans)[number], total: number) => {
-    if (!companyId || !owner) {
-      toast.error('Please finish creating your account first.');
+    if (!owner) {
+      toast.error('Please sign in before paying.');
       return;
     }
     trackEvent('manufacturer_signup_checkout', { plan: plan.tier, amount: total });
@@ -194,7 +194,7 @@ export default function ManufacturerSignupPage() {
       plan_label: `${plan.label} Plan`,
       price_inr: total,
       billing_cycle: 'monthly',
-      company_id: companyId,
+      company_id: companyId ?? undefined,
       user_name: account.fullName || profile?.full_name || displayName,
       user_email: owner.email,
       user_phone: checkMobile(account.phone).e164 ?? profile?.phone ?? '',
@@ -272,6 +272,7 @@ export default function ManufacturerSignupPage() {
         onResetEdits={() => setEdits({})}
         blocked={gstBlocked ? 'Finish the GST number (15 characters) or clear the box to continue.' : ''}
         onContinue={goToAccount}
+        onPayNow={user ? () => setStep('plan') : undefined}
       />
     );
   } else if (step === 'account') {
@@ -290,6 +291,7 @@ export default function ManufacturerSignupPage() {
           setStep('about');
         }}
         onSubmit={createAccount}
+        onPayNow={owner ? () => setStep('plan') : undefined}
       />
     );
   } else {
@@ -302,6 +304,7 @@ export default function ManufacturerSignupPage() {
         country={PRICING_COUNTRY}
         formatPrice={formatRupees}
         busy={paying}
+        profileReady={Boolean(companyId)}
         onPay={pay}
         onSkip={() => navigate(after)}
       />

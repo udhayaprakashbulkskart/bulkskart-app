@@ -9,7 +9,10 @@
  *
  * Every amount is set here from pricing.ts. Amounts sent by the browser (price_inr, total_amount, ...) are ignored.
  *
- * POST body for subscription: { type: 'subscription', plan_tier, company_id }
+ * POST body for subscription: { type: 'subscription', plan_tier, company_id? }
+ * A signed-in supplier can pay before their profile is finished. company_id is used only when it
+ * belongs to that person. When it is missing, this function uses their company, or opens a blank
+ * unverified one for them. The browser never chooses the price or someone else's company.
  * POST body for promotion:    { type: 'promotion', product_id, promotion_type, duration_days, target_category, target_country, company_id }
  * POST body for auction fee:  { type: 'auction_fee', auction: { title, description, total_quantity, quantity_unit, starting_price,
  *                               reserve_price, min_bid_increment, duration: '1h' | '24h', delivery_location, lead_time, specs,
@@ -65,6 +68,79 @@ const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+type PayUser = { id: string; email?: string | null };
+// deno-lint-ignore no-explicit-any
+type Db = any;
+
+/**
+ * The company a subscription is paid for. A supplied id is accepted only when this person owns it
+ * (or is an admin). With no id, their existing company is used. If they have none yet, a blank
+ * unverified company is opened in their name so the payment has somewhere safe to land. Balances
+ * and verification are left untouched.
+ */
+async function supplierCompanyForPayment(
+  supabase: Db,
+  user: PayUser,
+  requestedId: string | undefined,
+  createIfMissing: boolean,
+): Promise<{ id: string } | { status: number; error: string }> {
+  if (requestedId) {
+    const { data: company, error } = await supabase
+      .from('companies')
+      .select('id, owner_id')
+      .eq('id', requestedId)
+      .maybeSingle();
+    if (error || !company) return { status: 404, error: 'Company not found' };
+    if (company.owner_id !== user.id) {
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+      if (profile?.role !== 'admin') return { status: 403, error: 'Forbidden: You do not own this company profile' };
+    }
+    return { id: company.id };
+  }
+
+  if (!createIfMissing) return { status: 400, error: 'Missing company_id' };
+
+  const { data: existing } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('owner_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existing?.id) return { id: existing.id };
+
+  const { data: profile } = await supabase.from('profiles').select('full_name, role').eq('id', user.id).maybeSingle();
+  if (profile?.role === 'admin') return { status: 400, error: 'Missing company_id' };
+
+  const rawName = (profile?.full_name || user.email?.split('@')[0] || 'Supplier').trim();
+  const companyName = rawName.slice(0, 120) || 'Supplier';
+  const slug = `supplier-${user.id.replace(/-/g, '').slice(0, 12)}-${Date.now().toString(36)}`;
+  const minimal = {
+    owner_id: user.id,
+    company_name: companyName,
+    slug,
+    country: 'India',
+    business_type: 'manufacturer',
+    verification_status: 'unverified',
+  };
+  let inserted = await supabase
+    .from('companies')
+    .insert({ ...minimal, onboarding_step: 1, onboarding_completed: false, profile_completion: 0 })
+    .select('id')
+    .maybeSingle();
+  if (inserted.error && /column/i.test(String(inserted.error.message || ''))) {
+    inserted = await supabase.from('companies').insert(minimal).select('id').maybeSingle();
+  }
+  if (inserted.error || !inserted.data?.id) {
+    console.error('Could not open a supplier account for payment:', inserted.error);
+    return { status: 500, error: 'Could not start your supplier account for this payment. Please try again.' };
+  }
+  if (profile && profile.role !== 'supplier' && profile.role !== 'admin') {
+    await supabase.from('profiles').update({ role: 'supplier' }).eq('id', user.id);
+  }
+  return { id: inserted.data.id };
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
@@ -253,42 +329,30 @@ serve(async (req) => {
       return reply(200, { order_id: rzpOrder.id, amount: rzpOrder.amount, currency: rzpOrder.currency, key_id: keyId });
     }
 
-    if (!company_id) {
-      return new Response(JSON.stringify({ error: 'Missing company_id' }), {
-        status: 400,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Verify ownership of the company or admin role
-    const { data: company, error: compErr } = await supabase
-      .from('companies')
-      .select('id, owner_id')
-      .eq('id', company_id)
-      .maybeSingle();
-
-    if (compErr || !company) {
-      return new Response(JSON.stringify({ error: 'Company not found' }), {
-        status: 404,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Check if user is owner or admin
-    if (company.owner_id !== user.id) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (profile?.role !== 'admin') {
-        return new Response(JSON.stringify({ error: 'Forbidden: You do not own this company profile' }), {
-          status: 403,
+    // Promotions belong to a product the company already lists, so they still need that company.
+    // Subscriptions do not: a signed-in supplier can pay before the profile is finished.
+    if (type === 'promotion') {
+      if (!company_id) {
+        return new Response(JSON.stringify({ error: 'Missing company_id' }), {
+          status: 400,
           headers: { ...CORS, 'Content-Type': 'application/json' },
         });
       }
     }
+
+    const owned = await supplierCompanyForPayment(
+      supabase,
+      user,
+      typeof company_id === 'string' && company_id ? company_id : undefined,
+      type !== 'promotion',
+    );
+    if ('error' in owned) {
+      return new Response(JSON.stringify({ error: owned.error }), {
+        status: owned.status,
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
+    const companyId = owned.id;
 
     // ========================================================
     // CASE A: Product Promotion Order
@@ -323,7 +387,7 @@ serve(async (req) => {
         .from('products')
         .select('id, name, company_id')
         .eq('id', product_id)
-        .eq('company_id', company_id)
+        .eq('company_id', companyId)
         .maybeSingle();
 
       if (prodErr || !product) {
@@ -349,7 +413,7 @@ serve(async (req) => {
           receipt: `promo_${Date.now()}`,
           notes: {
             type: 'promotion',
-            company_id,
+            company_id: companyId,
             product_id,
             promotion_type: price.type,
             duration_days: String(price.days),
@@ -375,7 +439,7 @@ serve(async (req) => {
       const { data: promoRecord, error: promoErr } = await supabase
         .from('product_promotions')
         .insert({
-          company_id,
+          company_id: companyId,
           product_id,
           promotion_type: price.type,
           target_category: target_category || null,
@@ -437,7 +501,7 @@ serve(async (req) => {
         amount,
         currency: 'INR',
         receipt: `sub_${Date.now()}`,
-        notes: { plan_tier: plan.tier, plan_label: plan.label, company_id, user_id: user.id },
+        notes: { plan_tier: plan.tier, plan_label: plan.label, company_id: companyId, user_id: user.id },
       }),
     });
 
@@ -453,7 +517,7 @@ serve(async (req) => {
     const rzpOrder = await rzpRes.json();
 
     const { error: dbErr } = await supabase.from('subscription_orders').insert({
-      company_id,
+      company_id: companyId,
       user_id: user.id,
       plan_tier: plan.tier,
       plan_label: plan.label,
