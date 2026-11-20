@@ -24,6 +24,17 @@ describe('home page top laid out from the design picture', () => {
     }
   });
 
+  it('shows eight more categories with pictures from tablet width up, keeping the phone at six tiles', () => {
+    expect(landing).toContain('grid grid-cols-6 gap-1.5 sm:gap-2.5 md:grid-cols-7');
+    expect(landing).toContain('group hidden flex-col items-center overflow-hidden rounded-2xl bg-white px-2 pb-3 pt-3 text-center');
+    for (const file of ['cat-metals.jpg', 'cat-construction.jpg', 'cat-agriculture.jpg', 'cat-automotive.jpg', 'cat-solar.jpg', 'cat-furniture.jpg', 'cat-home-kitchen.jpg', 'cat-beauty.jpg']) {
+      expect(landing).toContain(`/home-design/${file}`);
+      expect(existsSync(join(process.cwd(), 'public/home-design', file))).toBe(true);
+    }
+    // credited: thumbnails of the licensed catalogue photos
+    expect(src('public/home-design/README.md')).toContain('CREDITS.md');
+  });
+
   it('links the category tiles, banner and action tiles to real pages', () => {
     for (const to of ['/products?category=machinery-industrial', '/products?category=packaging', '/products?category=electronics-electricals', '/products?category=textiles-apparel', '/products?category=chemicals-raw-materials', '/categories', '/auctions', '/post-requirement', '/manufacturers', '/auth?tab=supplier']) {
       expect(landing.includes(`'${to}'`) || landing.includes(`"${to}"`)).toBe(true);
