@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   ArrowRight, Bookmark, Box, CalendarDays, CheckCircle2, ChevronDown, Clock, Coins, Crown, FileText, Filter, Flame,
-  Handshake, Layers, LayoutGrid, Loader2, Lock, MapPin, Plus, Sparkles, Users,
+  BellOff, BellRing, Handshake, Layers, LayoutGrid, Loader2, Lock, MapPin, Plus, Sparkles, Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
@@ -27,6 +27,7 @@ import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import { getRequirementVisualInfo } from '@/lib/requirementVisuals';
 import { formatMoney } from '@/lib/productPrice';
 import { isOutsideListing } from '@/lib/rfqSources';
+import { RFQ_ALERTS_EVENT, rfqAlertsOff, setRfqAlertsOff } from '@/lib/rfqAlerts';
 import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
 
 const PAGE_SIZE = 10;
@@ -310,6 +311,14 @@ export default function LiveRequirementsFeed() {
     };
   }, []);
 
+  // the "New RFQ Posted!" popups at the top of the site can be switched off and on here
+  const [alertsOff, setAlertsOff] = useState(rfqAlertsOff);
+  useEffect(() => {
+    const sync = () => setAlertsOff(rfqAlertsOff());
+    window.addEventListener(RFQ_ALERTS_EVENT, sync);
+    return () => window.removeEventListener(RFQ_ALERTS_EVENT, sync);
+  }, []);
+
   /** Guests sign up as a supplier; signed-in people without a company finish their company profile. */
   const registerCompanyHref = user ? '/dashboard/supplier/profile' : '/auth?tab=supplier';
 
@@ -451,10 +460,22 @@ export default function LiveRequirementsFeed() {
         </div>
 
         {/* ── Live feed ── */}
-        <p className="mt-3 flex items-center gap-1.5 px-1 text-[10.5px] text-white/60 md:text-[13px]" aria-live="polite">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#E5322D]" aria-hidden="true" />
-          Live feed · new RFQs appear as buyers post them · updated {secondsAgo < 5 ? 'just now' : `${secondsAgo}s ago`}
-        </p>
+        <div className="mt-3 flex items-center gap-2 px-1">
+          <p className="flex min-w-0 flex-1 items-center gap-1.5 text-[10.5px] text-white/60 md:text-[13px]" aria-live="polite">
+            <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#E5322D]" aria-hidden="true" />
+            <span className="min-w-0">Live feed · new RFQs appear as buyers post them · updated {secondsAgo < 5 ? 'just now' : `${secondsAgo}s ago`}</span>
+          </p>
+          <button
+            type="button"
+            aria-pressed={!alertsOff}
+            onClick={() => setRfqAlertsOff(!alertsOff)}
+            title={alertsOff ? 'Show "New RFQ Posted!" popups at the top of the site' : 'Stop the "New RFQ Posted!" popups'}
+            className={`flex h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[10.5px] font-semibold transition-colors md:h-8 md:text-[12.5px] ${alertsOff ? 'border-[#FF5A00]/60 text-[#FF8A3D] hover:bg-[#FF5A00]/10' : 'border-white/15 text-white/70 hover:border-white/35 hover:text-white'}`}
+          >
+            {alertsOff ? <BellRing className="h-3.5 w-3.5" aria-hidden="true" /> : <BellOff className="h-3.5 w-3.5" aria-hidden="true" />}
+            {alertsOff ? 'Turn on RFQ alerts' : 'RFQ alerts on'}
+          </button>
+        </div>
 
         {/* Who can quote */}
         <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/[0.07] px-3 py-2 md:mt-3 md:px-4 md:py-2.5" role="note">
