@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import {
   Menu, Bell, ChevronDown, LogOut, User, LayoutDashboard,
   Globe, ChevronRight, Search, Moon, Sun, DollarSign, Zap, Check,
-  Settings, Shirt, Package, Beaker, AlertCircle, Sparkles, LogIn, UserPlus
+  Settings, Shirt, Package, Beaker, AlertCircle, Sparkles, LogIn, UserPlus, LayoutGrid
 } from 'lucide-react';
 
 // Mobile category chips shown below the search row
@@ -310,15 +310,27 @@ export default function Header() {
   return (
     <header className="relative z-30 w-full bg-background border-b border-border shadow-sm transition-colors">
       {/* ── Main row ── */}
-      <div className="max-w-[1400px] mx-auto px-2.5 sm:px-4 md:px-6 h-[56px] flex items-center gap-1 sm:gap-2 md:gap-4 justify-between md:justify-start">
+      <div className="max-w-[1400px] mx-auto px-2.5 sm:px-4 md:px-6 h-[50px] md:h-[56px] flex items-center gap-1 sm:gap-2 md:gap-4 justify-between md:justify-start">
+
+        {/* ── Mobile: menu button on the left of the logo ── */}
+        <div className="md:hidden shrink-0">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-foreground h-9 w-9 shrink-0 -ml-1" aria-label="Open navigation menu">
+                <Menu className="w-[22px] h-[22px]" />
+              </Button>
+            </SheetTrigger>
+            {drawer}
+          </Sheet>
+        </div>
 
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0 group py-1 min-w-0" aria-label="BulkSkart Homepage">
-          <LogoMark />
+          <LogoMark className="max-md:h-[30px] max-md:max-w-[140px] min-[380px]:max-md:max-w-[150px]" />
         </Link>
 
         {/* Search bar — desktop */}
-        <form onSubmit={handleSearch} className="dh-search hidden md:flex flex-1 min-w-[140px] max-w-[420px] lg:max-w-[500px] items-center bg-muted border border-border rounded-lg h-9 px-3 gap-2 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/30 transition-all">
+        <form onSubmit={handleSearch} className="hidden md:flex flex-1 min-w-[140px] max-w-[420px] lg:max-w-[500px] items-center bg-muted border border-border rounded-lg h-9 px-3 gap-2 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/30 transition-all">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input
             ref={searchInputRef}
@@ -328,35 +340,37 @@ export default function Header() {
             placeholder="Search products, suppliers, categories…"
             className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
           />
-          <Button type="submit" size="sm" className="h-7 px-3 text-[12px] bg-primary text-white rounded-md shrink-0">
+          <Button type="submit" size="sm" className="h-7 px-3 text-[12px] bg-[#C94400] text-white rounded-md shrink-0">
             Search
           </Button>
         </form>
 
         {/* ── Mobile: icon row (right side of logo) ── */}
-        <div className="md:hidden flex items-center gap-1 sm:gap-1.5 ml-auto shrink-0">
-          <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0" aria-label="Toggle theme">
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        <div className="md:hidden flex items-center gap-0.5 min-[360px]:gap-1 ml-auto shrink-0">
+          {/* Search, notifications and account, as in the mobile design (light/dark switch is in the menu) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              const input = searchInputRef.current;
+              input?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              input?.focus({ preventScroll: true });
+            }}
+            className="h-9 w-9 text-foreground shrink-0"
+            aria-label="Search"
+          >
+            <Search className="w-5 h-5" />
           </Button>
-          <CopyPublicProfileButton compact />
-          <NotificationBell />
+          <NotificationBell className="text-foreground [&_svg.lucide-bell]:w-5 [&_svg.lucide-bell]:h-5" />
           {user && profile ? (
-            <Link to={getDashboardLink()} className="w-7 h-7 rounded-full bg-[#FF5A00] flex items-center justify-center text-white text-xs font-bold shrink-0">
+            <Link to={getDashboardLink()} className="ml-0.5 w-8 h-8 rounded-full bg-[#FF5A00] flex items-center justify-center text-white text-[15px] font-bold shrink-0 shadow-[0_0_14px_-4px_rgba(255,90,0,0.9)]" aria-label="My dashboard">
               {(displayName || profile?.full_name || 'U')[0]?.toUpperCase() ?? 'U'}
             </Link>
           ) : (
             <Link to="/auth">
-              <Button size="sm" className="h-7 px-2 min-[360px]:px-2.5 text-[10.5px] min-[360px]:text-[11px] font-bold bg-[#FF5A00] hover:bg-[#e04e00] text-white rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Sign In</Button>
+              <Button size="sm" className="h-7 px-2 min-[360px]:px-2.5 text-[10.5px] min-[360px]:text-[11px] font-bold bg-[#C94400] hover:bg-[#B33D00] text-white rounded shadow-[0_2px_0_#922f00] whitespace-nowrap">Sign In</Button>
             </Link>
           )}
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-foreground h-8 w-8 shrink-0" aria-label="Open navigation menu">
-                <Menu className="w-4.5 h-4.5" />
-              </Button>
-            </SheetTrigger>
-            {drawer}
-          </Sheet>
         </div>
 
         {/* ── Desktop: right side controls ── */}
@@ -380,8 +394,8 @@ export default function Header() {
               <Button variant="ghost" size="sm" aria-label="Select Country and Currency" className="dh-region h-9 px-2 gap-1.5 text-[13px] text-muted-foreground hover:text-foreground font-semibold">
                 <span className="text-base leading-none">{countryConfig.flag}</span>
                 <span className="font-bold text-foreground">{countryConfig.code}</span>
-                <span className="text-xs font-mono text-muted-foreground">({countryConfig.symbol})</span>
-                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">
+                <span className="hidden lg:inline text-xs font-mono text-muted-foreground">({countryConfig.symbol})</span>
+                <span className="hidden lg:inline text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">
                   {countryConfig.taxLabel}
                 </span>
                 <ChevronDown className="w-3 h-3 opacity-60" />
@@ -427,7 +441,10 @@ export default function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <CopyPublicProfileButton />
+          {/* tablets: no room beside the search box; the dashboard has the same button */}
+          <span className="hidden lg:contents">
+            <CopyPublicProfileButton />
+          </span>
           <NotificationBell />
           {user ? (
             <DropdownMenu open={userMenuOpen} onOpenChange={setUserMenuOpen}>
@@ -436,7 +453,7 @@ export default function Header() {
                   <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
                     {(displayName || profile?.full_name || user.email || 'U')[0]?.toUpperCase() ?? 'U'}
                   </div>
-                  <span className="max-w-[80px] truncate">{(displayName || profile?.full_name || 'Account').split(' ')[0]}</span>
+                  <span className="hidden lg:inline max-w-[80px] truncate">{(displayName || profile?.full_name || 'Account').split(' ')[0]}</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
@@ -491,18 +508,18 @@ export default function Header() {
       </div>
 
       {/* ── Mobile: full-width search bar row ── */}
-      <div className="md:hidden px-2.5 sm:px-4 pt-1 pb-1.5 bg-background w-full min-w-0 box-border">
-        <form onSubmit={handleSearch} className="flex items-center rounded-xl border border-border bg-muted overflow-hidden h-9 w-full min-w-0 shadow-xs">
-          <Search className="w-3.5 h-3.5 text-muted-foreground ml-2.5 shrink-0" />
+      <div className="md:hidden px-2.5 sm:px-4 pt-1.5 pb-2 bg-background w-full min-w-0 box-border">
+        <form onSubmit={handleSearch} className="flex items-center rounded-2xl border border-border bg-muted overflow-hidden h-[36px] w-full min-w-0 p-[2px] shadow-xs focus-within:border-[#FF5A00]/60">
+          <Search className="w-4 h-4 text-foreground/80 ml-2.5 shrink-0" />
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search products, suppliers, categories..."
-            className="flex-1 min-w-0 px-2 py-1.5 text-[12px] outline-none bg-transparent text-foreground placeholder:text-muted-foreground"
+            className="flex-1 min-w-0 px-2 py-1 text-[12px] outline-none bg-transparent text-foreground placeholder:text-muted-foreground"
           />
-          <button type="submit" aria-label="Search" className="bg-[#FF5A00] hover:bg-[#e04e00] px-3 min-[360px]:px-3.5 h-full text-white text-[11px] font-bold shrink-0 transition-colors">
+          <button type="submit" aria-label="Search" className="bg-gradient-to-b from-[#FF7A1A] to-[#F25600] hover:from-[#FF8A30] px-3.5 min-[360px]:px-4 h-full rounded-[13px] text-white text-[12.5px] font-bold shrink-0 transition-colors shadow-[0_0_14px_-4px_rgba(255,90,0,0.9)]">
             Search
           </button>
         </form>
@@ -510,20 +527,18 @@ export default function Header() {
 
       {/* ── Mobile: category chips with smooth touch swipe ── */}
       <div className="md:hidden flex items-center gap-1.5 overflow-x-auto px-2.5 sm:px-4 pb-2 w-full min-w-0 scrollbar-none overscroll-x-contain touch-pan-x">
+        <Link to="/categories"
+          className="flex items-center gap-1 shrink-0 h-[26px] px-2.5 rounded-full border border-[#FF5A00] bg-[#FF5A00]/10 text-[11px] font-semibold text-foreground whitespace-nowrap shadow-[0_0_12px_-6px_rgba(255,90,0,0.9)]">
+          <LayoutGrid className="w-3.5 h-3.5 shrink-0 text-[#FF5A00]" />
+          All Categories
+        </Link>
         {MOBILE_CATS.map(({ label, icon: Icon, href }) => (
           <Link key={label} to={href}
-            className="flex items-center gap-1 shrink-0 px-2.5 py-1 bg-muted border border-border rounded-full text-[10px] font-medium text-foreground whitespace-nowrap hover:border-primary/50 hover:text-primary transition-colors">
-            <Icon className="w-2.5 h-2.5 shrink-0" />
+            className="flex items-center gap-1 shrink-0 h-[26px] px-2.5 bg-muted/60 border border-border rounded-full text-[11px] font-medium text-foreground whitespace-nowrap hover:border-[#FF5A00]/60 transition-colors">
+            <Icon className="w-3.5 h-3.5 shrink-0" />
             {label}
           </Link>
         ))}
-        <Link to="/products"
-          className="flex items-center gap-1 shrink-0 px-2.5 py-1 bg-muted border border-border rounded-full text-[10px] font-medium text-foreground whitespace-nowrap hover:border-primary/50 hover:text-primary transition-colors">
-          <span className="grid grid-cols-2 gap-0.5 w-2.5 h-2.5">
-            {[...Array(4)].map((_, i) => <span key={i} className="block w-0.5 h-0.5 rounded-sm bg-current" />)}
-          </span>
-          More
-        </Link>
       </div>
 
       {/* ── Desktop Category Nav ── */}

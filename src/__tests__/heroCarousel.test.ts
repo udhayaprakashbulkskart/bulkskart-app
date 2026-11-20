@@ -28,12 +28,10 @@ describe('landing hero product carousel', () => {
     expect(new Set(featured.map((p) => p.name)).size).toBe(featured.length);
   });
 
-  it('adds only the product scroll under the hero and keeps the hero content as it was', () => {
+  it('keeps the product scroll on the home page, under the picture-based top section', () => {
     const landing = src('src/components/home/LandingHero.tsx');
     expect(landing).toContain('<ProductCarouselHero />');
-    expect(landing).toContain("const HEADLINE = ['The', 'Global', 'B2B', 'Marketplace', 'for'];");
-    expect(landing).toContain('Search products, suppliers, categories…');
-    expect(landing.indexOf('<ProductCarouselHero />')).toBeLessThan(landing.indexOf('CATEGORY CHIPS ═'));
+    expect(landing.indexOf('ACTION TILES ═')).toBeLessThan(landing.indexOf('<ProductCarouselHero />'));
     const scroll = src('src/components/home/hero/ProductCarouselHero.tsx');
     expect(scroll).not.toContain('<h1');
     expect(scroll).toContain('aria-roledescription="carousel"');
