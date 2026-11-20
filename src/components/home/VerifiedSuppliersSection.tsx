@@ -22,6 +22,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import LiveCountStrip from '@/components/common/LiveCountStrip';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
@@ -1075,12 +1076,6 @@ function SupplierBrandLogo({ supplier }: { supplier: DisplaySupplier }) {
   }
 }
 
-const SUPPLIER_STATS = [
-  { icon: Users, value: '10,000+', label: 'Verified Suppliers' },
-  { icon: Globe, value: '120+', label: 'Countries' },
-  { icon: Layers, value: '50+', label: 'Industries' },
-  { icon: ShieldCheck, value: '100%', label: 'Verified Profiles' },
-];
 
 /** Gold laurel wreath used either side of the section title (desktop only). */
 function LaurelWreath({ side }: { side: 'left' | 'right' }) {
@@ -1129,7 +1124,7 @@ function SupplierCardDesign({
   const [saved, setSaved] = useState(false);
   return (
     <article
-      className={`group relative flex w-[280px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-[#FF5A00]/35 bg-gradient-to-b from-[#0e1522] to-[#0a0f1a] shadow-[0_18px_50px_-22px_rgba(255,90,0,0.55)] transition-all duration-300 hover:-translate-y-1 hover:border-[#FF5A00] sm:w-[300px] md:w-auto ${
+      className={`group relative flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-[#FF5A00]/35 bg-gradient-to-b from-[#0e1522] to-[#0a0f1a] shadow-[0_18px_50px_-22px_rgba(255,90,0,0.55)] transition-all duration-300 hover:-translate-y-1 hover:border-[#FF5A00] ${
         dimmed ? 'opacity-70' : 'opacity-100'
       }`}
     >
@@ -1273,21 +1268,6 @@ export default function VerifiedSuppliersSection() {
 
   const handleManualRotate = () => advanceBatch(DISPLAY_COUNT);
 
-  // Carousel position (0–3) drives the page dots under the cards.
-  const [supplierPage, setSupplierPage] = useState(0);
-  const handleSupplierScroll = () => {
-    const el = supplierScrollRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    setSupplierPage(max <= 0 ? 0 : Math.min(3, Math.round((el.scrollLeft / max) * 3)));
-  };
-  const scrollSupplierTo = (page: number) => {
-    const el = supplierScrollRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    el.scrollTo({ left: (max * page) / 3, behavior: 'smooth' });
-  };
-
   // Load database suppliers and merge with visit-randomized simulation catalog
   const loadSuppliers = useCallback(async () => {
     setError(null);
@@ -1407,19 +1387,6 @@ export default function VerifiedSuppliersSection() {
     navigate(`/products?q=${encodeURIComponent(query)}`);
   };
 
-  const supplierScrollRef = useRef<HTMLDivElement>(null);
-
-  const scrollSuppliers = (direction: 'left' | 'right') => {
-    if (supplierScrollRef.current) {
-      const scrollAmount = supplierScrollRef.current.clientWidth * 0.75;
-      supplierScrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
-      });
-    }
-    advanceBatch(direction === 'left' ? -DISPLAY_COUNT : DISPLAY_COUNT);
-  };
-
   return (
     <section className="py-5 sm:py-7 md:py-9 bg-[#030712] text-white relative overflow-hidden border-b border-[#2A2A2A]">
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-5 md:px-6">
@@ -1457,21 +1424,7 @@ export default function VerifiedSuppliersSection() {
           </div>
         </div>
 
-        {/* Stats bar */}
-        <div className="mx-auto mb-5 grid max-w-[1100px] grid-cols-2 overflow-hidden rounded-2xl border border-[#FF5A00]/25 bg-gradient-to-r from-[#0d1320] via-[#FF5A00]/[0.06] to-[#0d1320] shadow-[0_0_24px_-14px_rgba(255,90,0,0.25)] md:grid-cols-4">
-          {SUPPLIER_STATS.map(({ icon: Icon, value, label }, i) => (
-            <div
-              key={label}
-              className={`flex items-center gap-3 px-4 py-4 sm:px-6 ${i % 2 === 0 ? 'border-r border-white/10' : ''} ${i < 2 ? 'border-b border-white/10 md:border-b-0' : ''} ${i < 3 ? 'md:border-r md:border-white/10' : 'md:border-r-0'}`}
-            >
-              <Icon className="h-7 w-7 shrink-0 text-[#FF5A00] sm:h-8 sm:w-8" strokeWidth={1.8} />
-              <div>
-                <div className="text-[20px] font-black leading-none text-white sm:text-[24px]">{value}</div>
-                <div className="mt-1 text-[11px] text-neutral-400 sm:text-[12px]">{label}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <LiveCountStrip className="mx-auto mb-5 max-w-[1100px]" />
 
         {/* ── Country Filter Pills ───────────────────────────────────── */}
         <div className="mb-5 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none sm:gap-2.5">
@@ -1481,7 +1434,7 @@ export default function VerifiedSuppliersSection() {
               <button
                 key={tab.key}
                 onClick={() => setSelectedCountry(tab.key)}
-                className={`flex shrink-0 select-none items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${
+                className={`flex min-h-11 shrink-0 select-none items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-semibold transition-all duration-200 ${
                   active
                     ? 'border-transparent bg-gradient-to-r from-[#FF7A2E] to-[#E84A00] text-white shadow-[0_8px_24px_-8px_rgba(255,90,0,0.8)]'
                     : 'border-white/10 bg-[#0d1320] text-neutral-200 hover:border-white/25 hover:text-white'
@@ -1542,11 +1495,7 @@ export default function VerifiedSuppliersSection() {
         ) : (
           /* ── RESPONSIVE PC GRID (4 Columns) & MOBILE HORIZONTAL CAROUSEL ── */
           <>
-            <div
-              ref={supplierScrollRef}
-              onScroll={handleSupplierScroll}
-              className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-4 pb-3 pt-1 scrollbar-none sm:mx-0 sm:px-0 md:grid md:grid-cols-2 md:overflow-visible lg:grid-cols-4"
-            >
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {displayedSuppliers.map((s, idx) => (
                 <SupplierCardDesign
                   key={`${s.id}-${s.img}`}
@@ -1554,21 +1503,6 @@ export default function VerifiedSuppliersSection() {
                   priority={idx < 4}
                   dimmed={isRotating}
                   onOpen={() => handleViewProducts(s)}
-                />
-              ))}
-            </div>
-
-            {/* Page dots (follow the carousel position) */}
-            <div className="mt-3 flex items-center justify-center gap-2 md:hidden">
-              {[0, 1, 2, 3].map(i => (
-                <button
-                  key={i}
-                  type="button"
-                  aria-label={`Show suppliers page ${i + 1}`}
-                  onClick={() => scrollSupplierTo(i)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    supplierPage === i ? 'w-7 bg-[#C94400]' : 'w-2 bg-[#262626] hover:bg-[#1E1E1E]'
-                  }`}
                 />
               ))}
             </div>

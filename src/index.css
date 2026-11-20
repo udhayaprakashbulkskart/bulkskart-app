@@ -106,11 +106,11 @@
   html {
     @apply bg-background;
     scroll-behavior: smooth;
-    font-size: 14.5px; /* Compact global enterprise B2B font scale */
+    font-size: 16px;
   }
 
   body {
-    @apply bg-background text-foreground antialiased text-[13.5px] leading-relaxed;
+    @apply bg-background text-foreground antialiased text-[15px] leading-relaxed;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     letter-spacing: 0.005em;
   }
@@ -221,5 +221,53 @@
     .calm-enter,
     .calm-fade { animation: none; }
     .calm-action { transition: none; }
+  }
+}
+
+/* Responsive shell: one readable scale, no page-level sideways scroll, tables and
+   forms that stay usable from a 360px phone up to a wide desktop. */
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+}
+
+.site-header {
+  padding-top: env(safe-area-inset-top);
+}
+
+@media (min-width: 768px) {
+  footer details > ul {
+    display: block !important;
+  }
+  footer details summary {
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .site-header button,
+  .site-header a[class*="h-11"],
+  .site-header input,
+  .site-header select {
+    font-size: 16px;
+  }
+
+  main :is(input, select, textarea) {
+    font-size: 16px;
+  }
+
+  main :has(> table),
+  .dsh :has(> table) {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

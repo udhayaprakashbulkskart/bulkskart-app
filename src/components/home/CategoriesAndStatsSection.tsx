@@ -9,8 +9,7 @@ import {
 interface CategoryItem {
   id: string;
   name: string;
-  count: string;
-  description: string;
+    description: string;
   icon: React.ComponentType<{ className?: string }>;
   iconBadgeStyle: string;
   query: string;
@@ -22,7 +21,6 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: 'cat-textiles',
     name: 'Textiles & Knitted Fabrics',
-    count: '12,400+ Products',
     description: 'Fabrics, yarns, woven rolls, cotton and apparel',
     icon: Shirt,
     iconBadgeStyle: 'bg-[#221612] border-[#FF5A00]/40 text-[#FF5A00]',
@@ -33,7 +31,6 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: 'cat-steel',
     name: 'Steel & Structural Metals',
-    count: '8,900+ Products',
     description: 'Steel beams, pipes, hollow tubes, rebar and structures',
     icon: Factory,
     iconBadgeStyle: 'bg-[#202020] border-orange-500/40 text-orange-400',
@@ -44,7 +41,6 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: 'cat-machinery',
     name: 'Industrial Machinery & Equipment',
-    count: '6,200+ Products',
     description: 'Electric motors, industrial pumps, machinery & tools',
     icon: Cog,
     iconBadgeStyle: 'bg-[#221a12] border-orange-500/40 text-orange-400',
@@ -55,7 +51,6 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: 'cat-polymers',
     name: 'Polymers & Plastic Raw Materials',
-    count: '5,800+ Products',
     description: 'Virgin polymers, resins, HDPE, LDPE and plastic pellets',
     icon: Layers,
     iconBadgeStyle: 'bg-[#202020] border-orange-500/40 text-orange-400',
@@ -66,7 +61,6 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: 'cat-chemicals',
     name: 'Chemicals & Solvents',
-    count: '4,100+ Products',
     description: 'Industrial solvents, reagents, acids and specialty chemicals',
     icon: FlaskConical,
     iconBadgeStyle: 'bg-[#1c1c1c] border-orange-500/40 text-orange-400',
@@ -77,7 +71,6 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: 'cat-packaging',
     name: 'Corrugated Packaging',
-    count: '7,300+ Products',
     description: 'Kraft boxes, corrugated cartons, shipping crates & rolls',
     icon: Package,
     iconBadgeStyle: 'bg-[#241810] border-orange-500/40 text-orange-400',
@@ -129,48 +122,34 @@ export default function CategoriesAndStatsSection() {
       </div>
 
       {/* ── 2-Column Mobile Grid & 3-Column Desktop Grid matching Image 2 ── */}
-      <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3.5 lg:gap-4">
+      <div className="relative z-10 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
           return (
             <Link
               key={cat.id}
               to={`/products?category=${cat.categorySlug}`}
-              className="relative overflow-hidden rounded-2xl bg-[#151515]/90 hover:bg-[#1b1b1b] border border-neutral-800/90 hover:border-neutral-700/90 transition-all duration-300 flex flex-col justify-between group p-3 sm:p-3.5 shadow-lg hover:-translate-y-0.5 active:scale-[0.98] min-h-[120px] sm:min-h-[135px] md:min-h-[145px]"
+              className="group flex min-h-[44px] flex-col overflow-hidden rounded-2xl border border-neutral-800/90 bg-[#151515] shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:border-neutral-700 hover:bg-[#1b1b1b]"
             >
-              {/* Category Icon Badge (Top-Left) */}
-              <div className="relative z-10 flex items-center justify-between w-full mb-1.5 sm:mb-2">
-                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border ${cat.iconBadgeStyle} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner`}>
-                  <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                </div>
-              </div>
-
-              {/* Title & Product Count (Left Side, Full Text without truncation) */}
-              <div className="relative z-10 pt-1 flex-1 flex flex-col justify-end max-w-[62%] sm:max-w-[65%]">
-                <h3 className="font-extrabold text-white text-xs sm:text-[13.5px] md:text-sm leading-tight group-hover:text-[#FF5A00] transition-colors break-words">
-                  {cat.name}
-                </h3>
-                <p className="text-[11px] sm:text-xs text-[#FF5A00] font-bold mt-1 sm:mt-1.5 whitespace-nowrap">
-                  {cat.count}
-                </p>
-              </div>
-
-              {/* Authentic Commodity Photography (Right Half) seamlessly blending into card */}
-              <div className="absolute right-0 top-0 bottom-0 w-[52%] sm:w-[50%] pointer-events-none overflow-hidden rounded-r-2xl">
+              <div className="relative aspect-[16/9] w-full overflow-hidden bg-neutral-900">
                 <img
                   src={cat.img}
-                  alt={cat.name}
-                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
+                  alt=""
+                  className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
-                {/* Seamless ambient blend gradients */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#151515] via-[#151515]/70 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#151515]/60 via-transparent to-transparent" />
               </div>
-
-              {/* Circular Chevron Button (Floating over Right Side) matching Image 2 */}
-              <div className="absolute right-2.5 sm:right-3 bottom-2.5 sm:bottom-3 z-20 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-neutral-900/80 border border-neutral-700/80 text-white group-hover:bg-[#FF5A00] group-hover:border-[#FF5A00] flex items-center justify-center shrink-0 transition-all shadow-md group-hover:scale-105">
-                <ChevronRight className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-3 p-3.5">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${cat.iconBadgeStyle}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-bold leading-snug text-white transition-colors group-hover:text-[#FF5A00]">
+                    {cat.name}
+                  </h3>
+                  <p className="mt-0.5 line-clamp-2 text-sm text-neutral-400">{cat.description}</p>
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-neutral-400 group-hover:text-[#FF5A00]" />
               </div>
             </Link>
           );

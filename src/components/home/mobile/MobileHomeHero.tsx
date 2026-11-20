@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronDown, FileText, Globe, Search } from 'lucide-react';
 import heroArt from '@/assets/mobile-home/hero-art.webp';
 import promoArt from '@/assets/mobile-home/promo-art.webp';
-import { CheckBadge, FEATURES, Laurel, PROMO_POINTS, STATS, type HomeSearchType } from '../shared/parts';
+import { CheckBadge, FEATURES, Laurel, PROMO_POINTS, type HomeSearchType } from '../shared/parts';
+import LiveCountStrip from '@/components/common/LiveCountStrip';
 import './mobile-home.css';
 
 export type MobileSearchType = HomeSearchType;
@@ -156,19 +157,7 @@ export default function MobileHomeHero({
 
         <div className="mh-divider" />
 
-        <div className="mh-stats">
-          {STATS.map(({ icon: Icon, value, label, tone }) => (
-            <div key={label} className={`mh-stat mh-stat-${tone}`}>
-              <span className="mh-stat-icon">
-                <Icon aria-hidden="true" />
-              </span>
-              <span className="mh-stat-text">
-                <b>{value}</b>
-                <span>{label}</span>
-              </span>
-            </div>
-          ))}
-        </div>
+        <LiveCountStrip className="mh-stats" />
       </section>
 
       <Link to="/post-requirement" className="mh-promo" aria-label="Post a requirement and get bulk quotations">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Database, Factory, Gavel, Globe, ShieldCheck, Truck, Zap } from 'lucide-react';
+import { Database, ShieldCheck, Truck, Zap } from 'lucide-react';
 
 /** What the home page search box can look for. */
 export type HomeSearchType = 'products' | 'manufacturers' | 'rfqs';
@@ -59,14 +59,6 @@ export const FEATURES = [
   { icon: ShieldCheck, top: 'Verified', bottom: 'Suppliers' },
   { icon: Database, top: 'Bulk', bottom: 'Pricing' },
   { icon: Zap, top: 'Fast', bottom: 'Quotations' },
-];
-
-/** The four figures in the search panel, as printed in the design. */
-export const STATS = [
-  { icon: Factory, value: '5000+', label: 'Verified Manufacturers', tone: 'purple' },
-  { icon: Box, value: '1M+', label: 'Bulk Products', tone: 'brown' },
-  { icon: Globe, value: '120+', label: 'Trade Countries', tone: 'blue' },
-  { icon: Gavel, value: '10,000+', label: 'Live RFQs & Auctions', tone: 'green' },
 ];
 
 /** The three lines in the promo banner. */

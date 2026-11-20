@@ -87,11 +87,11 @@ describe('Verified Suppliers: heading, figures and filters', () => {
     expect(props.onRefresh).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the four figures as printed in the design', () => {
+  it('does not print invented supplier totals', () => {
     setup();
-    const figures = within(screen.getByRole('list', { name: 'Verified suppliers at a glance' }));
-    for (const text of ['10,000+', 'Verified Suppliers', '120+', 'Countries', '50+', 'Industries', '100%', 'Verified Profiles']) {
-      expect(figures.getByText(text)).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Verified suppliers at a glance' })).toBeNull();
+    for (const text of ['10,000+', '120+', '50+']) {
+      expect(screen.queryByText(text)).toBeNull();
     }
   });
 

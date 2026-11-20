@@ -88,7 +88,7 @@ export default function HomePage() {
         faq={[
           {
             question: "What is BulkSkart?",
-            answer: "BulkSkart is India's leading global B2B wholesale marketplace connecting verified bulk buyers directly with verified global manufacturers and industrial exporters across India, USA, UAE, Germany, and 180+ countries.",
+            answer: "BulkSkart is a B2B wholesale marketplace connecting bulk buyers with manufacturers and industrial exporters.",
           },
           {
             question: "Is posting a bulk requirement (RFQ) free for buyers?",

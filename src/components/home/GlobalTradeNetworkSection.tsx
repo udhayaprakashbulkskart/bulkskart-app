@@ -28,7 +28,7 @@ export default function GlobalTradeNetworkSection() {
         <div className="absolute bottom-0 left-10 w-[400px] h-[400px] bg-[#FF5A1F]/5 blur-[140px] pointer-events-none rounded-full" />
 
         {/* ── Header Row: Orange Anchor Icon + Title + Region Dropdown ── */}
-        <div className="relative z-10 flex flex-row items-center justify-between gap-4 mb-4 sm:mb-6">
+        <div className="relative z-10 mb-4 flex flex-col items-start justify-between gap-3 sm:mb-6 sm:flex-row sm:items-center sm:gap-4">
           <div className="flex items-center gap-3 sm:gap-3.5">
             {/* Orange Harbor/Anchor Glyph Container */}
             <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-gradient-to-br from-[#FF5A1F]/25 to-[#FF3B00]/10 border border-[#FF5A1F]/35 flex items-center justify-center shrink-0 shadow-lg shadow-[#FF5A1F]/15">
@@ -66,7 +66,7 @@ export default function GlobalTradeNetworkSection() {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-xl border border-neutral-700/80 bg-[#1A1A1A]/90 hover:bg-[#272727] text-neutral-200 hover:text-white font-medium text-xs sm:text-sm flex items-center gap-2 transition-all shadow-sm focus:outline-none"
+                  className="flex h-11 items-center gap-2 rounded-xl border border-neutral-700/80 bg-[#1A1A1A]/90 px-4 text-sm font-medium text-neutral-200 shadow-sm transition-all hover:bg-[#272727] hover:text-white focus:outline-none"
                 >
                   <span>{selectedRegion}</span>
                   <ChevronDown className="w-4 h-4 text-neutral-400" />
@@ -89,7 +89,7 @@ export default function GlobalTradeNetworkSection() {
         </div>
 
         {/* ── Proportionally Scaled SVG World Map Canvas (Exact to Reference Photo) ── */}
-        <div className="relative w-full aspect-[1000/540] rounded-2xl bg-[#040813] border border-neutral-800/80 overflow-hidden shadow-2xl flex items-center justify-center select-none">
+        <div className="relative flex aspect-[16/10] max-h-[220px] w-full select-none items-center justify-center overflow-hidden rounded-2xl border border-neutral-800/80 bg-[#040813] shadow-2xl sm:max-h-[280px] md:aspect-[1000/540] md:max-h-[420px]">
           
           <svg
             className="w-full h-full block"
