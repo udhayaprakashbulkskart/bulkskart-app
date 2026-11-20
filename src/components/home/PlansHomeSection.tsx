@@ -122,11 +122,11 @@ export default function PlansHomeSection() {
         </div>
 
         {/* Plans Grid (3 Monthly Columns) */}
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
           {MONTHLY_PLANS.map((plan) => (
             <div
               key={plan.tier}
-              className={`rounded-2xl p-6 sm:p-7 flex flex-col justify-between transition-all relative ${
+              className={`relative flex flex-col justify-between rounded-2xl p-3 transition-all sm:p-6 lg:p-7 ${
                 plan.popular
                   ? 'bg-gradient-to-b from-card to-background border-2 border-primary shadow-[0_0_30px_rgba(249,115,22,0.15)] ring-1 ring-primary/40'
                   : 'bg-card border border-border/80 hover:border-border'
@@ -156,7 +156,7 @@ export default function PlansHomeSection() {
                 {/* Price Display */}
                 <div className="mb-4 pb-4 border-b border-border/60">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-extrabold text-foreground">{plan.price}</span>
+                    <span className="text-lg font-extrabold text-foreground sm:text-3xl lg:text-4xl">{plan.price}</span>
                     <span className="text-sm text-muted-foreground font-medium">{plan.period}</span>
                   </div>
                   <p className="text-[11px] text-orange-400 font-medium mt-1">
@@ -170,7 +170,7 @@ export default function PlansHomeSection() {
                     Included with {plan.tier}:
                   </p>
                   {plan.features.map((feature, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-foreground/90">
+                    <div key={i} className="flex items-start gap-1.5 text-[11px] text-foreground/90 sm:gap-2 sm:text-sm">
                       <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                       <span className="leading-snug">{feature}</span>
                     </div>
@@ -183,7 +183,7 @@ export default function PlansHomeSection() {
                 <Button
                   onClick={() => handleSelectPlan(plan)}
                   disabled={paying}
-                  className={`h-12 w-full gap-1.5 text-sm font-bold transition-all ${
+                  className={`h-11 w-full gap-1 px-1 text-[10px] font-bold transition-all sm:h-12 sm:px-3 sm:text-sm ${
                     plan.popular
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-md'
                       : 'bg-muted hover:bg-muted/80 text-foreground border border-border'

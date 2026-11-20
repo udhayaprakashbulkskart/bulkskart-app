@@ -112,7 +112,7 @@ export default function VerifiedSupplierQuickActions() {
         </div>
 
         {/* Responsive workflow grid: equal-height cards that fit laptop → wide displays */}
-        <div className="relative z-10 grid auto-rows-fr grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="relative z-10 grid auto-rows-fr grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
           {actions.map((act) => {
             const Icon = act.icon;
             return (

@@ -140,15 +140,14 @@ export default function HomePage() {
       ═══════════════════════════════════════════════════ */}
       <Suspense fallback={null}><VerifiedSuppliersSection /></Suspense>
       <WhenVisible><FeaturedProductsSection /></WhenVisible>
-      <WhenVisible><OrderBenefitsSection /></WhenVisible>
       <WhenVisible><CategoriesAndStatsSection /></WhenVisible>
       <WhenVisible><VerifiedSupplierQuickActions /></WhenVisible>
       <WhenVisible><LiveRequirementsFeed /></WhenVisible>
       <WhenVisible><LiveReverseAuctionsRail /></WhenVisible>
       <WhenVisible><GlobalTradeNetworkSection /></WhenVisible>
       <WhenVisible><PostRequirementsHomeSection /></WhenVisible>
+      <WhenVisible><OrderBenefitsSection /></WhenVisible>
       <WhenVisible><PlansHomeSection /></WhenVisible>
-      <WhenVisible><ReviewsHomeSection /></WhenVisible>
 
       {/* ═══════════════════════════════════════════════════
           CRAWLABLE B2B MARKETPLACE OVERVIEW (SEO & BUYER GUIDE)
@@ -281,6 +280,8 @@ export default function HomePage() {
           </div>
         </FadeInSection>
       </section>
+
+      <WhenVisible><ReviewsHomeSection /></WhenVisible>
 
     </MainLayout>
   );

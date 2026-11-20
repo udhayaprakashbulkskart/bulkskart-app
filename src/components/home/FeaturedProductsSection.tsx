@@ -1138,7 +1138,7 @@ export default function FeaturedProductsSection() {
         {/* ── 4. PRODUCT GRID ───────────────────────────────────────────────── */}
         {loading && products.length === 0 ? (
           // Skeleton Loader: 8 cards matching PC grid
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {Array.from({ length: 8 }).map((_, idx) => (
               <div
                 key={idx}
@@ -1252,7 +1252,7 @@ export default function FeaturedProductsSection() {
             {/* Mobile: Exactly 2-column grid without text clipping */}
             {/* Desktop PC: Balanced 3 to 4 columns (up to 5 on 2K+) */}
             <div
-              className={`grid grid-cols-1 gap-3 transition-opacity duration-300 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 ${
+              className={`grid grid-cols-2 gap-2.5 transition-opacity duration-300 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 ${
                 isRotating ? 'opacity-55' : 'opacity-100'
               }`}
             >

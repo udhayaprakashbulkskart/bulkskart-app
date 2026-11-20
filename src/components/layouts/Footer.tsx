@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import BrandLogo from '@/components/common/BrandLogo';
 import { Globe, Linkedin, Twitter, Facebook, Instagram, Youtube, Mail, MessageSquare } from 'lucide-react';
 import { WHATSAPP_CHAT_URL, WHATSAPP_DISPLAY } from '@/lib/supportContact';
@@ -48,11 +48,12 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const onHome = useLocation().pathname === '/';
   return (
     <footer className="w-full max-w-full overflow-x-hidden border-t border-border bg-muted">
       <div className="mx-auto max-w-[1400px] px-4 py-8 md:px-6 md:py-10">
-        <div className="mb-8 grid grid-cols-1 gap-2 md:grid-cols-6 md:gap-5">
-          <div className="mb-4 md:col-span-1 md:mb-0">
+        <div className={`mb-8 grid gap-2 md:grid-cols-6 md:gap-5 ${onHome ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <div className={`mb-4 md:col-span-1 md:mb-0 ${onHome ? 'col-span-2' : ''}`}>
             <div className="mb-4">
               <BrandLogo size="md" variant="auto" linkTo="/" />
             </div>
@@ -77,7 +78,7 @@ export default function Footer() {
           </div>
 
           {Object.entries(footerLinks).map(([section, links]) => (
-            <details key={section} className="group border-b border-border py-1 md:border-0 md:py-0">
+            <details key={section} open={onHome || undefined} className="group border-b border-border py-1 md:border-0 md:py-0">
               <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-sm font-semibold uppercase tracking-wider text-foreground md:mb-4 md:min-h-0 md:cursor-default [&::-webkit-details-marker]:hidden">
                 {section}
                 <span className="text-muted-foreground md:hidden group-open:rotate-180" aria-hidden="true">▾</span>

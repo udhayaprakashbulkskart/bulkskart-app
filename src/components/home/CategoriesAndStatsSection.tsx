@@ -122,35 +122,36 @@ export default function CategoriesAndStatsSection() {
       </div>
 
       {/* ── 2-Column Mobile Grid & 3-Column Desktop Grid matching Image 2 ── */}
-      <div className="relative z-10 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="relative z-10 grid grid-cols-2 gap-2.5 md:grid-cols-3">
         {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
           return (
             <Link
               key={cat.id}
               to={`/products?category=${cat.categorySlug}`}
-              className="group flex min-h-[44px] flex-col overflow-hidden rounded-2xl border border-neutral-800/90 bg-[#151515] shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:border-neutral-700 hover:bg-[#1b1b1b]"
+              className="group relative min-h-[148px] overflow-hidden rounded-2xl border border-neutral-800 bg-[#151515]"
             >
-              <div className="relative aspect-[16/9] w-full overflow-hidden bg-neutral-900">
-                <img
-                  src={cat.img}
-                  alt=""
-                  className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
-              </div>
-              <div className="flex items-center gap-3 p-3.5">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${cat.iconBadgeStyle}`}>
-                  <Icon className="h-5 w-5" />
+              <img
+                src={cat.img}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/10" />
+              <div className="relative flex h-full min-h-[148px] flex-col justify-between p-3">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${cat.iconBadgeStyle}`}>
+                  <Icon className="h-4 w-4" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-bold leading-snug text-white transition-colors group-hover:text-[#FF5A00]">
+                <div className="pr-6">
+                  <h3 className="text-sm font-bold leading-snug text-white group-hover:text-[#FF5A00] sm:text-base">
                     {cat.name}
                   </h3>
-                  <p className="mt-0.5 line-clamp-2 text-sm text-neutral-400">{cat.description}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-neutral-300">{cat.description}</p>
                 </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-neutral-400 group-hover:text-[#FF5A00]" />
               </div>
+              <span className="absolute bottom-3 right-3 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white">
+                <ChevronRight className="h-4 w-4" />
+              </span>
             </Link>
           );
         })}

@@ -80,6 +80,7 @@ export default function Header() {
   const { getPrefetchHandlers } = usePrefetch();
   const navigate = useNavigate();
   const location = useLocation();
+  const onHome = location.pathname === '/';
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -313,6 +314,16 @@ export default function Header() {
       {/* ── Main row ── */}
       <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-2 px-3 sm:px-4 md:h-[60px] md:justify-start md:gap-4 md:px-6">
 
+        {onHome && (
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 text-foreground md:hidden" aria-label="Open navigation menu">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            {drawer}
+          </Sheet>
+        )}
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0 group py-1 min-w-0" aria-label="BulkSkart Homepage">
           <LogoMark />
@@ -346,14 +357,16 @@ export default function Header() {
               <Button size="sm" className="h-11 rounded-lg bg-[#FF5A00] px-3 text-sm font-bold text-white shadow-[0_2px_0_#922f00] hover:bg-[#e04e00]">Sign In</Button>
             </Link>
           )}
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 text-foreground" aria-label="Open navigation menu">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            {drawer}
-          </Sheet>
+          {!onHome && (
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 text-foreground" aria-label="Open navigation menu">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              {drawer}
+            </Sheet>
+          )}
         </div>
 
         {/* ── Desktop: right side controls ── */}
@@ -522,8 +535,23 @@ export default function Header() {
         </div>
       </nav>
     </header>
+    {onHome ? (
+      <div className="flex w-full min-w-0 touch-pan-x items-center gap-2 overflow-x-auto overscroll-x-contain bg-background px-3 pb-2 scrollbar-none md:hidden">
+        {navLinks.map((link, i) => (
+          <Link
+            key={link.href}
+            to={link.href}
+            className={`flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-xl px-3 text-sm font-semibold ${
+              i === 0 ? 'bg-[#FF5A00] text-white' : 'border border-border bg-muted text-foreground'
+            }`}
+          >
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    ) : null}
     {/* Category chips sit under the sticky bar and scroll away with the page. */}
-    <div className="flex w-full min-w-0 touch-pan-x items-center gap-2 overflow-x-auto overscroll-x-contain bg-background px-3 pb-2 scrollbar-none md:hidden sm:px-4">
+    <div className={`${onHome ? 'hidden' : 'flex'} w-full min-w-0 touch-pan-x items-center gap-2 overflow-x-auto overscroll-x-contain bg-background px-3 pb-2 scrollbar-none md:hidden sm:px-4`}>
         {MOBILE_CATS.map(({ label, icon: Icon, href }) => (
           <Link key={label} to={href}
             className="flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-muted px-3 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary">

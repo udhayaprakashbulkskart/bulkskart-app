@@ -1495,7 +1495,7 @@ export default function VerifiedSuppliersSection() {
         ) : (
           /* ── RESPONSIVE PC GRID (4 Columns) & MOBILE HORIZONTAL CAROUSEL ── */
           <>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {displayedSuppliers.map((s, idx) => (
                 <SupplierCardDesign
                   key={`${s.id}-${s.img}`}

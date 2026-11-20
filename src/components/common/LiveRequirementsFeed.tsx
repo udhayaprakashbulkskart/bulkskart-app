@@ -299,7 +299,7 @@ export default function LiveRequirementsFeed() {
         </div>
 
         {/* ── RFQ CARDS (Compact 2-col desktop layout) ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
           {loading && reqs.length === 0 ? (
             [1, 2, 3, 4].map(n => (
               <div key={n} className="h-44 rounded-2xl bg-muted/40 animate-pulse border border-border" />
