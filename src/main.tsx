@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import App from "./App.tsx";
 import { AppWrapper } from "./components/common/PageMeta.tsx";
 import { installChunkRecovery, isChunkLoadError, reloadForStaleChunk } from "./lib/chunkRecovery";
+// listens for the browser's install offer from the start, so the Download App popup can use it later
+import "./lib/appInstall";
 import "./index.css";
 
 Sentry.init({
