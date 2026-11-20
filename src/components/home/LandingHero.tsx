@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
-  ShieldCheck, Truck, ArrowRight, Layers, ChevronRight, FilePlus2, Gavel, Store, Users, Package, Globe, BadgeCheck,
+  ShieldCheck, Truck, ArrowRight, Layers, ChevronRight, FilePlus2, Gavel, Store, Users, BadgeCheck,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProductCarouselHero from '@/components/home/hero/ProductCarouselHero';
@@ -10,7 +10,7 @@ import ProductCarouselHero from '@/components/home/hero/ProductCarouselHero';
 /*
  * Top of the home page, laid out from the BulkSkart mobile design picture: the hero banner with the forklift photo,
  * the category tiles, the "Get Bulk Orders" banner and four action tiles. The photos are cut from that picture
- * (public/home-design). The product scroll and the stats strip follow.
+ * (public/home-design). The product scroll follows.
  */
 
 // ── Content ────────────────────────────────────────────────────────────
@@ -53,46 +53,6 @@ const ACTION_TILES = [
   { title: 'Find Suppliers', sub: '(Verified)', icon: Users, to: '/manufacturers' },
   { title: 'Become a Supplier', sub: '(List & Sell)', icon: Store, to: '/auth?tab=supplier' },
 ];
-
-const STATS = [
-  { to: 50000, suffix: '+', label: 'Verified Manufacturers', icon: Users },
-  { to: 1, suffix: 'M+', label: 'Bulk Products', icon: Package },
-  { to: 120, suffix: '+', label: 'Trade Countries', icon: Globe },
-  { to: 10000, suffix: '+', label: 'Live RFQs & Auctions', icon: Gavel },
-];
-
-// ── Helpers ────────────────────────────────────────────────────────────
-function CountUp({ to, suffix = '' }: { to: number; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const reduce = useReducedMotion();
-  const [value, setValue] = useState(reduce ? to : 0);
-
-  useEffect(() => {
-    if (reduce) return;
-    const el = ref.current;
-    if (!el) return;
-    let started = false;
-    const run = () => {
-      const start = performance.now();
-      const dur = 1600;
-      const frame = (now: number) => {
-        const t = Math.min(1, (now - start) / dur);
-        const eased = 1 - Math.pow(1 - t, 3);
-        setValue(Math.round(to * eased));
-        if (t < 1) requestAnimationFrame(frame);
-      };
-      requestAnimationFrame(frame);
-    };
-    const io = new IntersectionObserver(([e]) => {
-      if (e?.isIntersecting && !started) { started = true; run(); io.disconnect(); }
-    }, { threshold: 0.4 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [to, reduce]);
-
-  const shown = to >= 1000 && to < 1000000 ? `${(value / 1000).toLocaleString('en-IN', { maximumFractionDigits: 0 })}K` : value.toLocaleString('en-IN');
-  return <span ref={ref}>{shown}{suffix && suffix !== 'M+' ? suffix : ''}{suffix === 'M+' ? 'M+' : ''}</span>;
-}
 
 // ── Component ──────────────────────────────────────────────────────────
 export default function LandingHero() {
@@ -329,27 +289,6 @@ export default function LandingHero() {
         <ProductCarouselHero />
       </div>
 
-      {/* ═════════════ STATS ═════════════ */}
-      <div className="relative mx-auto mb-7 mt-5 max-w-[1400px] px-4 sm:px-5 md:px-6">
-        <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-white/10 bg-[#161616]/[0.03] backdrop-blur-md md:grid-cols-4">
-          {STATS.map(({ to, suffix, label, icon: Icon }, i) => (
-            <motion.div
-              key={label}
-              initial={reduce ? false : { opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: i * 0.08 }}
-              className={`flex flex-col items-center gap-1 px-2 py-5 text-center ${i % 2 === 0 ? 'border-r border-white/10' : ''} ${i < 2 ? 'border-b border-white/10 md:border-b-0' : ''} ${i < 3 ? 'md:border-r md:border-white/10' : 'md:border-r-0'}`}
-            >
-              <Icon className="h-5 w-5 text-[#FF7A2E]" />
-              <div className="bg-gradient-to-b from-white to-white/70 bg-clip-text text-[22px] font-black leading-none text-transparent md:text-[26px]">
-                <CountUp to={to} suffix={suffix} />
-              </div>
-              <div className="text-[11px] text-white/60 md:text-[12px]">{label}</div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
     </section>
   );
 }
