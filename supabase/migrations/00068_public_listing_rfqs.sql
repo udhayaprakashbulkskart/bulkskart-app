@@ -1,24 +1,28 @@
--- Public RFQ listings copied from other B2B marketplaces, kept apart from RFQs posted by BulkSkart buyers.
+-- Public Requirements: buyer requirements collected from publicly accessible pages on other B2B websites,
+-- kept apart from RFQs posted by BulkSkart buyers.
 --
--- A public listing has no BulkSkart buyer: suppliers contact the buyer on the original page (source_url),
--- so it never takes quotations here and never starts BulkSkart's supplier matching.
--- Fields the source page does not show stay NULL (quantity and unit included).
+-- * The requirement itself (product, quantity, location, dates) is in `requirements` with source_type 'public_listing'.
+-- * Where it came from (source website, original URL, verification) is in `public_listing_sources`, readable by
+--   admins only, for auditing. Customers never see the source or get sent to it.
+-- * These buyers are not on BulkSkart and have not authorised BulkSkart to forward quotations, so no quotation can
+--   be sent on them, and supplier matching never runs for them.
+-- * A public requirement shows only when an admin has approved it (review_status) and until it expires (expires_at,
+--   30 days after it was posted).
 
 ALTER TABLE requirements
   ADD COLUMN IF NOT EXISTS source_type text NOT NULL DEFAULT 'bulkskart',
-  ADD COLUMN IF NOT EXISTS source_name text,
-  ADD COLUMN IF NOT EXISTS source_url text,
-  ADD COLUMN IF NOT EXISTS source_listing_id text,
-  ADD COLUMN IF NOT EXISTS source_category text,
-  ADD COLUMN IF NOT EXISTS source_subcategory text,
-  ADD COLUMN IF NOT EXISTS source_posted_on date,
-  ADD COLUMN IF NOT EXISTS source_verified_at timestamptz;
+  ADD COLUMN IF NOT EXISTS review_status text,
+  ADD COLUMN IF NOT EXISTS listing_category text;
 
 ALTER TABLE requirements DROP CONSTRAINT IF EXISTS requirements_source_type_check;
 ALTER TABLE requirements ADD CONSTRAINT requirements_source_type_check
   CHECK (source_type IN ('bulkskart', 'public_listing'));
 
--- Public listings have no BulkSkart buyer and may not state a quantity or unit.
+ALTER TABLE requirements DROP CONSTRAINT IF EXISTS requirements_review_status_check;
+ALTER TABLE requirements ADD CONSTRAINT requirements_review_status_check
+  CHECK (review_status IS NULL OR review_status IN ('pending', 'approved', 'rejected'));
+
+-- Public requirements have no BulkSkart buyer and may not state a quantity or unit.
 ALTER TABLE requirements ALTER COLUMN buyer_id DROP NOT NULL;
 ALTER TABLE requirements ALTER COLUMN quantity DROP NOT NULL;
 ALTER TABLE requirements ALTER COLUMN quantity_unit DROP NOT NULL;
@@ -28,14 +32,41 @@ ALTER TABLE requirements DROP CONSTRAINT IF EXISTS requirements_bulkskart_rfq_co
 ALTER TABLE requirements ADD CONSTRAINT requirements_bulkskart_rfq_complete
   CHECK (source_type <> 'bulkskart' OR (buyer_id IS NOT NULL AND quantity IS NOT NULL AND quantity_unit IS NOT NULL));
 
--- A public listing always says where it came from, and never has a BulkSkart buyer.
-ALTER TABLE requirements DROP CONSTRAINT IF EXISTS requirements_public_listing_sourced;
-ALTER TABLE requirements ADD CONSTRAINT requirements_public_listing_sourced
-  CHECK (source_type <> 'public_listing' OR (source_url IS NOT NULL AND source_name IS NOT NULL AND buyer_id IS NULL));
+-- A public requirement never has a BulkSkart buyer, always has a review state and always expires.
+ALTER TABLE requirements DROP CONSTRAINT IF EXISTS requirements_public_listing_rules;
+ALTER TABLE requirements ADD CONSTRAINT requirements_public_listing_rules
+  CHECK (source_type <> 'public_listing' OR (buyer_id IS NULL AND review_status IS NOT NULL AND expires_at IS NOT NULL));
 
--- The same original listing is never imported twice.
-CREATE UNIQUE INDEX IF NOT EXISTS requirements_source_url_key ON requirements (source_url) WHERE source_url IS NOT NULL;
-CREATE INDEX IF NOT EXISTS requirements_source_type_created_idx ON requirements (source_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS requirements_public_listing_idx
+  ON requirements (review_status, expires_at DESC) WHERE source_type = 'public_listing';
+
+-- Audit trail for each public requirement (admins only).
+CREATE TABLE IF NOT EXISTS public_listing_sources (
+  requirement_id uuid PRIMARY KEY REFERENCES requirements(id) ON DELETE CASCADE,
+  source_name text NOT NULL,
+  source_url text NOT NULL UNIQUE,              -- the same original listing is never imported twice
+  source_listing_id text,
+  source_category text,
+  source_subcategory text,
+  source_posted_on date,
+  collected_at timestamptz,
+  verified_at timestamptz,
+  verified_http_status integer,
+  reviewed_by uuid REFERENCES profiles(id),
+  reviewed_at timestamptz,
+  review_note text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public_listing_sources ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS public_listing_sources_admin_select ON public_listing_sources;
+CREATE POLICY public_listing_sources_admin_select ON public_listing_sources FOR SELECT USING (is_admin());
+DROP POLICY IF EXISTS public_listing_sources_admin_update ON public_listing_sources;
+CREATE POLICY public_listing_sources_admin_update ON public_listing_sources FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
+DROP POLICY IF EXISTS public_listing_sources_admin_delete ON public_listing_sources;
+CREATE POLICY public_listing_sources_admin_delete ON public_listing_sources FOR DELETE USING (is_admin());
+
+-- (Existing policies already let only admins change a public requirement: it has no buyer_id.)
 
 -- Supplier matching (and its notifications) only for BulkSkart RFQs.
 CREATE OR REPLACE FUNCTION trigger_rfq_matching_on_new_req()
@@ -58,12 +89,12 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- No BulkSkart quotation on a public listing: its buyer is not on BulkSkart and would never see it.
+-- No quotation on a public requirement: its buyer is not on BulkSkart and would never receive it.
 CREATE OR REPLACE FUNCTION reject_quotation_on_public_listing()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
   IF EXISTS (SELECT 1 FROM requirements r WHERE r.id = NEW.requirement_id AND r.source_type = 'public_listing') THEN
-    RAISE EXCEPTION 'This RFQ is a public listing from another website. Contact the buyer on the original listing.'
+    RAISE EXCEPTION 'Quotations are not available for public requirements: the buyer is not on BulkSkart.'
       USING ERRCODE = 'check_violation';
   END IF;
   RETURN NEW;
@@ -75,5 +106,5 @@ CREATE TRIGGER trg_reject_quotation_on_public_listing
   BEFORE INSERT ON quotations
   FOR EACH ROW EXECUTE FUNCTION reject_quotation_on_public_listing();
 
-COMMENT ON COLUMN requirements.source_type IS 'bulkskart = posted by a BulkSkart buyer; public_listing = copied from a public page on another marketplace (see source_url)';
-COMMENT ON COLUMN requirements.source_url IS 'Original public listing; shown as VIEW ORIGINAL RFQ';
+COMMENT ON COLUMN requirements.source_type IS 'bulkskart = posted by a BulkSkart buyer; public_listing = collected from a public page elsewhere (source in public_listing_sources)';
+COMMENT ON TABLE public_listing_sources IS 'Where each public requirement came from and how it was verified. Admins only.';

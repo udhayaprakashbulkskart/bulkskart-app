@@ -13,7 +13,7 @@ import {
   Settings, LogOut, Menu, Globe, BarChart3, TrendingUp,
   Shield, Flag, CreditCard, Building2, UserCircle,
   Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
-  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet,
+  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -93,6 +93,7 @@ export const adminNavItems: NavItem[] = [
   { label: 'Control Panel', href: '/dashboard/admin', icon: LayoutDashboard },
   { label: 'AI Match Analytics', href: '/dashboard/admin/ai-match-analytics', icon: Zap },
   { label: 'Reports', href: '/dashboard/admin/reports', icon: Flag },
+  { label: 'Public Requirements', href: '/dashboard/admin/public-requirements', icon: Globe2 },
   { label: 'Payments', href: '/dashboard/admin/payments', icon: Wallet },
 ];
 

@@ -187,10 +187,10 @@ describe('Dashboard shell: the top bar', () => {
     expect(menu().getByRole('link', { name: 'My Products' })).not.toHaveAttribute('aria-current');
   });
 
-  it('has four sections for an admin: control panel, analytics, reports and payments', () => {
+  it('has five sections for an admin: control panel, analytics, reports, public requirements and payments', () => {
     signIn('admin');
     renderAt('/dashboard/admin');
-    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Reports', 'Payments']);
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Reports', 'Public Requirements', 'Payments']);
   });
 
   it('has no More button: nothing in the menu is hidden behind a button', () => {
@@ -202,7 +202,7 @@ describe('Dashboard shell: the top bar', () => {
     }
   });
 
-  it('gives a long menu a row of its own and keeps the admin\'s short one beside the logo', () => {
+  it('gives a menu of more than four sections a row of its own', () => {
     signIn('buyer');
     const buyer = renderAt('/dashboard/buyer');
     expect(document.querySelector('.dsh-bar')).toHaveClass('is-stacked');
@@ -214,7 +214,7 @@ describe('Dashboard shell: the top bar', () => {
     supplier.unmount();
     signIn('admin');
     renderAt('/dashboard/admin');
-    expect(document.querySelector('.dsh-bar')).not.toHaveClass('is-stacked');
+    expect(document.querySelector('.dsh-bar')).toHaveClass('is-stacked');
   });
 
   it('opens a section from the menu', async () => {

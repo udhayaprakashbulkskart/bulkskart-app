@@ -72,6 +72,7 @@ const DisputeCenterPage     = lazy(() => import('./pages/dashboard/shared/Disput
 // ─── Lazy: admin dashboard ────────────────────────────────────────────────────
 const AdminDashboardFull    = lazy(() => import('./pages/dashboard/admin/AdminDashboardFull'));
 const AdminReportsPage      = lazy(() => import('./pages/dashboard/admin/AdminReportsPage'));
+const AdminPublicRequirementsPage = lazy(() => import('./pages/dashboard/admin/AdminPublicRequirementsPage'));
 const AdminPaymentsPage     = lazy(() => import('./pages/dashboard/admin/AdminPaymentsPage'));
 const SupplierWalletPage    = lazy(() => import('./pages/dashboard/supplier/SupplierWalletPage'));
 const FactoryVisitsPage     = lazy(() => import('./pages/dashboard/shared/FactoryVisitsPage'));
@@ -252,6 +253,7 @@ export const routes: RouteConfig[] = [
   { name: 'Admin Dashboard', path: '/dashboard/admin', element: <AdminDashboardFull /> },
   { name: 'AI Match Analytics', path: '/dashboard/admin/ai-match-analytics', element: <AIMatchAnalyticsPage /> },
   { name: 'Admin Reports', path: '/dashboard/admin/reports', element: <AdminReportsPage /> },
+  { name: 'Admin Public Requirements', path: '/dashboard/admin/public-requirements', element: <AdminPublicRequirementsPage /> },
   { name: 'Admin Payments', path: '/dashboard/admin/payments', element: <AdminPaymentsPage /> },
 
   // ── Company / Legal ───────────────────────────────────────────
