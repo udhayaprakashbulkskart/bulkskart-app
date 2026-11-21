@@ -223,6 +223,15 @@ export interface Requirement {
   created_at: string;
   updated_at: string;
   expires_at: string | null;
+  /** 'public_listing' = copied from a public page on another marketplace (see source_url); BulkSkart buyer RFQs are 'bulkskart' */
+  source_type?: 'bulkskart' | 'public_listing' | null;
+  source_name?: string | null;
+  source_url?: string | null;
+  source_listing_id?: string | null;
+  source_category?: string | null;
+  source_subcategory?: string | null;
+  source_posted_on?: string | null;
+  source_verified_at?: string | null;
   // joins
   profiles?: Profile;
   categories?: Category;

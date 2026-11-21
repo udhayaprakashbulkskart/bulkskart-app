@@ -31,8 +31,8 @@ import {
 const FIRST_MS = 6_000;
 const REFRESH_MS = 5 * 60_000;
 const LIMIT = 12;
-const SELECT =
-  'id,req_number,title,description,specifications,quantity,quantity_unit,budget_min,budget_max,currency,status,created_at,deadline,expires_at';
+// '*' so source_type is read when the database has it (public listings are left out) and nothing breaks before
+const SELECT = '*';
 
 
 

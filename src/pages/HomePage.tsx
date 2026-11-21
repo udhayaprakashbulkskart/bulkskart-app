@@ -14,6 +14,7 @@ const OrderBenefitsSection = lazy(() => import('@/components/home/OrderBenefitsS
 const CategoriesAndStatsSection = lazy(() => import('@/components/home/CategoriesAndStatsSection'));
 const VerifiedSupplierQuickActions = lazy(() => import('@/components/home/VerifiedSupplierQuickActions'));
 const LiveRequirementsFeed = lazy(() => import('@/components/common/LiveRequirementsFeed'));
+const PublicListingsSection = lazy(() => import('@/components/common/PublicListingsSection'));
 const LiveReverseAuctionsRail = lazy(() => import('@/components/home/LiveReverseAuctionsRail'));
 const GlobalTradeNetworkSection = lazy(() => import('@/components/home/GlobalTradeNetworkSection'));
 const PostRequirementsHomeSection = lazy(() => import('@/components/home/PostRequirementsHomeSection'));
@@ -146,6 +147,8 @@ export default function HomePage() {
       {!HIDDEN_HOME_SECTIONS.exploreCategories && <WhenVisible><CategoriesAndStatsSection /></WhenVisible>}
       {!HIDDEN_HOME_SECTIONS.tradeWorkflows && <WhenVisible><VerifiedSupplierQuickActions /></WhenVisible>}
       <WhenVisible><LiveRequirementsFeed /></WhenVisible>
+      {/* buyer requirements from other marketplaces, kept apart from BulkSkart RFQs */}
+      <WhenVisible><PublicListingsSection /></WhenVisible>
       {!HIDDEN_HOME_SECTIONS.sellIn24Hours && <WhenVisible><LiveReverseAuctionsRail /></WhenVisible>}
       <WhenVisible><GlobalTradeNetworkSection /></WhenVisible>
       <WhenVisible><PostRequirementsHomeSection /></WhenVisible>

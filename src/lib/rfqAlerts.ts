@@ -90,6 +90,7 @@ export function usableLeads(rows: RfqLead[]): RfqLead[] {
   const seen = new Set<string>();
   return rows.filter((r) => {
     if (!r?.id || !r.title?.trim() || isTestTitle(r.title)) return false;
+    if ((r as { source_type?: string | null }).source_type === 'public_listing') return false; // not posted on BulkSkart
     if (isOutsideListing(r) || isSeededRequirement(r)) return false;
     const key = r.title.trim().toLowerCase();
     if (seen.has(key)) return false;

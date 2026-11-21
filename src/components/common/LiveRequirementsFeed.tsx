@@ -27,6 +27,7 @@ import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import { getRequirementVisualInfo } from '@/lib/requirementVisuals';
 import { formatMoney } from '@/lib/productPrice';
 import { isOutsideListing } from '@/lib/rfqSources';
+import { isMissingColumnError, isPublicListing } from '@/lib/publicListings';
 import { RFQ_ALERTS_EVENT, rfqAlertsOff, setRfqAlertsOff } from '@/lib/rfqAlerts';
 import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
 
@@ -200,7 +201,7 @@ export default function LiveRequirementsFeed() {
       query.order('created_at', { ascending: false });
     const { data, error: err } = await ordered.range(from, from + PAGE_SIZE - 1);
     if (err) throw err;
-    return ((data ?? []) as unknown as Requirement[]).filter((r) => !isOutsideListing(r) && !isSeededRequirement(r));
+    return ((data ?? []) as unknown as Requirement[]).filter((r) => !isOutsideListing(r) && !isSeededRequirement(r) && !isPublicListing(r));
   }, []);
 
   const loadFirst = useCallback(async () => {
@@ -244,15 +245,22 @@ export default function LiveRequirementsFeed() {
     const nowIso = new Date().toISOString();
     const monthAgo = new Date(Date.now() - 30 * 24 * HOUR).toISOString();
     try {
-      let liveQuery = supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${nowIso}`).or(`deadline.is.null,deadline.gt.${nowIso}`);
-      if (!INCLUDE_TEMPLATE_SEED_DATA) liveQuery = liveQuery.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
-      const [live, buyers, month, industries] = await Promise.all([
-        liveQuery,
+      // live BulkSkart RFQs (public listings from other marketplaces are counted apart)
+      const liveCount = async (withoutPublic: boolean) => {
+        let liveQuery = supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${nowIso}`).or(`deadline.is.null,deadline.gt.${nowIso}`);
+        if (!INCLUDE_TEMPLATE_SEED_DATA) liveQuery = liveQuery.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
+        if (withoutPublic) liveQuery = liveQuery.neq('source_type', 'public_listing');
+        return liveQuery;
+      };
+      const [liveFirst, buyers, month, industries] = await Promise.all([
+        liveCount(true),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'buyer').eq('status', 'active'),
         // Budgets of RFQs posted in the last 30 days (rupees); up to 1,000 rows, so the total is a lower bound
         supabase.from('requirements').select('budget_max').eq('currency', 'INR').gte('created_at', monthAgo).not('budget_max', 'is', null).limit(1000),
         supabase.from('categories').select('id', { count: 'exact', head: true }).is('parent_id', null),
       ]);
+      // before the public-listings migration the column is missing; count the old way then
+      const live = isMissingColumnError(liveFirst.error) ? await liveCount(false) : liveFirst;
       const value = Array.isArray(month.data) ? (month.data as Array<{ budget_max: number | null }>).reduce((s, r) => s + (Number(r.budget_max) || 0), 0) : null;
       setCounts({ live: live.count ?? null, buyers: buyers.count ?? null, value, industries: industries.count ?? null });
     } catch {
@@ -295,7 +303,7 @@ export default function LiveRequirementsFeed() {
         if (!data || data.status !== 'active') return;
         const req = data as Requirement;
         if (req.deadline && new Date(req.deadline).getTime() <= Date.now()) return;
-        if (isOutsideListing(req) || isSeededRequirement(req)) return;
+        if (isOutsideListing(req) || isSeededRequirement(req) || isPublicListing(req)) return;
         const f = filtersRef.current;
         const cat = CATEGORIES.find((c) => c.id === f.category);
         if (cat && cat.slugs.length > 0 && !cat.slugs.includes(req.categories?.slug ?? '')) return;
