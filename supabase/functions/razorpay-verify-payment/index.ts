@@ -80,7 +80,9 @@ serve(async (req) => {
 
     const company_id = payload.company_id;
     const missingCompany = (!company_id && type !== 'order_payment');
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || (missingCompany && type !== 'auction_fee' && type !== 'promotion')) {
+    // A subscription is tied to the order row, which already names the payer's company, so the
+    // browser does not have to send a company id (the profile may not exist when they press pay).
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || (missingCompany && type !== 'auction_fee' && type !== 'promotion' && type !== 'subscription')) {
       return json(400, { error: 'Missing required payment verification fields' });
     }
 

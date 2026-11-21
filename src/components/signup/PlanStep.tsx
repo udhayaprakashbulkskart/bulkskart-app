@@ -17,6 +17,8 @@ interface PlanStepProps {
   country: CountryConfig;
   formatPrice: (amount: number) => string;
   busy: boolean;
+  /** false when the person is paying before their business profile exists */
+  profileReady?: boolean;
   onPay: (plan: SubscriptionPlan, total: number) => void;
   onSkip: () => void;
 }
@@ -36,7 +38,7 @@ function Line({ label, hint, value, strong }: { label: string; hint?: string; va
 }
 
 /** Choose a plan and pay, with the whole price in front of the person before they press the button. */
-export function PlanStep({ firstName, plans, selected, onSelect, country, formatPrice, busy, onPay, onSkip }: PlanStepProps) {
+export function PlanStep({ firstName, plans, selected, onSelect, country, formatPrice, busy, profileReady = true, onPay, onSkip }: PlanStepProps) {
   const buyable = plans.filter((plan) => !plan.enterprise && plan.basePrice !== null);
   const chosen = buyable.find((plan) => plan.tier === selected) ?? buyable[0];
   const pricing = chosen && chosen.basePrice !== null ? calculateCountryPricing(chosen.basePrice, country) : null;
@@ -47,7 +49,11 @@ export function PlanStep({ firstName, plans, selected, onSelect, country, format
         <h1 id="plan-title" tabIndex={-1} className="text-2xl font-extrabold leading-tight tracking-tight outline-none sm:text-3xl">
           {firstName ? `You are in, ${firstName}!` : 'You are in!'} Choose a plan
         </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">Your account and business profile are saved. One last step to start responding to buyers.</p>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          {profileReady
+            ? 'Your account and business profile are saved. One last step to start responding to buyers.'
+            : 'You can pay now and finish your business profile afterwards. One last step to start responding to buyers.'}
+        </p>
       </div>
 
       <AssistantNote>

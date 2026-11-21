@@ -137,13 +137,6 @@ export default function SupplierSubscriptionPage() {
       window.location.href = 'mailto:info@bulkskart.com?subject=Enterprise Plan Inquiry';
       return;
     }
-    if (!company?.id) {
-      toast.error('Company profile required. Please complete your company registration first.', {
-        action: { label: 'Complete Profile', onClick: () => window.location.href = '/dashboard/supplier/profile' },
-        duration: 6000,
-      });
-      return;
-    }
     if (!user || !profile) { toast.error('Please sign in to subscribe.'); return; }
     // Show transparent breakdown dialog for supplier confirmation
     setConfirmPlan(plan);
@@ -151,7 +144,7 @@ export default function SupplierSubscriptionPage() {
 
   const executeCheckout = (plan: Plan) => {
     setConfirmPlan(null);
-    if (!company?.id || !user || !profile) return;
+    if (!user || !profile) return;
     const breakdown = plan.basePrice ? calculatePricing(plan.basePrice) : null;
     const totalAmount = breakdown ? breakdown.totalPayable : (plan.priceInr ?? 0);
     startCheckout({
@@ -159,11 +152,11 @@ export default function SupplierSubscriptionPage() {
       plan_label:    `${plan.label} Plan`,
       price_inr:     totalAmount,
       billing_cycle: 'monthly',
-      company_id:    company.id,
+      company_id:    company?.id,
       user_name:     profile.full_name ?? '',
       user_email:    user.email ?? '',
       onSuccess: () => {
-        getActiveSubscription(company.id).then(sub => setActiveSub(sub as Subscription | null));
+        if (company?.id) getActiveSubscription(company.id).then(sub => setActiveSub(sub as Subscription | null));
         // the rest of the dashboard only knows about a new plan once the account is read again
         void refreshProfile(user.id);
         setTimeout(fetchInvoices, 4000); // allow EF time to generate
@@ -172,13 +165,6 @@ export default function SupplierSubscriptionPage() {
   };
 
   const handleSubscribeAddon = (addonKey: 'ai_accessibility' | 'flash_sell_24h') => {
-    if (!company?.id) {
-      toast.error('Company profile required. Please complete your registration first.', {
-        action: { label: 'Complete Profile', onClick: () => window.location.href = '/dashboard/supplier/profile' },
-        duration: 6000,
-      });
-      return;
-    }
     if (!user || !profile) { toast.error('Please sign in to purchase add-ons.'); return; }
 
     const isAi = addonKey === 'ai_accessibility';
@@ -192,12 +178,13 @@ export default function SupplierSubscriptionPage() {
       plan_label: label,
       price_inr: totalAmount,
       billing_cycle: isAi ? 'monthly' : 'one_time',
-      company_id: company.id,
+      company_id: company?.id,
       user_name: profile.full_name ?? '',
       user_email: user.email ?? '',
       onSuccess: () => {
         toast.success(`${label} activated successfully!`);
-        getActiveSubscription(company.id).then(sub => setActiveSub(sub as Subscription | null));
+        if (company?.id) getActiveSubscription(company.id).then(sub => setActiveSub(sub as Subscription | null));
+        void refreshProfile(user.id);
         setTimeout(fetchInvoices, 4000);
       },
     });

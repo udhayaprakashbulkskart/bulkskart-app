@@ -15,7 +15,8 @@ export interface CheckoutOptions {
   plan_label: string;      // display name e.g. "Business"
   price_inr: number;       // e.g. 999
   billing_cycle: string;   // 'monthly' | 'annual'
-  company_id: string;
+  /** omitted when the supplier has not finished a company profile; the server opens one for them */
+  company_id?: string;
   user_name?: string;
   user_email?: string;
   user_phone?: string;
@@ -87,7 +88,7 @@ export function useRazorpay() {
           plan_label: opts.plan_label,
           price_inr: opts.price_inr,
           billing_cycle: opts.billing_cycle,
-          company_id: opts.company_id,
+          ...(opts.company_id ? { company_id: opts.company_id } : {}),
         },
       });
 
@@ -130,7 +131,7 @@ export function useRazorpay() {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              company_id: opts.company_id,
+              ...(opts.company_id ? { company_id: opts.company_id } : {}),
               plan_tier: opts.plan_tier,
               billing_cycle: opts.billing_cycle,
             },
