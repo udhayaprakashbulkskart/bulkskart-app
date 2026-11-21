@@ -26,7 +26,8 @@ const LoanCalculatorPage      = lazy(() => import('./pages/LoanCalculatorPage'))
 const TradeAssistantPage      = lazy(() => import('./pages/TradeAssistantPage'));
 const SEOHubPage              = lazy(() => import('./pages/SEOHubPage'));
 const BlogDetailPage          = lazy(() => import('./pages/BlogDetailPage'));
-const CategoriesPage          = lazy(() => import('./pages/CategoriesPage'));
+// All categories and subcategories on one page (the earlier hub, pages/CategoriesPage.tsx, is kept in the repo)
+const AllCategoriesPage       = lazy(() => import('./pages/AllCategoriesPage'));
 
 // ─── Lazy: auth-required pages ────────────────────────────────────────────────
 const PostRequirementPage     = lazy(() => import('./pages/PostRequirementPage'));
@@ -124,9 +125,9 @@ export const routes: RouteConfig[] = [
 
   // ── Public Dynamic Catalog & Entity Pages ────────────────────
   { name: 'Product Detail', path: '/products/:slug', element: <ProductDetailPage />, public: true },
-  { name: 'Categories Hub', path: '/categories', element: <CategoriesPage />, public: true },
-  { name: 'Categories Slug Hub', path: '/categories/:slug', element: <CategoriesPage />, public: true },
-  { name: 'Category Route', path: '/category/:slug', element: <CategoriesPage />, public: true },
+  { name: 'Categories Hub', path: '/categories', element: <AllCategoriesPage />, public: true },
+  { name: 'Categories Slug Hub', path: '/categories/:slug', element: <AllCategoriesPage />, public: true },
+  { name: 'Category Route', path: '/category/:slug', element: <AllCategoriesPage />, public: true },
   { name: 'Login Alias', path: '/login', element: <AuthPage />, public: true },
   { name: 'Register Alias', path: '/register', element: <AuthPage />, public: true },
   { name: 'Company Profile', path: '/companies/:slug', element: <CompanyProfilePage />, public: true },
@@ -229,7 +230,7 @@ export const routes: RouteConfig[] = [
   { name: 'Manufacturer Notifications', path: '/dashboard/manufacturer/notifications', element: <NotificationsPage /> },
 
   // ── Convenience Short Links ───────────────────────────────────
-  { name: 'Categories Shortcut', path: '/categories', element: <CategoriesPage />, public: true },
+  { name: 'Categories Shortcut', path: '/categories', element: <AllCategoriesPage />, public: true },
   { name: 'RFQs Shortcut', path: '/rfqs', element: <RequirementsPage />, public: true },
   { name: 'Requirement Single Shortcut', path: '/requirement', element: <RequirementsPage />, public: true },
   { name: 'Companies Shortcut', path: '/companies', element: <ManufacturersPage />, public: true },
