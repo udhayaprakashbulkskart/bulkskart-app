@@ -26,8 +26,8 @@ import SafeImage from '@/components/common/SafeImage';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import { getRequirementVisualInfo } from '@/lib/requirementVisuals';
 import { formatMoney } from '@/lib/productPrice';
-import { isOutsideListing } from '@/lib/rfqSources';
-import { isMissingColumnError, isPublicListing } from '@/lib/publicListings';
+import { isOutsideListing, withoutOutsideOrDemoRfqs } from '@/lib/rfqSources';
+import { isPublicListing } from '@/lib/publicListings';
 import { RFQ_ALERTS_EVENT, rfqAlertsOff, setRfqAlertsOff } from '@/lib/rfqAlerts';
 import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
 
@@ -137,6 +137,9 @@ function compactCount(n: number | null): string {
   return n > 0 ? `${n.toLocaleString('en-IN')}+` : '0';
 }
 
+/** Set once the database turns out not to have source_type yet, so the count stops asking for it every minute. */
+let publicColumnMissing = false;
+
 export default function LiveRequirementsFeed() {
   const { user, profile, company } = useAuth();
   const reduce = useReducedMotion();
@@ -184,6 +187,8 @@ export default function LiveRequirementsFeed() {
       .or(`deadline.is.null,deadline.gt.${nowIso}`);
     // demonstration rows from the template migrations are never shown as live demand
     if (!INCLUDE_TEMPLATE_SEED_DATA) query = query.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
+    // tender imports and feed-filler rows are left out here too, or they can fill a whole page and leave it empty
+    query = withoutOutsideOrDemoRfqs(query);
     if (bySlug) query = query.in('categories.slug', cat!.slugs);
     if (f.location !== 'all') query = query.ilike('destination_city', `%${f.location}%`);
     if (f.verifiedOnly) query = query.eq('is_verified_buyer', true);
@@ -249,18 +254,21 @@ export default function LiveRequirementsFeed() {
       const liveCount = async (withoutPublic: boolean) => {
         let liveQuery = supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${nowIso}`).or(`deadline.is.null,deadline.gt.${nowIso}`);
         if (!INCLUDE_TEMPLATE_SEED_DATA) liveQuery = liveQuery.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
+        liveQuery = withoutOutsideOrDemoRfqs(liveQuery);
         if (withoutPublic) liveQuery = liveQuery.neq('source_type', 'public_listing');
         return liveQuery;
       };
       const [liveFirst, buyers, month, industries] = await Promise.all([
-        liveCount(true),
+        liveCount(!publicColumnMissing),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'buyer').eq('status', 'active'),
         // Budgets of RFQs posted in the last 30 days (rupees); up to 1,000 rows, so the total is a lower bound
         supabase.from('requirements').select('budget_max').eq('currency', 'INR').gte('created_at', monthAgo).not('budget_max', 'is', null).limit(1000),
         supabase.from('categories').select('id', { count: 'exact', head: true }).is('parent_id', null),
       ]);
-      // before the public-listings migration the column is missing; count the old way then
-      const live = isMissingColumnError(liveFirst.error) ? await liveCount(false) : liveFirst;
+      // before the public-listings migration the column is missing; count the old way then (a count-only request
+      // returns its error without a code or message, so any error retries)
+      if (liveFirst.error) publicColumnMissing = true;
+      const live = liveFirst.error ? await liveCount(false) : liveFirst;
       const value = Array.isArray(month.data) ? (month.data as Array<{ budget_max: number | null }>).reduce((s, r) => s + (Number(r.budget_max) || 0), 0) : null;
       setCounts({ live: live.count ?? null, buyers: buyers.count ?? null, value, industries: industries.count ?? null });
     } catch {
@@ -507,29 +515,7 @@ export default function LiveRequirementsFeed() {
           )}
         </div>
 
-        {/* Who can quote */}
-        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/[0.07] px-3 py-2 md:mt-3 md:px-4 md:py-2.5" role="note">
-          <span className="flex min-w-0 flex-1 items-center gap-2 text-[11.5px] leading-snug md:text-[14px]">
-            <Lock className="h-4 w-4 shrink-0 text-[#FF7A2E]" aria-hidden="true" />
-            <span>
-              <strong className="font-bold">Only registered companies can send quotations.</strong>{' '}
-              <span className="text-white/70">
-                {company ? `You are quoting as ${company.company_name}.` : 'Register your business to quote on buyer RFQs.'}
-              </span>
-            </span>
-          </span>
-          {!company && (
-            <Link
-              to={registerCompanyHref}
-              className="group inline-flex shrink-0 items-center gap-1 text-[11.5px] font-bold text-[#FF8A3D] hover:text-[#FFA766] md:text-[14px]"
-            >
-              Register your company
-              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-            </Link>
-          )}
-        </div>
-
-        <div className="mt-2 grid gap-2 md:mt-3 md:grid-cols-2 md:gap-4">
+        <div className="mt-2 grid grid-cols-1 gap-2 md:mt-3 md:grid-cols-2 md:gap-4">
           {loading && items.length === 0 ? (
             [1, 2, 3, 4].map((n) => <div key={n} className="h-[118px] animate-pulse rounded-2xl border border-white/10 bg-[#121212] md:h-[160px]" />)
           ) : error ? (

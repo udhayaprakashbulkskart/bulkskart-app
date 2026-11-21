@@ -1862,7 +1862,7 @@ export type RequirementStatusFilter = 'all' | 'urgent' | 'new' | 'expiring' | 'l
  * One page of open buyer requirements from the database, with the real total for the same filters.
  * "urgent"/"expiring" = deadline within 7/3 days, "new"/"live" = posted in the last 3 days/24 hours.
  */
-import { isOutsideListing } from '@/lib/rfqSources';
+import { isOutsideListing, withoutOutsideOrDemoRfqs } from '@/lib/rfqSources';
 import { isPublicListing } from '@/lib/publicListings';
 
 export async function getRequirementsPage(q: {
@@ -1881,6 +1881,8 @@ export async function getRequirementsPage(q: {
     .from('requirements')
     .select('*, profiles!buyer_id(id,full_name,email,phone), categories!category_id(id,name,slug)', { count: 'exact' })
     .eq('status', 'active');
+  // tender imports and feed-filler rows are left out by the database, so pages and the count only hold real RFQs
+  query = withoutOutsideOrDemoRfqs(query);
   if (q.categoryId && q.categoryId !== 'all') query = query.eq('category_id', q.categoryId);
   const term = (q.search || '').trim().replace(/[%,()*]/g, ' ').trim();
   if (term) query = query.or(`title.ilike.%${term}%,description.ilike.%${term}%`);
