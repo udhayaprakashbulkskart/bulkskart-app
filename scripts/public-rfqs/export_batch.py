@@ -63,7 +63,7 @@ sql = f"""-- Public Requirements import: {len(rows)} buyer requirements from pub
 -- and checked again against the live page before export (product, quantity, unit, location, posting date).
 -- Nothing is added that the page does not show: no buyer names or contacts, no budgets, no deadlines.
 -- Listings older than 30 days are left out; each row is hidden 30 days after it was posted (expires_at).
--- Rows go live as 'approved' (admins can reject them); supplier matching does not run for them.
+-- Rows are imported as 'pending': nothing is shown to customers until an admin approves it. Supplier matching does not run for them.
 -- Needs 00068_public_listing_rfqs.sql. Re-running is safe: a listing already imported (same source URL) is skipped.
 
 WITH src (title, description, specifications, quantity, quantity_unit, destination_city, destination_country, listing_category,
@@ -80,7 +80,7 @@ req AS (
   INSERT INTO requirements (id, source_type, review_status, title, description, specifications, quantity, quantity_unit,
                             destination_city, destination_country, listing_category, category_id, currency, status,
                             is_verified_buyer, created_at, expires_at)
-  SELECT id, 'public_listing', 'approved', title, description, specifications, quantity::integer, quantity_unit,
+  SELECT id, 'public_listing', 'pending', title, description, specifications, quantity::integer, quantity_unit,
          destination_city, destination_country, listing_category,
          (SELECT id FROM categories WHERE slug = 'machinery-industrial' LIMIT 1), 'INR', 'active', false,
          created_at::timestamptz, expires_at::timestamptz
