@@ -26,7 +26,8 @@ const LoanCalculatorPage      = lazy(() => import('./pages/LoanCalculatorPage'))
 const TradeAssistantPage      = lazy(() => import('./pages/TradeAssistantPage'));
 const SEOHubPage              = lazy(() => import('./pages/SEOHubPage'));
 const BlogDetailPage          = lazy(() => import('./pages/BlogDetailPage'));
-const CategoriesPage          = lazy(() => import('./pages/CategoriesPage'));
+// All categories and subcategories on one page (the earlier hub, pages/CategoriesPage.tsx, is kept in the repo)
+const AllCategoriesPage       = lazy(() => import('./pages/AllCategoriesPage'));
 
 // ─── Lazy: auth-required pages ────────────────────────────────────────────────
 const PostRequirementPage     = lazy(() => import('./pages/PostRequirementPage'));
@@ -71,6 +72,7 @@ const DisputeCenterPage     = lazy(() => import('./pages/dashboard/shared/Disput
 // ─── Lazy: admin dashboard ────────────────────────────────────────────────────
 const AdminDashboardFull    = lazy(() => import('./pages/dashboard/admin/AdminDashboardFull'));
 const AdminReportsPage      = lazy(() => import('./pages/dashboard/admin/AdminReportsPage'));
+const AdminPublicRequirementsPage = lazy(() => import('./pages/dashboard/admin/AdminPublicRequirementsPage'));
 const AdminPaymentsPage     = lazy(() => import('./pages/dashboard/admin/AdminPaymentsPage'));
 const SupplierWalletPage    = lazy(() => import('./pages/dashboard/supplier/SupplierWalletPage'));
 const FactoryVisitsPage     = lazy(() => import('./pages/dashboard/shared/FactoryVisitsPage'));
@@ -124,9 +126,9 @@ export const routes: RouteConfig[] = [
 
   // ── Public Dynamic Catalog & Entity Pages ────────────────────
   { name: 'Product Detail', path: '/products/:slug', element: <ProductDetailPage />, public: true },
-  { name: 'Categories Hub', path: '/categories', element: <CategoriesPage />, public: true },
-  { name: 'Categories Slug Hub', path: '/categories/:slug', element: <CategoriesPage />, public: true },
-  { name: 'Category Route', path: '/category/:slug', element: <CategoriesPage />, public: true },
+  { name: 'Categories Hub', path: '/categories', element: <AllCategoriesPage />, public: true },
+  { name: 'Categories Slug Hub', path: '/categories/:slug', element: <AllCategoriesPage />, public: true },
+  { name: 'Category Route', path: '/category/:slug', element: <AllCategoriesPage />, public: true },
   { name: 'Login Alias', path: '/login', element: <AuthPage />, public: true },
   { name: 'Register Alias', path: '/register', element: <AuthPage />, public: true },
   { name: 'Company Profile', path: '/companies/:slug', element: <CompanyProfilePage />, public: true },
@@ -229,7 +231,7 @@ export const routes: RouteConfig[] = [
   { name: 'Manufacturer Notifications', path: '/dashboard/manufacturer/notifications', element: <NotificationsPage /> },
 
   // ── Convenience Short Links ───────────────────────────────────
-  { name: 'Categories Shortcut', path: '/categories', element: <CategoriesPage />, public: true },
+  { name: 'Categories Shortcut', path: '/categories', element: <AllCategoriesPage />, public: true },
   { name: 'RFQs Shortcut', path: '/rfqs', element: <RequirementsPage />, public: true },
   { name: 'Requirement Single Shortcut', path: '/requirement', element: <RequirementsPage />, public: true },
   { name: 'Companies Shortcut', path: '/companies', element: <ManufacturersPage />, public: true },
@@ -251,6 +253,7 @@ export const routes: RouteConfig[] = [
   { name: 'Admin Dashboard', path: '/dashboard/admin', element: <AdminDashboardFull /> },
   { name: 'AI Match Analytics', path: '/dashboard/admin/ai-match-analytics', element: <AIMatchAnalyticsPage /> },
   { name: 'Admin Reports', path: '/dashboard/admin/reports', element: <AdminReportsPage /> },
+  { name: 'Admin Public Requirements', path: '/dashboard/admin/public-requirements', element: <AdminPublicRequirementsPage /> },
   { name: 'Admin Payments', path: '/dashboard/admin/payments', element: <AdminPaymentsPage /> },
 
   // ── Company / Legal ───────────────────────────────────────────

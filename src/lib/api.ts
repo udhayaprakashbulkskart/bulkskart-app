@@ -809,6 +809,7 @@ export async function getRequirements(options?: {
 
   for (const item of data) {
     if (!item || !item.id) continue;
+    if (isPublicListing(item as Requirement)) continue; // public listings from other marketplaces have their own section
     if (excludeIdSet.has(item.id)) continue;
     if (item.req_number && excludeReqNumSet.has(item.req_number)) continue;
 
@@ -1862,6 +1863,7 @@ export type RequirementStatusFilter = 'all' | 'urgent' | 'new' | 'expiring' | 'l
  * "urgent"/"expiring" = deadline within 7/3 days, "new"/"live" = posted in the last 3 days/24 hours.
  */
 import { isOutsideListing } from '@/lib/rfqSources';
+import { isPublicListing } from '@/lib/publicListings';
 
 export async function getRequirementsPage(q: {
   page: number;
@@ -1910,6 +1912,6 @@ export async function getRequirementsPage(q: {
     buyer_phone: item.profiles?.phone || item.buyer_phone || null,
   })) as Requirement[];
   // Listings taken from tender portals or other websites stay off BulkSkart's RFQ pages
-  const own = rows.filter((r) => !isOutsideListing(r));
+  const own = rows.filter((r) => !isOutsideListing(r) && !isPublicListing(r));
   return { data: own, count: typeof count === 'number' ? count : own.length };
 }

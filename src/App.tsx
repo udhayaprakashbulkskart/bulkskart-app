@@ -1,7 +1,8 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import IntersectObserver from '@/components/common/IntersectObserver';
-const LiveBuyerOrderAlert = lazy(() => import('@/components/common/LiveBuyerOrderAlert'));
+// The bottom buyer-alert carousel (LiveBuyerOrderAlert) is replaced by the "New RFQ Posted!" popup at the top.
+const RfqTopAlert = lazy(() => import('@/components/common/RfqTopAlert'));
 const AIChatAssistant = lazy(() => import('@/components/common/AIChatAssistant'));
 const DownloadAppPopup = lazy(() => import('@/components/common/DownloadAppPopup'));
 import AutoImageSyncManager from '@/components/common/AutoImageSyncManager';
@@ -69,7 +70,7 @@ const App: React.FC = () => {
             </Suspense>
             {showDeferred && (
               <Suspense fallback={null}>
-                <LiveBuyerOrderAlert />
+                <RfqTopAlert />
                 <AIChatAssistant />
                 <DownloadAppPopup />
               </Suspense>

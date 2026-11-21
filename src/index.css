@@ -223,3 +223,23 @@
     .calm-action { transition: none; }
   }
 }
+
+/* "New RFQ Posted!" popup: the bell rings once as it slides in, and a bar counts down until it slides away */
+@keyframes bs-bell-ring {
+  0%, 100% { transform: rotate(0deg); }
+  12% { transform: rotate(16deg); }
+  24% { transform: rotate(-14deg); }
+  36% { transform: rotate(11deg); }
+  48% { transform: rotate(-8deg); }
+  60% { transform: rotate(5deg); }
+  72% { transform: rotate(-2deg); }
+}
+@keyframes bs-alert-drain {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+.bs-bell-ring { transform-origin: 50% 8%; animation: bs-bell-ring 1.1s ease-in-out 0.2s 1 both; }
+.bs-alert-drain { transform-origin: left center; animation-name: bs-alert-drain; animation-timing-function: linear; animation-fill-mode: forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .bs-bell-ring, .bs-alert-drain { animation: none; }
+}

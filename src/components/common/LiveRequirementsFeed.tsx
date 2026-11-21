@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   ArrowRight, Bookmark, Box, CalendarDays, CheckCircle2, ChevronDown, Clock, Coins, Crown, FileText, Filter, Flame,
-  Handshake, Layers, LayoutGrid, Loader2, Lock, MapPin, Plus, Sparkles, Users,
+  BellOff, BellRing, Handshake, Layers, LayoutGrid, Loader2, Lock, MapPin, Plus, Sparkles, Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
@@ -27,6 +27,8 @@ import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import { getRequirementVisualInfo } from '@/lib/requirementVisuals';
 import { formatMoney } from '@/lib/productPrice';
 import { isOutsideListing } from '@/lib/rfqSources';
+import { isMissingColumnError, isPublicListing } from '@/lib/publicListings';
+import { RFQ_ALERTS_EVENT, rfqAlertsOff, setRfqAlertsOff } from '@/lib/rfqAlerts';
 import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
 
 const PAGE_SIZE = 10;
@@ -199,7 +201,7 @@ export default function LiveRequirementsFeed() {
       query.order('created_at', { ascending: false });
     const { data, error: err } = await ordered.range(from, from + PAGE_SIZE - 1);
     if (err) throw err;
-    return ((data ?? []) as unknown as Requirement[]).filter((r) => !isOutsideListing(r) && !isSeededRequirement(r));
+    return ((data ?? []) as unknown as Requirement[]).filter((r) => !isOutsideListing(r) && !isSeededRequirement(r) && !isPublicListing(r));
   }, []);
 
   const loadFirst = useCallback(async () => {
@@ -243,15 +245,22 @@ export default function LiveRequirementsFeed() {
     const nowIso = new Date().toISOString();
     const monthAgo = new Date(Date.now() - 30 * 24 * HOUR).toISOString();
     try {
-      let liveQuery = supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${nowIso}`).or(`deadline.is.null,deadline.gt.${nowIso}`);
-      if (!INCLUDE_TEMPLATE_SEED_DATA) liveQuery = liveQuery.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
-      const [live, buyers, month, industries] = await Promise.all([
-        liveQuery,
+      // live BulkSkart RFQs (public listings from other marketplaces are counted apart)
+      const liveCount = async (withoutPublic: boolean) => {
+        let liveQuery = supabase.from('requirements').select('id', { count: 'exact', head: true }).eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${nowIso}`).or(`deadline.is.null,deadline.gt.${nowIso}`);
+        if (!INCLUDE_TEMPLATE_SEED_DATA) liveQuery = liveQuery.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
+        if (withoutPublic) liveQuery = liveQuery.neq('source_type', 'public_listing');
+        return liveQuery;
+      };
+      const [liveFirst, buyers, month, industries] = await Promise.all([
+        liveCount(true),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'buyer').eq('status', 'active'),
         // Budgets of RFQs posted in the last 30 days (rupees); up to 1,000 rows, so the total is a lower bound
         supabase.from('requirements').select('budget_max').eq('currency', 'INR').gte('created_at', monthAgo).not('budget_max', 'is', null).limit(1000),
         supabase.from('categories').select('id', { count: 'exact', head: true }).is('parent_id', null),
       ]);
+      // before the public-listings migration the column is missing; count the old way then
+      const live = isMissingColumnError(liveFirst.error) ? await liveCount(false) : liveFirst;
       const value = Array.isArray(month.data) ? (month.data as Array<{ budget_max: number | null }>).reduce((s, r) => s + (Number(r.budget_max) || 0), 0) : null;
       setCounts({ live: live.count ?? null, buyers: buyers.count ?? null, value, industries: industries.count ?? null });
     } catch {
@@ -294,7 +303,7 @@ export default function LiveRequirementsFeed() {
         if (!data || data.status !== 'active') return;
         const req = data as Requirement;
         if (req.deadline && new Date(req.deadline).getTime() <= Date.now()) return;
-        if (isOutsideListing(req) || isSeededRequirement(req)) return;
+        if (isOutsideListing(req) || isSeededRequirement(req) || isPublicListing(req)) return;
         const f = filtersRef.current;
         const cat = CATEGORIES.find((c) => c.id === f.category);
         if (cat && cat.slugs.length > 0 && !cat.slugs.includes(req.categories?.slug ?? '')) return;
@@ -308,6 +317,14 @@ export default function LiveRequirementsFeed() {
     return () => {
       supabase.removeChannel(channel);
     };
+  }, []);
+
+  // the "New RFQ Posted!" popups at the top of the site can be switched off and on here
+  const [alertsOff, setAlertsOff] = useState(rfqAlertsOff);
+  useEffect(() => {
+    const sync = () => setAlertsOff(rfqAlertsOff());
+    window.addEventListener(RFQ_ALERTS_EVENT, sync);
+    return () => window.removeEventListener(RFQ_ALERTS_EVENT, sync);
   }, []);
 
   /** Guests sign up as a supplier; signed-in people without a company finish their company profile. */
@@ -451,10 +468,44 @@ export default function LiveRequirementsFeed() {
         </div>
 
         {/* ── Live feed ── */}
-        <p className="mt-3 flex items-center gap-1.5 px-1 text-[10.5px] text-white/60 md:text-[13px]" aria-live="polite">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#E5322D]" aria-hidden="true" />
-          Live feed · new RFQs appear as buyers post them · updated {secondsAgo < 5 ? 'just now' : `${secondsAgo}s ago`}
-        </p>
+        <div className="mt-3 flex items-center gap-2 px-1">
+          <p className="flex min-w-0 flex-1 items-center gap-1.5 text-[10.5px] text-white/60 md:text-[13px]" aria-live="polite">
+            <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#E5322D]" aria-hidden="true" />
+            <span className="min-w-0">Live feed · new RFQs appear as buyers post them · updated {secondsAgo < 5 ? 'just now' : `${secondsAgo}s ago`}</span>
+          </p>
+          <button
+            type="button"
+            aria-pressed={!alertsOff}
+            onClick={() => setRfqAlertsOff(!alertsOff)}
+            title={alertsOff ? 'Show "New RFQ Posted!" popups at the top of the site' : 'Stop the "New RFQ Posted!" popups'}
+            className={`flex h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[10.5px] font-semibold transition-colors md:h-8 md:text-[12.5px] ${alertsOff ? 'border-[#FF5A00]/60 text-[#FF8A3D] hover:bg-[#FF5A00]/10' : 'border-white/15 text-white/70 hover:border-white/35 hover:text-white'}`}
+          >
+            {alertsOff ? <BellRing className="h-3.5 w-3.5" aria-hidden="true" /> : <BellOff className="h-3.5 w-3.5" aria-hidden="true" />}
+            {alertsOff ? 'Turn on RFQ alerts' : 'RFQ alerts on'}
+          </button>
+        </div>
+
+        {/* Who can quote */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/[0.07] px-3 py-2 md:mt-3 md:px-4 md:py-2.5" role="note">
+          <span className="flex min-w-0 flex-1 items-center gap-2 text-[11.5px] leading-snug md:text-[14px]">
+            <Lock className="h-4 w-4 shrink-0 text-[#FF7A2E]" aria-hidden="true" />
+            <span>
+              <strong className="font-bold">Only registered companies can send quotations.</strong>{' '}
+              <span className="text-white/70">
+                {company ? `You are quoting as ${company.company_name}.` : 'Register your business to quote on buyer RFQs.'}
+              </span>
+            </span>
+          </span>
+          {!company && (
+            <Link
+              to={registerCompanyHref}
+              className="group inline-flex shrink-0 items-center gap-1 text-[11.5px] font-bold text-[#FF8A3D] hover:text-[#FFA766] md:text-[14px]"
+            >
+              Register your company
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+            </Link>
+          )}
+        </div>
 
         {/* Who can quote */}
         <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/[0.07] px-3 py-2 md:mt-3 md:px-4 md:py-2.5" role="note">

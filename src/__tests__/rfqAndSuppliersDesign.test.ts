@@ -31,8 +31,8 @@ describe('RFQs stay on BulkSkart', () => {
   });
 
   it('hides outside listings in the home feed and the RFQ list, and opens only own attachments', () => {
-    expect(src('src/components/common/LiveRequirementsFeed.tsx')).toContain('.filter((r) => !isOutsideListing(r) && !isSeededRequirement(r))');
-    expect(src('src/lib/api.ts')).toContain('rows.filter((r) => !isOutsideListing(r))');
+    expect(src('src/components/common/LiveRequirementsFeed.tsx')).toContain('.filter((r) => !isOutsideListing(r) && !isSeededRequirement(r) && !isPublicListing(r))');
+    expect(src('src/lib/api.ts')).toContain('rows.filter((r) => !isOutsideListing(r) && !isPublicListing(r))');
     expect(src('src/components/common/RequirementDetailDrawer.tsx')).toContain('isOwnUrl(requirement.attachment_url)');
     expect(src('src/pages/RequirementDetailsPage.tsx')).toContain('isOwnUrl(req.attachment_url)');
   });

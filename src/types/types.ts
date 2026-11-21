@@ -223,6 +223,12 @@ export interface Requirement {
   created_at: string;
   updated_at: string;
   expires_at: string | null;
+  /** 'public_listing' = a Public Requirement collected from a public page elsewhere (its source is admin-only); BulkSkart buyer RFQs are 'bulkskart' */
+  source_type?: 'bulkskart' | 'public_listing' | null;
+  /** public requirements only: admin review state */
+  review_status?: 'pending' | 'approved' | 'rejected' | null;
+  /** public requirements only: product category as listed (e.g. "Bearings") */
+  listing_category?: string | null;
   // joins
   profiles?: Profile;
   categories?: Category;

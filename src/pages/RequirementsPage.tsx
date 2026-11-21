@@ -31,6 +31,7 @@ import RequirementDetailDrawer from '@/components/common/RequirementDetailDrawer
 import { getRequirementVisualInfo, placeLabel, quantityLabel } from '@/lib/requirementVisuals';
 import RequirementThumb, { categoryIcon } from '@/components/common/RequirementThumb';
 import { ExternalSourceLink, GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
+import PublicListingsSection from '@/components/common/PublicListingsSection';
 
 const REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
 const PAGE_SIZE = 12;
@@ -989,6 +990,9 @@ export default function RequirementsPage() {
         onClose={() => setDialogOpen(false)}
         reason={dialogReason}
       />
+
+      {/* buyer requirements from other marketplaces, kept apart from BulkSkart RFQs */}
+      <PublicListingsSection />
     </MainLayout>
   );
 }

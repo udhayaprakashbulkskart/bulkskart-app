@@ -53,6 +53,7 @@ import { formatPriceRange } from '@/lib/productPrice';
 import type { Product, Quotation, Requirement } from '@/types/types';
 import '@/components/formkit/formkit.css';
 import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
+import { isPublicListing, postedOnLabel } from '@/lib/publicListings';
 
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -333,6 +334,32 @@ export default function RequirementDetailsPage() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // A Public Requirement (collected from a public page elsewhere): its buyer is not on BulkSkart, so no quotation here.
+  if (isPublicListing(req)) {
+    const posted = postedOnLabel(req.created_at);
+    const qty = req.quantity != null ? `${Number(req.quantity).toLocaleString('en-IN')}${req.quantity_unit ? ` ${req.quantity_unit}` : ''}` : 'Not stated';
+    return (
+      <MainLayout>
+        <PageMeta title={`${req.title} | Public requirement | BulkSkart`} description="A publicly listed buyer requirement." robots="noindex, nofollow" />
+        <div className="bg-background min-h-[70vh] px-4 py-8">
+          <div className="mx-auto max-w-2xl space-y-4 rounded-2xl border border-border bg-card p-6">
+            <span className="inline-block rounded-md border border-[#FF6A14]/60 bg-[#FF6A14]/10 px-2 py-0.5 text-xs font-black tracking-wide text-[#E04E00] dark:text-[#FF8A3D]">PUBLIC REQUIREMENT</span>
+            <h1 className="text-xl font-black text-foreground sm:text-2xl">{req.title}</h1>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+              <dt className="text-muted-foreground">Quantity</dt><dd className="text-foreground">{qty}</dd>
+              <dt className="text-muted-foreground">Delivery location</dt><dd className="text-foreground">{[req.destination_city, req.destination_country].filter(Boolean).join(', ') || 'Not stated'}</dd>
+              {req.listing_category && (<><dt className="text-muted-foreground">Category</dt><dd className="text-foreground">{req.listing_category}</dd></>)}
+              {posted && (<><dt className="text-muted-foreground">Posted</dt><dd className="text-foreground">{posted}</dd></>)}
+            </dl>
+            {req.specifications && <p className="whitespace-pre-line text-sm text-muted-foreground">{req.specifications}</p>}
+            <p className="text-sm text-muted-foreground">This requirement was publicly listed by a buyer who is not registered on BulkSkart, so quotations cannot be sent through BulkSkart for it.</p>
+            <Link to="/requirements" className="fk-btn is-primary inline-flex">Browse Live RFQs from BulkSkart buyers</Link>
           </div>
         </div>
       </MainLayout>
