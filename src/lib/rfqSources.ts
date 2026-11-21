@@ -6,6 +6,7 @@
  * opened when they are stored by BulkSkart itself.
  */
 import type { Requirement } from '@/types/types';
+import { INCLUDE_TEMPLATE_SEED_DATA, SEEDED_FEED_DESCRIPTION_ILIKE } from '@/lib/seedData';
 
 const OWN_DOMAINS = ['bulkskart.com'];
 
@@ -57,4 +58,18 @@ export function isOutsideListing(req: Pick<Requirement, 'title' | 'description' 
   const text = [req.title, req.description, req.specifications].filter(Boolean).join(' \n ');
   // "GeM" (Government e-Marketplace) is matched with its exact spelling so "gem stones" are not caught
   return OUTSIDE_PORTAL.test(text) || /\bGeM\b/.test(text) || outsideLinksIn(text).length > 0;
+}
+
+/**
+ * Leaves out, in the database query itself: requirements without a BulkSkart buyer (Public Requirements collected
+ * elsewhere have none), government tender imports (their description names GeM) and feed-filler demo RFQs. The checks
+ * above run on each page afterwards, but when the newest rows are all such listings a page would otherwise come back
+ * empty although real RFQs exist further down.
+ */
+export function withoutOutsideOrDemoRfqs<Q extends { or: (filters: string) => Q }>(query: Q): Q {
+  let q = query.or('buyer_id.not.is.null');
+  // case-sensitive "GeM", so "gem stones" stay
+  q = q.or('description.is.null,description.not.like.*GeM*');
+  if (!INCLUDE_TEMPLATE_SEED_DATA) q = q.or(`description.is.null,description.not.ilike.${SEEDED_FEED_DESCRIPTION_ILIKE}`);
+  return q;
 }

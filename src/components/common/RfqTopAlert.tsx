@@ -13,6 +13,7 @@ import { ArrowRight, BellOff, BellRing, Box, IndianRupee, X } from 'lucide-react
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
 import type { Requirement } from '@/types/types';
+import { withoutOutsideOrDemoRfqs } from '@/lib/rfqSources';
 import {
   CYCLE_MS,
   NO_RFQ_ALERT_PATHS,
@@ -34,18 +35,15 @@ const LIMIT = 12;
 // '*' so source_type is read when the database has it (public listings are left out) and nothing breaks before
 const SELECT = '*';
 
-
-
-
-
 async function loadLeads(): Promise<Lead[]> {
   const now = new Date().toISOString();
-  const { data, error } = await supabase
+  const query = supabase
     .from('requirements')
     .select(SELECT)
     .eq('status', 'active')
     .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .or(`deadline.is.null,deadline.gt.${now}`)
+    .or(`deadline.is.null,deadline.gt.${now}`);
+  const { data, error } = await withoutOutsideOrDemoRfqs(query)
     .order('created_at', { ascending: false })
     .limit(LIMIT * 2);
   if (error) throw error;

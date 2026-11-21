@@ -17,7 +17,9 @@ describe('Public Requirements (collected from public pages elsewhere)', () => {
 
   it('stay out of Live RFQ: feed, counts, alerts and the RFQ list', () => {
     expect(src('src/components/common/LiveRequirementsFeed.tsx')).toContain('!isSeededRequirement(r) && !isPublicListing(r)');
-    expect(src('src/components/common/LiveRequirementsFeed.tsx')).toContain("liveQuery.neq('source_type', 'public_listing')");
+    // a public requirement has no BulkSkart buyer, so the feed and count queries leave it out in the database too
+    expect(src('src/lib/rfqSources.ts')).toContain("query.or('buyer_id.not.is.null')");
+    expect(src('src/components/common/LiveRequirementsFeed.tsx')).toContain('withoutOutsideOrDemoRfqs(open)');
     expect(src('src/lib/api.ts')).toContain('!isOutsideListing(r) && !isPublicListing(r)');
     const lead = { id: 'a', title: 'U Bolt', description: null, specifications: null, quantity: 1001, quantity_unit: 'Nos', budget_min: null, budget_max: null, currency: 'INR', created_at: null };
     expect(usableLeads([{ ...lead, source_type: 'public_listing' } as never])).toHaveLength(0);

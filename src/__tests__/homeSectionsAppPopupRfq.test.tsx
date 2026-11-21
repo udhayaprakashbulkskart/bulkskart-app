@@ -78,14 +78,18 @@ describe('Download App popup', () => {
   });
 });
 
-describe('Live RFQ: only registered companies with a paid plan send quotations', () => {
+describe('Live RFQ: anyone can view, only Premium (paid) suppliers send quotations', () => {
   const feed = src('src/components/common/LiveRequirementsFeed.tsx');
-  it('says so in the section and in the empty feed, with a way to register', () => {
-    expect(feed).toContain('Anyone can view RFQs. Only registered companies with a paid subscription can send quotations.');
+  it('says so in the Premium banner and in the empty feed, with a way to upgrade or register', () => {
+    expect(feed).toContain("{premium ? 'PREMIUM' : 'PREMIUM ONLY'}");
+    expect(feed).toContain("{premium ? 'You are a' : 'Exclusive for'}");
+    expect(feed).toContain('to submit quotations and connect with bulk buyers.');
     expect(feed).toContain('No open RFQs right now');
-    expect(feed).toContain('Only registered companies with a paid subscription can send quotations.');
-    expect(feed).toContain('See paid plans');
-    expect(feed.match(/\{\/\* Who can quote \*\/\}/g)).toHaveLength(1);
+    expect(feed).toContain('Only <strong className="font-bold text-[#FFC928]">Premium Suppliers</strong> can submit quotations.');
+    expect(feed).toContain('Upgrade to Premium');
+    expect(feed).toContain("const premium = !!company && !!isPaidSubscriber;");
+    expect(feed).toContain("const upgradeHref = user && !company ? registerCompanyHref : '/pricing';");
+    expect(feed.match(/\{\/\* Who can quote/g)).toHaveLength(1);
     expect(feed).toContain("const registerCompanyHref = user ? '/dashboard/supplier/profile' : '/auth?tab=supplier';");
   });
   it('still stops guests and people without a company at the quote button', () => {
