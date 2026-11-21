@@ -41,7 +41,7 @@ describe('RFQs stay on BulkSkart', () => {
 describe('Live RFQ and Verified Suppliers laid out from the design pictures', () => {
   it('Live RFQ has the header, promises, counts, filters, cards and the post button', () => {
     const feed = src('src/components/common/LiveRequirementsFeed.tsx');
-    for (const text of ["'Genuine Buyers'", "'Direct Quotation'", "label: 'Live RFQs'", "label: 'RFQ Value (Monthly)'", "label: 'All RFQs'", "label: 'High Value'", "label: 'My RFQs'", 'All Locations', 'Submit Quotation', 'Post a Buying Requirement (RFQ)', "label: 'Urgent RFQ'", "label: 'Multi-Product RFQ'", "label: 'New RFQ'"]) {
+    for (const text of ["'Genuine Buyers'", "'Direct Quotation'", "label: 'Live RFQs'", "label: 'Open RFQ Value'", "label: 'All RFQs'", "label: 'High Value'", "label: 'My RFQs'", 'All Locations', 'Submit Quotation', 'Post a Buying Requirement (RFQ)', "label: 'Urgent RFQ'", "label: 'Multi-Product RFQ'", "label: 'New RFQ'"]) {
       expect(feed).toContain(text);
     }
     // live: realtime inserts and a countdown that ticks

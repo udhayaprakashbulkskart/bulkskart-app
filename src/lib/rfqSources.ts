@@ -61,13 +61,15 @@ export function isOutsideListing(req: Pick<Requirement, 'title' | 'description' 
 }
 
 /**
- * Leaves government tender imports (their description names GeM) and feed-filler demo RFQs out in the database
- * query itself. The checks above run on each page afterwards, but when the newest rows are all such listings a page
- * would otherwise come back empty although real RFQs exist further down.
+ * Leaves out, in the database query itself: requirements without a BulkSkart buyer (Public Requirements collected
+ * elsewhere have none), government tender imports (their description names GeM) and feed-filler demo RFQs. The checks
+ * above run on each page afterwards, but when the newest rows are all such listings a page would otherwise come back
+ * empty although real RFQs exist further down.
  */
 export function withoutOutsideOrDemoRfqs<Q extends { or: (filters: string) => Q }>(query: Q): Q {
+  let q = query.or('buyer_id.not.is.null');
   // case-sensitive "GeM", so "gem stones" stay
-  let q = query.or('description.is.null,description.not.like.*GeM*');
+  q = q.or('description.is.null,description.not.like.*GeM*');
   if (!INCLUDE_TEMPLATE_SEED_DATA) q = q.or(`description.is.null,description.not.ilike.${SEEDED_FEED_DESCRIPTION_ILIKE}`);
   return q;
 }

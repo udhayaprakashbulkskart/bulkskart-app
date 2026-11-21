@@ -3,11 +3,12 @@ import { withoutOutsideOrDemoRfqs } from '@/lib/rfqSources';
 import { isSeededRequirement } from '@/lib/seedData';
 
 describe('Live RFQ: tender imports and feed-filler rows are left out in the database query', () => {
-  it('adds a GeM filter and a feed-filler filter, both keeping rows without a description', () => {
+  it('keeps only RFQs with a BulkSkart buyer and drops GeM and feed-filler rows (rows without a description stay)', () => {
     const calls: string[] = [];
     const query = { or(filters: string) { calls.push(filters); return query; } };
     expect(withoutOutsideOrDemoRfqs(query)).toBe(query);
     expect(calls).toEqual([
+      'buyer_id.not.is.null',
       'description.is.null,description.not.like.*GeM*',
       'description.is.null,description.not.ilike.*seeded for BulkSkart production RFQ feed*',
     ]);

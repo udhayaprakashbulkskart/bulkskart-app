@@ -47,7 +47,10 @@ describe('"New RFQ Posted!" popup', () => {
     for (const path of ['/auth', '/post-requirement', '/checkout/1', '/dashboard/supplier/settings']) expect(NO_RFQ_ALERT_PATHS.test(path), path).toBe(true);
     for (const path of ['/', '/products', '/requirements', '/dashboard/supplier']) expect(NO_RFQ_ALERT_PATHS.test(path), path).toBe(false);
     const feed = src('src/components/common/LiveRequirementsFeed.tsx');
-    expect(feed).toContain("{alertsOff ? 'Turn on RFQ alerts' : 'RFQ alerts on'}");
+    // hidden from the popup itself; the Live RFQ section offers to turn them back on
+    expect(feed).toContain('{alertsOff && (');
+    expect(feed).toContain('onClick={() => setRfqAlertsOff(false)}');
+    expect(feed).toContain('Turn on RFQ alerts');
   });
 
   it('sits at the top of every page in place of the old bottom buyer alert', () => {
