@@ -1,4 +1,5 @@
 import { supabase } from '@/db/supabase';
+import { pickActiveSubscription } from '@/lib/quoteAccess';
 import type { GlobalCatalogProduct } from '@/data/expandedGlobalProducts';
 import type { CuratedProduct } from '@/data/curatedIndustrialProducts';
 import { loadAlibabaCatalog, loadGlobalCatalog, loadCuratedCatalog } from '@/lib/catalogLoaders';
@@ -98,13 +99,15 @@ const PAGE_SIZE = 12;
  * Returns the supplier's active subscription for a company, or null.
  */
 export async function getActiveSubscription(companyId: string) {
+  // status 'active' and not past ends_at, the same rule the database uses for quotations
   const { data } = await supabase
     .from('subscriptions')
     .select('*')
     .eq('company_id', companyId)
     .eq('status', 'active')
-    .maybeSingle();
-  return data ?? null;
+    .order('created_at', { ascending: false })
+    .limit(10);
+  return pickActiveSubscription(Array.isArray(data) ? data : []);
 }
 
 /**
@@ -1167,6 +1170,9 @@ export async function createQuotation(payload: Partial<Quotation>): Promise<{ er
   const supplierId = payload.supplier_id;
   const companyId = payload.supplier_company_id;
 
+  if (!companyId) {
+    return { error: 'Only registered companies with an active paid subscription can send quotations. Register your company first.' };
+  }
   if (companyId) {
     const sub = await getActiveSubscription(companyId);
     if (!sub) {

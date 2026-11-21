@@ -66,14 +66,14 @@ export default function SubscribeToContactDialog({ open, onClose, reason = 'no_s
     : 'Active Subscription Required';
 
   const description = isLoggedOut
-    ? 'Only registered and subscribed manufacturers can send quotations and message buyers. Sign in to your account to continue.'
+    ? 'Anyone can view RFQs, but only registered companies with an active paid subscription can send quotations. Sign in or register your company to continue.'
     : isNotRegistered
     ? 'Please complete your business registration and verify GST/IEC to send formal quotations to buyers.'
     : isQuotaExceeded
     ? "You've reached your monthly post response quota (5 on Starter, 50 on Business). Upgrade your plan to send more quotations."
     : isAiMatching
     ? 'The ₹7,500 Business Package or ₹7,500 AI Accessibility Add-on unlocks AI-powered catalog matching, automated quote generation, and 50 live RFQ responses per month.'
-    : 'Manufacturers can send formal quotations to Live Buying Requirements only with an active paid subscription plan.';
+    : 'Anyone can view RFQs, but only registered companies with an active paid subscription can send quotations. Upgrade to a paid plan to send quotations.';
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
