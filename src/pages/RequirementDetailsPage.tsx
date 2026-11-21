@@ -21,12 +21,14 @@ import {
   Tag,
   Target,
   User,
+  Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import MainLayout from '@/components/layouts/MainLayout';
 import PageMeta from '@/components/common/PageMeta';
 import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
+import { QUOTE_ACCESS_NOTE } from '@/lib/quoteAccess';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
 import AIQuotationModal from '@/components/common/AIQuotationModal';
 import SubmitQuotationWizard from '@/components/rfq/SubmitQuotationWizard';
@@ -113,7 +115,7 @@ function Card({ title, icon: Icon, children, className = '' }: { title?: string;
 export default function RequirementDetailsPage() {
   const { rfqId } = useParams<{ rfqId: string }>();
   const navigate = useNavigate();
-  const { user, profile, company } = useAuth();
+  const { user, profile, company, isPaidSubscriber } = useAuth();
 
   const [req, setReq] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -518,6 +520,31 @@ export default function RequirementDetailsPage() {
                     Post your own requirement
                   </Link>
                   .
+                </p>
+              )}
+              {!isPoster && (
+                <p className="mt-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs sm:text-sm text-muted-foreground" role="note">
+                  <Lock className="w-4 h-4 mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+                  <span>
+                    <strong className="font-semibold text-foreground">{QUOTE_ACCESS_NOTE}</strong>{' '}
+                    {!user ? (
+                      <>
+                        <Link to={`/login?returnUrl=${encodeURIComponent(`/requirements/${req.id}`)}`} className="text-primary font-semibold hover:underline">Sign in</Link>
+                        {' or '}
+                        <Link to="/signup/manufacturer" className="text-primary font-semibold hover:underline">register your company</Link>
+                        {' to quote.'}
+                      </>
+                    ) : !company ? (
+                      (isSupplier) && (
+                        <Link to="/dashboard/supplier/profile" className="text-primary font-semibold hover:underline">Register your company to quote.</Link>
+                      )
+                    ) : !isPaidSubscriber ? (
+                      <>
+                        Upgrade to a paid plan to send quotations.{' '}
+                        <Link to="/pricing" className="text-primary font-semibold hover:underline">See plans</Link>
+                      </>
+                    ) : null}
+                  </span>
                 </p>
               )}
             </div>

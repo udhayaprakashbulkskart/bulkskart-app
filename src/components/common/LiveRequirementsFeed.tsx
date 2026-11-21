@@ -138,7 +138,7 @@ function compactCount(n: number | null): string {
 }
 
 export default function LiveRequirementsFeed() {
-  const { user, profile, company } = useAuth();
+  const { user, profile, company, isPaidSubscriber } = useAuth();
   const reduce = useReducedMotion();
 
   const [items, setItems] = useState<Requirement[]>([]);
@@ -490,13 +490,17 @@ export default function LiveRequirementsFeed() {
           <span className="flex min-w-0 flex-1 items-center gap-2 text-[11.5px] leading-snug md:text-[14px]">
             <Lock className="h-4 w-4 shrink-0 text-[#FF7A2E]" aria-hidden="true" />
             <span>
-              <strong className="font-bold">Only registered companies can send quotations.</strong>{' '}
+              <strong className="font-bold">Anyone can view RFQs. Only registered companies with a paid subscription can send quotations.</strong>{' '}
               <span className="text-white/70">
-                {company ? `You are quoting as ${company.company_name}.` : 'Register your business to quote on buyer RFQs.'}
+                {!company
+                  ? 'Register your business and choose a paid plan to quote on buyer RFQs.'
+                  : isPaidSubscriber
+                    ? `You are quoting as ${company.company_name}.`
+                    : `Upgrade ${company.company_name} to a paid plan to send quotations.`}
               </span>
             </span>
           </span>
-          {!company && (
+          {!company ? (
             <Link
               to={registerCompanyHref}
               className="group inline-flex shrink-0 items-center gap-1 text-[11.5px] font-bold text-[#FF8A3D] hover:text-[#FFA766] md:text-[14px]"
@@ -504,29 +508,15 @@ export default function LiveRequirementsFeed() {
               Register your company
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
             </Link>
-          )}
-        </div>
-
-        {/* Who can quote */}
-        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/[0.07] px-3 py-2 md:mt-3 md:px-4 md:py-2.5" role="note">
-          <span className="flex min-w-0 flex-1 items-center gap-2 text-[11.5px] leading-snug md:text-[14px]">
-            <Lock className="h-4 w-4 shrink-0 text-[#FF7A2E]" aria-hidden="true" />
-            <span>
-              <strong className="font-bold">Only registered companies can send quotations.</strong>{' '}
-              <span className="text-white/70">
-                {company ? `You are quoting as ${company.company_name}.` : 'Register your business to quote on buyer RFQs.'}
-              </span>
-            </span>
-          </span>
-          {!company && (
+          ) : !isPaidSubscriber ? (
             <Link
-              to={registerCompanyHref}
+              to="/pricing"
               className="group inline-flex shrink-0 items-center gap-1 text-[11.5px] font-bold text-[#FF8A3D] hover:text-[#FFA766] md:text-[14px]"
             >
-              Register your company
+              See paid plans
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
             </Link>
-          )}
+          ) : null}
         </div>
 
         <div className="mt-2 grid gap-2 md:mt-3 md:grid-cols-2 md:gap-4">
@@ -546,7 +536,7 @@ export default function LiveRequirementsFeed() {
                 <p className="mt-3 text-[16px] font-black md:text-[20px]">No open RFQs right now</p>
                 <p className="mx-auto mt-1.5 max-w-[460px] text-[12.5px] leading-relaxed text-white/70 md:text-[14px]">
                   New buying requirements appear here live as soon as buyers post them.{' '}
-                  <strong className="font-bold text-white">Only registered companies are allowed to send quotations.</strong>
+                  <strong className="font-bold text-white">Only registered companies with a paid subscription can send quotations.</strong>
                 </p>
                 {!company && (
                   <Link

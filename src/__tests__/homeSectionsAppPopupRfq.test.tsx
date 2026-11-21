@@ -78,12 +78,14 @@ describe('Download App popup', () => {
   });
 });
 
-describe('Live RFQ: only registered companies send quotations', () => {
+describe('Live RFQ: only registered companies with a paid plan send quotations', () => {
   const feed = src('src/components/common/LiveRequirementsFeed.tsx');
   it('says so in the section and in the empty feed, with a way to register', () => {
-    expect(feed).toContain('Only registered companies can send quotations.');
+    expect(feed).toContain('Anyone can view RFQs. Only registered companies with a paid subscription can send quotations.');
     expect(feed).toContain('No open RFQs right now');
-    expect(feed).toContain('Only registered companies are allowed to send quotations.');
+    expect(feed).toContain('Only registered companies with a paid subscription can send quotations.');
+    expect(feed).toContain('See paid plans');
+    expect(feed.match(/\{\/\* Who can quote \*\/\}/g)).toHaveLength(1);
     expect(feed).toContain("const registerCompanyHref = user ? '/dashboard/supplier/profile' : '/auth?tab=supplier';");
   });
   it('still stops guests and people without a company at the quote button', () => {

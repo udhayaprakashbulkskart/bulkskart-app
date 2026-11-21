@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { pickActiveSubscription } from '@/lib/quoteAccess';
 import { claimBrowserStorageFor } from '@/lib/userScopedStorage';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/db/supabase';
@@ -80,12 +81,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const { data: subData } = await supabase
+      const { data: subRows } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('company_id', companyId)
         .eq('status', 'active')
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(10);
+      // active and not past ends_at, the same rule the database uses for quotations
+      const subData = pickActiveSubscription(Array.isArray(subRows) ? subRows : []);
 
       if (subData) {
         setSubscription(subData as Subscription);
