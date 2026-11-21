@@ -8,6 +8,8 @@
  *    demo company the placeholder owner below. Real suppliers have a real signed-up user as owner.
  *  - supabase/migrations/00015_seed_india_requirements_50k.sql generates RFQs titled
  *    "<product> - Lot #5xxxx" with one fixed boilerplate description.
+ *  - RFQs added later to fill the live feed say so in their description ("Live buying requirement seeded for
+ *    BulkSkart production RFQ feed."). No buyer posted them.
  *
  * Nothing is deleted. These rows are only left out of landing page queries. To show them anyway (for
  * example to preview the layout against demo data), build with VITE_INCLUDE_TEMPLATE_SEED_DATA=true.
@@ -24,6 +26,10 @@ export const SEEDED_RFQ_TITLE_LIKE = '% - Lot #%';
 
 const SEEDED_RFQ_TITLE = / - Lot #\d+\s*$/;
 const SEEDED_RFQ_DESCRIPTION = /^Requirement from India\. Looking for verified manufacturers for bulk supply\./;
+const SEEDED_FEED_DESCRIPTION = /seeded for BulkSkart production RFQ feed/i;
+
+/** PostgREST ilike pattern for the feed-filler RFQs above, so the database leaves them out of a page. */
+export const SEEDED_FEED_DESCRIPTION_ILIKE = '*seeded for BulkSkart production RFQ feed*';
 
 export const INCLUDE_TEMPLATE_SEED_DATA: boolean = import.meta.env.VITE_INCLUDE_TEMPLATE_SEED_DATA === 'true';
 
@@ -34,5 +40,6 @@ export function isSeededCompany(row: { id?: string | null; owner_id?: string | n
 
 export function isSeededRequirement(row: { title?: string | null; description?: string | null }): boolean {
   if (INCLUDE_TEMPLATE_SEED_DATA) return false;
-  return SEEDED_RFQ_TITLE.test(row.title ?? '') || SEEDED_RFQ_DESCRIPTION.test(row.description ?? '');
+  const description = row.description ?? '';
+  return SEEDED_RFQ_TITLE.test(row.title ?? '') || SEEDED_RFQ_DESCRIPTION.test(description) || SEEDED_FEED_DESCRIPTION.test(description);
 }
