@@ -5,6 +5,7 @@ import {
   BULKSKART_LOGO_LIGHT,
   BULKSKART_LOGO_URL,
 } from '@/constants/branding';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export interface BrandLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'responsive';
@@ -21,14 +22,16 @@ export default function BrandLogo({
   linkTo = '/',
 }: BrandLogoProps) {
   const [imgError, setImgError] = useState(false);
+  const { theme } = useTheme();
 
   // Determine active logo source based on current theme and requested variant
   const logoSrc = (() => {
     if (variant === 'original') return BULKSKART_LOGO_URL;
     if (variant === 'dark') return BULKSKART_LOGO_DARK;
     if (variant === 'light') return BULKSKART_LOGO_LIGHT;
-    // 'auto': both themes use the same black background (see index.css), so the logo for dark backgrounds is always right
-    return BULKSKART_LOGO_DARK;
+    // 'auto': the white-lettered logo on the dark theme (the default), the dark-lettered one on the light theme,
+    // where the header is white and white letters would disappear
+    return theme === 'light' ? BULKSKART_LOGO_LIGHT : BULKSKART_LOGO_DARK;
   })();
 
   const sizeClasses = {

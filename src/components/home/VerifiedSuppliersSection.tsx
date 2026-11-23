@@ -40,6 +40,7 @@ import {
   Settings2,
 } from 'lucide-react';
 import { getCompanies } from '@/lib/api';
+import { countLabel, loadLiveStats, type LiveStats } from '@/lib/liveStats';
 import { findMockupCompany } from '@/data/mockupVerifiedSuppliers';
 import { SUPPLIER_CARD_THEMES } from '@/lib/supplierCardThemes';
 import { DISTINCT_PIXABAY_COMPANY_IMAGES, isGenericImage } from '@/lib/contentImages';
@@ -825,12 +826,15 @@ const COUNTRY_TABS = [
   { key: 'South Korea', label: 'South Korea', flag: '🇰🇷' },
 ];
 
-const SUPPLIER_STATS = [
-  { icon: Users, value: '10,000+', label: 'Verified Suppliers' },
-  { icon: Globe, value: '120+', label: 'Countries' },
-  { icon: Layers, value: '50+', label: 'Industries' },
-  { icon: ShieldCheck, value: '100%', label: 'Verified Profiles' },
-];
+/** Counted from the database (lib/liveStats), never typed in. */
+function supplierStats(s: LiveStats) {
+  return [
+    { icon: Users, value: countLabel(s.suppliers), label: 'Suppliers' },
+    { icon: Box, value: countLabel(s.openRfqs), label: 'Live RFQs' },
+    { icon: Globe, value: countLabel(s.buyers), label: 'Active Buyers' },
+    { icon: Layers, value: countLabel(s.industries), label: 'Industries' },
+  ];
+}
 
 /** One supplier card in the reference design (image, logo, details, stats, actions). */
 // Cover pictures from the Verified Suppliers design, used when a supplier has not uploaded its own
@@ -895,7 +899,7 @@ function SupplierCardDesign({
           aria-label={saved ? 'Remove from saved suppliers' : 'Save supplier'}
           aria-pressed={saved}
           onClick={e => { e.stopPropagation(); setSaved(v => !v); }}
-          className="absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-white/25 bg-[#0A0A0A]/70 backdrop-blur-md transition-transform hover:scale-110 md:right-3 md:top-3 md:h-8 md:w-8"
+          className="absolute right-1.5 top-1.5 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/25 bg-[#0A0A0A]/70 backdrop-blur-md transition-transform hover:scale-110 md:right-3 md:top-3 md:h-8 md:w-8"
         >
           <Heart className={`h-3 w-3 md:h-4 md:w-4 ${saved ? 'fill-[#FF5A00] text-[#FF5A00]' : 'text-white'}`} />
         </button>
@@ -979,6 +983,12 @@ function SupplierCardDesign({
 }
 
 export default function VerifiedSuppliersSection() {
+  const [liveStats, setLiveStats] = useState<LiveStats>({ openRfqs: null, suppliers: null, buyers: null, industries: null });
+  useEffect(() => {
+    let cancelled = false;
+    loadLiveStats().then((s) => { if (!cancelled) setLiveStats(s); });
+    return () => { cancelled = true; };
+  }, []);
   const navigate = useNavigate();
   // Fresh unique catalog + offset every page open / refresh (no blank first paint)
   const visitSeedRef = useRef<number>(createVisitSeed());
@@ -1228,7 +1238,7 @@ export default function VerifiedSuppliersSection() {
               onClick={handleManualRotate}
               aria-label="Show next suppliers"
               title="Show next suppliers"
-              className={`ml-0.5 text-[#FF7A2E] transition-transform hover:text-white ${isRotating ? 'animate-spin' : 'hover:scale-110'}`}
+              className={`relative ml-0.5 text-[#FF7A2E] transition-transform after:absolute after:-inset-2 after:content-[''] hover:text-white ${isRotating ? 'animate-spin' : 'hover:scale-110'}`}
             >
               <RefreshCw className="h-3.5 w-3.5 md:h-4 md:w-4" />
             </button>
@@ -1237,7 +1247,7 @@ export default function VerifiedSuppliersSection() {
 
         {/* Stats */}
         <div className="mt-3 grid grid-cols-4 rounded-2xl border border-[#FF5A00]/45 bg-gradient-to-b from-[#141820] to-[#0b0e15] px-1 py-3 shadow-[0_0_30px_-14px_rgba(255,90,0,0.8)] md:mt-5 md:py-5">
-          {SUPPLIER_STATS.map(({ icon: Icon, value, label }, i) => (
+          {supplierStats(liveStats).map(({ icon: Icon, value, label }, i) => (
             <div key={label} className={`flex flex-col items-center px-1 text-center ${i > 0 ? 'border-l border-white/10' : ''}`}>
               <Icon className="h-[22px] w-[22px] text-[#FF6A14] md:h-8 md:w-8" strokeWidth={1.6} aria-hidden="true" />
               <span className="mt-1 text-[16px] font-extrabold leading-none min-[400px]:text-[17px] md:mt-2 md:text-[30px]">{value}</span>
@@ -1352,7 +1362,7 @@ export default function VerifiedSuppliersSection() {
             </div>
 
             {/* Page dots (follow the carousel position) */}
-            <div className="mt-3 flex items-center justify-center gap-2 md:hidden">
+            <div className="mt-3 flex items-center justify-center gap-4 md:hidden">
               {[0, 1, 2, 3].map(i => (
                 <button
                   key={i}
@@ -1360,7 +1370,7 @@ export default function VerifiedSuppliersSection() {
                   aria-label={`Show suppliers page ${i + 1}`}
                   aria-current={supplierPage === i ? 'true' : undefined}
                   onClick={() => scrollSupplierTo(i)}
-                  className={`h-2 rounded-full transition-all duration-300 ${supplierPage === i ? 'w-6 bg-[#FF6A14]' : 'w-2 bg-white/35 hover:bg-white/60'}`}
+                  className={`relative h-2 rounded-full transition-all duration-300 after:absolute after:-inset-x-[9px] after:-inset-y-3 after:content-[''] ${supplierPage === i ? 'w-6 bg-[#FF6A14]' : 'w-2 bg-white/35 hover:bg-white/60'}`}
                 />
               ))}
             </div>

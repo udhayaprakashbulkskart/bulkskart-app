@@ -645,7 +645,7 @@ export default function LiveRequirementsFeed() {
                           </span>
                         )}
                       </div>
-                      <button type="button" onClick={() => setDetailReq(req)} className="mt-1 block w-full text-left">
+                      <button type="button" onClick={() => setDetailReq(req)} className="-my-1.5 block w-full py-1.5 text-left">
                         <h3 className="line-clamp-2 text-[11.5px] font-bold leading-tight text-white hover:text-[#FF7A2E] md:text-[16px]">{visual.cleanTitle}</h3>
                       </button>
                       <dl className="mt-1 space-y-[1px] text-[9.5px] leading-snug text-white/85 md:mt-2 md:space-y-1 md:text-[13px]">
@@ -678,7 +678,7 @@ export default function LiveRequirementsFeed() {
                           onClick={() => toggleSaved(req.id)}
                           aria-pressed={isSaved}
                           aria-label={isSaved ? 'Remove from My RFQs' : 'Save to My RFQs'}
-                          className="flex h-6 w-5 items-start justify-center text-white/85 hover:text-[#FF7A2E] md:h-7 md:w-6"
+                          className="-mr-2 -mt-1.5 flex h-8 w-8 items-center justify-center text-white/85 hover:text-[#FF7A2E] md:h-9 md:w-9"
                         >
                           <Bookmark className={`h-4 w-4 md:h-5 md:w-5 ${isSaved ? 'fill-[#FF6A14] text-[#FF6A14]' : ''}`} />
                         </button>

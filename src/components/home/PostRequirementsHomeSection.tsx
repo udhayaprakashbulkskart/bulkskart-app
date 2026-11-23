@@ -195,7 +195,7 @@ export default function PostRequirementsHomeSection() {
                     setQuantity('10000');
                     setUnit('Pieces');
                   }}
-                  className="px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
+                  className="min-h-7 px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
                 >
                   5-Ply Shipping Boxes
                 </button>
@@ -207,7 +207,7 @@ export default function PostRequirementsHomeSection() {
                     setQuantity('500');
                     setUnit('Pieces');
                   }}
-                  className="px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
+                  className="min-h-7 px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
                 >
                   SS 304 Flanges
                 </button>
@@ -219,7 +219,7 @@ export default function PostRequirementsHomeSection() {
                     setQuantity('20');
                     setUnit('Metric Tons');
                   }}
-                  className="px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
+                  className="min-h-7 px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
                 >
                   Cotton Yarn 30s
                 </button>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { BadgeCheck, Truck, Wallet } from 'lucide-react';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatPriceRange } from '@/lib/productPrice';
-import { fromCatalogue, heroLists, loadHeroProducts, type HeroProduct } from './heroProducts';
+import { currentHour, fromCatalogue, heroLists, loadHeroProducts, msToNextHour, type HeroProduct } from './heroProducts';
 import './product-carousel.css';
 
 /**
@@ -69,21 +69,26 @@ export default function ProductCarouselHero() {
   autoRef.current = auto;
   geoRef.current = geo;
 
-  // ── data ──
+  // ── data: a new set of products every hour (also while the page stays open) ──
+  const [hour, setHour] = useState(currentHour);
+  useEffect(() => {
+    const t = window.setTimeout(() => setHour(currentHour()), msToNextHour() + 1000);
+    return () => window.clearTimeout(t);
+  }, [hour]);
   useEffect(() => {
     let cancelled = false;
     // Never leave the ring empty for long: the catalogue fills it if products are slow to arrive.
     const fallback = window.setTimeout(() => {
-      if (!cancelled) setLists((current) => current ?? heroLists([], fromCatalogue()));
+      if (!cancelled) setLists((current) => current ?? heroLists([], fromCatalogue(), hour));
     }, 3000);
-    loadHeroProducts().then((loaded) => {
+    loadHeroProducts(hour).then((loaded) => {
       if (!cancelled) setLists(loaded);
     });
     return () => {
       cancelled = true;
       window.clearTimeout(fallback);
     };
-  }, []);
+  }, [hour]);
 
   const unique: HeroProduct[] = lists ? lists.featured : NO_PRODUCTS;
   // Short lists are repeated so the ring stays full on both sides.
