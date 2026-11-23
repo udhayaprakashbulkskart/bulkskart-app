@@ -13,7 +13,7 @@ import {
   Settings, LogOut, Menu, Globe, BarChart3, TrendingUp,
   Shield, Flag, CreditCard, Building2, UserCircle,
   Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
-  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2,
+  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -96,6 +96,9 @@ export const adminNavItems: NavItem[] = [
   { label: 'Public Requirements', href: '/dashboard/admin/public-requirements', icon: Globe2 },
   { label: 'Payments', href: '/dashboard/admin/payments', icon: Wallet },
 ];
+
+/** Shown to super admins only: who is an admin (see SuperAdminPage). */
+export const superAdminNavItem: NavItem = { label: 'Super Admin', href: '/dashboard/admin/super', icon: Crown };
 
 /**
  * While a dashboard page is open the whole document wears the dashboard colours, so pop-ups (menus, dialogs, toasts) match.
@@ -320,7 +323,7 @@ export default function DashboardLayout({ children, hideUnpaidNotice = false }: 
   }, [searchOpen]);
 
   const navItems = role === 'admin'
-    ? adminNavItems
+    ? ((profile as { is_super_admin?: boolean } | null)?.is_super_admin ? [...adminNavItems, superAdminNavItem] : adminNavItems)
     : role === 'supplier'
     ? supplierNavItems
     : buyerNavItems;
