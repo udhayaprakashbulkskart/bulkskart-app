@@ -54,7 +54,9 @@ import { calculateProductMatchScore, catalogueInr, generateAIQuotationDraft, typ
 import { formatPriceRange } from '@/lib/productPrice';
 import type { Product, Quotation, Requirement } from '@/types/types';
 import '@/components/formkit/formkit.css';
-import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
+import { isOutsideListing, isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
+import { canViewContacts, maskContactsInText } from '@/lib/contactAccess';
+import { isSeededRequirement } from '@/lib/seedData';
 import { isPublicListing, postedOnLabel } from '@/lib/publicListings';
 
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -375,7 +377,12 @@ export default function RequirementDetailsPage() {
   const deadlinePassed = Boolean(req.deadline && new Date(req.deadline).getTime() < Date.now() - 24 * 60 * 60 * 1000);
   const isOpen = req.status === 'active' && !deadlinePassed;
   const gemUrl = gemTenderUrl(req.specifications);
-  const specText = gemUrl ? specificationProse(req.specifications) : req.specifications;
+  // phone numbers and emails a buyer typed into the text: only for paid members (and never in search snippets)
+  const showText = (text: string) => (canViewContacts({ isPaidSubscriber, viewerId: user?.id, ownerId: req.buyer_id }) ? text : maskContactsInText(text));
+  const publicText = (text?: string | null) => maskContactsInText(withoutOutsideLinks(text ?? '')).replace(/\s+/g, ' ').trim();
+  const specText = showText((gemUrl ? specificationProse(req.specifications) : req.specifications) ?? '');
+  // tender imports and demo rows stay out of search results
+  const keepOutOfSearch = isOutsideListing(req) || isSeededRequirement(req);
   const specs = parseSpecs(specText);
   const buyer = req.profiles as (Requirement['profiles'] & { company_name?: string | null }) | undefined;
   const contactMissing = Boolean(gemUrl) && !sharedBuyerPhone(buyer?.phone);
@@ -409,8 +416,9 @@ export default function RequirementDetailsPage() {
     <MainLayout>
       <PageMeta
         title={`${req.title} (${rfqCode}) — Buying Requirement | BulkSkart`}
+        robots={keepOutOfSearch ? 'noindex, follow' : undefined}
         description={
-          req.description ||
+          publicText(req.description).slice(0, 300) ||
           `Buyer requirement for ${req.quantity} ${req.quantity_unit} of ${req.title}${place ? `, delivery to ${place}` : ''}. Send a quotation on BulkSkart.`
         }
         keywords={`${req.title}, bulk RFQ, buy ${req.title}, wholesale requirement, ${req.categories?.name || 'industrial'}, B2B supply lead`}
@@ -425,7 +433,7 @@ export default function RequirementDetailsPage() {
           '@context': 'https://schema.org',
           '@type': 'Demand',
           name: req.title,
-          description: req.description || `Bulk purchase request for ${req.quantity} ${req.quantity_unit} of ${req.title}`,
+          description: publicText(req.description) || `Bulk purchase request for ${req.quantity} ${req.quantity_unit} of ${req.title}`,
           sku: rfqCode,
           itemOffered: { '@type': 'Product', name: req.title, category: req.categories?.name },
           ...(hasBudget
@@ -575,7 +583,7 @@ export default function RequirementDetailsPage() {
 
               <Card title="What the buyer needs" icon={FileText}>
                 {req.description ? (
-                  <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{withoutOutsideLinks(req.description)}</p>
+                  <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line">{showText(withoutOutsideLinks(req.description))}</p>
                 ) : (
                   <p className="text-sm text-muted-foreground">The buyer has not added a description.</p>
                 )}
@@ -584,7 +592,7 @@ export default function RequirementDetailsPage() {
                     {specs.map((row, index) => (
                       <div key={`${row.label}-${index}`} className="grid grid-cols-3 gap-3 px-3 py-2.5 text-sm">
                         <dt className="text-muted-foreground">{row.label}</dt>
-                        <dd className="col-span-2 font-medium text-foreground break-words">{withoutOutsideLinks(row.value).replace(/\|(\s*\|)+/g, '|') || '—'}</dd>
+                        <dd className="col-span-2 font-medium text-foreground break-words">{showText(withoutOutsideLinks(row.value)).replace(/\|(\s*\|)+/g, '|') || '—'}</dd>
                       </div>
                     ))}
                   </dl>

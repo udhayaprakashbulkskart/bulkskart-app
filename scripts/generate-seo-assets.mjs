@@ -4,6 +4,8 @@
  * not serve /products from products.html. Shells stay out of dist so /products is
  * the SPA (200, no redirect). A parse-time script applies the matching title,
  * description, and no-slash canonical. Sitemap URLs use that same no-slash form.
+ * Every address gets its own canonical and hreflang (index.html carries none: one shared homepage canonical would
+ * mark every page as a copy of the homepage). Sitemaps list the addresses the pages themselves declare.
  * If Supabase is unreachable, the public sitemap already copied into dist is left in place.
  */
 import fs from 'node:fs';
@@ -103,24 +105,37 @@ function injectRouteMeta(html, pages) {
     routes[noSlash(page.path)] = { title: page.title, description: page.description };
   }
   const payload = JSON.stringify(routes).replace(/</g, '\\u003c');
-  const script = `<script id="bsk-route-meta">(function(){var routes=${payload};var path=location.pathname||"/";if(path.length>1&&path.endsWith("/"))path=path.slice(0,-1);var page=routes[path];if(!page)return;var canonical="https://www.bulkskart.com"+(path==="/"?"/":path);document.title=page.title;function meta(attr,name,content){var q="meta["+attr+"=\\""+name+"\\"]";var el=document.querySelector(q);if(!el){el=document.createElement("meta");el.setAttribute(attr,name);document.head.appendChild(el);}el.setAttribute("content",content);}meta("name","description",page.description);meta("property","og:title",page.title);meta("property","og:description",page.description);meta("property","og:url",canonical);meta("name","twitter:title",page.title);meta("name","twitter:description",page.description);var link=document.querySelector('link[rel="canonical"]');if(!link){link=document.createElement("link");link.setAttribute("rel","canonical");document.head.appendChild(link);}link.setAttribute("href",canonical);})();</script>`;
+  const script = `<script id="bsk-route-meta">(function(){var routes=${payload};var path=location.pathname||"/";if(path.length>1&&path.endsWith("/"))path=path.slice(0,-1);var canonical="https://www.bulkskart.com"+(path==="/"?"/":path);function link(rel,attrs){var q='link[rel="'+rel+'"]'+(attrs.hreflang?'[hreflang="'+attrs.hreflang+'"]':'');var el=document.querySelector(q);if(!el){el=document.createElement("link");el.setAttribute("rel",rel);if(attrs.hreflang)el.setAttribute("hreflang",attrs.hreflang);document.head.appendChild(el);}el.setAttribute("href",canonical);}link("canonical",{});link("alternate",{hreflang:"en-IN"});link("alternate",{hreflang:"x-default"});var page=routes[path];if(!page)return;document.title=page.title;function meta(attr,name,content){var q="meta["+attr+"=\\""+name+"\\"]";var el=document.querySelector(q);if(!el){el=document.createElement("meta");el.setAttribute(attr,name);document.head.appendChild(el);}el.setAttribute("content",content);}meta("name","description",page.description);meta("property","og:title",page.title);meta("property","og:description",page.description);meta("property","og:url",canonical);meta("name","twitter:title",page.title);meta("name","twitter:description",page.description);})();</script>`;
   const without = html.replace(/<script id="bsk-route-meta">[\s\S]*?<\/script>\n?/, '');
   return without.replace('</head>', `${script}\n</head>`);
 }
 
+/** The 41 category pages, from src/data/categoryCatalog.ts (same wording as categorySeo() in AllCategoriesPage). */
 function categoryPages() {
-  const source = fs.readFileSync(path.resolve('src/pages/CategoriesPage.tsx'), 'utf8');
-  const pages = [];
-  const pattern = /name: '([^']+)',\s*slug: '([^']+)',\s*description: '([^']+)'/g;
-  for (const match of source.matchAll(pattern)) {
-    const [, name, slug, description] = match;
-    pages.push({
-      path: `/category/${slug}`,
-      title: `${name} — Wholesale & Bulk Supply | BulkSkart`,
-      description,
-    });
-  }
-  return pages;
+  const source = fs.readFileSync(path.resolve('src/data/categoryCatalog.ts'), 'utf8');
+  const blocks = source.split(/\n\s*slug: "/).slice(1);
+  return blocks.map((block) => {
+    const slug = block.slice(0, block.indexOf('"'));
+    const title = (block.match(/title: "([^"]+)"/) || [])[1] || slug;
+    const subs = [...block.matchAll(/\{ name: "([^"]+)"/g)].map((m) => m[1]);
+    const examples = subs.slice(0, 4).join(', ');
+    return {
+      path: `/categories/${slug}`,
+      title: `${title} — Bulk & Wholesale Suppliers in India | BulkSkart`,
+      description: `Buy ${title.toLowerCase()} in bulk from manufacturers and wholesale suppliers in India: ${examples} and more. Compare quotes or post a free RFQ on BulkSkart.`,
+    };
+  });
+}
+
+// A requirement worth listing: posted by a BulkSkart buyer, still open, not a tender import, demo row or outside link.
+const OUTSIDE = /(?:\bgem\.gov\.in\b|\.gov\.in\b|\.nic\.in\b|\beprocure\b|\bcppp\b|\be-?tenders?\b|\bindiamart\b|\btradeindia\b|\bexportersindia\b|\balibaba\.com\b|https?:\/\/|www\.)/i;
+function listableRequirement(row, now) {
+  const text = [row.title, row.description, row.specifications].filter(Boolean).join(' ');
+  if (!row.id || !row.title || !row.buyer_id) return false;
+  if (/\b(test|debug|timed|timeout)\b/i.test(row.title) || / - Lot #\d+\s*$/.test(row.title)) return false;
+  if (/\bGeM\b/.test(text) || OUTSIDE.test(text) || /seeded for BulkSkart production RFQ feed|^Requirement from India\. Looking for verified manufacturers/i.test(row.description || '')) return false;
+  const ends = row.deadline ? new Date(`${String(row.deadline).slice(0, 10)}T23:59:59Z`).getTime() : row.expires_at ? new Date(row.expires_at).getTime() : Infinity;
+  return ends > now;
 }
 
 async function fetchAll(base, key, table, query) {
@@ -164,25 +179,21 @@ export async function generateSeoAssets(distDir) {
   }
 
   try {
-    const [products, requirements, companies, categories] = await Promise.all([
+    const [products, requirements, companies] = await Promise.all([
       fetchAll(base, key, 'products', 'select=slug&is_active=eq.true&slug=not.is.null'),
-      fetchAll(base, key, 'requirements', 'select=id,title&status=eq.active'),
+      fetchAll(base, key, 'requirements', 'select=id,title,description,specifications,buyer_id,deadline,expires_at&status=eq.active&buyer_id=not.is.null'),
       fetchAll(base, key, 'companies', 'select=slug&slug=not.is.null'),
-      fetchAll(base, key, 'categories', 'select=slug&is_active=eq.true&slug=not.is.null'),
     ]);
     const absolute = (urlPath) => {
       const clean = noSlash(urlPath);
       return `${SITE}${clean === '/' ? '/' : clean}`;
     };
     const productUrls = products.map(row => row.slug).filter(Boolean).map(slug => absolute(`/products/${slug}`));
-    const requirementUrls = requirements
-      .filter(row => row.id && row.title && !/\b(test|debug|timed|timeout)\b/i.test(row.title))
-      .map(row => absolute(`/requirement/${row.id}`));
-    const companyUrls = companies.map(row => row.slug).filter(Boolean).map(slug => absolute(`/suppliers/${slug}`));
-    const categoryUrls = [
-      ...categories.map(row => absolute(`/category/${row.slug}`)),
-      ...categoryPages().map(page => absolute(page.path)),
-    ];
+    // the addresses the pages declare as canonical: /requirements/<id>, /companies/<slug>, /categories/<slug>
+    const now = Date.now();
+    const requirementUrls = requirements.filter(row => listableRequirement(row, now)).map(row => absolute(`/requirements/${row.id}`));
+    const companyUrls = companies.map(row => row.slug).filter(Boolean).map(slug => absolute(`/companies/${slug}`));
+    const categoryUrls = [absolute('/categories'), ...categoryPages().map(page => absolute(page.path))];
     const unique = list => [...new Set(list)];
     const mainUrls = STATIC_PAGES.map(page => absolute(page.path));
     fs.writeFileSync(path.join(distDir, 'sitemap-main.xml'), urlset(mainUrls));
