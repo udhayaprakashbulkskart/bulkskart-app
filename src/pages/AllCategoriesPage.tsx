@@ -1,6 +1,7 @@
 /**
  * All Categories: every category and subcategory on one page, with the banner and product photos from the
- * category design PDF (src/data/categoryCatalog.ts, public/categories/).
+ * category design PDF (src/data/categoryCatalog.ts, public/category-images/).
+ * /categories lists every category; /categories/<category> is that category's own page (own title, text and address).
  *
  * Laptops and desktops: a sticky list of categories on the left that follows the scroll; phones and tablets:
  * a sticky row of category chips. One search box filters all subcategories. A subcategory opens the products
@@ -92,36 +93,45 @@ function matches(text: string, words: string[]) {
   return words.every((w) => t.includes(w));
 }
 
+/** Search snippet and intro for one category page: what it covers, from its own subcategories. */
+export function categorySeo(c: CatalogCategory) {
+  const examples = c.subcategories.slice(0, 6).map((s) => s.name);
+  const title = `${c.title} — Bulk & Wholesale Suppliers in India | BulkSkart`;
+  const description = `Buy ${c.title.toLowerCase()} in bulk from manufacturers and wholesale suppliers in India: ${examples.slice(0, 4).join(', ')} and more. Compare quotes or post a free RFQ on BulkSkart.`;
+  const intro = `Source ${c.title.toLowerCase()} in bulk on BulkSkart. ${c.subcategories.length} subcategories, including ${examples.join(', ')}. Compare manufacturers and wholesale suppliers, ask for quotations, or post a free buying requirement (RFQ) and let suppliers come to you.`;
+  return { title, description, intro };
+}
+
 export default function AllCategoriesPage() {
   const { slug: routeSlug } = useParams<{ slug?: string }>();
+  // /categories/<category>: that category's own page; anything else lists every category
+  const routeCat = CATEGORY_CATALOG.find((c) => c.slug === routeSlug) ?? null;
   const [query, setQuery] = useState('');
-  const [active, setActive] = useState(CATEGORY_CATALOG[0]?.slug ?? '');
+  const [active, setActive] = useState(routeCat?.slug ?? CATEGORY_CATALOG[0]?.slug ?? '');
   const chipRowRef = useRef<HTMLDivElement>(null);
 
   const words = useMemo(() => query.trim().toLowerCase().split(/\s+/).filter(Boolean), [query]);
   const visible = useMemo(() => {
-    if (words.length === 0) return CATEGORY_CATALOG;
+    if (words.length === 0) return routeCat ? [routeCat] : CATEGORY_CATALOG;
     return CATEGORY_CATALOG.flatMap((c) => {
       if (matches(c.title, words)) return [c];
       const subs = c.subcategories.filter((s) => matches(s.name, words));
       return subs.length ? [{ ...c, subcategories: subs }] : [];
     });
-  }, [words]);
+  }, [words, routeCat]);
   const resultCount = visible.reduce((n, c) => n + c.subcategories.length, 0);
 
-  // open at the category in the address (/categories/<category>)
+  // a category page opens at the top with its own category highlighted
   useEffect(() => {
-    if (!routeSlug) return;
-    const el = document.getElementById(`cat-${routeSlug}`);
-    if (el) {
-      setActive(routeSlug);
-      requestAnimationFrame(() => el.scrollIntoView({ block: 'start' }));
-    }
-  }, [routeSlug]);
+    if (!routeCat) return;
+    setActive(routeCat.slug);
+    setQuery('');
+    window.scrollTo({ top: 0 });
+  }, [routeCat]);
 
-  // follow the scroll: the category in view is highlighted in the list and the chips
+  // follow the scroll (all-categories page): the category in view is highlighted in the list and the chips
   useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') return;
+    if (routeCat || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(
       (entries) => {
         const seen = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
@@ -134,7 +144,7 @@ export default function AllCategoriesPage() {
       if (el) observer.observe(el);
     }
     return () => observer.disconnect();
-  }, [visible]);
+  }, [visible, routeCat]);
 
   // keep the highlighted chip in view on phones
   useEffect(() => {
@@ -145,19 +155,36 @@ export default function AllCategoriesPage() {
     row.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
   }, [active]);
 
-  const jump = (slug: string) => {
+  // Chips and the side list are links to each category's page; on the all-categories page they scroll instead
+  const jump = (event: React.MouseEvent, slug: string) => {
+    if (routeCat) return;
+    const el = document.getElementById(`cat-${slug}`);
+    if (!el) return;
+    event.preventDefault();
     setActive(slug);
-    document.getElementById(`cat-${slug}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+  const navList = words.length > 0 ? visible : CATEGORY_CATALOG;
+  const seo = routeCat ? categorySeo(routeCat) : null;
 
   return (
     <MainLayout>
-      <PageMeta
-        title="All Categories | Bulk Products, Suppliers & Services | BulkSkart"
-        description={`Browse all ${CATEGORY_CATALOG.length} BulkSkart categories and ${TOTAL_SUBCATEGORIES} subcategories: electronics, industrial supplies, construction, apparel, FMCG, medical, packaging, chemicals, services and more.`}
-        canonical="https://www.bulkskart.com/categories"
-        breadcrumbs={[{ name: 'Home', item: '/' }, { name: 'Categories', item: '/categories' }]}
-      />
+      {routeCat && seo ? (
+        <PageMeta
+          title={seo.title}
+          description={seo.description}
+          canonical={`https://www.bulkskart.com/categories/${routeCat.slug}`}
+          ogImage={`https://www.bulkskart.com${routeCat.banner}`}
+          breadcrumbs={[{ name: 'Home', item: '/' }, { name: 'Categories', item: '/categories' }, { name: routeCat.title, item: `/categories/${routeCat.slug}` }]}
+        />
+      ) : (
+        <PageMeta
+          title="All Categories | Bulk Products, Suppliers & Services | BulkSkart"
+          description={`Browse all ${CATEGORY_CATALOG.length} BulkSkart categories and ${TOTAL_SUBCATEGORIES} subcategories: electronics, industrial supplies, construction, apparel, FMCG, medical, packaging, chemicals, services and more.`}
+          canonical="https://www.bulkskart.com/categories"
+          breadcrumbs={[{ name: 'Home', item: '/' }, { name: 'Categories', item: '/categories' }]}
+        />
+      )}
 
       <div className="bg-[#f5f5f5] text-neutral-900 dark:bg-[#0a0a0a] dark:text-white">
         {/* ── Page heading and search ── */}
@@ -165,17 +192,34 @@ export default function AllCategoriesPage() {
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[12px] text-neutral-500 dark:text-white/55">
             <Link to="/" className="hover:text-[#FF5A00]">Home</Link>
             <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-            <span className="font-semibold text-neutral-800 dark:text-white/85">Categories</span>
+            {routeCat ? (
+              <>
+                <Link to="/categories" className="hover:text-[#FF5A00]">Categories</Link>
+                <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="line-clamp-1 font-semibold text-neutral-800 dark:text-white/85">{routeCat.title}</span>
+              </>
+            ) : (
+              <span className="font-semibold text-neutral-800 dark:text-white/85">Categories</span>
+            )}
           </nav>
           <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h1 className="text-[24px] font-black leading-tight tracking-tight sm:text-[30px]">
-                All <span className="text-[#FF5A00]">Categories</span>
-              </h1>
-              <p className="mt-0.5 text-[12.5px] text-neutral-600 dark:text-white/65 sm:text-[14px]">
-                {CATEGORY_CATALOG.length} categories · {TOTAL_SUBCATEGORIES} subcategories of bulk products and services
-              </p>
-            </div>
+            {routeCat && seo ? (
+              <div className="max-w-[760px]">
+                <h1 className="text-[22px] font-black leading-tight tracking-tight sm:text-[28px]">
+                  Bulk {routeCat.title} <span className="block text-[15px] font-extrabold text-[#FF5A00] sm:text-[18px]">Wholesale suppliers &amp; manufacturers in India</span>
+                </h1>
+                <p className="mt-1.5 text-[12.5px] leading-relaxed text-neutral-600 dark:text-white/70 sm:text-[14px]">{seo.intro}</p>
+              </div>
+            ) : (
+              <div>
+                <h1 className="text-[24px] font-black leading-tight tracking-tight sm:text-[30px]">
+                  All <span className="text-[#FF5A00]">Categories</span>
+                </h1>
+                <p className="mt-0.5 text-[12.5px] text-neutral-600 dark:text-white/65 sm:text-[14px]">
+                  {CATEGORY_CATALOG.length} categories · {TOTAL_SUBCATEGORIES} subcategories of bulk products and services
+                </p>
+              </div>
+            )}
             <label className="relative block w-full md:max-w-[420px]">
               <span className="sr-only">Search categories</span>
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" aria-hidden="true" />
@@ -208,16 +252,16 @@ export default function AllCategoriesPage() {
         {/* ── Category chips (phones and tablets) ── */}
         <div className="sticky top-0 z-30 mt-3 border-y border-neutral-200 bg-[#f5f5f5]/95 backdrop-blur lg:hidden dark:border-white/10 dark:bg-[#0a0a0a]/95">
           <div ref={chipRowRef} className="mx-auto flex max-w-[1440px] gap-2 overflow-x-auto px-3 py-2 sm:px-5" style={{ scrollbarWidth: 'none' }}>
-            {visible.map((c) => {
+            {navList.map((c) => {
               const Icon = ICONS[c.slug] ?? LayoutGrid;
               const on = c.slug === active;
               return (
-                <button
+                <Link
                   key={c.slug}
-                  type="button"
+                  to={`/categories/${c.slug}`}
                   data-chip={c.slug}
-                  aria-pressed={on}
-                  onClick={() => jump(c.slug)}
+                  aria-current={on ? 'page' : undefined}
+                  onClick={(e) => jump(e, c.slug)}
                   className={`flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[12.5px] font-semibold transition-colors ${
                     on
                       ? 'border-transparent bg-gradient-to-r from-[#FF7A1A] to-[#F05A00] text-white shadow-[0_6px_16px_-8px_rgba(255,90,0,0.9)]'
@@ -226,7 +270,7 @@ export default function AllCategoriesPage() {
                 >
                   <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {splitTitle(c.title)[0].replace(/[,&]\s*$/, '').trim() || c.title}
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -237,18 +281,18 @@ export default function AllCategoriesPage() {
           <aside className="hidden lg:block">
             <nav aria-label="Categories" className="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-[#121212]" style={{ scrollbarWidth: 'thin' }}>
               <p className="px-2.5 pb-1.5 pt-1 text-[15px] font-black">
-                All Categories <span className="text-neutral-500 dark:text-white/50">({visible.length})</span>
+                All Categories <span className="text-neutral-500 dark:text-white/50">({navList.length})</span>
               </p>
               <ul>
-                {visible.map((c) => {
+                {navList.map((c) => {
                   const Icon = ICONS[c.slug] ?? LayoutGrid;
                   const on = c.slug === active;
                   return (
                     <li key={c.slug}>
-                      <button
-                        type="button"
-                        onClick={() => jump(c.slug)}
-                        aria-current={on ? 'true' : undefined}
+                      <Link
+                        to={`/categories/${c.slug}`}
+                        onClick={(e) => jump(e, c.slug)}
+                        aria-current={on ? 'page' : undefined}
                         className={`group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] leading-snug transition-colors ${
                           on ? 'bg-[#FF5A00]/10 font-bold text-[#E04E00] dark:text-[#FF8A3D]' : 'text-neutral-800 hover:bg-neutral-100 dark:text-white/85 dark:hover:bg-white/5'
                         }`}
@@ -256,7 +300,7 @@ export default function AllCategoriesPage() {
                         <Icon className={`h-[18px] w-[18px] shrink-0 ${on ? 'text-[#FF5A00]' : 'text-neutral-500 dark:text-white/55'}`} aria-hidden="true" />
                         <span className="line-clamp-2 min-w-0 flex-1">{c.title}</span>
                         <ChevronRight className={`h-4 w-4 shrink-0 ${on ? 'text-[#FF5A00]' : 'text-neutral-400'}`} aria-hidden="true" />
-                      </button>
+                      </Link>
                     </li>
                   );
                 })}
@@ -278,6 +322,12 @@ export default function AllCategoriesPage() {
             {visible.map((c, ci) => (
               <CategorySection key={c.slug} category={c} eager={ci < 2} total={CATEGORY_CATALOG.find((x) => x.slug === c.slug)?.subcategories.length ?? c.subcategories.length} filtered={words.length > 0} />
             ))}
+
+            {routeCat && words.length === 0 && (
+              <Link to="/categories" className="inline-flex items-center gap-1.5 text-[13.5px] font-bold text-[#E04E00] hover:underline dark:text-[#FF8A3D]">
+                Browse all {CATEGORY_CATALOG.length} categories <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            )}
 
             {/* ── Post RFQ ── */}
             <div className="flex flex-col items-start gap-3 rounded-2xl border border-[#FF5A00]/30 bg-gradient-to-r from-[#FFF1E8] to-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 dark:from-[#1d1009] dark:to-[#121212]">
