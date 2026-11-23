@@ -3,7 +3,7 @@ import { loadLiveStats } from '@/lib/liveStats';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
-  ShieldCheck, Truck, ArrowRight, Layers, ChevronRight, FilePlus2, Gavel, Store, Users, BadgeCheck, Landmark,
+  ShieldCheck, Truck, ArrowRight, Layers, ChevronRight, FilePlus2, Gavel, Store, Users, BadgeCheck, Landmark, MapPinned,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProductCarouselHero from '@/components/home/hero/ProductCarouselHero';
@@ -295,6 +295,29 @@ export default function LandingHero() {
             </Link>
           ))}
         </div>
+
+        {/* Live Verified Supplier Map: verified factories near the buyer, anywhere in the world */}
+        <Link
+          to="/supplier-map"
+          className="group mt-2 flex min-h-[56px] items-center gap-3 rounded-xl border border-[#FF5A00]/45 bg-gradient-to-r from-[#2a1406] via-[#160c05] to-[#0e0e0e] px-3 py-2.5 shadow-[0_10px_24px_-14px_rgba(255,90,0,0.7)] transition-all hover:-translate-y-0.5 hover:border-[#FF5A00] sm:mt-2.5 sm:px-4 lg:mt-3 lg:min-h-[64px] lg:rounded-2xl lg:px-5"
+        >
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FF5A00] shadow-[0_0_0_6px_rgba(255,90,0,0.18)] lg:h-11 lg:w-11">
+            <MapPinned className="h-5 w-5 text-white" aria-hidden="true" />
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#160c05] bg-[#16A34A]">
+              <BadgeCheck className="h-2.5 w-2.5 text-white" strokeWidth={3} aria-hidden="true" />
+            </span>
+          </span>
+          <span className="min-w-0 flex-1 text-left">
+            <span className="flex items-center gap-1.5 text-[14px] font-black leading-tight text-white lg:text-[16px]">
+              Live Supplier Map
+              <span className="relative flex h-2 w-2" aria-hidden="true"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF5A00] opacity-70 motion-reduce:animate-none" /><span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF5A00]" /></span>
+            </span>
+            <span className="block truncate text-[11.5px] text-white/70 lg:text-[13px]"><span className="sm:hidden">Verified factories near you, worldwide</span><span className="hidden sm:inline">Find verified factories near you, anywhere in the world</span></span>
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[#FF5A00] px-3 py-2 text-[12px] font-black text-white transition-colors group-hover:bg-[#E04E00] lg:text-[13.5px]">
+            Open map <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </span>
+        </Link>
       </div>
 
       {/* ═════════════ PRODUCT SCROLL: curved product carousel ═════════════ */}
