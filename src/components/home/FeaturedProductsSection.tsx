@@ -777,7 +777,7 @@ export default function FeaturedProductsSection() {
           </h3>
           <Link
             to="/products"
-            className="group flex h-[22px] shrink-0 items-center gap-1.5 rounded-full border border-[#FF6A00] px-2.5 text-[10.5px] font-bold text-[#FF6A00] transition-colors hover:bg-[#FF6A00]/10 sm:h-10 sm:gap-2 sm:px-5 sm:text-[14px]"
+            className="group flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-[#FF6A00] px-3 text-[11px] font-bold text-[#FF6A00] transition-colors hover:bg-[#FF6A00]/10 sm:h-10 sm:gap-2 sm:px-5 sm:text-[14px]"
           >
             View All
             <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 sm:h-4 sm:w-4" />
@@ -869,7 +869,7 @@ export default function FeaturedProductsSection() {
                         e.stopPropagation();
                         toggleFavorite(product.id, product.name);
                       }}
-                      className="absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-white/40 bg-black/60 backdrop-blur-sm transition-transform hover:scale-110 sm:right-2.5 sm:top-2.5 sm:h-9 sm:w-9"
+                      className="absolute right-1.5 top-1.5 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-black/60 backdrop-blur-sm transition-transform hover:scale-110 sm:right-2.5 sm:top-2.5 sm:h-9 sm:w-9"
                       aria-label={isFav ? 'Remove from wishlist' : 'Save to wishlist'}
                       aria-pressed={isFav}
                     >

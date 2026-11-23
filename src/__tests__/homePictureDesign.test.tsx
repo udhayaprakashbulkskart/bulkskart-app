@@ -8,7 +8,10 @@ describe('home page top laid out from the design picture', () => {
   const landing = src('src/components/home/LandingHero.tsx');
 
   it('has the hero copy, buttons and four promises from the picture', () => {
-    expect(landing).toContain('Live Now: 52,000+ Active RFQs');
+    // the live badge counts the open RFQs in the database instead of a typed-in figure
+    expect(landing).not.toContain('52,000+');
+    expect(landing).toContain("`Live Now: ${openRfqs.toLocaleString('en-IN')} Active RFQs`");
+    expect(landing).toContain('loadLiveStats()');
     expect(landing).toContain("{ title: 'The Global B2B Marketplace for', accent: 'Bulk Buying & Selling' }");
     expect(landing).toContain('Post Your Requirement');
     expect(landing).toContain('Get Supplier Quotes');
@@ -52,8 +55,7 @@ describe('home page top laid out from the design picture', () => {
     expect(header).toContain('to="/categories"');
   });
 
-  it('shows the logo made for dark backgrounds in both themes (both are black)', () => {
-    expect(src('src/components/common/BrandLogo.tsx')).toContain('return BULKSKART_LOGO_DARK;');
-    expect(src('src/index.css')).toContain('The light theme is intentionally the same palette as dark.');
+  it('shows the logo that matches the theme (white letters on dark, dark letters on the light theme)', () => {
+    expect(src('src/components/common/BrandLogo.tsx')).toContain("return theme === 'light' ? BULKSKART_LOGO_LIGHT : BULKSKART_LOGO_DARK;");
   });
 });

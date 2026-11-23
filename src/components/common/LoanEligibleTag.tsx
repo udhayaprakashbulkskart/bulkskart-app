@@ -40,7 +40,7 @@ export default function LoanEligibleTag({ link = false, size = 'sm', tone = 'ora
 
   if (link) {
     return (
-      <Link to="/loan-calculator" className={`${classes} transition-transform hover:scale-[1.03]`} title={TITLE}>
+      <Link to="/loan-calculator" className={`${classes} min-h-[26px] transition-transform hover:scale-[1.03]`} title={TITLE}>
         {content}
       </Link>
     );

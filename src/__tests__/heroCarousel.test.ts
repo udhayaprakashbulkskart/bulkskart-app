@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/api', () => ({ getMarketplaceProducts: vi.fn(async () => ({ products: [] })) }));
-import { fromCatalogue, fromProducts, heroLists, HERO_RING_SIZE } from '@/components/home/hero/heroProducts';
+import { currentHour, fromCatalogue, fromProducts, heroLists, hourlyWindow, msToNextHour, HERO_RING_SIZE } from '@/components/home/hero/heroProducts';
 import type { Product } from '@/types/types';
 
 const src = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
@@ -26,6 +26,22 @@ describe('landing hero product carousel', () => {
     expect(featured).toHaveLength(HERO_RING_SIZE);
     expect(top.every((p) => p.topSeller)).toBe(true);
     expect(new Set(featured.map((p) => p.name)).size).toBe(featured.length);
+  });
+
+  it('shows a new set of products every hour, rotating through all of them', () => {
+    const list = Array.from({ length: 40 }, (_, i) => i);
+    expect(hourlyWindow(list, 16, 0)).toEqual(list.slice(0, 16));
+    expect(hourlyWindow(list, 16, 1)).toEqual(list.slice(16, 32));
+    expect(hourlyWindow(list, 16, 2)).toEqual([...list.slice(32, 40), ...list.slice(0, 8)]);
+    expect(hourlyWindow([1, 2, 3], 16, 1)).toEqual([2, 3, 1]);
+    expect(hourlyWindow([1, 2], 0, 5)).toEqual([]);
+    expect(currentHour(7_200_000 + 5)).toBe(2);
+    expect(msToNextHour(3_600_000 - 10)).toBe(10);
+    const catalogue = fromCatalogue();
+    const a = heroLists([], catalogue, 100).featured.map((p) => p.id);
+    const b = heroLists([], catalogue, 101).featured.map((p) => p.id);
+    expect(a).toHaveLength(HERO_RING_SIZE);
+    expect(a).not.toEqual(b);
   });
 
   it('keeps the product scroll on the home page, under the picture-based top section', () => {

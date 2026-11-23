@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { loadLiveStats } from '@/lib/liveStats';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
-  ShieldCheck, Truck, ArrowRight, Layers, ChevronRight, FilePlus2, Gavel, Store, Users, BadgeCheck,
+  ShieldCheck, Truck, ArrowRight, Layers, ChevronRight, FilePlus2, Gavel, Store, Users, BadgeCheck, Landmark,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProductCarouselHero from '@/components/home/hero/ProductCarouselHero';
@@ -52,11 +53,22 @@ const ACTION_TILES = [
   { title: 'Post RFQ', sub: '(Get Quotes)', icon: FilePlus2, to: '/post-requirement' },
   { title: 'Find Suppliers', sub: '(Verified)', icon: Users, to: '/manufacturers' },
   { title: 'Become a Supplier', sub: '(List & Sell)', icon: Store, to: '/auth?tab=supplier' },
+  { title: 'Free Delivery', sub: '(Every Order)', icon: Truck, to: '/loan-calculator' },
+  { title: '₹2 Crore Loan', sub: '(Order Finance)', icon: Landmark, to: '/loan-calculator' },
 ];
 
 // ── Component ──────────────────────────────────────────────────────────
 export default function LandingHero() {
   const reduce = useReducedMotion();
+  // the live badge counts the open RFQs in the database (refreshed every minute)
+  const [openRfqs, setOpenRfqs] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => loadLiveStats().then((s) => { if (!cancelled) setOpenRfqs(s.openRfqs); });
+    load();
+    const t = window.setInterval(load, 60_000);
+    return () => { cancelled = true; window.clearInterval(t); };
+  }, []);
   const { profile, resolvedRole } = useAuth();
   const [slide, setSlide] = useState(0);
   const isSupplier = resolvedRole === 'supplier' || profile?.role === 'supplier';
@@ -108,7 +120,7 @@ export default function LandingHero() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF2D1A] opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF2D1A] md:h-2.5 md:w-2.5" />
               </span>
-              Live Now: 52,000+ Active RFQs
+              {openRfqs ? `Live Now: ${openRfqs.toLocaleString('en-IN')} Active RFQs` : 'Live Now: Active RFQs'}
             </motion.span>
 
             <div className="mt-2.5 min-h-[72px] min-[400px]:min-h-[76px] sm:min-h-[118px] md:mt-4 lg:min-h-[176px]">
@@ -173,7 +185,7 @@ export default function LandingHero() {
           </ul>
 
           {/* slide dots */}
-          <div className="relative flex items-center justify-center gap-1.5 pb-3 pt-3 md:justify-start md:gap-2 md:pb-8" role="tablist" aria-label="Hero slides">
+          <div className="relative flex items-center justify-center gap-4 pb-3 pt-3 md:justify-start md:pb-8" role="tablist" aria-label="Hero slides">
             {HERO_SLIDES.map((s, i) => (
               <button
                 key={s.accent}
@@ -182,7 +194,7 @@ export default function LandingHero() {
                 aria-selected={i === slide}
                 aria-label={`Show slide ${i + 1}`}
                 onClick={() => setSlide(i)}
-                className={`h-2 w-2 rounded-full transition-colors md:h-2.5 md:w-2.5 ${i === slide ? 'bg-[#FF5A00]' : 'bg-white/35 hover:bg-white/60'}`}
+                className={`relative h-2 w-2 rounded-full transition-colors after:absolute after:-inset-3 after:content-[''] md:h-2.5 md:w-2.5 ${i === slide ? 'bg-[#FF5A00]' : 'bg-white/35 hover:bg-white/60'}`}
               />
             ))}
           </div>
@@ -269,16 +281,17 @@ export default function LandingHero() {
 
       {/* ═════════════ ACTION TILES ═════════════ */}
       <div className="relative mx-auto mt-3 max-w-[1400px] px-2 sm:px-5 md:mt-5 md:px-6">
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5 md:gap-4">
+        {/* six buttons: 3 per row on phones and tablets, one row of 6 on laptops */}
+        <div className="grid auto-rows-fr grid-cols-3 gap-2 sm:gap-2.5 lg:grid-cols-6 lg:gap-3 xl:gap-4">
           {ACTION_TILES.map(({ title, sub, icon: Icon, to }) => (
             <Link
               key={title}
               to={to}
-              className="group flex flex-col items-center justify-center rounded-xl border border-white/12 bg-gradient-to-b from-[#1b1b1b] to-[#0e0e0e] px-0.5 py-2 text-center md:rounded-2xl shadow-[0_10px_24px_-14px_rgba(255,90,0,0.6)] transition-all hover:-translate-y-0.5 hover:border-[#FF5A00]/60 md:py-6"
+              className="group flex min-h-[78px] min-w-0 flex-col items-center justify-center rounded-xl border border-white/12 bg-gradient-to-b from-[#1b1b1b] to-[#0e0e0e] px-1.5 py-2.5 text-center shadow-[0_10px_24px_-14px_rgba(255,90,0,0.6)] transition-all hover:-translate-y-0.5 hover:border-[#FF5A00]/60 sm:min-h-[92px] lg:min-h-[120px] lg:rounded-2xl lg:py-4"
             >
-              <Icon className="h-[22px] w-[22px] text-[#FF6A14] md:h-9 md:w-9" strokeWidth={1.6} aria-hidden="true" />
-              <span className="mt-1 whitespace-nowrap text-[9.5px] font-bold leading-tight text-white min-[400px]:text-[10px] sm:text-[12px] md:mt-3 md:text-[16px]">{title}</span>
-              <span className="mt-0.5 text-[8.5px] text-white/70 min-[400px]:text-[9px] sm:text-[11px] md:text-[13px]">{sub}</span>
+              <Icon className="h-6 w-6 text-[#FF6A14] transition-transform group-hover:scale-110 sm:h-7 sm:w-7 lg:h-8 lg:w-8" strokeWidth={1.6} aria-hidden="true" />
+              <span className="mt-1.5 max-w-full text-[11.5px] font-bold leading-tight text-white sm:text-[13px] lg:mt-2.5 lg:text-[15px]">{title}</span>
+              <span className="mt-0.5 max-w-full text-[10px] leading-tight text-white/70 sm:text-[11px] lg:text-[12.5px]">{sub}</span>
             </Link>
           ))}
         </div>

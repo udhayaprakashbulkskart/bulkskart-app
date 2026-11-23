@@ -211,7 +211,7 @@ export default function PlansHomeSection() {
           </div>
           <Link
             to="/pricing"
-            className="text-primary font-semibold hover:underline flex items-center gap-1 shrink-0 text-xs"
+            className="text-primary font-semibold hover:underline flex min-h-[26px] items-center gap-1 shrink-0 text-xs"
           >
             <span>Compare Full Plan Features</span>
             <ArrowRight className="w-3 h-3" />
