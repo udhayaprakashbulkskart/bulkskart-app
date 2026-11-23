@@ -62,7 +62,7 @@ describe('Download App popup', () => {
   });
 
   it('stays off sign-in, dashboard and payment pages', () => {
-    for (const path of ['/auth', '/register/manufacturer', '/dashboard/buyer', '/admin', '/checkout', '/supplier-map']) expect(NO_POPUP_PATHS.test(path), path).toBe(true);
+    for (const path of ['/auth', '/register/manufacturer', '/dashboard/buyer', '/admin', '/checkout', '/supplier-map', '/register-factory']) expect(NO_POPUP_PATHS.test(path), path).toBe(true);
     for (const path of ['/', '/products', '/requirements', '/authors']) expect(NO_POPUP_PATHS.test(path), path).toBe(false);
   });
 

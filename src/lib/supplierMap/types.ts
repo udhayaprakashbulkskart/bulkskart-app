@@ -5,6 +5,7 @@ export type BusinessStatus = 'pending' | 'needs_info' | 'approved' | 'rejected' 
 export type LocationStatus = 'pending' | 'verified' | 'rejected';
 export type StockStatus = 'in_stock' | 'limited' | 'made_to_order' | 'out_of_stock';
 export type SupplyType = 'bulk' | 'contract' | 'bulk_contract' | 'export';
+export type LocationPrecision = 'exact' | 'pinned' | 'city';
 
 export interface MapProduct {
   id: string;
@@ -30,6 +31,8 @@ export interface MapSupplier {
   country: string | null;
   latitude: number;
   longitude: number;
+  /** exact = factory pin checked by BulkSkart; pinned = set by the manufacturer; city = centre of the profile's city */
+  location_precision: LocationPrecision;
   distance_km: number | null;
   rating: number | null;
   review_count: number | null;
@@ -40,6 +43,8 @@ export interface MapSupplier {
   udyam_verified: boolean;
   /** a business registered outside India whose registration an admin checked in that country's registry */
   registry_verified: boolean;
+  /** verified by BulkSkart (green check); every company on the map has an active paid plan */
+  verified: boolean;
   verified_since: string | null;
   matched_products: MapProduct[];
   product_count: number;
@@ -87,7 +92,9 @@ export interface MapSupplierDetail {
   udyam_verified: boolean;
   registry_verified: boolean;
   registration_country: string | null;
-  entity_type: EntityType;
+  verified: boolean;
+  location_precision: LocationPrecision;
+  entity_type: EntityType | null;
   verified_since: string | null;
   products: MapProduct[];
 }
@@ -105,6 +112,7 @@ export interface MapSearchParams {
   requireUdyam?: boolean;
   /** factory country, e.g. "Vietnam" */
   country?: string | null;
+  verifiedOnly?: boolean;
   bounds?: { south: number; west: number; north: number; east: number } | null;
   limit?: number;
   offset?: number;
@@ -173,6 +181,11 @@ export interface MyMapStatus {
   active_products: number;
   account_active: boolean;
   on_map: boolean;
+  /** from migration 00072 */
+  paid?: boolean;
+  verified?: boolean;
+  profile_city?: string | null;
+  map_point?: { latitude: number; longitude: number; location_precision: LocationPrecision; city: string | null; country: string | null } | null;
 }
 
 /** admin_list_business_verifications. */

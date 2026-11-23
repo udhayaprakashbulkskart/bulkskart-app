@@ -4,7 +4,7 @@
  */
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BadgeCheck, Globe2, MessageSquareQuote, X } from 'lucide-react';
+import { ArrowRight, BadgeCheck, ClipboardList, Globe2, X } from 'lucide-react';
 import type { PromptAnswer } from '@/lib/supplierMap/listBusinessPrompt';
 
 interface Props {
@@ -13,9 +13,9 @@ interface Props {
 }
 
 const POINTS = [
-  { icon: BadgeCheck, title: 'Free to list and verify', text: 'No plan needed to get your factory on the map.' },
-  { icon: Globe2, title: 'Found by buyers worldwide', text: 'Buyers search the map by product, distance and country.' },
-  { icon: MessageSquareQuote, title: 'Quotation requests come to you', text: 'Buyers ask you for prices straight from your map card.' },
+  { icon: ClipboardList, title: 'One short form', text: 'Business name, mobile, email and city. Add the rest later.' },
+  { icon: Globe2, title: 'Found by buyers worldwide', text: 'With a BulkSkart plan your factory shows on the Supplier Map.' },
+  { icon: BadgeCheck, title: 'Get the Verified mark', text: 'We check your registration and factory, then add the green check.' },
 ];
 
 export default function ListBusinessPrompt({ href, onAnswer }: Props) {
@@ -65,7 +65,7 @@ export default function ListBusinessPrompt({ href, onAnswer }: Props) {
       >
         <div className="relative h-32 overflow-hidden bg-gradient-to-br from-[#FF7A2E] via-[#FF5A00] to-[#B83E00]">
           <MapArt />
-          <span className="absolute left-4 top-4 rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-white">Free listing</span>
+          <span className="absolute left-4 top-4 rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-white">For manufacturers</span>
           <button type="button" onClick={() => onAnswer('later')} aria-label="Close"
             className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-white hover:bg-black/60">
             <X className="h-4 w-4" />
@@ -76,7 +76,7 @@ export default function ListBusinessPrompt({ href, onAnswer }: Props) {
           <div>
             <h2 id="list-business-title" className="text-[20px] font-black leading-tight">Do you make or sell products in bulk?</h2>
             <p id="list-business-text" className="mt-1.5 text-[13.5px] leading-snug text-white/70">
-              List your business on BulkSkart's verified supplier map. We check your registration and factory, then buyers can find you.
+              Register your factory on BulkSkart and get found by bulk buyers on the Supplier Map.
             </p>
           </div>
 
@@ -94,7 +94,7 @@ export default function ListBusinessPrompt({ href, onAnswer }: Props) {
 
           <Link ref={primary} to={href} onClick={() => onAnswer('listing')}
             className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A00] px-4 text-[15px] font-black text-white shadow-[0_12px_30px_-12px_rgba(255,90,0,0.9)] hover:bg-[#E04E00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-            List your business — it's free <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            Register your factory <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
           <div className="grid grid-cols-2 gap-2">
             <button type="button" onClick={() => onAnswer('buyer')} className="min-h-[44px] rounded-2xl border border-white/15 text-[13px] font-bold text-white/85 hover:border-white/40 hover:text-white">

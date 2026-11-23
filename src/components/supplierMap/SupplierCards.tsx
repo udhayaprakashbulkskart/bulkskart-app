@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  BadgeCheck, Boxes, Building2, CalendarClock, ChevronRight, Clock3, ExternalLink, Factory, Info, MapPin, Navigation,
+  BadgeCheck, Crown, Boxes, Building2, CalendarClock, ChevronRight, Clock3, ExternalLink, Factory, Info, MapPin, Navigation,
   Package, Send, Sparkles, Star, X,
 } from 'lucide-react';
 import type { MapProduct, MapSupplier, MapSupplierDetail } from '@/lib/supplierMap/types';
@@ -32,6 +32,26 @@ export function VerifiedBadge({ small = false }: { small?: boolean }) {
     </span>
   );
 }
+
+/** Every company on the map has an active paid plan; those not yet verified carry this instead of the green check. */
+export function PremiumBadge({ small = false }: { small?: boolean }) {
+  return (
+    <span className={cn('inline-flex shrink-0 items-center gap-1 rounded-full bg-[#FF5A00]/12 font-bold text-[#E04E00] dark:text-[#FF8A3D]', small ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]')}>
+      <Crown className={small ? 'h-3 w-3' : 'h-3.5 w-3.5'} aria-hidden="true" /> Premium
+    </span>
+  );
+}
+
+/** "Coimbatore, Tamil Nadu", with "(approx.)" when the point is only the city centre. */
+export const locationText = (s: Pick<MapSupplier, 'city' | 'state' | 'country' | 'location_precision'>) =>
+  `${placeLine(s.city, s.state, s.country)}${s.location_precision === 'city' ? ' (approx.)' : ''}`;
+const distanceText = (s: Pick<MapSupplier, 'distance_km' | 'location_precision'>) =>
+  s.distance_km == null ? null : `${s.location_precision === 'city' ? '~' : ''}${formatKm(s.distance_km)}`;
+const PRECISION_NOTE = {
+  exact: 'Factory location checked by BulkSkart',
+  pinned: 'Location set by the manufacturer',
+  city: 'Approximate: centre of the city',
+} as const;
 
 export function MatchPill({ match }: { match: MatchResult | null }) {
   if (!match) return null;
@@ -74,11 +94,11 @@ export function SupplierCard({ s, match, selected, onSelect, onQuote, compact = 
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="truncate text-[14.5px] font-black leading-tight">{s.company_name}</span>
-            <VerifiedBadge small />
+            {s.verified ? <VerifiedBadge small /> : <PremiumBadge small />}
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-muted-foreground">
-            <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3" aria-hidden="true" />{placeLine(s.city, s.state, s.country)}</span>
-            {s.distance_km != null && <span className="font-bold text-foreground">{formatKm(s.distance_km)}</span>}
+            <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3" aria-hidden="true" />{locationText(s)}</span>
+            {s.distance_km != null && <span className="font-bold text-foreground">{distanceText(s)}</span>}
             {(s.review_count ?? 0) > 0 && s.rating != null && (
               <span className="inline-flex items-center gap-0.5"><Star className="h-3 w-3 fill-[#F5B301] text-[#F5B301]" aria-hidden="true" />{Number(s.rating).toFixed(1)} ({s.review_count})</span>
             )}
@@ -94,7 +114,7 @@ export function SupplierCard({ s, match, selected, onSelect, onQuote, compact = 
           {product.moq != null && <span className="shrink-0 text-muted-foreground">MOQ {inr(Number(product.moq), s.country)} {product.moq_unit ?? ''}</span>}
         </div>
       ) : (
-        <p className="rounded-xl bg-muted/60 px-2.5 py-2 text-[12px] text-muted-foreground">{s.product_count} product{s.product_count === 1 ? '' : 's'} listed</p>
+        <p className="rounded-xl bg-muted/60 px-2.5 py-2 text-[12px] text-muted-foreground">{s.product_count > 0 ? `${s.product_count} product${s.product_count === 1 ? '' : 's'} listed` : 'No products listed yet. Ask for a quotation.'}</p>
       )}
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]">
@@ -168,7 +188,7 @@ export function SupplierDetailPanel({ s, detail, loading, match, onClose, onQuot
           <div className="min-w-0 flex-1">
             <h2 className="text-[18px] font-black leading-tight">{s.company_name}</h2>
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              <VerifiedBadge />
+              {s.verified ? <VerifiedBadge /> : <PremiumBadge />}
               <MatchPill match={match} />
               {(s.review_count ?? 0) > 0 && s.rating != null ? (
                 <span className="inline-flex items-center gap-0.5 text-[12px] font-bold"><Star className="h-3.5 w-3.5 fill-[#F5B301] text-[#F5B301]" aria-hidden="true" />{Number(s.rating).toFixed(1)} <span className="font-normal text-muted-foreground">({s.review_count} review{s.review_count === 1 ? '' : 's'})</span></span>
@@ -180,7 +200,7 @@ export function SupplierDetailPanel({ s, detail, loading, match, onClose, onQuot
         </div>
 
         <dl className="grid grid-cols-2 gap-2 text-[12px]">
-          <Fact icon={MapPin} label="Location" value={placeLine(s.city, s.state, s.country)} sub={s.distance_km != null ? `${formatKm(s.distance_km)} from you` : undefined} />
+          <Fact icon={MapPin} label="Location" value={placeLine(s.city, s.state, s.country)} sub={[s.distance_km != null ? `${distanceText(s)} from you` : null, PRECISION_NOTE[s.location_precision] ?? null].filter(Boolean).join(' · ')} />
           <Fact icon={Boxes} label="Monthly capacity" value={s.monthly_capacity != null ? `${inr(s.monthly_capacity, s.country)} ${s.capacity_unit ?? 'units'}` : 'Not listed'} sub={!s.monthly_capacity && detail?.production_capacity_text ? detail.production_capacity_text : undefined} />
           <Fact icon={Package} label="Lowest MOQ" value={s.min_moq != null ? `${inr(s.min_moq, s.country)} ${s.moq_unit ?? ''}` : 'Ask the supplier'} />
           <Fact icon={Clock3} label="Stock" value={s.stock_status ? STOCK_LABEL[s.stock_status] : 'Not updated'} sub={lead != null ? `Lead time ${lead} day${lead === 1 ? '' : 's'}` : undefined} tone={stockTone(s.stock_status)} />
@@ -190,17 +210,25 @@ export function SupplierDetailPanel({ s, detail, loading, match, onClose, onQuot
           {s.availability_updated_at ? `Availability last updated ${timeAgo(s.availability_updated_at)} by the supplier` : 'The supplier has not updated availability yet'}
         </p>
 
+        {s.verified ? (
         <section className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-3">
           <h3 className="flex items-center gap-1.5 text-[13px] font-black text-emerald-700 dark:text-emerald-400"><BadgeCheck className="h-4 w-4" aria-hidden="true" /> Verified business</h3>
           <p className="mt-1 text-[12px] leading-snug text-muted-foreground">
-            {entityLabel(detail?.entity_type)}
+            {detail?.entity_type ? entityLabel(detail.entity_type) : 'Business'}
             {s.registry_verified
               ? `: registration checked in the official company registry${registryCountry ? ` of ${registryCountry}` : ''}`
-              : checks.length ? `: ${checks.join(', ')} checked on the government portal` : ''}{' '}
-            and the factory location checked by BulkSkart
-            {s.verified_since ? ` (approved ${new Date(s.verified_since).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })})` : ''}.
+              : checks.length ? `: ${checks.join(', ')} checked on the government portal` : ' verified by BulkSkart'}
+            {s.verified_since ? ` (since ${new Date(s.verified_since).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })})` : ''}.
           </p>
         </section>
+        ) : (
+        <section className="rounded-2xl border border-[#FF5A00]/30 bg-[#FF5A00]/5 p-3">
+          <h3 className="flex items-center gap-1.5 text-[13px] font-black text-[#E04E00] dark:text-[#FF8A3D]"><Crown className="h-4 w-4" aria-hidden="true" /> Premium BulkSkart member</h3>
+          <p className="mt-1 text-[12px] leading-snug text-muted-foreground">
+            Has an active BulkSkart plan. BulkSkart has not verified this business yet, so check its registration documents before you pay.
+          </p>
+        </section>
+        )}
 
         {match && (
           <section>
@@ -223,6 +251,7 @@ export function SupplierDetailPanel({ s, detail, loading, match, onClose, onQuot
 
         <section>
           <h3 className="text-[13px] font-black">Products {loading && <span className="text-[11px] font-normal text-muted-foreground">loading…</span>}</h3>
+          {!loading && products.length === 0 && <p className="mt-1.5 text-[12px] text-muted-foreground">No products listed yet. Ask for a quotation and tell them what you need.</p>}
           <ul className="mt-2 space-y-2">
             {products.slice(0, 8).map((p) => (
               <li key={p.id} className="flex items-center gap-2.5 rounded-xl border border-border p-2">

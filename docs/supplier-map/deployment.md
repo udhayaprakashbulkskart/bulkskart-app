@@ -2,6 +2,21 @@
 
 ## 1. Database (Supabase SQL editor)
 
+**If 00071 is already live** (it is on www.bulkskart.com since 23 Nov 2026), run only
+`supabase/migrations/00072_supplier_map_paid_and_existing.sql`. It shows manufacturers with a paid plan, including
+existing profiles placed at their city. It is safe to run again.
+
+Check it with:
+
+```sql
+SELECT count(*) FROM public.map_places;                       -- about 270
+SELECT company_name, location_precision, verified FROM public.map_search_suppliers();
+```
+
+Paid companies without a city or a pin do not show; their map page in the dashboard tells them to add one.
+
+The first install was:
+
 1. Make sure migrations 00069 and 00070 have been run.
 2. Open `supabase/migrations/00071_supplier_map.sql`, paste the whole file into the SQL editor and run it. It is one
    transaction, it only adds things, and it is safe to run again.
@@ -33,12 +48,17 @@ Map tiles are optional settings, not secrets:
 
 | Variable | Default |
 | --- | --- |
-| `VITE_MAP_TILE_URL_DARK`, `VITE_MAP_TILE_URL_LIGHT` | CARTO dark/light basemaps |
-| `VITE_MAP_TILE_ATTRIBUTION` | OpenStreetMap + CARTO |
+| `VITE_MAP_TILE_URL_DARK`, `VITE_MAP_TILE_URL_LIGHT` | OpenStreetMap tiles (dark mode: the same tiles, filtered) |
+| `VITE_MAP_TILE_ATTRIBUTION` | OpenStreetMap contributors |
 | `VITE_MAP_SATELLITE_URL`, `VITE_MAP_SATELLITE_ATTRIBUTION` | No satellite layer |
 
-CARTO's free basemaps are meant for limited, non-commercial use. For a busy commercial site, take a plan with a tile
-provider (MapTiler, Stadia Maps, CARTO Enterprise), put its tile URL in the variables above, and keep the attribution.
+The map background is OpenStreetMap's own tiles. They need no API key; the attribution shown on the map is required.
+Dark mode is the same tiles with a colour filter. OpenStreetMap serves them from donated servers for moderate use
+(https://operations.osmfoundation.org/policies/tiles/). When traffic grows, or for English labels everywhere, take a
+plan with a tile provider (MapTiler, Stadia Maps, CARTO), put its tile URL with your key into the variables above,
+rebuild, and keep its attribution. No code change is needed.
+
+CARTO's basemaps without a key show "API KEY REQUIRED" on a live domain, which is why they are no longer the default.
 
 New pages:
 - `/supplier-map`: public. It is in the header menu and the sitemap.

@@ -51,6 +51,10 @@
   height: 10px;
   color: #fff;
 }
+/* on the map with a paid plan, not yet verified: the same pin without the green check, a darker orange */
+.bsm-pin.is-premium .bsm-pin-head {
+  background: linear-gradient(135deg, #ff8a3d, #e04e00 60%, #b83e00);
+}
 .bsm-pin.is-selected .bsm-pin-head {
   box-shadow: 0 0 0 6px rgb(255 90 0 / 0.28), 0 0 24px 4px rgb(255 90 0 / 0.55);
 }
@@ -89,6 +93,11 @@
 @media (prefers-reduced-motion: reduce) {
   .bsm-you::after { animation: none; }
   .bsm-pin { transition: none; }
+}
+
+/* dark mode: OpenStreetMap's light tiles turned dark (black land, grey roads, readable labels) */
+.bsm-tiles-dark {
+  filter: invert(100%) hue-rotate(180deg) brightness(92%) contrast(88%) saturate(55%);
 }
 
 /* Leaflet chrome */

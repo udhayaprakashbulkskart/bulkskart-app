@@ -256,14 +256,20 @@ export default function SupplierMapListingPage() {
 
   const steps = useMemo(() => {
     if (!status) return [];
+    // migration 00072: a paid plan and a location put the factory on the map; verification adds the green check
+    const point = status.map_point;
+    const placed = point
+      ? point.location_precision === 'city' ? `Shown at the centre of ${point.city ?? 'your city'}. Pin your factory below to show its exact place.` : 'Shown at your factory pin'
+      : status.profile_city ? `We could not find "${status.profile_city}" on the map. Pin your factory below.` : 'Add your city in Business Profile, or pin your factory below.';
     return [
-      { done: status.account_active, label: 'Active manufacturer account', hint: 'Your account is not active. Contact BulkSkart support.' },
-      { done: business?.status === 'approved', label: 'Business registration approved', hint: business ? BUSINESS_STATUS[business.status].label : 'Not submitted yet', anchor: '#registration' },
-      { done: location?.status === 'verified', label: 'Factory location verified', hint: location ? (location.status === 'pending' ? 'Waiting for review' : location.status === 'rejected' ? 'Rejected: place the pin again' : 'Verified') : 'Not added yet', anchor: '#location' },
-      { done: status.active_products > 0, label: 'At least one active product', hint: status.active_products > 0 ? `${status.active_products} active` : 'Add a product', link: '/dashboard/supplier/products' },
-      { done: !status.blocked, label: 'Account in good standing', hint: 'Your company is blocked. Contact support.' },
+      { done: status.account_active, label: 'Active manufacturer account', hint: 'Your account is not active. Contact BulkSkart support.', required: true },
+      { done: status.paid !== false, label: 'Active BulkSkart plan', hint: 'Only manufacturers with an active plan are shown on the map.', link: '/dashboard/supplier/subscription', linkText: 'Choose plan', required: true },
+      { done: Boolean(point) && point?.location_precision !== 'city', label: 'Factory location', hint: placed, anchor: '#location', required: !point },
+      { done: !status.blocked, label: 'Account in good standing', hint: 'Your company is blocked. Contact support.', required: true },
+      { done: Boolean(status.verified) || business?.status === 'approved', label: 'Green Verified mark (optional)', hint: business ? BUSINESS_STATUS[business.status].label : 'Send your registration below to get verified', anchor: '#registration' },
+      { done: status.active_products > 0, label: 'Products (optional)', hint: 'Buyers can ask for quotations on your products', link: '/dashboard/supplier/products', linkText: 'Add' },
     ];
-  }, [status, business, location]);
+  }, [status, business]);
 
   if (loading) {
     return (
@@ -284,7 +290,7 @@ export default function SupplierMapListingPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-black"><MapPin className="h-6 w-6 text-[#FF5A00]" aria-hidden="true" /> Live Supplier Map</h1>
-            <p className="text-sm text-muted-foreground">Buyers near you find your factory on the map once BulkSkart has checked your registration and location.</p>
+            <p className="text-sm text-muted-foreground">With an active BulkSkart plan your factory shows on the map. Get verified for the green check.</p>
           </div>
           <Link to="/supplier-map" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border px-3 text-[13px] font-bold hover:border-[#FF5A00] hover:text-[#FF5A00]">
             <ExternalLink className="h-4 w-4" aria-hidden="true" /> Open the map
@@ -318,7 +324,7 @@ export default function SupplierMapListingPage() {
                       {!s.done && <span className="block text-[12px] text-muted-foreground">{s.hint}</span>}
                     </span>
                     {!s.done && s.anchor && <a href={s.anchor} className="shrink-0 text-[12px] font-bold text-[#E04E00] dark:text-[#FF8A3D]">Go</a>}
-                    {!s.done && s.link && <Link to={s.link} className="shrink-0 text-[12px] font-bold text-[#E04E00] dark:text-[#FF8A3D]">Add</Link>}
+                    {!s.done && s.link && <Link to={s.link} className="shrink-0 text-[12px] font-bold text-[#E04E00] dark:text-[#FF8A3D]">{s.linkText ?? 'Add'}</Link>}
                   </li>
                 ))}
               </ul>

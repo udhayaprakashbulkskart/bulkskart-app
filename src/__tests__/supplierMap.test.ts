@@ -6,12 +6,15 @@ import { formatKm, matchSupplier, timeAgo } from '@/lib/supplierMap/matchScore';
 import { COUNTRY_NAMES, findPlace, kmBetween, normaliseBounds, PLACES, placeLabel, placeLine, RADIUS_OPTIONS, searchPlaces } from '@/lib/supplierMap/places';
 import { answerListingPrompt, LIST_BUSINESS_SIGNUP_HREF, listBusinessHref, markListingOffered, shouldOfferListing } from '@/lib/supplierMap/listBusinessPrompt';
 import { docPathFromUrl, privateDocRef } from '@/lib/supplierMap/docPath';
+import { baseTiles } from '@/lib/supplierMap/tiles';
+import { spreadPositions } from '@/lib/supplierMap/spread';
+import { draftFromForm, validateFactoryForm } from '@/lib/supplierMap/registerFactory';
 import type { MapSupplier } from '@/lib/supplierMap/types';
 
 const supplier = (over: Partial<MapSupplier> = {}): MapSupplier => ({
   company_id: 'c1', company_name: 'Tiruppur Knits', slug: 'tiruppur-knits', business_type: null, city: 'Tiruppur', state: 'Tamil Nadu', country: 'India',
   latitude: 11.1085, longitude: 77.3411, distance_km: null, rating: null, review_count: 0, logo_url: null, cover_url: null,
-  gst_verified: true, cin_verified: false, udyam_verified: false, registry_verified: false, verified_since: '2026-11-01T00:00:00Z',
+  gst_verified: true, cin_verified: false, udyam_verified: false, registry_verified: false, verified: true, location_precision: 'exact', verified_since: '2026-11-01T00:00:00Z',
   matched_products: [{ id: 'p1', name: 'Cotton T-Shirt', slug: 'cotton-t-shirt', moq: 200, moq_unit: 'pcs', price_min: 120, price_max: 180, currency: 'INR', image: null }],
   product_count: 1, min_moq: 200, moq_unit: 'pcs', monthly_capacity: null, capacity_unit: null, lead_time_days: null,
   stock_status: null, supply_type: null, availability_updated_at: null, total_count: 1, ...over,
@@ -144,14 +147,92 @@ describe('places', () => {
   });
 });
 
+describe('paid manufacturers and existing profiles (migration 00072)', () => {
+  const sql = readFileSync(resolve(__dirname, '../../supabase/migrations/00072_supplier_map_paid_and_existing.sql'), 'utf8');
+
+  it('shows only companies with an active paid plan, and never demo, blocked, rejected or suspended ones', () => {
+    const visible = sql.slice(sql.indexOf('CREATE FUNCTION public.map_visible_company_ids'), sql.indexOf('-- ── Search ──'));
+    for (const rule of [
+      'public.company_has_paid_plan(c.id)',
+      "p.status = 'active' AND p.role = 'supplier'",
+      'NOT COALESCE(c.is_blocked, false)',
+      "c.verification_status <> 'rejected'",
+      "bv.status NOT IN ('rejected', 'suspended')",
+      "c.owner_id <> '00000000-0000-0000-0000-000000000001'",
+    ]) expect(visible).toContain(rule);
+    expect(sql).toContain("s.status = 'active' AND (s.ends_at IS NULL OR s.ends_at > now())");
+    // products and the new application are no longer required
+    expect(visible).not.toContain('products');
+  });
+
+  it('knows every city the website offers, plus older names', () => {
+    for (const p of PLACES) expect(sql).toContain(`('${p.name.replace(/'/g, "''")}', '${p.country.replace(/'/g, "''")}'`);
+    expect(sql).toContain("('Bombay', 'India'");
+    expect(sql).toContain("('Cochin', 'India'");
+    expect(findPlace('bangalore')?.name).toBe('Bengaluru');
+    expect(searchPlaces('trichy')[0].name).toBe('Tiruchirappalli');
+  });
+
+  it('fans out companies shown at the same city centre so each can be tapped', () => {
+    const at = spreadPositions([
+      { id: 'a', lat: 11.0168, lng: 76.9558 }, { id: 'b', lat: 11.0168, lng: 76.9558 }, { id: 'c', lat: 11.0168, lng: 76.9558 }, { id: 'd', lat: 13.08, lng: 80.27 },
+    ]);
+    expect(at.get('d')).toEqual([13.08, 80.27]);
+    const spots = ['a', 'b', 'c'].map((id) => at.get(id)?.join(','));
+    expect(new Set(spots).size).toBe(3);
+    for (const id of ['a', 'b', 'c']) {
+      const [lat, lng] = at.get(id) ?? [0, 0];
+      expect(kmBetween(lat, lng, 11.0168, 76.9558)).toBeLessThan(3);
+    }
+  });
+
+  it('scores an unverified company without verification points, and says the distance is approximate', () => {
+    const m = matchSupplier(supplier({ verified: false, location_precision: 'city', distance_km: 12 }), { query: 't-shirt' });
+    expect(m.parts.find((p) => p.key === 'checks')).toMatchObject({ points: 0, reason: 'Not verified by BulkSkart yet' });
+    expect(m.parts.find((p) => p.key === 'distance')?.reason).toMatch(/About 12 km.*city centre/);
+  });
+});
+
+describe('Register your factory', () => {
+  const good = { companyName: 'Kovai Mills', fullName: 'Ravi Kumar', phone: '98765 43210', email: 'ravi@kovai.in', password: 'longenough', city: 'Coimbatore', country: 'India', makes: 'cotton t-shirts, polo shirts', agreed: true };
+
+  it('asks only for what an account needs', () => {
+    expect(validateFactoryForm(good)).toEqual({});
+    expect(validateFactoryForm({ ...good, makes: '' })).toEqual({});
+    expect(Object.keys(validateFactoryForm({ ...good, companyName: '', phone: '12', email: 'x', password: 'short', city: '', agreed: false })).sort())
+      .toEqual(['agreed', 'city', 'companyName', 'email', 'password', 'phone']);
+    expect(validateFactoryForm({ ...good, phone: '+971 50 123 4567', country: 'United Arab Emirates' })).toEqual({});
+  });
+
+  it('saves the factory with its city, country and products', () => {
+    const d = draftFromForm(good);
+    expect(d).toMatchObject({ companyName: 'Kovai Mills', businessType: 'Manufacturer', city: 'Coimbatore', country: 'India', products: ['cotton t-shirts', 'polo shirts'], phone: '+919876543210', gstin: '' });
+    expect(draftFromForm({ ...good, country: 'Vietnam', makes: '' })).toMatchObject({ tradeType: 'export', products: [], description: '' });
+  });
+});
+
+describe('map tiles', () => {
+  it('use a background that needs no API key on the live site (CARTO without a key shows "API KEY REQUIRED")', () => {
+    for (const theme of ['dark', 'light'] as const) {
+      const t = baseTiles(theme);
+      expect(t.url).toBe('https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+      expect(t.url).not.toMatch(/cartocdn|api_key|apikey|key=/i);
+      expect(t.attribution).toMatch(/OpenStreetMap/);
+      expect(t.detectRetina).toBe(false);
+    }
+    expect(baseTiles('dark').className).toBe('bsm-tiles-dark');
+    expect(baseTiles('light').className).toBeUndefined();
+  });
+});
+
 describe('"List your business" popup', () => {
   const memory = () => {
     const m = new Map<string, string>();
     return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
   };
 
-  it('goes to manufacturer signup, then straight to the map listing', () => {
-    expect(LIST_BUSINESS_SIGNUP_HREF).toBe('/signup/manufacturer?redirect=%2Fdashboard%2Fsupplier%2Fmap-listing');
+  it('goes to the one-page factory signup, then straight to the map listing', () => {
+    expect(LIST_BUSINESS_SIGNUP_HREF).toBe('/register-factory');
     expect(listBusinessHref(null, false)).toBe(LIST_BUSINESS_SIGNUP_HREF);
     expect(listBusinessHref('supplier', true)).toBe('/dashboard/supplier/map-listing');
     expect(listBusinessHref('buyer', true)).toBeNull();

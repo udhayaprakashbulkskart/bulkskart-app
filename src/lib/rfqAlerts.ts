@@ -75,7 +75,7 @@ export const VISIBLE_MS = 7_000;
 
 /** Pages where the popup would get in the way (the supplier map is a full-screen map with its own prompt). */
 export const NO_RFQ_ALERT_PATHS =
-  /^\/(auth|login|register|signup|forgot-password|reset-password|checkout|payment|pay|post-requirement|business-setup|onboarding|supplier-map)(\/|$)|\/(negotiation|settings)(\/|$)/;
+  /^\/(auth|login|register|signup|forgot-password|reset-password|checkout|payment|pay|post-requirement|business-setup|onboarding|supplier-map|register-factory)(\/|$)|\/(negotiation|settings)(\/|$)/;
 
 export type RfqLead = Pick<
   Requirement,

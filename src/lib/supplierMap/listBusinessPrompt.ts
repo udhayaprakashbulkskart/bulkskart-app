@@ -3,8 +3,8 @@
  * searched, at most once per visit, and not again for a while after they answer.
  */
 
-/** Signup for manufacturers, then straight to the map listing page. */
-export const LIST_BUSINESS_SIGNUP_HREF = `/signup/manufacturer?redirect=${encodeURIComponent('/dashboard/supplier/map-listing')}`;
+/** The one-page "Register your factory" signup; it ends on the map listing page. */
+export const LIST_BUSINESS_SIGNUP_HREF = '/register-factory';
 export const MAP_LISTING_HREF = '/dashboard/supplier/map-listing';
 
 /** Where "List your business" goes for this visitor; null for signed-in buyers and admins, who are not the audience. */

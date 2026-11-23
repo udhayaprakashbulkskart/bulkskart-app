@@ -28,12 +28,15 @@ Verified manufacturers, filtered and sorted by distance. Only companies that pas
 | `p_limit` | int | Page size; default 100, at most 200. |
 | `p_offset` | int | Paging. |
 | `p_country` | text | Only factories in this country, e.g. `Vietnam` (not case-sensitive). |
+| `p_verified_only` | bool | Only companies BulkSkart has verified (green check). From 00072. |
 
 Viewport longitudes run from -180 to 180. When the view crosses the 180th meridian, send `p_west > p_east`.
 
 Each row returns:
 - `company_id`, `company_name`, `slug`, `business_type`;
 - the factory's `city`, `state`, `country`, `latitude`, `longitude`, and `distance_km`;
+- `location_precision`: `exact` (pin checked), `pinned` (set by the manufacturer) or `city` (city centre);
+- `verified`: the green check; every company returned has an active paid plan;
 - `rating`, `review_count`, `logo_url`, `cover_url`;
 - `gst_verified`, `cin_verified`, `udyam_verified`, `registry_verified` (a registration abroad that was checked),
   `verified_since`;

@@ -24,7 +24,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { onMapChange, searchSuppliers, supplierDetail } from '@/lib/supplierMap/api';
 import { matchSupplier, type MatchResult, timeAgo } from '@/lib/supplierMap/matchScore';
-import { answerListingPrompt, listBusinessHref, markListingOffered, type PromptAnswer, shouldOfferListing } from '@/lib/supplierMap/listBusinessPrompt';
+import { answerListingPrompt, LIST_BUSINESS_SIGNUP_HREF, listBusinessHref, markListingOffered, type PromptAnswer, shouldOfferListing } from '@/lib/supplierMap/listBusinessPrompt';
 import { COUNTRY_NAMES, findPlace, normaliseBounds, type Place, placeLabel, RADIUS_OPTIONS, searchPlaces } from '@/lib/supplierMap/places';
 import { mapDbError } from '@/lib/supplierMap/registration';
 import type { MapProduct, MapSupplier, MapSupplierDetail } from '@/lib/supplierMap/types';
@@ -35,8 +35,8 @@ const SupplierLeafletMap = lazy(() => import('@/components/supplierMap/SupplierL
 const PAGE = 100;
 type Sort = 'match' | 'distance' | 'rating';
 interface Buyer { lat: number; lng: number; label: string }
-interface Filters { category: string; country: string; orderQty: string; minCapacity: string; gst: boolean; cin: boolean; udyam: boolean }
-const NO_FILTERS: Filters = { category: '', country: '', orderQty: '', minCapacity: '', gst: false, cin: false, udyam: false };
+interface Filters { category: string; country: string; orderQty: string; minCapacity: string; verified: boolean; gst: boolean; cin: boolean; udyam: boolean }
+const NO_FILTERS: Filters = { category: '', country: '', orderQty: '', minCapacity: '', verified: false, gst: false, cin: false, udyam: false };
 const num = (v: string) => (v.trim() && Number(v) > 0 ? Number(v) : null);
 
 function useIsDesktop() {
@@ -115,6 +115,7 @@ export default function SupplierMapPage() {
       requireGst: filters.gst,
       requireCin: filters.cin,
       requireUdyam: filters.udyam,
+      verifiedOnly: filters.verified,
       bounds: area ? normaliseBounds(area) : null,
     }),
     [query, buyer, radius, filters, area],
@@ -288,13 +289,14 @@ export default function SupplierMapPage() {
     let product: MapProduct | undefined = p ?? s.matched_products[0] ?? (selectedId === s.company_id ? detail?.products?.[0] : undefined);
     if (!product) product = (await supplierDetail(s.company_id)).detail?.products?.[0];
     if (!product) {
-      toast.error('This supplier has no product to quote right now.');
+      // no products listed yet: ask through a requirement addressed to this manufacturer
+      navigate(`/post-requirement?supplier=${encodeURIComponent(s.company_id)}${query ? `&q=${encodeURIComponent(query)}` : ''}`);
       return;
     }
     setQuote({ s, p: product });
   };
 
-  const activeFilterCount = [filters.category, filters.country, filters.orderQty, filters.minCapacity].filter(Boolean).length + [filters.gst, filters.cin, filters.udyam].filter(Boolean).length;
+  const activeFilterCount = [filters.category, filters.country, filters.orderQty, filters.minCapacity].filter(Boolean).length + [filters.verified, filters.gst, filters.cin, filters.udyam].filter(Boolean).length;
   const clearAll = () => {
     setInput('');
     setQuery('');
@@ -344,7 +346,9 @@ export default function SupplierMapPage() {
 
   // ── "List your business": for visitors who are not signed in (and manufacturers not yet listed) ──
   const listHref = listBusinessHref(profile?.role, Boolean(user));
-  const supplierCta = listHref ?? '/signup/manufacturer';
+  // signed-out visitors register; manufacturers already signed in finish their map listing
+  const registerHref = listHref ?? LIST_BUSINESS_SIGNUP_HREF;
+  const registerLabel = profile?.role === 'supplier' ? 'Put my factory on the map' : 'Register your factory';
   const searched = Boolean(query || buyer || area || activeFilterCount > 0);
   useEffect(() => {
     if (prompt || loading || quote || (open && !desktop)) return;
@@ -505,9 +509,13 @@ export default function SupplierMapPage() {
             className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-[13.5px] outline-none focus:border-[#FF5A00]" />
         </label>
       </div>
+      <label className="flex min-h-[44px] cursor-pointer items-center justify-between gap-3 rounded-xl border border-border px-3">
+        <span className="flex items-center gap-1.5 text-[12.5px] font-semibold"><BadgeCheck className="h-4 w-4 text-emerald-500" aria-hidden="true" /> Verified by BulkSkart only</span>
+        <input type="checkbox" checked={draft.verified} onChange={(e) => setDraft({ ...draft, verified: e.target.checked })} className="h-5 w-5 accent-[#FF5A00]" />
+      </label>
       <fieldset>
         <legend className="text-[12px] font-semibold">Indian registration checked by BulkSkart</legend>
-        <p className="text-[10.5px] text-muted-foreground">Every supplier here is verified. Narrow Indian businesses to the ones whose:</p>
+        <p className="text-[10.5px] text-muted-foreground">Narrow to verified Indian businesses whose:</p>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           {([['cin', 'CIN / LLPIN'], ['gst', 'GSTIN'], ['udyam', 'Udyam']] as const).map(([k, label]) => (
             <button key={k} type="button" aria-pressed={draft[k]} onClick={() => setDraft({ ...draft, [k]: !draft[k] })}
@@ -531,22 +539,16 @@ export default function SupplierMapPage() {
     </span>
   );
 
-  const countLine = loading ? 'Searching…' : error ? '' : `${total.toLocaleString('en-IN')} verified manufacturer${total === 1 ? '' : 's'}${query ? ` for "${query}"` : ''}${buyer && radius && !area ? ` within ${radius} km of ${buyer.label}` : area ? ' in this area' : ''}`;
+  const countLine = loading ? 'Searching…' : error ? '' : `${total.toLocaleString('en-IN')}${filters.verified ? ' verified' : ''} manufacturer${total === 1 ? '' : 's'}${query ? ` for "${query}"` : ''}${buyer && radius && !area ? ` within ${radius} km of ${buyer.label}` : area ? ' in this area' : ''}`;
 
   const empty = !loading && !error && rows.length === 0 && (
     <div className="mx-auto max-w-sm rounded-2xl border border-border bg-card p-5 text-center shadow-xl">
       <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FF5A00]/12"><Factory className="h-6 w-6 text-[#FF5A00]" aria-hidden="true" /></span>
-      <p className="mt-3 text-[15px] font-black">No verified manufacturers {query || radius || activeFilterCount || area ? 'match this search' : 'on the map yet'}</p>
-      <p className="mt-1 text-[12.5px] leading-snug text-muted-foreground">
-        We only show businesses whose registration and factory location our team has checked, so the map fills up as manufacturers are approved.
-      </p>
-      <div className="mt-3 flex flex-col gap-2">
-        {(query || radius || activeFilterCount > 0 || area) && (
-          <button type="button" onClick={clearAll} className="min-h-[42px] rounded-xl border border-border text-[13px] font-bold hover:border-[#FF5A00]">Clear search and filters</button>
-        )}
-        <Link to={`/post-requirement${query ? `?q=${encodeURIComponent(query)}` : ''}`} className="flex min-h-[42px] items-center justify-center rounded-xl bg-[#FF5A00] text-[13px] font-bold text-white hover:bg-[#E04E00]">Post your requirement instead</Link>
-        <Link to={supplierCta} className="text-[12px] font-semibold text-[#E04E00] underline-offset-2 hover:underline dark:text-[#FF8A3D]">Manufacturer? Put your factory on the map</Link>
-      </div>
+      <p className="mt-3 text-[15px] font-black">No manufacturers {query || radius || activeFilterCount || area ? 'match this search' : 'on the map yet'}</p>
+      <p className="mt-1 text-[12.5px] leading-snug text-muted-foreground">Is your factory missing? Register it and get found by buyers.</p>
+      <Link to={registerHref} className="mt-3 flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[#FF5A00] text-[14px] font-black text-white hover:bg-[#E04E00]">
+        <Factory className="h-4 w-4" aria-hidden="true" /> {registerLabel}
+      </Link>
     </div>
   );
 
@@ -659,7 +661,7 @@ export default function SupplierMapPage() {
                 <>
                   <div className="shrink-0 space-y-1 border-b border-border p-4">
                     <div className="flex items-center justify-between gap-2">
-                      <h2 className="text-[16px] font-black">Verified manufacturers</h2>
+                      <h2 className="text-[16px] font-black">Manufacturers on the map</h2>
                       {live}
                     </div>
                     <div className="flex items-center justify-between gap-2">
@@ -668,8 +670,8 @@ export default function SupplierMapPage() {
                     </div>
                     {listHref && (
                       <Link to={listHref} className="mt-2 flex min-h-[40px] items-center justify-between gap-2 rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/8 px-3 text-[12.5px] font-bold hover:border-[#FF5A00]">
-                        <span className="flex items-center gap-1.5"><Factory className="h-4 w-4 text-[#FF5A00]" aria-hidden="true" /> Manufacturer or supplier?</span>
-                        <span className="text-[#E04E00] dark:text-[#FF8A3D]">List your business free →</span>
+                        <span className="flex items-center gap-1.5"><Factory className="h-4 w-4 text-[#FF5A00]" aria-hidden="true" /> Manufacturer?</span>
+                        <span className="text-[#E04E00] dark:text-[#FF8A3D]">{registerLabel} →</span>
                       </Link>
                     )}
                   </div>
@@ -678,9 +680,8 @@ export default function SupplierMapPage() {
                       <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-40 animate-pulse rounded-2xl bg-muted" />)}</div>
                     ) : rows.length === 0 ? (
                       <div className="p-3 text-center text-[12.5px] text-muted-foreground">
-                        <BadgeCheck className="mx-auto mb-2 h-8 w-8 text-emerald-500" aria-hidden="true" />
-                        Only businesses whose registration and factory our team has checked appear here.
-                        <Link to={supplierCta} className="mt-2 block font-bold text-[#E04E00] dark:text-[#FF8A3D]">Manufacturer? Get verified</Link>
+                        <Factory className="mx-auto mb-2 h-8 w-8 text-[#FF5A00]" aria-hidden="true" />
+                        Manufacturers with an active BulkSkart plan appear here. A green check means BulkSkart has verified them.
                       </div>
                     ) : view === 'map' ? list('grid-cols-1') : (
                       <p className="p-3 text-center text-[12.5px] text-muted-foreground">Pick a supplier to see the details here.</p>
@@ -720,7 +721,7 @@ export default function SupplierMapPage() {
                     {listHref && (
                       <div className="mx-3 mb-2 flex justify-end">
                         <Link to={listHref} className="pointer-events-auto inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[#FF5A00] px-3.5 text-[12px] font-black text-white shadow-lg">
-                          <Plus className="h-3.5 w-3.5" aria-hidden="true" /> List your business
+                          <Plus className="h-3.5 w-3.5" aria-hidden="true" /> {registerLabel}
                         </Link>
                       </div>
                     )}

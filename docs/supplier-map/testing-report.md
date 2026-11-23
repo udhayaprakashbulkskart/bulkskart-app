@@ -53,6 +53,49 @@ set up near Coimbatore, Tiruppur and Mumbai, and each was put in a different sta
 | Audit log | ✅ every submit and status change, with the actor and the note |
 | Existing admin page sets a company *verified* | ✅ still works; that company is not on the map until its application is approved too |
 
+## Paid plans and existing profiles (00072, `sql-tests/paid_check.mjs`)
+
+Run on top of 00071 and twice in a row, with 19 test companies.
+
+**On the map:**
+
+| Company | Placement | Mark |
+| --- | --- | --- |
+| Paid, unverified, Coimbatore | city | Premium |
+| Paid and verified, "mumbai" | city | Verified |
+| "Nehru place, Delhi" | Delhi | |
+| City and state swapped ("Maharashtra" / "Mumbai") | Mumbai | |
+| "Navi Mumbai" | Navi Mumbai, not Mumbai | |
+| Old name "Cochin" | Kochi's centre | |
+| Own pin, not yet checked | pinned | |
+| Checked pin | exact; the street address is shown | |
+| Dubai | city | |
+
+**Hidden:**
+- no paid plan, an expired plan, or a trial only;
+- no city and no pin;
+- blocked company, suspended owner, or a company an admin rejected;
+- a suspended map application;
+- demo companies.
+
+**Other checks:**
+- A verified company with a new application waiting shows as Premium.
+- "Verified only" returns only the verified company.
+- 60 km of Coimbatore returns the right two.
+- A text search finds companies with no products, by their description.
+- When a plan ends, the company leaves the map and a live-update signal is sent.
+- Visitors can't call the paid-plan check directly.
+
+**Browser (sample data):**
+- 3 profiles sharing Coimbatore's centre are fanned out so each can be tapped.
+- Only the 2 verified pins have the green check.
+- Cards show Verified or Premium, "(approx.)" for city-level places, and "No products listed yet".
+
+**Live site, empty map:**
+- The card shows a single "Register your factory" button, which opens `/register-factory`.
+- An empty submit there shows 7 messages and puts the cursor in the first field.
+- Not tested: creating a real account, because that would write to the live database.
+
 ## Worldwide (added after the first version)
 
 | Case | Result |
@@ -122,5 +165,5 @@ So no documents were exposed, and 00071 closes the gap before the first upload.
   self-hosted Realtime service. Test it after running the migration: approve a test company and watch the map.
 - **Sign-in flows.** The manufacturer and admin pages were type-checked and built, and the database functions they call
   are tested above. They were not clicked through in a browser while signed in, because that needs real accounts.
-- **Map tiles.** The sandbox blocks the CARTO tile servers, so tiles were stubbed in the browser test.
+- **Map tiles (fixed 23 Nov 2026).** The first version used CARTO tiles, which this sandbox could not reach, so they were stubbed in testing. On the live site they showed "API KEY REQUIRED". The map now uses OpenStreetMap tiles. They were checked here with real tiles, in dark and light themes and on desktop and phone: 20 tiles loaded, 0 failed, no CARTO requests.
 - **Production data.** Today no company meets every rule, so the live map is empty until the first approvals.
