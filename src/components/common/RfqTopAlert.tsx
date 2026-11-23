@@ -50,9 +50,13 @@ async function loadLeads(): Promise<Lead[]> {
   return usableLeads((data ?? []) as unknown as Lead[]).slice(0, LIMIT);
 }
 
-/** On phones the Download App popup also sits at the top; the RFQ popup waits while it is open. */
+/**
+ * The RFQ popup waits while something else needs the screen: an open panel or dialog (such as RFQ details, whose
+ * title it would cover), or on phones the Download App popup at the top.
+ */
 function topSpotTaken(): boolean {
   if (typeof window === 'undefined') return false;
+  if (document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]')) return true;
   const phone = window.matchMedia?.('(max-width: 767px)').matches;
   return Boolean(phone && document.getElementById('download-app-title'));
 }

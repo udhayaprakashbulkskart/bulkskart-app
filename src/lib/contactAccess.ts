@@ -32,3 +32,14 @@ export function withoutProfileContacts(select: string): string {
     return `${head}(${kept.join(',') || 'id'})`;
   });
 }
+
+const EMAIL_IN_TEXT = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
+// 9+ digits with spaces, dots, dashes or brackets between them: phone numbers, not quantities, dates or addresses
+const PHONE_IN_TEXT = /\+?\d[\d\s().-]{7,}\d/g;
+
+/** Text a buyer wrote, with phone numbers and email addresses in it replaced by dots (for people without a paid plan). */
+export function maskContactsInText(text: string): string {
+  return text
+    .replace(EMAIL_IN_TEXT, '•••••@•••••')
+    .replace(PHONE_IN_TEXT, (m) => (m.replace(/\D/g, '').length >= 9 ? '••••• •••••' : m));
+}
