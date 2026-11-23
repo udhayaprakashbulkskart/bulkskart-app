@@ -28,6 +28,10 @@ const SEOHubPage              = lazy(() => import('./pages/SEOHubPage'));
 const BlogDetailPage          = lazy(() => import('./pages/BlogDetailPage'));
 // All categories and subcategories on one page (the earlier hub, pages/CategoriesPage.tsx, is kept in the repo)
 const AllCategoriesPage       = lazy(() => import('./pages/AllCategoriesPage'));
+// Live Verified Supplier Map (migration 00071)
+const SupplierMapPage         = lazy(() => import('./pages/SupplierMapPage'));
+const SupplierMapListingPage  = lazy(() => import('./pages/dashboard/supplier/SupplierMapListingPage'));
+const AdminVerificationsPage  = lazy(() => import('./pages/dashboard/admin/AdminVerificationsPage'));
 
 // ─── Lazy: auth-required pages ────────────────────────────────────────────────
 const PostRequirementPage     = lazy(() => import('./pages/PostRequirementPage'));
@@ -128,6 +132,7 @@ export const routes: RouteConfig[] = [
   // ── Public Dynamic Catalog & Entity Pages ────────────────────
   { name: 'Product Detail', path: '/products/:slug', element: <ProductDetailPage />, public: true },
   { name: 'Categories Hub', path: '/categories', element: <AllCategoriesPage />, public: true },
+  { name: 'Supplier Map', path: '/supplier-map', element: <SupplierMapPage />, public: true },
   { name: 'Categories Slug Hub', path: '/categories/:slug', element: <AllCategoriesPage />, public: true },
   { name: 'Category Route', path: '/category/:slug', element: <AllCategoriesPage />, public: true },
   { name: 'Login Alias', path: '/login', element: <AuthPage />, public: true },
@@ -194,6 +199,7 @@ export const routes: RouteConfig[] = [
   { name: 'Supplier Messages', path: '/dashboard/supplier/messages', element: <MessagesPage /> },
   { name: 'Supplier Profile', path: '/dashboard/supplier/profile', element: <SupplierProfilePage /> },
   { name: 'Supplier Verification', path: '/dashboard/supplier/verification', element: <SupplierVerificationPage /> },
+  { name: 'Supplier Map Listing', path: '/dashboard/supplier/map-listing', element: <SupplierMapListingPage /> },
   { name: 'Supplier Notifications', path: '/dashboard/supplier/notifications', element: <NotificationsPage /> },
   { name: 'Supplier Disputes', path: '/dashboard/supplier/disputes', element: <DisputeCenterPage /> },
   { name: 'Supplier Orders', path: '/dashboard/supplier/orders', element: <SupplierOrdersPage /> },
@@ -220,6 +226,7 @@ export const routes: RouteConfig[] = [
   { name: 'Manufacturer Messages', path: '/dashboard/manufacturer/messages', element: <MessagesPage /> },
   { name: 'Manufacturer Profile', path: '/dashboard/manufacturer/profile', element: <SupplierProfilePage /> },
   { name: 'Manufacturer Verification', path: '/dashboard/manufacturer/verification', element: <SupplierVerificationPage /> },
+  { name: 'Manufacturer Map Listing', path: '/dashboard/manufacturer/map-listing', element: <SupplierMapListingPage /> },
   { name: 'Manufacturer Disputes', path: '/dashboard/manufacturer/disputes', element: <DisputeCenterPage /> },
   { name: 'Manufacturer Orders', path: '/dashboard/manufacturer/orders', element: <SupplierOrdersPage /> },
   { name: 'Manufacturer Order Tracking', path: '/dashboard/manufacturer/orders/:orderId', element: <OrderTrackingPage /> },
@@ -257,6 +264,7 @@ export const routes: RouteConfig[] = [
   { name: 'Admin Public Requirements', path: '/dashboard/admin/public-requirements', element: <AdminPublicRequirementsPage /> },
   { name: 'Admin Payments', path: '/dashboard/admin/payments', element: <AdminPaymentsPage /> },
   { name: 'Super Admin', path: '/dashboard/admin/super', element: <SuperAdminPage /> },
+  { name: 'Business Verifications', path: '/dashboard/admin/verifications', element: <AdminVerificationsPage /> },
 
   // ── Company / Legal ───────────────────────────────────────────
   { name: 'About Us',      path: '/about',         element: <AboutPage />,        public: true },

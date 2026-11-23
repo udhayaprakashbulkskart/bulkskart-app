@@ -45,7 +45,7 @@ describe('"New RFQ Posted!" popup', () => {
     expect(rfqAlertsOff()).toBe(true);
     setRfqAlertsOff(false);
     expect(rfqAlertsOff()).toBe(false);
-    for (const path of ['/auth', '/post-requirement', '/checkout/1', '/dashboard/supplier/settings']) expect(NO_RFQ_ALERT_PATHS.test(path), path).toBe(true);
+    for (const path of ['/auth', '/post-requirement', '/checkout/1', '/dashboard/supplier/settings', '/supplier-map']) expect(NO_RFQ_ALERT_PATHS.test(path), path).toBe(true);
     for (const path of ['/', '/products', '/requirements', '/dashboard/supplier']) expect(NO_RFQ_ALERT_PATHS.test(path), path).toBe(false);
     const feed = src('src/components/common/LiveRequirementsFeed.tsx');
     // hidden from the popup itself; the Live RFQ section offers to turn them back on

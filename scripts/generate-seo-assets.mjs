@@ -35,6 +35,11 @@ const STATIC_PAGES = [
     description: 'Search verified factories, exporters, and OEM manufacturers. Filter by certification and connect on BulkSkart.',
   },
   {
+    path: '/supplier-map',
+    title: 'Live Verified Supplier Map – Find Manufacturers Near You | BulkSkart',
+    description: 'Find verified Indian manufacturers near you on a live map. Every factory is checked by BulkSkart: registration, location and active products.',
+  },
+  {
     path: '/categories',
     title: 'All B2B Product Categories & Industry Directory | BulkSkart',
     description: 'Explore industrial bulk product categories on BulkSkart, from machinery and textiles to raw materials.',

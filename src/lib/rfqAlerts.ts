@@ -73,9 +73,9 @@ export const CYCLE_MS = 10_000;
 /** How long each one stays before sliding away. */
 export const VISIBLE_MS = 7_000;
 
-/** Pages where the popup would get in the way. */
+/** Pages where the popup would get in the way (the supplier map is a full-screen map with its own prompt). */
 export const NO_RFQ_ALERT_PATHS =
-  /^\/(auth|login|register|signup|forgot-password|reset-password|checkout|payment|pay|post-requirement|business-setup|onboarding)(\/|$)|\/(negotiation|settings)(\/|$)/;
+  /^\/(auth|login|register|signup|forgot-password|reset-password|checkout|payment|pay|post-requirement|business-setup|onboarding|supplier-map)(\/|$)|\/(negotiation|settings)(\/|$)/;
 
 export type RfqLead = Pick<
   Requirement,

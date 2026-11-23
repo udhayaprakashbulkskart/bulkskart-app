@@ -178,6 +178,7 @@ describe('Dashboard shell: the top bar', () => {
       'Messages',
       'Notifications',
       'Verification',
+      'Supplier Map',
       'Disputes',
       'Analytics',
       'Subscription',
@@ -187,10 +188,10 @@ describe('Dashboard shell: the top bar', () => {
     expect(menu().getByRole('link', { name: 'My Products' })).not.toHaveAttribute('aria-current');
   });
 
-  it('has five sections for an admin: control panel, analytics, reports, public requirements and payments', () => {
+  it('has six sections for an admin: control panel, analytics, verifications, reports, public requirements and payments', () => {
     signIn('admin');
     renderAt('/dashboard/admin');
-    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Reports', 'Public Requirements', 'Payments']);
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Verifications', 'Reports', 'Public Requirements', 'Payments']);
   });
 
   it('has no More button: nothing in the menu is hidden behind a button', () => {

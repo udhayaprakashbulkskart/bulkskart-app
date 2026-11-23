@@ -21,12 +21,26 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
+/**
+ * One exception: the Live Verified Supplier Map's brief asks for green "verified" marks (and green "approved" states
+ * on its supplier and admin screens), so emerald is allowed in those files only.
+ */
+const VERIFIED_GREEN_FILES = [
+  '/src/components/supplierMap/',
+  '/src/pages/SupplierMapPage.tsx',
+  '/src/pages/dashboard/supplier/SupplierMapListingPage.tsx',
+  '/src/pages/dashboard/admin/AdminVerificationsPage.tsx',
+];
+
 describe('colour palette', () => {
   it('uses no Tailwind colour classes outside white, black (neutral), orange and red', () => {
     const found: string[] = [];
     for (const file of sourceFiles(join(process.cwd(), 'src'))) {
-      const hits = readFileSync(file, 'utf8').match(CLASS);
-      if (hits) found.push(`${file.replace(process.cwd(), '')}: ${[...new Set(hits)].join(', ')}`);
+      const rel = file.replace(process.cwd(), '');
+      const allowGreen = VERIFIED_GREEN_FILES.some((f) => rel.startsWith(f));
+      const hits = (readFileSync(file, 'utf8').match(CLASS) ?? []).filter((h) => !(allowGreen && /-emerald-/.test(h)));
+      if (hits.length === 0) continue;
+      found.push(`${rel}: ${[...new Set(hits)].join(', ')}`);
     }
     expect(found).toEqual([]);
   });
