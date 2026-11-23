@@ -91,6 +91,11 @@
   .bsm-pin { transition: none; }
 }
 
+/* dark mode: OpenStreetMap's light tiles turned dark (black land, grey roads, readable labels) */
+.bsm-tiles-dark {
+  filter: invert(100%) hue-rotate(180deg) brightness(92%) contrast(88%) saturate(55%);
+}
+
 /* Leaflet chrome */
 .bsm-map.leaflet-container,
 .bsm-map .leaflet-container {

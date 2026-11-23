@@ -51,7 +51,7 @@ export default function LocationPickerMap({ value, onChange, focus, theme, readO
     if (!m) return;
     const cfg = baseTiles(theme);
     tiles.current?.remove();
-    tiles.current = L.tileLayer(cfg.url, { attribution: cfg.attribution, subdomains: cfg.subdomains ?? 'abc', maxZoom: cfg.maxZoom, detectRetina: true }).addTo(m);
+    tiles.current = L.tileLayer(cfg.url, { attribution: cfg.attribution, subdomains: cfg.subdomains ?? 'abc', maxZoom: cfg.maxZoom, detectRetina: cfg.detectRetina, className: cfg.className }).addTo(m);
   }, [theme]);
 
   useEffect(() => {

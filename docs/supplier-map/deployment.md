@@ -33,12 +33,17 @@ Map tiles are optional settings, not secrets:
 
 | Variable | Default |
 | --- | --- |
-| `VITE_MAP_TILE_URL_DARK`, `VITE_MAP_TILE_URL_LIGHT` | CARTO dark/light basemaps |
-| `VITE_MAP_TILE_ATTRIBUTION` | OpenStreetMap + CARTO |
+| `VITE_MAP_TILE_URL_DARK`, `VITE_MAP_TILE_URL_LIGHT` | OpenStreetMap tiles (dark mode: the same tiles, filtered) |
+| `VITE_MAP_TILE_ATTRIBUTION` | OpenStreetMap contributors |
 | `VITE_MAP_SATELLITE_URL`, `VITE_MAP_SATELLITE_ATTRIBUTION` | No satellite layer |
 
-CARTO's free basemaps are meant for limited, non-commercial use. For a busy commercial site, take a plan with a tile
-provider (MapTiler, Stadia Maps, CARTO Enterprise), put its tile URL in the variables above, and keep the attribution.
+The map background is OpenStreetMap's own tiles. They need no API key; the attribution shown on the map is required.
+Dark mode is the same tiles with a colour filter. OpenStreetMap serves them from donated servers for moderate use
+(https://operations.osmfoundation.org/policies/tiles/). When traffic grows, or for English labels everywhere, take a
+plan with a tile provider (MapTiler, Stadia Maps, CARTO), put its tile URL with your key into the variables above,
+rebuild, and keep its attribution. No code change is needed.
+
+CARTO's basemaps without a key show "API KEY REQUIRED" on a live domain, which is why they are no longer the default.
 
 New pages:
 - `/supplier-map`: public. It is in the header menu and the sitemap.

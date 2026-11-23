@@ -122,5 +122,5 @@ So no documents were exposed, and 00071 closes the gap before the first upload.
   self-hosted Realtime service. Test it after running the migration: approve a test company and watch the map.
 - **Sign-in flows.** The manufacturer and admin pages were type-checked and built, and the database functions they call
   are tested above. They were not clicked through in a browser while signed in, because that needs real accounts.
-- **Map tiles.** The sandbox blocks the CARTO tile servers, so tiles were stubbed in the browser test.
+- **Map tiles (fixed 23 Nov 2026).** The first version used CARTO tiles, which this sandbox could not reach, so they were stubbed in testing. On the live site they showed "API KEY REQUIRED". The map now uses OpenStreetMap tiles. They were checked here with real tiles, in dark and light themes and on desktop and phone: 20 tiles loaded, 0 failed, no CARTO requests.
 - **Production data.** Today no company meets every rule, so the live map is empty until the first approvals.

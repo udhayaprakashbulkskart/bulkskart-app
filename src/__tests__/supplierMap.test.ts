@@ -6,6 +6,7 @@ import { formatKm, matchSupplier, timeAgo } from '@/lib/supplierMap/matchScore';
 import { COUNTRY_NAMES, findPlace, kmBetween, normaliseBounds, PLACES, placeLabel, placeLine, RADIUS_OPTIONS, searchPlaces } from '@/lib/supplierMap/places';
 import { answerListingPrompt, LIST_BUSINESS_SIGNUP_HREF, listBusinessHref, markListingOffered, shouldOfferListing } from '@/lib/supplierMap/listBusinessPrompt';
 import { docPathFromUrl, privateDocRef } from '@/lib/supplierMap/docPath';
+import { baseTiles } from '@/lib/supplierMap/tiles';
 import type { MapSupplier } from '@/lib/supplierMap/types';
 
 const supplier = (over: Partial<MapSupplier> = {}): MapSupplier => ({
@@ -141,6 +142,20 @@ describe('places', () => {
     expect(normaliseBounds({ south: -25, west: 170, north: -10, east: 190 })).toEqual({ south: -25, west: 170, north: -10, east: -170 });
     expect(normaliseBounds({ south: -100, west: -300, north: 100, east: 300 })).toEqual({ south: -90, west: -180, north: 90, east: 180 });
     expect(normaliseBounds({ south: 10, west: 70, north: 20, east: 80 })).toEqual({ south: 10, west: 70, north: 20, east: 80 });
+  });
+});
+
+describe('map tiles', () => {
+  it('use a background that needs no API key on the live site (CARTO without a key shows "API KEY REQUIRED")', () => {
+    for (const theme of ['dark', 'light'] as const) {
+      const t = baseTiles(theme);
+      expect(t.url).toBe('https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+      expect(t.url).not.toMatch(/cartocdn|api_key|apikey|key=/i);
+      expect(t.attribution).toMatch(/OpenStreetMap/);
+      expect(t.detectRetina).toBe(false);
+    }
+    expect(baseTiles('dark').className).toBe('bsm-tiles-dark');
+    expect(baseTiles('light').className).toBeUndefined();
   });
 });
 
