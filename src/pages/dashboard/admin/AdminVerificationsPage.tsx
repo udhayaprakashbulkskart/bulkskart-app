@@ -156,7 +156,7 @@ function HistoryList({ entries, compact = false }: { entries: AuditEntry[]; comp
 
 function ApplicationCard({ a, open, onToggle, onChanged }: { a: AdminApplication; open: boolean; onToggle: () => void; onChanged: () => void }) {
   const { theme } = useTheme();
-  const [checks, setChecks] = useState({ cin: a.cin_verified, gst: a.gst_verified, udyam: a.udyam_verified });
+  const [checks, setChecks] = useState({ cin: a.cin_verified, gst: a.gst_verified, udyam: a.udyam_verified, registry: a.registry_verified });
   const [note, setNote] = useState('');
   const [locNote, setLocNote] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
@@ -212,13 +212,13 @@ function ApplicationCard({ a, open, onToggle, onChanged }: { a: AdminApplication
     if (!(await openPrivateDocument(path))) toast.error('Could not open the file (it may have been removed)');
   };
 
-  const check = (key: 'cin' | 'gst' | 'udyam', label: string, value: string | null, portal: string) =>
+  const check = (key: 'cin' | 'gst' | 'udyam' | 'registry', label: string, value: string | null, portal: string, portalLabel = 'Check on portal') =>
     value ? (
       <div className="rounded-xl border border-border p-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
           <a href={portal} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11.5px] font-bold text-[#E04E00] dark:text-[#FF8A3D]">
-            Check on portal <ExternalLink className="h-3 w-3" aria-hidden="true" />
+            {portalLabel} <ExternalLink className="h-3 w-3" aria-hidden="true" />
           </a>
         </div>
         <p className="mt-0.5 select-all font-mono text-[13.5px] font-bold">{value}</p>
@@ -263,6 +263,14 @@ function ApplicationCard({ a, open, onToggle, onChanged }: { a: AdminApplication
               {check('cin', a.entity_type === 'llp' ? 'LLPIN (MCA)' : 'CIN (MCA)', a.cin_llpin, PORTALS.mca)}
               {check('gst', 'GSTIN', a.gstin, PORTALS.gst)}
               {check('udyam', 'Udyam', a.udyam_number, PORTALS.udyam)}
+              {check('registry', `Registration in ${a.registration_country ?? 'its country'}`, a.registration_number,
+                `https://opencorporates.com/companies?q=${encodeURIComponent(a.legal_name)}`, 'Search OpenCorporates')}
+              {a.entity_type === 'foreign_company' && (
+                <p className="text-[11.5px] text-muted-foreground">
+                  Registered outside India: approve only after finding it in the official company registry of {a.registration_country ?? 'its country'} (OpenCorporates links to most
+                  registries) and checking the name, number and status match the certificate.
+                </p>
+              )}
               {incorporated && <p className="text-[11.5px] text-muted-foreground">A {entityLabel(a.entity_type).toLowerCase()} is approved only on its checked {a.entity_type === 'llp' ? 'LLPIN' : 'CIN'}. A GSTIN alone does not prove incorporation.</p>}
             </div>
           </div>
@@ -294,7 +302,7 @@ function ApplicationCard({ a, open, onToggle, onChanged }: { a: AdminApplication
                   </Suspense>
                 </div>
                 <div className="space-y-2 text-[12.5px]">
-                  <p>{loc.address}{loc.city ? `, ${loc.city}` : ''}{loc.state ? `, ${loc.state}` : ''} {loc.pincode ?? ''}</p>
+                  <p>{loc.address}{loc.city ? `, ${loc.city}` : ''}{loc.state ? `, ${loc.state}` : ''} {loc.pincode ?? ''}{loc.country ? `, ${loc.country}` : ''}</p>
                   <p className="text-muted-foreground">Factory address on the application: {a.factory_address}</p>
                   <a href={`https://www.google.com/maps/search/?api=1&query=${loc.latitude},${loc.longitude}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-bold text-[#E04E00] dark:text-[#FF8A3D]">
                     Check the pin on Google Maps <ExternalLink className="h-3 w-3" aria-hidden="true" />

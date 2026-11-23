@@ -106,7 +106,7 @@ export function matchSupplier(s: MapSupplier, input: MatchInput): MatchResult {
 
   {
     const max = WEIGHTS.checks;
-    const checked = [s.cin_verified && 'CIN/LLPIN', s.gst_verified && 'GSTIN', s.udyam_verified && 'Udyam'].filter(Boolean) as string[];
+    const checked = [s.cin_verified && 'CIN/LLPIN', s.gst_verified && 'GSTIN', s.udyam_verified && 'Udyam', s.registry_verified && 'Company registry'].filter(Boolean) as string[];
     const f = checked.length >= 2 ? 1 : checked.length === 1 ? 0.7 : 0.5;
     parts.push({ key: 'checks', label: 'Registration', points: Math.round(max * f), max, reason: checked.length ? `${checked.join(' + ')} checked by BulkSkart` : 'Verified by BulkSkart' });
   }

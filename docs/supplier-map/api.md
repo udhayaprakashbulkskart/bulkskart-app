@@ -27,12 +27,16 @@ Verified manufacturers, filtered and sorted by distance. Only companies that pas
 | `p_south`, `p_west`, `p_north`, `p_east` | float | Map viewport ("Search this area"). |
 | `p_limit` | int | Page size; default 100, at most 200. |
 | `p_offset` | int | Paging. |
+| `p_country` | text | Only factories in this country, e.g. `Vietnam` (not case-sensitive). |
+
+Viewport longitudes run from -180 to 180. When the view crosses the 180th meridian, send `p_west > p_east`.
 
 Each row returns:
 - `company_id`, `company_name`, `slug`, `business_type`;
-- the factory's `city`, `state`, `latitude`, `longitude`, and `distance_km`;
+- the factory's `city`, `state`, `country`, `latitude`, `longitude`, and `distance_km`;
 - `rating`, `review_count`, `logo_url`, `cover_url`;
-- `gst_verified`, `cin_verified`, `udyam_verified`, `verified_since`;
+- `gst_verified`, `cin_verified`, `udyam_verified`, `registry_verified` (a registration abroad that was checked),
+  `verified_since`;
 - `matched_products` (up to 6: id, name, slug, moq, moq_unit, price_min, price_max, currency, image, category),
   `product_count`, `min_moq`, `moq_unit`;
 - availability: `monthly_capacity`, `capacity_unit`, `lead_time_days`, `stock_status`, `supply_type`,
@@ -56,14 +60,17 @@ Subscribe to `INSERT` on `public.supplier_map_changes` to learn when something o
 
 | Function | Does | Errors |
 | --- | --- | --- |
-| `supplier_submit_business_verification(p jsonb) → 'pending'` | Creates or replaces the application (see the keys below). Any change sets it back to `pending`. | `company_required`, `invalid_entity_type`, `missing_details`, `cin_required`, `llpin_required`, `invalid_gstin`, `invalid_udyam`, `gst_or_udyam_required`, `documents_required`, `invalid_document_path`, `suspended_contact_support` |
+| `supplier_submit_business_verification(p jsonb) → 'pending'` | Creates or replaces the application (see the keys below). Any change sets it back to `pending`. | `company_required`, `invalid_entity_type`, `missing_details`, `cin_required`, `llpin_required`, `invalid_gstin`, `invalid_udyam`, `gst_or_udyam_required`, `registration_country_required`, `registration_number_required`, `documents_required`, `invalid_document_path`, `suspended_contact_support` |
 | `supplier_save_factory_location(p_lat, p_lng, p_address, p_city, p_state, p_country, p_pincode) → status` | Saves the factory pin. A new position or address goes back to `pending`. | `invalid_location`, `address_required` |
 | `supplier_update_availability(p_monthly_capacity, p_capacity_unit, p_lead_time_days, p_stock_status, p_supply_type)` | Updates availability and stamps `availability_updated_at`. No review is needed. | `location_first` |
 | `supplier_map_status() → jsonb` | What is missing before the company shows: `business`, `location`, `active_products`, `account_active`, `blocked`, `on_map`. | |
 
 Keys of `p` for `supplier_submit_business_verification`:
-- `entity_type`: one of `private_limited`, `public_limited`, `llp`, `partnership`, `proprietorship`, `other`;
+- `entity_type`: one of `private_limited`, `public_limited`, `llp`, `partnership`, `proprietorship`, `other`,
+  `foreign_company`;
 - `legal_name`, `cin_llpin`, `gstin`, `udyam_number`;
+- for `foreign_company`: `registration_country` (not India) and `registration_number` (3 to 50 letters, digits,
+  spaces, `.`, `/` or `-`). CIN, GSTIN and Udyam are then ignored;
 - `registered_address`, `factory_address`;
 - `contact_name`, `contact_phone`, `contact_email`;
 - `documents`: `[{ kind, path, name }]`, with each `path` inside `<auth.uid()>/` of the `verification-docs` bucket.
@@ -84,7 +91,7 @@ Allowed values:
 Each row returns the application, plus `company_name`, `owner_email`, `location` (jsonb), `active_products` and
 `on_map`. At most 200 rows.
 
-### `admin_decide_business_verification(p_company, p_decision, p_note, p_gst_verified, p_cin_verified, p_udyam_verified) → status`
+### `admin_decide_business_verification(p_company, p_decision, p_note, p_gst_verified, p_cin_verified, p_udyam_verified, p_registry_verified) → status`
 
 `p_decision` takes:
 
@@ -97,7 +104,8 @@ Each row returns the application, plus `company_name`, `owner_email`, `location`
 | `recheck` | Sends it back to pending. |
 
 How the decision works:
-- The three flags record which numbers the admin checked on the official portals.
+- The four flags record which numbers the admin checked: GSTIN, CIN/LLPIN and Udyam on the Indian portals, and the
+  registry flag for a business registered abroad (checked in that country's company registry).
 - Approving syncs `companies.verification_status`, `is_verified`, `verified_at`, `verified_by` and
   `verification_expiry_at`, and sets `recheck_due_at` to one year ahead.
 - A `reject` or `suspend` sets the company to `rejected` with the reason.
@@ -105,6 +113,7 @@ How the decision works:
 Errors:
 - `note_required`: rejecting, asking for information and suspending all need a note.
 - `cin_not_verified`: a company or LLP was approved without its CIN/LLPIN checked.
+- `registry_not_verified`: a business registered abroad was approved without its registration checked.
 - `registration_not_verified`: another business was approved without a checked GSTIN or Udyam number.
 
 ### `admin_decide_factory_location(p_company, p_decision, p_note) → status`

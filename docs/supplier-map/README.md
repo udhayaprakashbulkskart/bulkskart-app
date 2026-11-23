@@ -1,7 +1,43 @@
 # Live Verified Supplier Map
 
-Buyers find verified Indian manufacturers near them on a map (`/supplier-map`). Manufacturers apply to be listed
-(`/dashboard/supplier/map-listing`), and admins check and approve them (`/dashboard/admin/verifications`).
+Buyers anywhere in the world find verified manufacturers near them, or in any country, on a map (`/supplier-map`).
+Manufacturers in India or abroad apply to be listed (`/dashboard/supplier/map-listing`), and admins check and approve
+them (`/dashboard/admin/verifications`).
+
+## Worldwide
+
+- **Where the buyer is.** A buyer sets their location in one of three ways:
+  - search about 190 trading cities in more than 70 countries by city or country name;
+  - use the device's location;
+  - use "the centre of the map" for anywhere else.
+
+  The location is used only to measure distance and is never saved. The radius chips run Nearby / 10 / 25 / 50 /
+  100 km, then **Worldwide**.
+- **Filters.** Results can be filtered by factory country. "Search this area" works anywhere, including across the
+  180th meridian.
+- **Factories abroad.** A factory can be in any country; the manufacturer chooses the country when placing the pin.
+- **Registered outside India.** A business registered abroad applies as "Business registered outside India", with its
+  country and company registration number instead of CIN/GSTIN/Udyam. An admin approves it only after finding it in
+  that country's official company registry: the admin page links to OpenCorporates, and the database refuses approval
+  without the "registration checked" tick.
+- **Signup.** Manufacturer signup has a Country field. Outside India the GST field is hidden and the state is free text.
+
+## "List your business" for new visitors
+
+A visitor who is not signed in and searches the map gets a popup after a few seconds, or sooner when nothing matched:
+"Do you make or sell products in bulk? List your business — it's free".
+
+| Choice | What happens |
+| --- | --- |
+| **List your business** | Goes to `/signup/manufacturer?redirect=/dashboard/supplier/map-listing`: signup, then straight to the map listing page. |
+| **I'm a buyer** | Hides the popup for 90 days. |
+| **Not now**, close or Esc | Hides it for 3 days. |
+
+It shows at most once per visit. A "List your business" button also stays on the page: in the results panel on
+desktop, above the cards on phones. Signed-in manufacturers get a link to their listing page instead, and signed-in
+buyers don't see it.
+
+The site's Download App popup and "New RFQ" alert stay off the map page so they don't cover the search bar.
 
 It is a separate module. It reuses the existing accounts, companies, products, auth, the private
 `verification-docs` storage bucket and the Instant Quote form. It deletes no data, and existing pages keep working.

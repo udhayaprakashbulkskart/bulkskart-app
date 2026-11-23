@@ -12,27 +12,35 @@
 -- Pending, needs-info, rejected and suspended businesses never appear.
 --
 -- Verification: the manufacturer submits legal details and documents; the database checks the formats; an admin
--- checks the registration (official portals: MCA for CIN/LLPIN, GST taxpayer search, Udyam) and approves or rejects.
--- Nothing is approved automatically, and a GSTIN alone never counts as proof of incorporation: a company or LLP is
--- approved only with its CIN/LLPIN checked. Every status change is written to verification_audit_log.
+-- checks the registration (official portals: MCA for CIN/LLPIN, GST taxpayer search, Udyam; for a business registered
+-- outside India, that country's official company registry) and approves or rejects. Nothing is approved
+-- automatically, and a GSTIN alone never counts as proof of incorporation: a company or LLP is approved only with its
+-- CIN/LLPIN checked, and a business registered abroad only with its registration checked in that country's registry.
+-- Every status change is written to verification_audit_log.
+--
+-- Worldwide: buyers search from anywhere, and factories can be anywhere (each location has its country).
 --
 -- The factory location is the registered factory address, pinned once by the manufacturer and checked by an admin.
 -- No live GPS is collected.
 --
 -- It also makes the business document buckets private again (00033 had opened them to everyone).
 --
--- Run by hand in the Supabase SQL editor after 00070. Safe to run again. One transaction.
+-- Run by hand in the Supabase SQL editor after 00070. Safe to run again (also over an earlier copy of this file).
+-- One transaction.
 
 BEGIN;
 
 -- ── Business registration applications (one current application per company) ──
 CREATE TABLE IF NOT EXISTS public.business_verifications (
   company_id uuid PRIMARY KEY REFERENCES public.companies(id) ON DELETE CASCADE,
-  entity_type text NOT NULL CHECK (entity_type IN ('private_limited', 'public_limited', 'llp', 'partnership', 'proprietorship', 'other')),
+  entity_type text NOT NULL CHECK (entity_type IN ('private_limited', 'public_limited', 'llp', 'partnership', 'proprietorship', 'other', 'foreign_company')),
   legal_name text NOT NULL,
   cin_llpin text,
   gstin text,
   udyam_number text,
+  -- a business registered outside India: the country and its company registry / business licence number
+  registration_country text,
+  registration_number text,
   registered_address text NOT NULL,
   factory_address text NOT NULL,
   contact_name text NOT NULL,
@@ -45,6 +53,7 @@ CREATE TABLE IF NOT EXISTS public.business_verifications (
   gst_verified boolean NOT NULL DEFAULT false,
   cin_verified boolean NOT NULL DEFAULT false,
   udyam_verified boolean NOT NULL DEFAULT false,
+  registry_verified boolean NOT NULL DEFAULT false,
   decision_note text,
   submitted_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   submitted_at timestamptz NOT NULL DEFAULT now(),
@@ -54,6 +63,13 @@ CREATE TABLE IF NOT EXISTS public.business_verifications (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS business_verifications_status_idx ON public.business_verifications (status, submitted_at DESC);
+-- when an earlier copy of this file already created the table
+ALTER TABLE public.business_verifications ADD COLUMN IF NOT EXISTS registration_country text;
+ALTER TABLE public.business_verifications ADD COLUMN IF NOT EXISTS registration_number text;
+ALTER TABLE public.business_verifications ADD COLUMN IF NOT EXISTS registry_verified boolean NOT NULL DEFAULT false;
+ALTER TABLE public.business_verifications DROP CONSTRAINT IF EXISTS business_verifications_entity_type_check;
+ALTER TABLE public.business_verifications ADD CONSTRAINT business_verifications_entity_type_check
+  CHECK (entity_type IN ('private_limited', 'public_limited', 'llp', 'partnership', 'proprietorship', 'other', 'foreign_company'));
 
 -- ── Registered factory location and availability ──
 CREATE TABLE IF NOT EXISTS public.factory_locations (
@@ -79,6 +95,7 @@ CREATE TABLE IF NOT EXISTS public.factory_locations (
 );
 -- distance searches first narrow by a latitude/longitude box, then measure exactly
 CREATE INDEX IF NOT EXISTS factory_locations_verified_latlng_idx ON public.factory_locations (latitude, longitude) WHERE status = 'verified';
+CREATE INDEX IF NOT EXISTS factory_locations_verified_country_idx ON public.factory_locations (lower(country)) WHERE status = 'verified';
 
 -- ── Audit log of every verification decision ──
 CREATE TABLE IF NOT EXISTS public.verification_audit_log (
@@ -295,8 +312,11 @@ AS $$
   ));
 $$;
 
--- ── Search: verified manufacturers, optionally by product, around a point, in a map viewport ──
-CREATE OR REPLACE FUNCTION public.map_search_suppliers(
+-- ── Search: verified manufacturers, optionally by product, around a point, in a map viewport, anywhere in the world ──
+-- (the earlier signature, without p_country, is replaced)
+DROP FUNCTION IF EXISTS public.map_search_suppliers(text, double precision, double precision, double precision, text, numeric, numeric, text, boolean, boolean, boolean, double precision, double precision, double precision, double precision, integer, integer);
+DROP FUNCTION IF EXISTS public.map_search_suppliers(text, double precision, double precision, double precision, text, numeric, numeric, text, boolean, boolean, boolean, double precision, double precision, double precision, double precision, integer, integer, text);
+CREATE FUNCTION public.map_search_suppliers(
   p_query text DEFAULT NULL,
   p_lat double precision DEFAULT NULL,
   p_lng double precision DEFAULT NULL,
@@ -313,13 +333,14 @@ CREATE OR REPLACE FUNCTION public.map_search_suppliers(
   p_north double precision DEFAULT NULL,
   p_east double precision DEFAULT NULL,
   p_limit integer DEFAULT 100,
-  p_offset integer DEFAULT 0
+  p_offset integer DEFAULT 0,
+  p_country text DEFAULT NULL
 )
 RETURNS TABLE (
-  company_id uuid, company_name text, slug text, business_type text, city text, state text,
+  company_id uuid, company_name text, slug text, business_type text, city text, state text, country text,
   latitude double precision, longitude double precision, distance_km double precision,
   rating numeric, review_count integer, logo_url text, cover_url text,
-  gst_verified boolean, cin_verified boolean, udyam_verified boolean, verified_since timestamptz,
+  gst_verified boolean, cin_verified boolean, udyam_verified boolean, registry_verified boolean, verified_since timestamptz,
   matched_products jsonb, product_count integer, min_moq numeric, moq_unit text,
   monthly_capacity numeric, capacity_unit text, lead_time_days integer, stock_status text, supply_type text,
   availability_updated_at timestamptz, total_count bigint
@@ -332,27 +353,33 @@ AS $$
   WITH q AS (
     SELECT NULLIF(btrim(p_query), '') AS term,
            NULLIF(btrim(p_category), '') AS cat,
+           NULLIF(btrim(p_country), '') AS country,
+           -- longitude half-width of the radius box (wide near the poles)
+           CASE WHEN p_radius_km IS NULL OR p_lat IS NULL THEN NULL
+                ELSE p_radius_km / (111.0 * GREATEST(cos(radians(p_lat)), 0.01)) END AS dlng,
            LEAST(GREATEST(COALESCE(p_limit, 100), 1), 200) AS lim,
            GREATEST(COALESCE(p_offset, 0), 0) AS off
   ),
   base AS (
     SELECT c.id, c.company_name, c.slug, c.business_type, c.rating_avg, c.review_count, c.logo_url, c.cover_url,
-           c.key_products, fl.latitude, fl.longitude, fl.city, fl.state, fl.monthly_capacity, fl.capacity_unit,
+           c.key_products, fl.latitude, fl.longitude, fl.city, fl.state, fl.country, fl.monthly_capacity, fl.capacity_unit,
            fl.lead_time_days, fl.stock_status, fl.supply_type, fl.availability_updated_at,
-           bv.gst_verified, bv.cin_verified, bv.udyam_verified, bv.decided_at,
+           bv.gst_verified, bv.cin_verified, bv.udyam_verified, bv.registry_verified, bv.decided_at,
            CASE WHEN p_lat IS NULL OR p_lng IS NULL THEN NULL
                 ELSE public.km_between(p_lat, p_lng, fl.latitude, fl.longitude) END AS dist
       FROM public.map_visible_company_ids() v
       JOIN public.companies c ON c.id = v.company_id
       JOIN public.factory_locations fl ON fl.company_id = c.id
-      JOIN public.business_verifications bv ON bv.company_id = c.id
+      JOIN public.business_verifications bv ON bv.company_id = c.id, q
      WHERE (p_south IS NULL OR fl.latitude BETWEEN p_south AND p_north)
-       AND (p_west IS NULL OR fl.longitude BETWEEN p_west AND p_east)
+       -- a viewport that crosses the 180th meridian comes as west > east
+       AND (p_west IS NULL OR p_east IS NULL OR CASE WHEN p_west <= p_east THEN fl.longitude BETWEEN p_west AND p_east
+                                                     ELSE fl.longitude >= p_west OR fl.longitude <= p_east END)
+       AND (q.country IS NULL OR lower(fl.country) = lower(q.country))
        -- a box around the point first, so the exact distance is only measured for nearby factories
        AND (p_radius_km IS NULL OR p_lat IS NULL OR p_lng IS NULL OR (
              fl.latitude BETWEEN p_lat - p_radius_km / 111.0 AND p_lat + p_radius_km / 111.0
-             AND fl.longitude BETWEEN p_lng - p_radius_km / (111.0 * GREATEST(cos(radians(p_lat)), 0.01))
-                                  AND p_lng + p_radius_km / (111.0 * GREATEST(cos(radians(p_lat)), 0.01))))
+             AND (q.dlng >= 180 OR abs(fl.longitude - p_lng) <= q.dlng OR abs(fl.longitude - p_lng) >= 360 - q.dlng)))
        AND (NOT p_require_gst OR bv.gst_verified)
        AND (NOT p_require_cin OR bv.cin_verified)
        AND (NOT p_require_udyam OR bv.udyam_verified)
@@ -396,8 +423,8 @@ AS $$
   ranged AS (
     SELECT * FROM matched WHERE p_radius_km IS NULL OR dist IS NULL OR dist <= p_radius_km
   )
-  SELECT r.id, r.company_name, r.slug, r.business_type, r.city, r.state, r.latitude, r.longitude, round(r.dist::numeric, 1)::double precision,
-         r.rating_avg, r.review_count, r.logo_url, r.cover_url, r.gst_verified, r.cin_verified, r.udyam_verified, r.decided_at,
+  SELECT r.id, r.company_name, r.slug, r.business_type, r.city, r.state, r.country, r.latitude, r.longitude, round(r.dist::numeric, 1)::double precision,
+         r.rating_avg, r.review_count, r.logo_url, r.cover_url, r.gst_verified, r.cin_verified, r.udyam_verified, r.registry_verified, r.decided_at,
          (SELECT COALESCE(jsonb_agg(e), '[]'::jsonb) FROM (SELECT e FROM jsonb_array_elements(r.items) e LIMIT 6) s),
          r.n, r.min_moq, r.unit, r.monthly_capacity, r.capacity_unit, r.lead_time_days, r.stock_status, r.supply_type,
          r.availability_updated_at, count(*) OVER ()
@@ -426,6 +453,7 @@ AS $$
     'monthly_capacity', fl.monthly_capacity, 'capacity_unit', fl.capacity_unit, 'lead_time_days', fl.lead_time_days,
     'stock_status', fl.stock_status, 'supply_type', fl.supply_type, 'availability_updated_at', fl.availability_updated_at,
     'gst_verified', bv.gst_verified, 'cin_verified', bv.cin_verified, 'udyam_verified', bv.udyam_verified,
+    'registry_verified', bv.registry_verified, 'registration_country', bv.registration_country,
     'entity_type', bv.entity_type, 'verified_since', bv.decided_at,
     'products', COALESCE((
       SELECT jsonb_agg(jsonb_build_object('id', pr.id, 'name', pr.name, 'slug', pr.slug, 'moq', pr.moq, 'moq_unit', pr.moq_unit,
@@ -473,18 +501,32 @@ DECLARE
   v_cin text := NULLIF(upper(btrim(COALESCE(p->>'cin_llpin', ''))), '');
   v_gst text := NULLIF(upper(btrim(COALESCE(p->>'gstin', ''))), '');
   v_udyam text := NULLIF(upper(btrim(COALESCE(p->>'udyam_number', ''))), '');
+  v_reg_country text := NULLIF(btrim(COALESCE(p->>'registration_country', '')), '');
+  v_reg_number text := NULLIF(upper(btrim(COALESCE(p->>'registration_number', ''))), '');
   v_old public.business_verifications;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '28000'; END IF;
   IF v_company IS NULL THEN RAISE EXCEPTION 'company_required' USING ERRCODE = '42501'; END IF;
-  IF v_type NOT IN ('private_limited', 'public_limited', 'llp', 'partnership', 'proprietorship', 'other') THEN
+  IF v_type IS NULL OR v_type NOT IN ('private_limited', 'public_limited', 'llp', 'partnership', 'proprietorship', 'other', 'foreign_company') THEN
     RAISE EXCEPTION 'invalid_entity_type' USING ERRCODE = '22023';
   END IF;
   IF COALESCE(btrim(p->>'legal_name'), '') = '' OR COALESCE(btrim(p->>'registered_address'), '') = '' OR COALESCE(btrim(p->>'factory_address'), '') = ''
      OR COALESCE(btrim(p->>'contact_name'), '') = '' OR COALESCE(btrim(p->>'contact_phone'), '') = '' OR COALESCE(btrim(p->>'contact_email'), '') = '' THEN
     RAISE EXCEPTION 'missing_details' USING ERRCODE = '22023';
   END IF;
-  -- companies need their CIN, LLPs their LLPIN; everyone else needs a GSTIN or Udyam number
+  -- registered outside India: the country and its registry number (Indian numbers do not apply)
+  IF v_type = 'foreign_company' THEN
+    IF v_reg_country IS NULL OR lower(v_reg_country) = 'india' THEN
+      RAISE EXCEPTION 'registration_country_required' USING ERRCODE = '22023';
+    END IF;
+    IF v_reg_number IS NULL OR v_reg_number !~ '^[A-Z0-9][A-Z0-9 ./-]{2,49}$' THEN
+      RAISE EXCEPTION 'registration_number_required' USING ERRCODE = '22023';
+    END IF;
+    v_cin := NULL; v_gst := NULL; v_udyam := NULL;
+  ELSE
+    v_reg_country := NULL; v_reg_number := NULL;
+  END IF;
+  -- companies need their CIN, LLPs their LLPIN; other Indian businesses need a GSTIN or Udyam number
   IF v_type IN ('private_limited', 'public_limited') AND (v_cin IS NULL OR NOT public.valid_cin(v_cin)) THEN
     RAISE EXCEPTION 'cin_required' USING ERRCODE = '22023';
   END IF;
@@ -493,7 +535,7 @@ BEGIN
   END IF;
   IF v_gst IS NOT NULL AND NOT public.valid_gstin(v_gst) THEN RAISE EXCEPTION 'invalid_gstin' USING ERRCODE = '22023'; END IF;
   IF v_udyam IS NOT NULL AND NOT public.valid_udyam(v_udyam) THEN RAISE EXCEPTION 'invalid_udyam' USING ERRCODE = '22023'; END IF;
-  IF v_type NOT IN ('private_limited', 'public_limited', 'llp') AND v_gst IS NULL AND v_udyam IS NULL THEN
+  IF v_type NOT IN ('private_limited', 'public_limited', 'llp', 'foreign_company') AND v_gst IS NULL AND v_udyam IS NULL THEN
     RAISE EXCEPTION 'gst_or_udyam_required' USING ERRCODE = '22023';
   END IF;
   IF jsonb_typeof(COALESCE(p->'documents', '[]'::jsonb)) <> 'array' OR jsonb_array_length(COALESCE(p->'documents', '[]'::jsonb)) = 0 THEN
@@ -510,19 +552,23 @@ BEGIN
   END IF;
 
   INSERT INTO public.business_verifications AS bv (
-    company_id, entity_type, legal_name, cin_llpin, gstin, udyam_number, registered_address, factory_address,
-    contact_name, contact_phone, contact_email, documents, status, gst_verified, cin_verified, udyam_verified,
+    company_id, entity_type, legal_name, cin_llpin, gstin, udyam_number, registration_country, registration_number,
+    registered_address, factory_address, contact_name, contact_phone, contact_email, documents, status,
+    gst_verified, cin_verified, udyam_verified, registry_verified,
     decision_note, submitted_by, submitted_at, decided_by, decided_at, updated_at)
-  VALUES (v_company, v_type, btrim(p->>'legal_name'), v_cin, v_gst, v_udyam, btrim(p->>'registered_address'), btrim(p->>'factory_address'),
-    btrim(p->>'contact_name'), btrim(p->>'contact_phone'), lower(btrim(p->>'contact_email')), p->'documents', 'pending', false, false, false,
+  VALUES (v_company, v_type, btrim(p->>'legal_name'), v_cin, v_gst, v_udyam, v_reg_country, v_reg_number,
+    btrim(p->>'registered_address'), btrim(p->>'factory_address'),
+    btrim(p->>'contact_name'), btrim(p->>'contact_phone'), lower(btrim(p->>'contact_email')), p->'documents', 'pending',
+    false, false, false, false,
     NULL, auth.uid(), now(), NULL, NULL, now())
   ON CONFLICT (company_id) DO UPDATE SET
     entity_type = EXCLUDED.entity_type, legal_name = EXCLUDED.legal_name, cin_llpin = EXCLUDED.cin_llpin, gstin = EXCLUDED.gstin,
-    udyam_number = EXCLUDED.udyam_number, registered_address = EXCLUDED.registered_address, factory_address = EXCLUDED.factory_address,
+    udyam_number = EXCLUDED.udyam_number, registration_country = EXCLUDED.registration_country, registration_number = EXCLUDED.registration_number,
+    registered_address = EXCLUDED.registered_address, factory_address = EXCLUDED.factory_address,
     contact_name = EXCLUDED.contact_name, contact_phone = EXCLUDED.contact_phone, contact_email = EXCLUDED.contact_email,
     documents = EXCLUDED.documents,
     -- any change is reviewed again: an approved business goes back to pending (and off the map) until re-approved
-    status = 'pending', gst_verified = false, cin_verified = false, udyam_verified = false,
+    status = 'pending', gst_verified = false, cin_verified = false, udyam_verified = false, registry_verified = false,
     submitted_by = EXCLUDED.submitted_by, submitted_at = now(), updated_at = now();
 
   UPDATE public.companies SET verification_status = 'pending' WHERE id = v_company AND verification_status IN ('unverified', 'rejected');
@@ -606,11 +652,12 @@ AS $$
 $$;
 
 -- ── Admin: applications, decisions, locations, history ──
-CREATE OR REPLACE FUNCTION public.admin_list_business_verifications(p_status text DEFAULT 'pending')
+DROP FUNCTION IF EXISTS public.admin_list_business_verifications(text);
+CREATE FUNCTION public.admin_list_business_verifications(p_status text DEFAULT 'pending')
 RETURNS TABLE (
   company_id uuid, company_name text, owner_email text, entity_type text, legal_name text, cin_llpin text, gstin text,
-  udyam_number text, registered_address text, factory_address text, contact_name text, contact_phone text, contact_email text,
-  documents jsonb, status text, gst_verified boolean, cin_verified boolean, udyam_verified boolean, decision_note text,
+  udyam_number text, registration_country text, registration_number text, registered_address text, factory_address text, contact_name text, contact_phone text, contact_email text,
+  documents jsonb, status text, gst_verified boolean, cin_verified boolean, udyam_verified boolean, registry_verified boolean, decision_note text,
   submitted_at timestamptz, decided_at timestamptz, recheck_due_at timestamptz,
   location jsonb, active_products bigint, on_map boolean
 )
@@ -623,8 +670,9 @@ BEGIN
   IF NOT public.is_admin() THEN RAISE EXCEPTION 'admin_only' USING ERRCODE = '42501'; END IF;
   RETURN QUERY
     SELECT bv.company_id, c.company_name::text, p.email::text, bv.entity_type, bv.legal_name, bv.cin_llpin, bv.gstin, bv.udyam_number,
+           bv.registration_country, bv.registration_number,
            bv.registered_address, bv.factory_address, bv.contact_name, bv.contact_phone, bv.contact_email, bv.documents, bv.status,
-           bv.gst_verified, bv.cin_verified, bv.udyam_verified, bv.decision_note, bv.submitted_at, bv.decided_at, bv.recheck_due_at,
+           bv.gst_verified, bv.cin_verified, bv.udyam_verified, bv.registry_verified, bv.decision_note, bv.submitted_at, bv.decided_at, bv.recheck_due_at,
            (SELECT to_jsonb(fl) FROM public.factory_locations fl WHERE fl.company_id = bv.company_id),
            (SELECT count(*) FROM public.products pr WHERE pr.company_id = bv.company_id AND pr.is_active),
            EXISTS (SELECT 1 FROM public.map_visible_company_ids() v WHERE v.company_id = bv.company_id)
@@ -641,9 +689,12 @@ END;
 $$;
 
 -- p_decision: approve | reject | needs_info | suspend | recheck
+-- (the earlier signature, without p_registry_verified, is replaced)
+DROP FUNCTION IF EXISTS public.admin_decide_business_verification(uuid, text, text, boolean, boolean, boolean);
 CREATE OR REPLACE FUNCTION public.admin_decide_business_verification(
   p_company uuid, p_decision text, p_note text DEFAULT NULL,
-  p_gst_verified boolean DEFAULT NULL, p_cin_verified boolean DEFAULT NULL, p_udyam_verified boolean DEFAULT NULL)
+  p_gst_verified boolean DEFAULT NULL, p_cin_verified boolean DEFAULT NULL, p_udyam_verified boolean DEFAULT NULL,
+  p_registry_verified boolean DEFAULT NULL)
 RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -651,7 +702,7 @@ SET search_path = public
 AS $$
 DECLARE
   v public.business_verifications;
-  v_gst boolean; v_cin boolean; v_udyam boolean;
+  v_gst boolean; v_cin boolean; v_udyam boolean; v_reg boolean;
 BEGIN
   IF NOT public.is_admin() THEN RAISE EXCEPTION 'admin_only' USING ERRCODE = '42501'; END IF;
   SELECT * INTO v FROM public.business_verifications WHERE company_id = p_company FOR UPDATE;
@@ -659,17 +710,23 @@ BEGIN
   v_gst := COALESCE(p_gst_verified, v.gst_verified) AND v.gstin IS NOT NULL;
   v_cin := COALESCE(p_cin_verified, v.cin_verified) AND v.cin_llpin IS NOT NULL;
   v_udyam := COALESCE(p_udyam_verified, v.udyam_verified) AND v.udyam_number IS NOT NULL;
+  v_reg := COALESCE(p_registry_verified, v.registry_verified) AND v.registration_number IS NOT NULL;
 
   IF p_decision = 'approve' THEN
     -- a company or LLP is approved only with its CIN/LLPIN checked (a GSTIN does not prove incorporation);
-    -- other businesses need a checked GSTIN or Udyam registration
+    -- a business registered abroad only with its registration checked in that country's registry;
+    -- other Indian businesses need a checked GSTIN or Udyam registration
     IF v.entity_type IN ('private_limited', 'public_limited', 'llp') AND NOT v_cin THEN
       RAISE EXCEPTION 'cin_not_verified' USING ERRCODE = '22023';
     END IF;
-    IF v.entity_type NOT IN ('private_limited', 'public_limited', 'llp') AND NOT (v_gst OR v_udyam) THEN
+    IF v.entity_type = 'foreign_company' AND NOT v_reg THEN
+      RAISE EXCEPTION 'registry_not_verified' USING ERRCODE = '22023';
+    END IF;
+    IF v.entity_type NOT IN ('private_limited', 'public_limited', 'llp', 'foreign_company') AND NOT (v_gst OR v_udyam) THEN
       RAISE EXCEPTION 'registration_not_verified' USING ERRCODE = '22023';
     END IF;
     UPDATE public.business_verifications SET status = 'approved', gst_verified = v_gst, cin_verified = v_cin, udyam_verified = v_udyam,
+           registry_verified = v_reg,
            decision_note = p_note, decided_by = auth.uid(), decided_at = now(), recheck_due_at = now() + interval '1 year', updated_at = now()
      WHERE company_id = p_company;
     UPDATE public.companies SET verification_status = 'verified', is_verified = true, verified_at = now(), verified_by = auth.uid(),
@@ -679,7 +736,7 @@ BEGIN
     IF COALESCE(btrim(p_note), '') = '' THEN RAISE EXCEPTION 'note_required' USING ERRCODE = '22023'; END IF;
     UPDATE public.business_verifications
        SET status = CASE p_decision WHEN 'reject' THEN 'rejected' WHEN 'needs_info' THEN 'needs_info' ELSE 'suspended' END,
-           gst_verified = v_gst, cin_verified = v_cin, udyam_verified = v_udyam,
+           gst_verified = v_gst, cin_verified = v_cin, udyam_verified = v_udyam, registry_verified = v_reg,
            decision_note = p_note, decided_by = auth.uid(), decided_at = now(), updated_at = now()
      WHERE company_id = p_company;
     IF p_decision IN ('reject', 'suspend') THEN
@@ -740,8 +797,8 @@ END;
 $$;
 
 -- ── Who may call what ──
-REVOKE ALL ON FUNCTION public.map_search_suppliers(text, double precision, double precision, double precision, text, numeric, numeric, text, boolean, boolean, boolean, double precision, double precision, double precision, double precision, integer, integer) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.map_search_suppliers(text, double precision, double precision, double precision, text, numeric, numeric, text, boolean, boolean, boolean, double precision, double precision, double precision, double precision, integer, integer) TO anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION public.map_search_suppliers(text, double precision, double precision, double precision, text, numeric, numeric, text, boolean, boolean, boolean, double precision, double precision, double precision, double precision, integer, integer, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.map_search_suppliers(text, double precision, double precision, double precision, text, numeric, numeric, text, boolean, boolean, boolean, double precision, double precision, double precision, double precision, integer, integer, text) TO anon, authenticated, service_role;
 REVOKE ALL ON FUNCTION public.map_supplier_detail(uuid, double precision, double precision) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.map_supplier_detail(uuid, double precision, double precision) TO anon, authenticated, service_role;
 REVOKE ALL ON FUNCTION public.supplier_submit_business_verification(jsonb) FROM PUBLIC, anon;
@@ -749,7 +806,7 @@ REVOKE ALL ON FUNCTION public.supplier_save_factory_location(double precision, d
 REVOKE ALL ON FUNCTION public.supplier_update_availability(numeric, text, integer, text, text) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.supplier_map_status() FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.admin_list_business_verifications(text) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.admin_decide_business_verification(uuid, text, text, boolean, boolean, boolean) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.admin_decide_business_verification(uuid, text, text, boolean, boolean, boolean, boolean) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.admin_decide_factory_location(uuid, text, text) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.admin_verification_history(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.supplier_submit_business_verification(jsonb) TO authenticated, service_role;
@@ -757,7 +814,7 @@ GRANT EXECUTE ON FUNCTION public.supplier_save_factory_location(double precision
 GRANT EXECUTE ON FUNCTION public.supplier_update_availability(numeric, text, integer, text, text) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.supplier_map_status() TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.admin_list_business_verifications(text) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.admin_decide_business_verification(uuid, text, text, boolean, boolean, boolean) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.admin_decide_business_verification(uuid, text, text, boolean, boolean, boolean, boolean) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.admin_decide_factory_location(uuid, text, text) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.admin_verification_history(uuid) TO authenticated, service_role;
 REVOKE ALL ON FUNCTION public.my_company_id() FROM PUBLIC, anon;

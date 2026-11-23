@@ -1,6 +1,6 @@
 /** Shapes returned by the supplier map database functions (migration 00071). */
 
-export type EntityType = 'private_limited' | 'public_limited' | 'llp' | 'partnership' | 'proprietorship' | 'other';
+export type EntityType = 'private_limited' | 'public_limited' | 'llp' | 'partnership' | 'proprietorship' | 'other' | 'foreign_company';
 export type BusinessStatus = 'pending' | 'needs_info' | 'approved' | 'rejected' | 'suspended';
 export type LocationStatus = 'pending' | 'verified' | 'rejected';
 export type StockStatus = 'in_stock' | 'limited' | 'made_to_order' | 'out_of_stock';
@@ -27,6 +27,7 @@ export interface MapSupplier {
   business_type: string | null;
   city: string | null;
   state: string | null;
+  country: string | null;
   latitude: number;
   longitude: number;
   distance_km: number | null;
@@ -37,6 +38,8 @@ export interface MapSupplier {
   gst_verified: boolean;
   cin_verified: boolean;
   udyam_verified: boolean;
+  /** a business registered outside India whose registration an admin checked in that country's registry */
+  registry_verified: boolean;
   verified_since: string | null;
   matched_products: MapProduct[];
   product_count: number;
@@ -82,6 +85,8 @@ export interface MapSupplierDetail {
   gst_verified: boolean;
   cin_verified: boolean;
   udyam_verified: boolean;
+  registry_verified: boolean;
+  registration_country: string | null;
   entity_type: EntityType;
   verified_since: string | null;
   products: MapProduct[];
@@ -98,6 +103,8 @@ export interface MapSearchParams {
   requireGst?: boolean;
   requireCin?: boolean;
   requireUdyam?: boolean;
+  /** factory country, e.g. "Vietnam" */
+  country?: string | null;
   bounds?: { south: number; west: number; north: number; east: number } | null;
   limit?: number;
   offset?: number;
@@ -117,6 +124,8 @@ export interface BusinessApplication {
   cin_llpin: string | null;
   gstin: string | null;
   udyam_number: string | null;
+  registration_country: string | null;
+  registration_number: string | null;
   registered_address: string;
   factory_address: string;
   contact_name: string;
@@ -127,6 +136,7 @@ export interface BusinessApplication {
   gst_verified: boolean;
   cin_verified: boolean;
   udyam_verified: boolean;
+  registry_verified: boolean;
   decision_note: string | null;
   submitted_at: string;
   decided_at: string | null;

@@ -22,8 +22,8 @@ import {
   uploadVerificationDocument,
 } from '@/lib/supplierMap/api';
 import { docPathFromUrl } from '@/lib/supplierMap/docPath';
-import { CITIES, findCity } from '@/lib/supplierMap/places';
-import { ENTITY_TYPES, isIncorporated, mapDbError, normalise, validateApplication } from '@/lib/supplierMap/registration';
+import { COUNTRY_NAMES, findPlace, PLACES, placeLabel, searchPlaces } from '@/lib/supplierMap/places';
+import { ENTITY_TYPES, isForeign, isIncorporated, mapDbError, normalise, validateApplication } from '@/lib/supplierMap/registration';
 import { timeAgo } from '@/lib/supplierMap/matchScore';
 import type { BusinessStatus, EntityType, MyMapStatus, StockStatus, SupplyType, VerificationDocument } from '@/lib/supplierMap/types';
 import { cn } from '@/lib/utils';
@@ -32,7 +32,7 @@ const LocationPickerMap = lazy(() => import('@/components/supplierMap/LocationPi
 
 const DOC_KINDS: { value: VerificationDocument['kind']; label: string }[] = [
   { value: 'gst', label: 'GST registration certificate' },
-  { value: 'incorporation', label: 'Certificate of incorporation (company / LLP)' },
+  { value: 'incorporation', label: 'Certificate of incorporation or business licence' },
   { value: 'udyam', label: 'Udyam registration certificate' },
   { value: 'partnership_deed', label: 'Partnership deed' },
   { value: 'factory', label: 'Factory licence or address proof' },
@@ -71,7 +71,7 @@ export default function SupplierMapListingPage() {
 
   // registration
   const [app, setApp] = useState({
-    entity_type: '' as EntityType | '', legal_name: '', cin_llpin: '', gstin: '', udyam_number: '',
+    entity_type: '' as EntityType | '', legal_name: '', cin_llpin: '', gstin: '', udyam_number: '', registration_country: '', registration_number: '',
     registered_address: '', factory_address: '', contact_name: '', contact_phone: '', contact_email: '',
   });
   const [docs, setDocs] = useState<VerificationDocument[]>([]);
@@ -84,7 +84,8 @@ export default function SupplierMapListingPage() {
 
   // location
   const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
-  const [loc, setLoc] = useState({ address: '', city: '', state: '', pincode: '' });
+  const [loc, setLoc] = useState({ address: '', city: '', state: '', country: 'India', pincode: '' });
+  const [jump, setJump] = useState('');
   const [focus, setFocus] = useState<{ lat: number; lng: number; zoom: number; key: number } | null>(null);
   const [savingLoc, setSavingLoc] = useState(false);
 
@@ -116,6 +117,8 @@ export default function SupplierMapListingPage() {
         cin_llpin: b?.cin_llpin ?? '',
         gstin: b?.gstin ?? c?.gst_number ?? '',
         udyam_number: b?.udyam_number ?? '',
+        registration_country: b?.registration_country ?? (c?.country && c.country !== 'India' ? c.country : ''),
+        registration_number: b?.registration_number ?? '',
         registered_address: b?.registered_address ?? [c?.address, c?.city, c?.state, c?.pincode].filter(Boolean).join(', '),
         factory_address: b?.factory_address ?? '',
         contact_name: b?.contact_name ?? profile?.full_name ?? '',
@@ -126,14 +129,15 @@ export default function SupplierMapListingPage() {
       const l = s?.location;
       if (l) {
         setPin({ lat: Number(l.latitude), lng: Number(l.longitude) });
-        setLoc({ address: l.address ?? '', city: l.city ?? '', state: l.state ?? '', pincode: l.pincode ?? '' });
+        setLoc({ address: l.address ?? '', city: l.city ?? '', state: l.state ?? '', country: l.country || 'India', pincode: l.pincode ?? '' });
         setAvail({
           capacity: l.monthly_capacity != null ? String(l.monthly_capacity) : '', unit: l.capacity_unit ?? 'pcs',
           lead: l.lead_time_days != null ? String(l.lead_time_days) : '', stock: l.stock_status ?? '', supply: l.supply_type ?? '',
         });
       } else if (c) {
-        setLoc({ address: c.address ?? '', city: c.city ?? '', state: c.state ?? '', pincode: c.pincode ?? '' });
-        const city = findCity(c.city ?? '');
+        const country = c.country && COUNTRY_NAMES.includes(c.country) ? c.country : 'India';
+        setLoc({ address: c.address ?? '', city: c.city ?? '', state: c.state ?? '', country, pincode: c.pincode ?? '' });
+        const city = findPlace(`${c.city ?? ''}, ${country}`) ?? (country === 'India' ? findPlace(c.city ?? '') : PLACES.find((p) => p.country === country));
         if (city) setFocus({ lat: city.lat, lng: city.lng, zoom: 12, key: 1 });
       }
       // documents already uploaded on the Verification page (same private bucket, same folder)
@@ -196,6 +200,8 @@ export default function SupplierMapListingPage() {
     const err = await submitBusinessVerification({
       ...app,
       cin_llpin: normalise(app.cin_llpin) || null,
+      registration_number: app.registration_number.trim().toUpperCase() || null,
+      registration_country: app.registration_country || null,
       gstin: normalise(app.gstin) || null,
       udyam_number: normalise(app.udyam_number) || null,
       documents: docs,
@@ -220,7 +226,7 @@ export default function SupplierMapListingPage() {
       return;
     }
     setSavingLoc(true);
-    const { status: st, error } = await saveFactoryLocation({ lat: pin.lat, lng: pin.lng, address: loc.address, city: loc.city, state: loc.state, pincode: loc.pincode });
+    const { status: st, error } = await saveFactoryLocation({ lat: pin.lat, lng: pin.lng, address: loc.address, city: loc.city, state: loc.state, country: loc.country, pincode: loc.pincode });
     setSavingLoc(false);
     if (error) {
       toast.error(mapDbError(error));
@@ -338,7 +344,7 @@ export default function SupplierMapListingPage() {
                 <div className="mt-3 space-y-2 text-[13px]">
                   <p><b>{business?.legal_name}</b> · {ENTITY_TYPES.find((t) => t.value === business?.entity_type)?.label}</p>
                   <p className="text-muted-foreground">
-                    {[business?.cin_llpin && `CIN/LLPIN ${business.cin_llpin}`, business?.gstin && `GSTIN ${business.gstin}`, business?.udyam_number && `Udyam ${business.udyam_number}`].filter(Boolean).join(' · ')}
+                    {[business?.registration_number && `${business.registration_country} registration ${business.registration_number}`, business?.cin_llpin && `CIN/LLPIN ${business.cin_llpin}`, business?.gstin && `GSTIN ${business.gstin}`, business?.udyam_number && `Udyam ${business.udyam_number}`].filter(Boolean).join(' · ')}
                   </p>
                   <p className="text-[12px] text-muted-foreground">Sent {business && timeAgo(business.submitted_at)} · {business?.documents.length} document{business?.documents.length === 1 ? '' : 's'}</p>
                   <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-[38px] items-center rounded-xl border border-border px-3 text-[12.5px] font-bold hover:border-[#FF5A00]">Change details</button>
@@ -363,6 +369,24 @@ export default function SupplierMapListingPage() {
                     {err('legal_name')}
                   </label>
 
+                  {isForeign(entity) ? (
+                    <>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="block text-[13px] font-semibold">Country of registration <span className="text-red-500">*</span>
+                          <select className={field} value={app.registration_country} onChange={(e) => setApp({ ...app, registration_country: e.target.value })}>
+                            <option value="">Choose a country</option>
+                            {COUNTRY_NAMES.filter((c) => c !== 'India').map((c) => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                          {err('registration_country')}
+                        </label>
+                        <label className="block text-[13px] font-semibold">Company registration number <span className="text-red-500">*</span>
+                          <input className={cn(field, 'uppercase')} value={app.registration_number} onChange={(e) => setApp({ ...app, registration_number: e.target.value })} placeholder="As on your certificate or business licence" />
+                          {err('registration_number')}
+                        </label>
+                      </div>
+                      <p className="text-[11.5px] text-muted-foreground">We check it in your country's official company registry. Attach your certificate of incorporation or business licence below.</p>
+                    </>
+                  ) : (
                   <div className="grid gap-3 sm:grid-cols-3">
                     <label className="block text-[13px] font-semibold">{entity === 'llp' ? 'LLPIN' : 'CIN'} {entity && isIncorporated(entity) && <span className="text-red-500">*</span>}
                       <input className={cn(field, 'uppercase')} value={app.cin_llpin} onChange={(e) => setApp({ ...app, cin_llpin: e.target.value })} placeholder={entity === 'llp' ? 'AAB-1234' : 'U12345TN2020PTC123456'} disabled={!!entity && !isIncorporated(entity)} />
@@ -377,6 +401,7 @@ export default function SupplierMapListingPage() {
                       {err('udyam_number')}
                     </label>
                   </div>
+                  )}
                   {entity && isIncorporated(entity) && (
                     <p className="text-[11.5px] text-muted-foreground">Companies and LLPs are approved on their {entity === 'llp' ? 'LLPIN' : 'CIN'}, checked on the MCA portal. A GSTIN alone does not prove a company is incorporated.</p>
                   )}
@@ -444,7 +469,7 @@ export default function SupplierMapListingPage() {
                       {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" aria-hidden="true" />} {business ? 'Send for review again' : 'Send for verification'}
                     </button>
                   </div>
-                  <p className="text-[11.5px] text-muted-foreground">Nothing is approved automatically. A BulkSkart admin checks each number on the official MCA, GST and Udyam portals and reads your documents.</p>
+                  <p className="text-[11.5px] text-muted-foreground">Nothing is approved automatically. A BulkSkart admin checks each number on the official registry (MCA, GST and Udyam portals in India, or your country's company registry) and reads your documents.</p>
                 </form>
               )}
             </section>
@@ -463,15 +488,37 @@ export default function SupplierMapListingPage() {
               {location?.status === 'rejected' && location.review_note && (
                 <p className="mt-2 flex items-start gap-2 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-[12.5px]"><XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" aria-hidden="true" /> {location.review_note}</p>
               )}
-              <label className="mt-3 block text-[13px] font-semibold">Jump to a city
-                <select className={field} value="" onChange={(e) => { const c = findCity(e.target.value); if (c) setFocus({ lat: c.lat, lng: c.lng, zoom: 12, key: Date.now() }); }}>
-                  <option value="">Choose a city</option>
-                  {CITIES.map((c) => <option key={c.name} value={c.name}>{c.name}, {c.state}</option>)}
-                </select>
-              </label>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="block text-[13px] font-semibold">Country of the factory <span className="text-red-500">*</span>
+                  <select className={field} value={loc.country} onChange={(e) => {
+                    const country = e.target.value;
+                    setLoc({ ...loc, country });
+                    const first = PLACES.find((p) => p.country === country);
+                    if (first && !pin) setFocus({ lat: first.lat, lng: first.lng, zoom: country === 'India' ? 5 : 6, key: Date.now() });
+                  }}>
+                    {COUNTRY_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+                <label className="block text-[13px] font-semibold">Jump to a city
+                  <input type="search" className={field} value={jump} onChange={(e) => setJump(e.target.value)} placeholder="Type a city, e.g. Tiruppur or Shenzhen" />
+                </label>
+              </div>
+              {jump.trim() && (
+                <ul className="mt-1.5 max-h-48 overflow-y-auto rounded-xl border border-border" aria-label="Cities">
+                  {searchPlaces(jump).map((p) => (
+                    <li key={placeLabel(p)}>
+                      <button type="button" onClick={() => { setFocus({ lat: p.lat, lng: p.lng, zoom: 12, key: Date.now() }); setLoc((l) => ({ ...l, country: COUNTRY_NAMES.includes(p.country) ? p.country : l.country, city: l.city || p.name })); setJump(''); }}
+                        className="flex min-h-[40px] w-full items-center gap-2 px-3 text-left text-[13px] hover:bg-muted">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" aria-hidden="true" /> <b>{p.name}</b> <span className="truncate text-muted-foreground">{[p.region, p.country].filter(Boolean).join(', ')}</span>
+                      </button>
+                    </li>
+                  ))}
+                  {searchPlaces(jump).length === 0 && <li className="px-3 py-2.5 text-[12px] text-muted-foreground">Not in the list: zoom and drag the map to your factory instead.</li>}
+                </ul>
+              )}
               <div className="mt-3 h-[320px] overflow-hidden rounded-2xl border border-border sm:h-[380px]">
                 <Suspense fallback={<div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-[#FF5A00]" /></div>}>
-                  <LocationPickerMap className={cn('bsm-map h-full w-full', theme === 'light' && 'bsm-light')} value={pin} onChange={setPin} focus={focus} theme={theme} />
+                  <LocationPickerMap className={cn('bsm-map h-full w-full', theme === 'light' && 'bsm-light')} value={pin} onChange={setPin} focus={focus} theme={theme} start={loc.country === 'India' ? 'india' : 'world'} />
                 </Suspense>
               </div>
               <p className="mt-1.5 text-[11.5px] text-muted-foreground">{pin ? `Pin at ${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}. Drag it to adjust.` : 'Click the map at your factory to drop the pin. Zoom in for accuracy.'}</p>
@@ -483,11 +530,12 @@ export default function SupplierMapListingPage() {
                   <input className={field} value={loc.city} onChange={(e) => setLoc({ ...loc, city: e.target.value })} autoComplete="address-level2" />
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  <label className="block text-[13px] font-semibold">State
+                  <label className="block text-[13px] font-semibold">{loc.country === 'India' ? 'State' : 'State / region'}
                     <input className={field} value={loc.state} onChange={(e) => setLoc({ ...loc, state: e.target.value })} autoComplete="address-level1" />
                   </label>
-                  <label className="block text-[13px] font-semibold">PIN code
-                    <input className={field} inputMode="numeric" maxLength={6} value={loc.pincode} onChange={(e) => setLoc({ ...loc, pincode: e.target.value.replace(/\D/g, '') })} autoComplete="postal-code" />
+                  <label className="block text-[13px] font-semibold">{loc.country === 'India' ? 'PIN code' : 'Postal code'}
+                    <input className={field} inputMode={loc.country === 'India' ? 'numeric' : 'text'} maxLength={loc.country === 'India' ? 6 : 12} value={loc.pincode}
+                      onChange={(e) => setLoc({ ...loc, pincode: loc.country === 'India' ? e.target.value.replace(/\D/g, '') : e.target.value.toUpperCase() })} autoComplete="postal-code" />
                   </label>
                 </div>
               </div>

@@ -7,7 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './supplierMap.css';
 import type { MapSupplier } from '@/lib/supplierMap/types';
-import { INDIA_BOUNDS } from '@/lib/supplierMap/places';
+import { WORLD_BOUNDS } from '@/lib/supplierMap/places';
 import { baseTiles, satelliteTiles } from '@/lib/supplierMap/tiles';
 
 const FACTORY_SVG =
@@ -41,12 +41,14 @@ interface Props {
   fitKey: number;
   /** called after the person moves or zooms the map themselves */
   onUserMove?: (b: Bounds) => void;
+  /** the centre of the map after every move, wherever it came from */
+  onView?: (centre: { lat: number; lng: number }) => void;
   /** room taken by panels over the map (px), so the selected marker is kept clear of them */
   padding?: { top: number; bottom: number; left?: number; right?: number };
   className?: string;
 }
 
-export default function SupplierLeafletMap({ suppliers, selectedId, onSelect, buyer, radiusKm, theme, satellite = false, fitKey, onUserMove, padding, className }: Props) {
+export default function SupplierLeafletMap({ suppliers, selectedId, onSelect, buyer, radiusKm, theme, satellite = false, fitKey, onUserMove, onView, padding, className }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const tiles = useRef<L.TileLayer | null>(null);
@@ -56,16 +58,16 @@ export default function SupplierLeafletMap({ suppliers, selectedId, onSelect, bu
   const ring = useRef<L.Circle | null>(null);
   // moves the person made (drag, wheel, pinch, zoom buttons, keys), as opposed to the page framing results
   const lastInput = useRef(0);
-  const cb = useRef({ onSelect, onUserMove });
-  cb.current = { onSelect, onUserMove };
+  const cb = useRef({ onSelect, onUserMove, onView });
+  cb.current = { onSelect, onUserMove, onView };
   const pad = useRef(padding);
   pad.current = padding;
 
   // create once
   useEffect(() => {
     if (!el.current || map.current) return;
-    const m = L.map(el.current, { zoomControl: false, attributionControl: true, worldCopyJump: false, minZoom: 4, preferCanvas: false });
-    m.fitBounds(INDIA_BOUNDS);
+    const m = L.map(el.current, { zoomControl: false, attributionControl: true, worldCopyJump: true, minZoom: 2, preferCanvas: false });
+    m.fitBounds(WORLD_BOUNDS);
     L.control.zoom({ position: 'bottomright' }).addTo(m);
     m.attributionControl.setPrefix(false);
     layer.current = L.layerGroup().addTo(m);
@@ -77,6 +79,8 @@ export default function SupplierLeafletMap({ suppliers, selectedId, onSelect, bu
     const EVENTS = ['pointerdown', 'wheel', 'touchstart', 'keydown'] as const;
     for (const ev of EVENTS) node.addEventListener(ev, mark, { passive: true });
     m.on('moveend', () => {
+      const c = m.getCenter().wrap();
+      cb.current.onView?.({ lat: c.lat, lng: c.lng });
       if (Date.now() - lastInput.current > 2500) return;
       const b = m.getBounds();
       cb.current.onUserMove?.({ south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() });
@@ -174,7 +178,7 @@ export default function SupplierLeafletMap({ suppliers, selectedId, onSelect, bu
       if (buyer) b.extend([buyer.lat, buyer.lng]);
       m.fitBounds(b, { ...opts, maxZoom: 11 });
     } else if (buyer) m.setView([buyer.lat, buyer.lng], 9);
-    else m.fitBounds(INDIA_BOUNDS, opts);
+    else m.fitBounds(WORLD_BOUNDS, opts);
   }, [fitKey]);
 
   return <div ref={el} className={className} role="application" aria-label="Map of verified manufacturers" />;

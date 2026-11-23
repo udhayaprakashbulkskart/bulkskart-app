@@ -1,7 +1,8 @@
 /**
  * Live Verified Supplier Map (/supplier-map).
  *
- * Buyers find manufacturers near them. Only businesses that pass every check are returned by the database
+ * Buyers anywhere in the world find manufacturers near them (or anywhere). Only businesses that pass every check are
+ * returned by the database
  * (map_search_suppliers, migration 00071): registration approved by an admin, factory location verified, active
  * supplier account, at least one active product, not suspended. This page cannot add anyone to the map.
  */
@@ -9,12 +10,13 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowDownWideNarrow, ArrowLeft, BadgeCheck, Crosshair, Factory, List, Loader2, Map as MapIcon, MapPin, RefreshCw,
-  Search, SlidersHorizontal, X,
+  Navigation2, Plus, Search, SlidersHorizontal, X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import MainLayout from '@/components/layouts/MainLayout';
 import PageMeta from '@/components/common/PageMeta';
 import InstantQuoteDialog from '@/components/common/InstantQuoteDialog';
+import ListBusinessPrompt from '@/components/supplierMap/ListBusinessPrompt';
 import { SupplierCard, SupplierDetailPanel } from '@/components/supplierMap/SupplierCards';
 import type { Bounds } from '@/components/supplierMap/SupplierLeafletMap';
 import { supabase } from '@/db/supabase';
@@ -22,7 +24,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { onMapChange, searchSuppliers, supplierDetail } from '@/lib/supplierMap/api';
 import { matchSupplier, type MatchResult, timeAgo } from '@/lib/supplierMap/matchScore';
-import { CITIES, findCity, RADIUS_OPTIONS } from '@/lib/supplierMap/places';
+import { answerListingPrompt, listBusinessHref, markListingOffered, type PromptAnswer, shouldOfferListing } from '@/lib/supplierMap/listBusinessPrompt';
+import { COUNTRY_NAMES, findPlace, normaliseBounds, type Place, placeLabel, RADIUS_OPTIONS, searchPlaces } from '@/lib/supplierMap/places';
 import { mapDbError } from '@/lib/supplierMap/registration';
 import type { MapProduct, MapSupplier, MapSupplierDetail } from '@/lib/supplierMap/types';
 import { cn } from '@/lib/utils';
@@ -32,8 +35,8 @@ const SupplierLeafletMap = lazy(() => import('@/components/supplierMap/SupplierL
 const PAGE = 100;
 type Sort = 'match' | 'distance' | 'rating';
 interface Buyer { lat: number; lng: number; label: string }
-interface Filters { category: string; orderQty: string; minCapacity: string; gst: boolean; cin: boolean; udyam: boolean }
-const NO_FILTERS: Filters = { category: '', orderQty: '', minCapacity: '', gst: false, cin: false, udyam: false };
+interface Filters { category: string; country: string; orderQty: string; minCapacity: string; gst: boolean; cin: boolean; udyam: boolean }
+const NO_FILTERS: Filters = { category: '', country: '', orderQty: '', minCapacity: '', gst: false, cin: false, udyam: false };
 const num = (v: string) => (v.trim() && Number(v) > 0 ? Number(v) : null);
 
 function useIsDesktop() {
@@ -49,17 +52,17 @@ function useIsDesktop() {
 }
 
 export default function SupplierMapPage() {
-  const { profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const { theme } = useTheme();
   const desktop = useIsDesktop();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
 
   // ── search state (q, city and radius are kept in the address so a search can be shared) ──
-  const initialCity = findCity(params.get('city') ?? '');
+  const initialCity = findPlace(params.get('city') ?? '');
   const [input, setInput] = useState(params.get('q') ?? '');
   const [query, setQuery] = useState(params.get('q') ?? '');
-  const [buyer, setBuyer] = useState<Buyer | null>(initialCity ? { lat: initialCity.lat, lng: initialCity.lng, label: initialCity.name } : null);
+  const [buyer, setBuyer] = useState<Buyer | null>(initialCity ? { lat: initialCity.lat, lng: initialCity.lng, label: placeLabel(initialCity) } : null);
   const [radius, setRadius] = useState<number | null>(() => {
     const r = Number(params.get('r'));
     return initialCity && RADIUS_OPTIONS.some((o) => o.km === r) ? r : null;
@@ -74,6 +77,9 @@ export default function SupplierMapPage() {
   const [showPlaces, setShowPlaces] = useState(false);
   const [pendingRadius, setPendingRadius] = useState<number | null>(null);
   const [locating, setLocating] = useState(false);
+  const [placeQuery, setPlaceQuery] = useState('');
+  const [centre, setCentre] = useState<{ lat: number; lng: number } | null>(null);
+  const [prompt, setPrompt] = useState(false);
 
   // ── results ──
   const [rows, setRows] = useState<MapSupplier[]>([]);
@@ -103,12 +109,13 @@ export default function SupplierMapPage() {
       lng: buyer?.lng ?? null,
       radiusKm: area ? null : radius,
       category: filters.category || null,
+      country: filters.country || null,
       maxMoq: num(filters.orderQty),
       minCapacity: num(filters.minCapacity),
       requireGst: filters.gst,
       requireCin: filters.cin,
       requireUdyam: filters.udyam,
-      bounds: area,
+      bounds: area ? normaliseBounds(area) : null,
     }),
     [query, buyer, radius, filters, area],
   );
@@ -144,7 +151,7 @@ export default function SupplierMapPage() {
   useEffect(() => {
     const next = new URLSearchParams();
     if (query) next.set('q', query);
-    if (buyer && findCity(buyer.label)) next.set('city', buyer.label);
+    if (buyer && findPlace(buyer.label)) next.set('city', buyer.label);
     if (buyer && radius) next.set('r', String(radius));
     setParams(next, { replace: true });
   }, [query, buyer, radius, setParams]);
@@ -236,14 +243,17 @@ export default function SupplierMapPage() {
   const selected = rows.find((r) => r.company_id === selectedId) ?? null;
 
   // ── location ──
-  const chooseCity = (name: string) => {
-    const c = findCity(name);
-    if (!c) return;
-    setBuyer({ lat: c.lat, lng: c.lng, label: c.name });
+  const setBuyerAt = (b: Buyer) => {
+    setBuyer(b);
     setArea(null);
     if (pendingRadius !== null) setRadius(pendingRadius);
     setPendingRadius(null);
     setShowPlaces(false);
+    setPlaceQuery('');
+  };
+  const choosePlace = (p: Place) => setBuyerAt({ lat: p.lat, lng: p.lng, label: placeLabel(p) });
+  const useMapCentre = () => {
+    if (centre) setBuyerAt({ lat: centre.lat, lng: centre.lng, label: 'Map centre' });
   };
   const useMyLocation = () => {
     if (!navigator.geolocation) {
@@ -254,11 +264,7 @@ export default function SupplierMapPage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocating(false);
-        setBuyer({ lat: pos.coords.latitude, lng: pos.coords.longitude, label: 'Your location' });
-        setArea(null);
-        if (pendingRadius !== null) setRadius(pendingRadius);
-        setPendingRadius(null);
-        setShowPlaces(false);
+        setBuyerAt({ lat: pos.coords.latitude, lng: pos.coords.longitude, label: 'Your location' });
       },
       () => {
         setLocating(false);
@@ -288,7 +294,7 @@ export default function SupplierMapPage() {
     setQuote({ s, p: product });
   };
 
-  const activeFilterCount = [filters.category, filters.orderQty, filters.minCapacity].filter(Boolean).length + [filters.gst, filters.cin, filters.udyam].filter(Boolean).length;
+  const activeFilterCount = [filters.category, filters.country, filters.orderQty, filters.minCapacity].filter(Boolean).length + [filters.gst, filters.cin, filters.udyam].filter(Boolean).length;
   const clearAll = () => {
     setInput('');
     setQuery('');
@@ -336,7 +342,24 @@ export default function SupplierMapPage() {
     };
   }, []);
 
-  const supplierCta = profile?.role === 'supplier' ? '/dashboard/supplier/map-listing' : '/manufacturer-signup';
+  // ── "List your business": for visitors who are not signed in (and manufacturers not yet listed) ──
+  const listHref = listBusinessHref(profile?.role, Boolean(user));
+  const supplierCta = listHref ?? '/signup/manufacturer';
+  const searched = Boolean(query || buyer || area || activeFilterCount > 0);
+  useEffect(() => {
+    if (prompt || loading || quote || (open && !desktop)) return;
+    if (!shouldOfferListing({ signedIn: Boolean(user), authLoading, searched })) return;
+    // let them see the results first; sooner when nothing matched
+    const t = setTimeout(() => {
+      markListingOffered();
+      setPrompt(true);
+    }, rows.length === 0 ? 1200 : 3500);
+    return () => clearTimeout(t);
+  }, [prompt, loading, quote, open, desktop, user, authLoading, searched, rows.length]);
+  const answerPrompt = useCallback((a: PromptAnswer) => {
+    answerListingPrompt(a);
+    setPrompt(false);
+  }, []);
 
   // ── pieces ──
   const searchBar = (
@@ -383,7 +406,7 @@ export default function SupplierMapPage() {
     <div className="pointer-events-auto flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] lg:flex-wrap lg:overflow-visible">
       <button type="button" onClick={() => { setShowPlaces((v) => !v); setShowFilters(false); }} aria-expanded={showPlaces}
         className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-[#111113]/95 px-3 text-[12.5px] font-bold text-white shadow-lg hover:border-[#FF5A00]">
-        <MapPin className="h-3.5 w-3.5 text-[#FF5A00]" aria-hidden="true" /> {buyer ? buyer.label : 'Set your location'}
+        <MapPin className="h-3.5 w-3.5 text-[#FF5A00]" aria-hidden="true" /> <span className="max-w-[180px] truncate">{buyer ? buyer.label : 'Set your location'}</span>
       </button>
       {RADIUS_OPTIONS.map((o) => {
         const on = !area && (o.km === null ? radius === null : radius === o.km && Boolean(buyer));
@@ -409,13 +432,35 @@ export default function SupplierMapPage() {
         {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crosshair className="h-4 w-4" aria-hidden="true" />} Use my current location
       </button>
       <label className="mt-2.5 block text-[12px] font-semibold">
-        Or pick your city
-        <select value={buyer && findCity(buyer.label) ? buyer.label : ''} onChange={(e) => chooseCity(e.target.value)}
-          className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-[13.5px] outline-none focus:border-[#FF5A00]">
-          <option value="" disabled>Choose a city</option>
-          {CITIES.map((c) => <option key={c.name} value={c.name}>{c.name}, {c.state}</option>)}
-        </select>
+        Or search a city or country
+        <span className="relative mt-1 flex items-center">
+          <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <input type="search" value={placeQuery} onChange={(e) => setPlaceQuery(e.target.value)} placeholder="e.g. Dubai, Shenzhen, Tiruppur, Germany"
+            onKeyDown={(e) => { if (e.key === 'Enter') { const p = searchPlaces(placeQuery, 1)[0]; if (p) choosePlace(p); } }}
+            className="h-11 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-[13.5px] outline-none focus:border-[#FF5A00]" />
+        </span>
       </label>
+      {placeQuery.trim() && (
+        <ul className="mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-border" aria-label="Places">
+          {searchPlaces(placeQuery).map((p) => (
+            <li key={placeLabel(p)}>
+              <button type="button" onClick={() => choosePlace(p)} className="flex min-h-[40px] w-full items-center gap-2 px-3 text-left text-[13px] hover:bg-muted">
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" aria-hidden="true" />
+                <span className="font-semibold">{p.name}</span>
+                <span className="truncate text-muted-foreground">{[p.region, p.country].filter(Boolean).join(', ')}</span>
+              </button>
+            </li>
+          ))}
+          {searchPlaces(placeQuery).length === 0 && (
+            <li className="px-3 py-2.5 text-[12px] text-muted-foreground">Not in our list. Move the map there and use "Centre of the map", or share your location.</li>
+          )}
+        </ul>
+      )}
+      {centre && (
+        <button type="button" onClick={useMapCentre} className="mt-2 flex min-h-[40px] w-full items-center justify-center gap-2 rounded-xl border border-border text-[12.5px] font-bold hover:border-[#FF5A00]">
+          <Navigation2 className="h-4 w-4 text-[#FF5A00]" aria-hidden="true" /> Use the centre of the map
+        </button>
+      )}
       {buyer && (
         <button type="button" onClick={() => { setBuyer(null); setRadius(null); setShowPlaces(false); }} className="mt-2 text-[12px] font-semibold text-muted-foreground underline-offset-2 hover:underline">
           Clear my location
@@ -440,6 +485,13 @@ export default function SupplierMapPage() {
           {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
         </select>
       </label>
+      <label className="block text-[12px] font-semibold">
+        Factory country
+        <select value={draft.country} onChange={(e) => setDraft({ ...draft, country: e.target.value })} className="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-[13.5px] outline-none focus:border-[#FF5A00]">
+          <option value="">All countries</option>
+          {COUNTRY_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block text-[12px] font-semibold">
           Your order quantity
@@ -454,8 +506,8 @@ export default function SupplierMapPage() {
         </label>
       </div>
       <fieldset>
-        <legend className="text-[12px] font-semibold">Registration checked by BulkSkart</legend>
-        <p className="text-[10.5px] text-muted-foreground">Every supplier here is verified. Narrow to the ones whose:</p>
+        <legend className="text-[12px] font-semibold">Indian registration checked by BulkSkart</legend>
+        <p className="text-[10.5px] text-muted-foreground">Every supplier here is verified. Narrow Indian businesses to the ones whose:</p>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           {([['cin', 'CIN / LLPIN'], ['gst', 'GSTIN'], ['udyam', 'Udyam']] as const).map(([k, label]) => (
             <button key={k} type="button" aria-pressed={draft[k]} onClick={() => setDraft({ ...draft, [k]: !draft[k] })}
@@ -545,6 +597,7 @@ export default function SupplierMapPage() {
         theme={theme}
         fitKey={fitKey}
         onUserMove={(b) => setMoved(b)}
+        onView={setCentre}
         padding={desktop ? { top: 130, bottom: 30, left: 30, right: 30 } : { top: 140, bottom: open ? 40 : 250 }}
       />
     </Suspense>
@@ -571,9 +624,9 @@ export default function SupplierMapPage() {
   return (
     <MainLayout hideFooter>
       <PageMeta
-        title="Live Verified Supplier Map – Find Manufacturers Near You | BulkSkart"
-        description="Find verified Indian manufacturers near you on a live map. Every factory is checked by BulkSkart: registration, location and active products. Search by product, distance, MOQ and capacity."
-        keywords="verified manufacturers near me, supplier map India, factory near me, bulk manufacturers, wholesale suppliers map"
+        title="Live Verified Supplier Map – Find Manufacturers Near You, Worldwide | BulkSkart"
+        description="Find verified manufacturers and wholesale suppliers near you, anywhere in the world, on a live map. Every factory is checked by BulkSkart: registration, location and active products. Search by product, distance, country, MOQ and capacity."
+        keywords="verified manufacturers near me, supplier map, factory near me, global manufacturers directory, bulk suppliers worldwide, wholesale suppliers map, Indian manufacturers"
         canonical="https://www.bulkskart.com/supplier-map"
       />
       <h1 className="sr-only">Live Verified Supplier Map</h1>
@@ -613,6 +666,12 @@ export default function SupplierMapPage() {
                       <p className="text-[12.5px] text-muted-foreground">{countLine}</p>
                       {rows.length > 1 && sortControl}
                     </div>
+                    {listHref && (
+                      <Link to={listHref} className="mt-2 flex min-h-[40px] items-center justify-between gap-2 rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/8 px-3 text-[12.5px] font-bold hover:border-[#FF5A00]">
+                        <span className="flex items-center gap-1.5"><Factory className="h-4 w-4 text-[#FF5A00]" aria-hidden="true" /> Manufacturer or supplier?</span>
+                        <span className="text-[#E04E00] dark:text-[#FF8A3D]">List your business free →</span>
+                      </Link>
+                    )}
                   </div>
                   <div className="min-h-0 flex-1 overflow-y-auto p-3">
                     {loading && rows.length === 0 ? (
@@ -658,6 +717,13 @@ export default function SupplierMapPage() {
                   <div className="pointer-events-auto px-3">{errorBox || empty}</div>
                 ) : (
                   <>
+                    {listHref && (
+                      <div className="mx-3 mb-2 flex justify-end">
+                        <Link to={listHref} className="pointer-events-auto inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[#FF5A00] px-3.5 text-[12px] font-black text-white shadow-lg">
+                          <Plus className="h-3.5 w-3.5" aria-hidden="true" /> List your business
+                        </Link>
+                      </div>
+                    )}
                     <div className="pointer-events-auto mx-3 mb-2 flex items-center justify-between rounded-full bg-[#111113]/90 px-3 py-1.5 text-white shadow-lg">
                       <span className="truncate text-[11.5px] font-semibold">{countLine}</span>
                       <span className="ml-2 shrink-0 [&_span]:text-white/70">{live}</span>
@@ -687,6 +753,8 @@ export default function SupplierMapPage() {
           </>
         )}
       </div>
+
+      {prompt && listHref && !user && <ListBusinessPrompt href={listHref} onAnswer={answerPrompt} />}
 
       {quote && (
         <InstantQuoteDialog

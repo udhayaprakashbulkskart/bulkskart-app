@@ -32,6 +32,7 @@ export async function searchSuppliers(p: MapSearchParams): Promise<{ rows: MapSu
     p_east: p.bounds?.east ?? null,
     p_limit: p.limit ?? 100,
     p_offset: p.offset ?? 0,
+    p_country: p.country || null,
   });
   if (error) return { rows: [], total: 0, error };
   const rows = ((data ?? []) as MapSupplier[]).map((r) => ({
@@ -91,9 +92,9 @@ export async function submitBusinessVerification(payload: Record<string, unknown
   return error;
 }
 
-export async function saveFactoryLocation(l: { lat: number; lng: number; address: string; city?: string; state?: string; pincode?: string }): Promise<{ status: string | null; error: DbError }> {
+export async function saveFactoryLocation(l: { lat: number; lng: number; address: string; city?: string; state?: string; country?: string; pincode?: string }): Promise<{ status: string | null; error: DbError }> {
   const { data, error } = await supabase.rpc('supplier_save_factory_location', {
-    p_lat: l.lat, p_lng: l.lng, p_address: l.address, p_city: l.city || null, p_state: l.state || null, p_country: 'India', p_pincode: l.pincode || null,
+    p_lat: l.lat, p_lng: l.lng, p_address: l.address, p_city: l.city || null, p_state: l.state || null, p_country: l.country || 'India', p_pincode: l.pincode || null,
   });
   return { status: (data as string | null) ?? null, error };
 }
@@ -154,10 +155,11 @@ export async function adminListApplications(status: string): Promise<{ rows: Adm
 
 export type AdminDecision = 'approve' | 'reject' | 'needs_info' | 'suspend' | 'recheck';
 
-export async function adminDecideBusiness(companyId: string, decision: AdminDecision, note: string, checks: { gst?: boolean; cin?: boolean; udyam?: boolean }): Promise<{ status: BusinessStatus | null; error: DbError }> {
+export async function adminDecideBusiness(companyId: string, decision: AdminDecision, note: string, checks: { gst?: boolean; cin?: boolean; udyam?: boolean; registry?: boolean }): Promise<{ status: BusinessStatus | null; error: DbError }> {
   const { data, error } = await supabase.rpc('admin_decide_business_verification', {
     p_company: companyId, p_decision: decision, p_note: note.trim() || null,
     p_gst_verified: checks.gst ?? null, p_cin_verified: checks.cin ?? null, p_udyam_verified: checks.udyam ?? null,
+    p_registry_verified: checks.registry ?? null,
   });
   return { status: (data as BusinessStatus | null) ?? null, error };
 }

@@ -11,7 +11,8 @@ export const ENTITY_TYPES: { value: EntityType; label: string; hint: string }[] 
   { value: 'llp', label: 'Limited Liability Partnership (LLP)', hint: 'Needs its LLPIN' },
   { value: 'partnership', label: 'Partnership Firm', hint: 'Needs GSTIN or Udyam' },
   { value: 'proprietorship', label: 'Sole Proprietorship', hint: 'Needs GSTIN or Udyam' },
-  { value: 'other', label: 'Other registered business', hint: 'Needs GSTIN or Udyam' },
+  { value: 'other', label: 'Other registered business in India', hint: 'Needs GSTIN or Udyam' },
+  { value: 'foreign_company', label: 'Business registered outside India', hint: 'Needs its company registration number' },
 ];
 
 export const entityLabel = (t: EntityType | string | null | undefined): string =>
@@ -19,6 +20,12 @@ export const entityLabel = (t: EntityType | string | null | undefined): string =
 
 /** Companies and LLPs are incorporated with the MCA; their CIN/LLPIN is the proof, not a GSTIN. */
 export const isIncorporated = (t: EntityType): boolean => t === 'private_limited' || t === 'public_limited' || t === 'llp';
+/** Registered in another country: checked in that country's official company registry. */
+export const isForeign = (t: EntityType | ''): boolean => t === 'foreign_company';
+
+/** A company registry / business licence / tax number from any country: letters, digits, spaces, dots, dashes, slashes. */
+export const checkRegistrationNumber = (raw: string): string | null =>
+  /^[A-Z0-9][A-Z0-9 ./-]{2,49}$/.test(raw.trim().toUpperCase()) ? null : 'Enter the registration number exactly as on the certificate (3 to 50 letters or digits)';
 
 const GSTIN = /^[0-3][0-9][A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const CIN = /^[LU][0-9]{5}[A-Z]{2}[0-9]{4}(PLC|PTC|GOI|SGC|FTC|GAP|GAT|NPL|ULL|ULT|OPC|FLC)[0-9]{6}$/;
@@ -63,6 +70,8 @@ export interface ApplicationInput {
   cin_llpin: string;
   gstin: string;
   udyam_number: string;
+  registration_country: string;
+  registration_number: string;
   registered_address: string;
   factory_address: string;
   contact_name: string;
@@ -81,22 +90,26 @@ export function validateApplication(a: ApplicationInput): Record<string, string>
   if (!a.contact_name.trim()) e.contact_name = 'Enter a contact person';
   if (!/^\+?[0-9][0-9\s-]{7,15}$/.test(a.contact_phone.trim())) e.contact_phone = 'Enter a phone number';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.contact_email.trim())) e.contact_email = 'Enter an email address';
-  if (a.entity_type === 'private_limited' || a.entity_type === 'public_limited') {
+  if (a.entity_type === 'foreign_company') {
+    if (!a.registration_country.trim() || a.registration_country.trim().toLowerCase() === 'india') e.registration_country = 'Choose the country where the business is registered';
+    const m = a.registration_number.trim() ? checkRegistrationNumber(a.registration_number) : 'Enter the company registration number';
+    if (m) e.registration_number = m;
+  } else if (a.entity_type === 'private_limited' || a.entity_type === 'public_limited') {
     const m = a.cin_llpin.trim() ? checkCin(a.cin_llpin) : 'A company needs its CIN';
     if (m) e.cin_llpin = m;
   } else if (a.entity_type === 'llp') {
     const m = a.cin_llpin.trim() ? checkLlpin(a.cin_llpin) : 'An LLP needs its LLPIN';
     if (m) e.cin_llpin = m;
   }
-  if (a.gstin.trim()) {
+  if (a.gstin.trim() && !isForeign(a.entity_type)) {
     const m = checkGstin(a.gstin);
     if (m) e.gstin = m;
   }
-  if (a.udyam_number.trim()) {
+  if (a.udyam_number.trim() && !isForeign(a.entity_type)) {
     const m = checkUdyam(a.udyam_number);
     if (m) e.udyam_number = m;
   }
-  if (a.entity_type && !isIncorporated(a.entity_type) && !a.gstin.trim() && !a.udyam_number.trim()) {
+  if (a.entity_type && !isIncorporated(a.entity_type) && !isForeign(a.entity_type) && !a.gstin.trim() && !a.udyam_number.trim()) {
     e.gstin = 'Enter a GSTIN or a Udyam number';
   }
   if (a.documentCount === 0) e.documents = 'Attach at least one registration document';
@@ -114,6 +127,9 @@ const DB_ERRORS: Record<string, string> = {
   invalid_gstin: 'The GSTIN is not valid.',
   invalid_udyam: 'The Udyam number is not valid.',
   gst_or_udyam_required: 'Enter a GSTIN or a Udyam number.',
+  registration_country_required: 'Choose the country where the business is registered.',
+  registration_number_required: 'Enter the company registration number exactly as on the certificate.',
+  registry_not_verified: 'Tick "registration checked" after checking the business in its country\'s official company registry.',
   documents_required: 'Attach at least one registration document.',
   invalid_document_path: 'A document could not be attached. Upload it again.',
   suspended_contact_support: 'This business is suspended. Contact BulkSkart support.',

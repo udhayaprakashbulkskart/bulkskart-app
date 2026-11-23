@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { COUNTRY_NAMES } from '@/lib/supplierMap/places';
 import { gstinProgress, INDIAN_STATES, PRODUCT_CATEGORIES, SUPPLIER_BUSINESS_TYPES, type SupplierBusinessType } from '@/lib/signup';
 import { cn } from '@/lib/utils';
 import { AssistantNote } from './SignupShell';
@@ -19,6 +20,8 @@ export interface AboutDetails {
   businessType: SupplierBusinessType;
   categories: string[];
   products: string[];
+  /** where the business is; manufacturers from any country can sign up */
+  country: string;
   city: string;
   state: string;
 }
@@ -144,6 +147,7 @@ export function AboutStep({ text, onText, gstin, onGstin, details, edited, onCha
         </div>
       </div>
 
+      {details.country === 'India' && (
       <div className="space-y-1">
         <Label htmlFor="about-gstin" className="text-sm font-semibold">
           GST number <span className="font-normal text-muted-foreground">(optional)</span>
@@ -164,6 +168,7 @@ export function AboutStep({ text, onText, gstin, onGstin, details, edited, onCha
         </p>
         <GstinStatus value={gstin} />
       </div>
+      )}
 
       {/* what the assistant understood, to be corrected by hand */}
       {showDetails ? (
@@ -288,7 +293,25 @@ export function AboutStep({ text, onText, gstin, onGstin, details, edited, onCha
               )}
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="space-y-1">
+                <Label htmlFor="about-country" className="text-xs font-semibold text-muted-foreground">
+                  Country
+                </Label>
+                <select
+                  id="about-country"
+                  value={details.country}
+                  onChange={(event) => onChange({ country: event.target.value, state: '' })}
+                  autoComplete="country-name"
+                  className="flex h-11 w-full rounded-lg border border-input bg-background px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
+                >
+                  {COUNTRY_NAMES.map((country) => (
+                    <option key={country} value={country}>
+                      {country}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="space-y-1">
                 <Label htmlFor="about-city" className="text-xs font-semibold text-muted-foreground">
                   City
@@ -304,8 +327,17 @@ export function AboutStep({ text, onText, gstin, onGstin, details, edited, onCha
               </div>
               <div className="space-y-1">
                 <Label htmlFor="about-state" className="text-xs font-semibold text-muted-foreground">
-                  State
+                  {details.country === 'India' ? 'State' : 'State / region'}
                 </Label>
+                {details.country !== 'India' ? (
+                  <Input
+                    id="about-state"
+                    value={details.state}
+                    onChange={(event) => onChange({ state: event.target.value })}
+                    autoComplete="address-level1"
+                    className="h-11 rounded-lg bg-background text-base"
+                  />
+                ) : (
                 <select
                   id="about-state"
                   value={details.state}
@@ -320,6 +352,7 @@ export function AboutStep({ text, onText, gstin, onGstin, details, edited, onCha
                     </option>
                   ))}
                 </select>
+                )}
               </div>
             </div>
           </div>

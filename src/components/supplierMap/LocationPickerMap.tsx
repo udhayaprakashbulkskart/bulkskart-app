@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './supplierMap.css';
-import { INDIA_BOUNDS } from '@/lib/supplierMap/places';
+import { INDIA_BOUNDS, WORLD_BOUNDS } from '@/lib/supplierMap/places';
 import { baseTiles } from '@/lib/supplierMap/tiles';
 import { factoryIcon } from './SupplierLeafletMap';
 
@@ -14,10 +14,12 @@ interface Props {
   focus?: { lat: number; lng: number; zoom: number; key: number } | null;
   theme: 'dark' | 'light';
   readOnly?: boolean;
+  /** with no pin yet: show India first (most BulkSkart factories), or the whole world */
+  start?: 'india' | 'world';
   className?: string;
 }
 
-export default function LocationPickerMap({ value, onChange, focus, theme, readOnly = false, className }: Props) {
+export default function LocationPickerMap({ value, onChange, focus, theme, readOnly = false, start = 'india', className }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const pin = useRef<L.Marker | null>(null);
@@ -27,11 +29,11 @@ export default function LocationPickerMap({ value, onChange, focus, theme, readO
 
   useEffect(() => {
     if (!el.current || map.current) return;
-    const m = L.map(el.current, { zoomControl: true, minZoom: 4, scrollWheelZoom: !readOnly, dragging: true });
+    const m = L.map(el.current, { zoomControl: true, minZoom: 2, worldCopyJump: true, scrollWheelZoom: !readOnly, dragging: true });
     m.attributionControl.setPrefix(false);
     if (value) m.setView([value.lat, value.lng], 15);
-    else m.fitBounds(INDIA_BOUNDS);
-    if (!readOnly) m.on('click', (e: L.LeafletMouseEvent) => change.current?.({ lat: round6(e.latlng.lat), lng: round6(e.latlng.lng) }));
+    else m.fitBounds(start === 'world' ? WORLD_BOUNDS : INDIA_BOUNDS);
+    if (!readOnly) m.on('click', (e: L.LeafletMouseEvent) => { const p = e.latlng.wrap(); change.current?.({ lat: round6(p.lat), lng: round6(p.lng) }); });
     map.current = m;
     const ro = new ResizeObserver(() => m.invalidateSize());
     ro.observe(el.current);
@@ -63,7 +65,7 @@ export default function LocationPickerMap({ value, onChange, focus, theme, readO
     if (!pin.current) {
       pin.current = L.marker([value.lat, value.lng], { icon: factoryIcon(true), draggable: !readOnly, keyboard: true, title: 'Factory location' }).addTo(m);
       pin.current.on('dragend', () => {
-        const p = pin.current?.getLatLng();
+        const p = pin.current?.getLatLng().wrap();
         if (p) change.current?.({ lat: round6(p.lat), lng: round6(p.lng) });
       });
     } else pin.current.setLatLng([value.lat, value.lng]);

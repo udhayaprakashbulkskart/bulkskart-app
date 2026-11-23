@@ -4,10 +4,10 @@
 
 | Check | Result |
 | --- | --- |
-| Database rules, run against a local Postgres copy (PGlite, `sql-tests/map_check.mjs`) | 99 checks, all as expected |
+| Database rules, run against a local Postgres copy (PGlite, `sql-tests/map_check.mjs`) | 118 checks, all as expected; identical on a fresh install and on an upgrade over the first version of 00071 |
 | Document storage lock-down (`sql-tests/storage_check.mjs`) | 10 checks, all as expected |
-| Unit tests (`src/__tests__/supplierMap.test.ts`) | 14 pass |
-| Whole test suite (`npx vitest run`) | 573 pass, 0 fail |
+| Unit tests (`src/__tests__/supplierMap.test.ts`) | 20 pass |
+| Whole test suite (`npx vitest run`) | 579 pass, 0 fail |
 | Type check (`tsgo`), lint (`biome`), production build | Pass |
 | Browser check, desktop 1440×900 and iPhone 13, with test data fed to the page | All flows below work; no page errors; no sideways scroll on the phone |
 
@@ -52,6 +52,32 @@ set up near Coimbatore, Tiruppur and Mumbai, and each was put in a different sta
 | Reject or suspend without a note | ✅ `note_required` |
 | Audit log | ✅ every submit and status change, with the actor and the note |
 | Existing admin page sets a company *verified* | ✅ still works; that company is not on the map until its application is approved too |
+
+## Worldwide (added after the first version)
+
+| Case | Result |
+| --- | --- |
+| Business registered outside India with country "India" | ✅ refused (`registration_country_required`) |
+| Bad registration number | ✅ refused (`registration_number_required`) |
+| Registered abroad, no GSTIN | ✅ accepted, pending |
+| Admin approves it without the registry tick, or with only a GST tick | ✅ refused (`registry_not_verified`) |
+| Admin approves it after the registry check | ✅ approved; on the map once the pin is verified |
+| Search with no filters | ✅ India, UAE and Fiji factories together |
+| Country filter "united arab emirates" (any case) | ✅ only the UAE factory |
+| 50 km of Dubai | ✅ the Jebel Ali factory, 27.1 km |
+| 300 km around a point at -179.9° longitude | ✅ the Suva (Fiji, +178.4°) factory, 176 km away |
+| Viewport from 170° to -170° | ✅ the Suva factory |
+| Card details | ✅ "registration checked in the official company registry of United Arab Emirates" |
+
+**Browser, signed-out visitor:**
+- No popup before searching.
+- After a search, the popup appears with focus on "List your business"; Esc closes it.
+- On phones it appears as a bottom sheet, and the Download App popup stays away.
+- After "I'm a buyer" and a reload, it does not come back.
+- On an empty result it appears too. "List your business" opens `/signup/manufacturer?redirect=%2Fdashboard%2Fsupplier%2Fmap-listing`.
+- In signup, choosing United Arab Emirates hides the GST field and makes the state a text field.
+- Location search "dub" → Dubai; 50 km → the Dubai factory, with the address bar `?city=Dubai, United Arab Emirates&r=50`.
+- No page errors.
 
 ## Document storage
 

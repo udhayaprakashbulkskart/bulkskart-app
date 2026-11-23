@@ -34,6 +34,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authen
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
 `);
 const mig = readFileSync(new URL('../../../supabase/migrations/00071_supplier_map.sql', import.meta.url), 'utf8');
+// OLD_MIGRATION=<file>: run an earlier copy of 00071 first, to check the upgrade path
+if (process.env.OLD_MIGRATION) await run(readFileSync(process.env.OLD_MIGRATION, 'utf8'));
 await run(mig); await run(mig); // safe to run twice
 const U = (n) => `00000000-0000-0000-0000-0000000000${String(n).padStart(2, '0')}`;
 const C = (n) => `c0000000-0000-0000-0000-0000000000${String(n).padStart(2, '0')}`;
@@ -142,5 +144,31 @@ await as(null, 'anon: Tiruppur after recheck overdue', `SELECT count(*) FROM map
 await as(U(90), 'admin recheck_due list', `SELECT company_name FROM admin_list_business_verifications('recheck_due')`);
 await as(U(90), 'admin re-approves after recheck', `SELECT admin_decide_business_verification('${C(10)}', 'approve', 'GST active on portal', true, null, null)`);
 await as(null, 'anon: Tiruppur back + gallery', `SELECT map_supplier_detail('${C(10)}')->>'gallery_images'`);
+// ── worldwide: a business registered outside India, and searches across the 180th meridian ──
+const DXB = (n) => JSON.stringify({ entity_type: 'foreign_company', legal_name: `Gulf Packaging ${n} LLC`, registration_country: 'United Arab Emirates', registration_number: 'DMCC-12345',
+  registered_address: 'JLT, Dubai', factory_address: 'Jebel Ali, Dubai', contact_name: 'Owner', contact_phone: '+971500000000', contact_email: `m${n}@x`, documents: JSON.parse(docs(n)) });
+for (const n of [20, 21]) {
+  await run(`INSERT INTO profiles VALUES ('${U(n)}', 'm${n}@x', 'Maker ${n}', 'supplier', 'active')`);
+  await run(`INSERT INTO companies (id, owner_id, company_name, slug, city) VALUES ('${C(n)}', '${U(n)}', 'Company ${n}', 'company-${n}', 'City')`);
+  await run(`INSERT INTO products (company_id, category_id, name, slug, moq) VALUES ('${C(n)}', '${C(99)}', 'Corrugated Box ${n}', 'p-${n}', 1000)`);
+}
+await as(U(20), 'abroad: country India refused', `SELECT supplier_submit_business_verification('${DXB(20).replace('United Arab Emirates', 'India')}'::jsonb)`);
+await as(U(20), 'abroad: bad registry number refused', `SELECT supplier_submit_business_verification('${DXB(20).replace('DMCC-12345', '#')}'::jsonb)`);
+await as(U(20), 'abroad: no GSTIN needed', `SELECT supplier_submit_business_verification('${DXB(20)}'::jsonb)`);
+await as(U(21), 'Fiji applies', `SELECT supplier_submit_business_verification('${DXB(21).replace('United Arab Emirates', 'Fiji')}'::jsonb)`);
+await as(U(20), 'Dubai pin', `SELECT supplier_save_factory_location(25.0118, 55.1060, 'Jebel Ali Free Zone', 'Dubai', 'Dubai', 'United Arab Emirates', null)`);
+await as(U(21), 'Fiji pin', `SELECT supplier_save_factory_location(-18.1416, 178.4419, 'Walu Bay', 'Suva', 'Central', 'Fiji', null)`);
+await as(U(90), 'admin approves abroad without registry tick', `SELECT admin_decide_business_verification('${C(20)}', 'approve', null, null, null, null, null)`);
+await as(U(90), 'admin approves abroad with GST tick only', `SELECT admin_decide_business_verification('${C(20)}', 'approve', null, true, null, null, null)`);
+await as(U(90), 'admin approves abroad after registry check', `SELECT admin_decide_business_verification('${C(20)}', 'approve', 'Checked in the UAE registry', null, null, null, true)`);
+await as(U(90), 'admin approves Fiji', `SELECT admin_decide_business_verification('${C(21)}', 'approve', 'Checked in the Fiji registry', null, null, null, true)`);
+for (const n of [20, 21]) await as(U(90), `admin verifies location ${n}`, `SELECT admin_decide_factory_location('${C(n)}', 'verify', null)`);
+await as(null, 'world: everyone on the map', `SELECT string_agg(company_name || ' (' || country || ')', ', ' ORDER BY company_name) FROM map_search_suppliers()`);
+await as(null, 'world: country filter UAE', `SELECT string_agg(company_name, ', ') FROM map_search_suppliers(p_country => 'united arab emirates')`);
+await as(null, 'world: 50 km of Dubai', `SELECT string_agg(company_name || ' ' || distance_km, ', ') FROM map_search_suppliers(NULL, 25.2048, 55.2708, 50)`);
+await as(null, 'world: 300 km across the 180th meridian', `SELECT string_agg(company_name || ' ' || distance_km, ', ') FROM map_search_suppliers(NULL, -18.0, -179.9, 300)`);
+await as(null, 'world: viewport across the 180th meridian', `SELECT string_agg(company_name, ', ') FROM map_search_suppliers(p_south => -25, p_west => 170, p_north => -10, p_east => -170)`);
+await as(null, 'world: detail shows registry check', `SELECT (d->>'registration_country') || ' / registry_verified=' || (d->>'registry_verified') FROM map_supplier_detail('${C(20)}') d`);
+await as(U(90), 'admin list shows registry fields', `SELECT registration_country || ' ' || registration_number || ' ' || registry_verified FROM admin_list_business_verifications('approved') WHERE company_id = '${C(20)}'`);
 r.companies = await q(`SELECT company_name, verification_status::text AS v, is_verified, rejection_reason FROM companies ORDER BY company_name`);
 console.log(JSON.stringify(r, null, 1));

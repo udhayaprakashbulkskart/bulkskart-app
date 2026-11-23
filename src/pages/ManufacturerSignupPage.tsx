@@ -64,16 +64,19 @@ export default function ManufacturerSignupPage() {
   // ── what the assistant understood ───────────────────────────────────────────────────────────────────────────────
   const words = useDebounce(text, 250);
   const reading = useMemo(() => readBusiness(words), [words]);
-  const gst = decodeGstin(gstin) ?? reading.gstin;
+  const country = edits.country ?? 'India';
+  const inIndia = country === 'India';
+  const gst = inIndia ? decodeGstin(gstin) ?? reading.gstin : null;
   const gstBox = gstinProgress(gstin);
-  const gstBlocked = gstBox.status === 'typing' || gstBox.status === 'invalid';
+  const gstBlocked = inIndia && (gstBox.status === 'typing' || gstBox.status === 'invalid');
 
   const details: AboutDetails = {
     businessType: edits.businessType ?? reading.businessType ?? 'Manufacturer',
     categories: edits.categories ?? [...reading.categories],
     products: edits.products ?? reading.products,
-    city: edits.city ?? reading.city ?? '',
-    state: edits.state ?? reading.state ?? gst?.state ?? '',
+    country,
+    city: edits.city ?? (inIndia ? reading.city : null) ?? '',
+    state: edits.state ?? (inIndia ? reading.state ?? gst?.state : null) ?? '',
   };
 
   const buildDraft = (values: AccountValues): SignupDraft => ({
@@ -83,7 +86,7 @@ export default function ManufacturerSignupPage() {
     products: details.products,
     city: details.city,
     state: details.state,
-    country: 'India',
+    country: details.country,
     gstin: gst?.gstin ?? '',
     description: text.trim(),
     tradeType: reading.tradeType ?? 'domestic',
