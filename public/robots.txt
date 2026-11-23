@@ -128,3 +128,6 @@ Disallow: /*?*fbclid=
 Disallow: /*?*utm_
 
 Sitemap: https://www.bulkskart.com/sitemap.xml
+
+# Lets search engines find every page, with or without Search Console
+Sitemap: https://www.bulkskart.com/sitemap.xml
