@@ -13,6 +13,14 @@ import {
 import type { Category, Company, CompanyCertification, CompanyReview, Product, Requirement, Quotation, Conversation, Message, Notification, Profile, OrderRow, SupplierInquiry, InquiryReply } from '@/types/types';
 import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
 import { CLOSING_SOON_DAYS, NEW_REQUIREMENT_HOURS } from '@/lib/requirementVisuals';
+import { withoutProfileContacts } from '@/lib/contactAccess';
+
+/** Visitors who are not signed in do not get profile phone, email or WhatsApp from the database (migration 00069). */
+// (typed as the original select so result types stay the same; the visitor version only has fewer profile columns)
+async function forViewer<S extends string>(select: S): Promise<S> {
+  const { data } = await supabase.auth.getSession();
+  return (data.session ? select : withoutProfileContacts(select)) as S;
+}
 
 function mapGlobalToProduct(gp: GlobalCatalogProduct): Product {
   return {
@@ -777,7 +785,7 @@ export async function getRequirements(options?: {
 }): Promise<Requirement[]> {
   let query = supabase
     .from('requirements')
-    .select('*, profiles!buyer_id(id,full_name,email,phone), categories!category_id(id,name,slug)')
+    .select(await forViewer('*, profiles!buyer_id(id,full_name,email,phone), categories!category_id(id,name,slug)'))
     .order('created_at', { ascending: false })
     .limit(options?.limit ? options.limit * 2 : PAGE_SIZE * 2);
 
@@ -852,7 +860,7 @@ export async function getRequirementById(id: string): Promise<Requirement | null
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);
   if (!isUuid && !/^[A-Za-z0-9-]{3,40}$/.test(key)) return null;
 
-  const query = supabase.from('requirements').select('*, profiles!buyer_id(*), categories!category_id(*)');
+  const query = supabase.from('requirements').select(await forViewer('*, profiles!buyer_id(*), categories!category_id(*)'));
   const { data } = await (isUuid ? query.eq('id', key) : query.ilike('req_number', key)).limit(1).maybeSingle();
   if (!data || isSeededRequirement(data)) return null;
   return data as Requirement;
@@ -915,7 +923,7 @@ export async function getOpenRequirements(
 ): Promise<{ rows: Requirement[]; total: number; error: string | null }> {
   try {
     const from = Math.max(0, (filters.page - 1) * filters.pageSize);
-    let query = openRequirementsQuery('*, profiles!buyer_id(id,full_name,company_name,phone), categories!category_id(id,name,slug)', filters);
+    let query = openRequirementsQuery(await forViewer('*, profiles!buyer_id(id,full_name,company_name,phone), categories!category_id(id,name,slug)'), filters);
     if (filters.sort === 'quotes_high') query = query.order('quote_count', { ascending: false });
     else if (filters.sort === 'qty_high') query = query.order('quantity', { ascending: false });
     else if (filters.sort === 'deadline') query = query.order('deadline', { ascending: true, nullsFirst: false });
@@ -1885,7 +1893,7 @@ export async function getRequirementsPage(q: {
   const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
   let query = supabase
     .from('requirements')
-    .select('*, profiles!buyer_id(id,full_name,email,phone), categories!category_id(id,name,slug)', { count: 'exact' })
+    .select(await forViewer('*, profiles!buyer_id(id,full_name,email,phone), categories!category_id(id,name,slug)'), { count: 'exact' })
     .eq('status', 'active');
   // tender imports and feed-filler rows are left out by the database, so pages and the count only hold real RFQs
   query = withoutOutsideOrDemoRfqs(query);
