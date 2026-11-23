@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-  Building2, Loader2, Mail, MapPin, MessageSquare, Package, Phone, ShieldCheck,
+  Building2, Loader2, Lock, Mail, MapPin, MessageSquare, Package, Phone, ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import MainLayout from '@/components/layouts/MainLayout';
@@ -10,6 +10,7 @@ import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
 import { telLink, waLink } from '@/lib/supplierPublicProfile';
+import { CONTACT_LOCK_NOTE, canViewContacts, contactUpgradeHref } from '@/lib/contactAccess';
 
 interface BuyerPublic {
   user_id: string;
@@ -63,7 +64,7 @@ const FALLBACK_BANNER = 'https://images.unsplash.com/photo-1586528116311-ad8dd3c
 export default function BuyerPublicProfilePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, isPaidSubscriber, loading: authLoading } = useAuth();
   const [buyer, setBuyer] = useState<BuyerPublic | null>(null);
   const [needs, setNeeds] = useState<BuyingNeed[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,9 +181,11 @@ export default function BuyerPublicProfilePage() {
     );
   }
 
-  const phone = buyer.phone?.trim() || '';
-  const whatsapp = buyer.whatsapp_number?.trim() || buyer.profile_whatsapp?.trim() || phone;
-  const email = buyer.email?.trim() || '';
+  // phone, WhatsApp and email only for members with a paid subscription (and the buyer themselves)
+  const canSeeContact = canViewContacts({ isPaidSubscriber, viewerId: user?.id, ownerId: buyer.user_id });
+  const phone = canSeeContact ? buyer.phone?.trim() || '' : '';
+  const whatsapp = canSeeContact ? buyer.whatsapp_number?.trim() || buyer.profile_whatsapp?.trim() || phone : '';
+  const email = canSeeContact ? buyer.email?.trim() || '' : '';
   const portrait = buyer.logo_url || buyer.avatar_url;
   const displayName = buyer.company_name || buyer.full_name || 'Buyer';
   const place = [buyer.city, buyer.state, buyer.country].filter(Boolean).join(', ');
@@ -330,6 +333,16 @@ export default function BuyerPublicProfilePage() {
         {phone && <a href={telLink(phone)} className="inline-flex h-9 items-center rounded-lg border border-border px-3 text-xs font-bold">Call</a>}
         {whatsapp && <a href={waLink(whatsapp)} className="inline-flex h-9 items-center rounded-lg border border-orange-500/40 px-3 text-xs font-bold text-orange-700 dark:text-orange-300">WhatsApp</a>}
         {email && !phone && !whatsapp && <a href={`mailto:${email}`} className="inline-flex h-9 items-center rounded-lg border border-border px-3 text-xs font-bold">Email</a>}
+        {!canSeeContact && (
+          <Link
+            to={contactUpgradeHref(profile?.role)}
+            title={CONTACT_LOCK_NOTE}
+            className="inline-flex h-9 items-center gap-1 rounded-lg border border-[#FF5A00]/40 px-3 text-xs font-bold text-[#E04E00] dark:text-[#FF7A2E]"
+          >
+            <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+            Contact
+          </Link>
+        )}
       </div>
     </MainLayout>
   );

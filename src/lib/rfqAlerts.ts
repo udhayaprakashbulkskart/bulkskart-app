@@ -52,14 +52,13 @@ export function rfqQuantity(req: Pick<Requirement, 'quantity' | 'quantity_unit'>
 }
 
 /**
- * The buyer's target price per unit, as entered on the RFQ form ("Target Max Price / Unit", or the min when
- * only that was given): "₹2,500 / Piece". Null when the buyer left it open.
+ * "up to ₹30,00,000": the buyer's budget as entered. Whether it is per unit or for the whole order is not recorded,
+ * so no unit is added (the RFQ page shows it the same way).
  */
-export function rfqBudgetPerUnit(req: Pick<Requirement, 'budget_min' | 'budget_max' | 'currency' | 'quantity_unit'>): string | null {
+export function rfqBudget(req: Pick<Requirement, 'budget_min' | 'budget_max' | 'currency'>): string | null {
   const amount = Number(req.budget_max) > 0 ? Number(req.budget_max) : Number(req.budget_min) > 0 ? Number(req.budget_min) : 0;
   if (!amount) return null;
-  const money = formatMoney({ amount, currency: (req.currency || 'INR').toUpperCase(), approximate: false });
-  return `${money} / ${singularUnit(req.quantity_unit)}`;
+  return `up to ${formatMoney({ amount, currency: (req.currency || 'INR').toUpperCase(), approximate: false })}`;
 }
 
 /** Posted in the last two days. */

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  CYCLE_MS, NO_RFQ_ALERT_PATHS, VISIBLE_MS, isNewRfq, rfqAlertsOff, rfqBudgetPerUnit, rfqQuantity, setRfqAlertsOff, singularUnit, usableLeads,
+  CYCLE_MS, NO_RFQ_ALERT_PATHS, VISIBLE_MS, isNewRfq, rfqAlertsOff, rfqBudget, rfqQuantity, setRfqAlertsOff, singularUnit, usableLeads,
 } from '@/lib/rfqAlerts';
 
 const src = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
@@ -15,9 +15,10 @@ describe('"New RFQ Posted!" popup', () => {
 
   it('reads quantity and the per-unit budget from the RFQ, as in the design', () => {
     expect(rfqQuantity({ quantity: 50, quantity_unit: 'Pieces' })).toBe('50 Pieces');
-    expect(rfqBudgetPerUnit({ budget_min: 2000, budget_max: 2500, currency: 'INR', quantity_unit: 'Pieces' })).toBe('₹2,500 / Piece');
-    expect(rfqBudgetPerUnit({ budget_min: 180, budget_max: null, currency: 'INR', quantity_unit: 'Sets' })).toBe('₹180 / Set');
-    expect(rfqBudgetPerUnit({ budget_min: null, budget_max: null, currency: 'INR', quantity_unit: 'Tons' })).toBeNull();
+    // no "/ Piece": a ₹30 lakh budget for 50,000 pipes is for the order, not per pipe
+    expect(rfqBudget({ budget_min: 2250000, budget_max: 3000000, currency: 'INR' })).toBe('up to ₹30,00,000');
+    expect(rfqBudget({ budget_min: 180, budget_max: null, currency: 'INR' })).toBe('up to ₹180');
+    expect(rfqBudget({ budget_min: null, budget_max: null, currency: 'INR' })).toBeNull();
     expect(singularUnit('Kg')).toBe('Kg');
     expect(singularUnit('')).toBe('Unit');
   });
