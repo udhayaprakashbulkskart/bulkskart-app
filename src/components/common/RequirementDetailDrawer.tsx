@@ -10,7 +10,8 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import SafeImage from '@/components/common/SafeImage';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Link } from 'react-router-dom';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -18,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Send, Loader2, MessageSquare, CheckCircle, XCircle,
   Upload, Building2, Calendar, Package, BadgeCheck, Zap,
-  Clock, TrendingUp, ShieldCheck, Lock,
+  Clock, TrendingUp, ShieldCheck, Lock, Crown, IndianRupee, MapPin,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
@@ -35,6 +36,9 @@ import SupplierRespondDialog from './SupplierRespondDialog';
 import { GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
 import { gemTenderUrl, sharedBuyerPhone, specificationProse } from '@/lib/externalListing';
 import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
+import { canViewContacts, contactUpgradeHref, maskContactsInText } from '@/lib/contactAccess';
+import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
+import { rfqBudget } from '@/lib/rfqAlerts';
 
 // ── Deal status pipeline ────────────────────────────────────────────────────────
 const DEAL_STEPS = [
@@ -49,9 +53,9 @@ const DEAL_STEPS = [
 function DealStatusBar({ status, isBuyer, onAdvance }: { status: string; isBuyer: boolean; onAdvance: (s: string) => void }) {
   const idx = DEAL_STEPS.findIndex(s => s.key === status);
   return (
-    <div className="bg-muted rounded-xl p-4 mb-4">
-      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Deal Status</p>
-      <div className="flex items-center gap-1 flex-wrap">
+    <div className="rounded-2xl border border-border bg-card p-3.5">
+      <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Deal status</p>
+      <div className="flex flex-wrap items-center gap-1">
         {DEAL_STEPS.map((step, i) => {
           const Icon = step.icon;
           const done = i < idx;
@@ -301,8 +305,21 @@ interface Props {
   onRequirementUpdated: (req: Requirement) => void;
 }
 
+/** "36d 20h", "5h 12m", or "Closed" once the deadline (end of that day) or expiry has passed. */
+function timeLeft(req: Requirement): string | null {
+  const end = req.deadline ? new Date(`${req.deadline.slice(0, 10)}T23:59:59`).getTime() : req.expires_at ? new Date(req.expires_at).getTime() : NaN;
+  if (Number.isNaN(end)) return null;
+  const ms = end - Date.now();
+  if (ms <= 0) return 'Closed';
+  const h = Math.floor(ms / 3600e3);
+  return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : `${h}h ${Math.floor((ms % 3600e3) / 60e3)}m`;
+}
+
+const dateLabel = (iso?: string | null) =>
+  iso ? new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
+
 export default function RequirementDetailDrawer({ open, onClose, requirement, onRequirementUpdated }: Props) {
-  const { user, profile, company } = useAuth();
+  const { user, profile, company, isPaidSubscriber } = useAuth();
   const [quotes, setQuotes] = useState<Quotation[]>([]);
   const [loadingQuotes, setLoadingQuotes] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
@@ -310,8 +327,15 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
   const [subDialogOpen, setSubDialogOpen] = useState(false);
   const [subDialogReason, setSubDialogReason] = useState<SubscriptionReason>('no_subscription');
   const [respondDialogOpen, setRespondDialogOpen] = useState(false);
+  const [chatStarting, setChatStarting] = useState(false);
 
-  const isBuyer = profile?.role === 'buyer';
+  // The buyer who posted this RFQ manages it (accept or reject quotations, move the deal on); everyone else sees it
+  // as a supplier would. Chat and quotations are for Premium suppliers: a registered company with an active paid plan
+  // (admins count as paid).
+  const isOwner = Boolean(user && requirement && requirement.buyer_id === user.id);
+  const premium = Boolean(company && isPaidSubscriber);
+  const canSeeContact = canViewContacts({ isPaidSubscriber, viewerId: user?.id, ownerId: requirement?.buyer_id });
+  const upgradeHref = contactUpgradeHref(profile?.role);
 
   const loadQuotes = useCallback(async () => {
     if (!requirement) return;
@@ -354,280 +378,296 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
     setQuotes(prev => prev.map(x => x.id === q.id ? { ...x, status: 'rejected' } : x));
   };
 
-  const handleOpenChat = async (q: Quotation) => {
-    if (!user) {
-      setSubDialogReason('not_logged_in');
-      setSubDialogOpen(true);
-      return;
-    }
-    // Subscription paid companies only can send messages
-    if (!isBuyer) {
-      if (!company) {
-        setSubDialogReason('not_registered_business');
-        setSubDialogOpen(true);
-        return;
-      }
-      const subCheck = await checkSupplierPaidSubscription(company.id, company);
-      if (!subCheck.allowed) {
-        setSubDialogReason(subCheck.reason);
-        setSubDialogOpen(true);
-        return;
-      }
-      const quota = await checkDirectMessageQuota(company.id, company);
-      if (quota !== 'ok') {
-        setSubDialogReason(quota);
-        setSubDialogOpen(true);
-        return;
-      }
-    }
+  /** Premium suppliers only: guests sign in, people without a company register it, unpaid companies upgrade. */
+  const supplierGate = async (): Promise<boolean> => {
+    const ask = (reason: SubscriptionReason) => { setSubDialogReason(reason); setSubDialogOpen(true); return false; };
+    if (!user) return ask('not_logged_in');
+    if (!company) return ask('not_registered_business');
+    const subCheck = await checkSupplierPaidSubscription(company.id, company);
+    if (!subCheck.allowed) return ask(subCheck.reason);
+    const quota = await checkDirectMessageQuota(company.id, company);
+    if (quota !== 'ok') return ask(quota);
+    return true;
+  };
 
-    const buyerId = isBuyer ? user.id : q.buyer_id;
-    const supplierId = isBuyer ? q.supplier_id : user.id;
-    const supplierCompanyId = q.supplier_company_id;
-    const { id: convId, error } = await getOrCreateConversation(buyerId, supplierId, supplierCompanyId, requirement?.id);
+  const handleOpenChat = async (q: Quotation) => {
+    if (!user) { setSubDialogReason('not_logged_in'); setSubDialogOpen(true); return; }
+    if (!isOwner && !(await supplierGate())) return;
+    const buyerId = isOwner ? user.id : q.buyer_id;
+    const supplierId = isOwner ? q.supplier_id : user.id;
+    const { id: convId, error } = await getOrCreateConversation(buyerId, supplierId, q.supplier_company_id, requirement?.id);
     if (error || !convId) { toast.error('Could not open chat'); return; }
     setActiveConvId(convId);
     setActiveTab('chat');
+  };
+
+  const startChatWithBuyer = async () => {
+    if (!requirement || chatStarting) return;
+    setChatStarting(true);
+    try {
+      if (!(await supplierGate()) || !user || !company) return;
+      const { id: convId, error } = await getOrCreateConversation(requirement.buyer_id, user.id, company.id, requirement.id);
+      if (error || !convId) { toast.error('Could not open chat'); return; }
+      setActiveConvId(convId);
+      setActiveTab('chat');
+    } finally {
+      setChatStarting(false);
+    }
+  };
+
+  const sendQuotation = async () => {
+    if (await supplierGate()) setRespondDialogOpen(true);
   };
 
   if (!requirement) return null;
 
   // @ts-expect-error
   const dealStatus: string = requirement.deal_status ?? 'active';
+  // @ts-expect-error extended col
+  const isUrgent: boolean = Boolean(requirement.is_urgent);
   const gemUrl = gemTenderUrl(requirement.specifications);
-  const contactMissing = Boolean(gemUrl) && !sharedBuyerPhone((requirement.profiles as { phone?: string | null } | undefined)?.phone);
+  const buyer = requirement.profiles as { full_name?: string | null; company_name?: string | null; phone?: string | null } | undefined;
+  const contactMissing = Boolean(gemUrl) && !sharedBuyerPhone(buyer?.phone);
+  const buyerName = buyer?.company_name || buyer?.full_name || 'Buyer';
+  const place = placeLabel(requirement);
+  const left = timeLeft(requirement);
+  const budget = rfqBudget(requirement);
+  const picture = (Array.isArray(requirement.images) && requirement.images.find((u) => typeof u === 'string' && u.trim())) || requirement.attachment_url;
+  const shown = (text: string) => (canSeeContact ? text : maskContactsInText(text));
+  const tidy = (text: string) => text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  const description = requirement.description ? tidy(withoutOutsideLinks(requirement.description)) : '';
+  const specs = requirement.specifications && (!gemUrl || specificationProse(requirement.specifications))
+    ? tidy(withoutOutsideLinks(gemUrl ? specificationProse(requirement.specifications) : requirement.specifications))
+    : '';
+  const contactsHidden = shown(description) !== description || shown(specs) !== specs;
+  const myQuotes = isOwner ? quotes : quotes.filter(q => q.supplier_id === user?.id);
+  const showActionBar = !isOwner && !(activeTab === 'chat' && activeConvId);
 
-  const reqDate = new Date(requirement.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const facts = [
+    { icon: Package, label: 'Quantity', value: quantityLabel(requirement) },
+    { icon: MapPin, label: 'Delivery', value: place ?? 'Not stated' },
+    { icon: Clock, label: left === 'Closed' ? 'Status' : 'Ends in', value: left ?? 'Open', note: requirement.deadline ? `by ${dateLabel(requirement.deadline)}` : undefined },
+    { icon: IndianRupee, label: 'Budget', value: budget ?? 'Open to quotes' },
+    { icon: Calendar, label: 'Posted', value: dateLabel(requirement.created_at) ?? '—' },
+    { icon: MessageSquare, label: 'Quotations', value: String(requirement.quote_count ?? 0) },
+  ];
+
+  const lockedPanel = (title: string, body: string) => (
+    <div className="mx-auto flex max-w-sm flex-col items-center px-2 py-10 text-center">
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#F5B301]/60 bg-[#F5B301]/10">
+        <Crown className="h-7 w-7 fill-[#FFC928] text-[#C98A00]" aria-hidden="true" />
+      </span>
+      <p className="mt-3 text-[16px] font-black">{title}</p>
+      <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{body}</p>
+      <Link
+        to={user ? upgradeHref : '/pricing'}
+        className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl border-[1.5px] border-[#F5B301] bg-[#F5B301]/10 px-5 text-[14px] font-bold text-foreground"
+      >
+        <Crown className="h-5 w-5 fill-[#FFC928] text-[#C98A00]" aria-hidden="true" /> Upgrade to Premium
+      </Link>
+      {!user && (
+        <Link to="/auth" className="mt-2 text-[12px] font-semibold text-[#FF5A00] hover:underline">Already Premium? Sign in</Link>
+      )}
+    </div>
+  );
 
   return (
     <Sheet open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <SheetContent side="right" className="w-full sm:max-w-xl md:w-[600px] max-w-[100vw] flex flex-col p-0 bg-background border-l border-border overflow-hidden">
+      <SheetContent side="right" className="flex h-[100dvh] w-full max-w-[100vw] flex-col gap-0 overflow-hidden border-l border-border bg-background p-0 sm:max-w-xl md:w-[640px]">
         {/* Header */}
-        <SheetHeader className="bg-card border-b border-border text-foreground px-5 py-4 shrink-0">
-          <SheetTitle className="text-[15px] font-black text-foreground leading-snug pr-6">
-            {requirement.title}
-          </SheetTitle>
-          <div className="flex items-center gap-2 flex-wrap">
+        <SheetHeader className="shrink-0 space-y-1.5 border-b border-border bg-card px-4 pb-3 pt-4 text-left">
+          <div className="flex flex-wrap items-center gap-1.5 pr-8">
             {requirement.categories && (
-              <span className="text-[10px] font-semibold text-[#FF5A00] bg-[#FF5A00]/15 px-2 py-0.5 rounded-full">
-                {requirement.categories.name}
+              <span className="rounded-full bg-[#FF5A00]/15 px-2 py-0.5 text-[10.5px] font-semibold text-[#FF5A00]">{requirement.categories.name}</span>
+            )}
+            {requirement.req_number && <span className="text-[10.5px] text-muted-foreground">{requirement.req_number}</span>}
+            {isUrgent && (
+              <span className="flex items-center gap-0.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10.5px] font-bold text-red-500">
+                <Zap className="h-3 w-3" /> Urgent
               </span>
             )}
-            {requirement.req_number && (
-              <span className="text-[10px] text-muted-foreground">{requirement.req_number}</span>
-            )}
-            {/* @ts-expect-error */}
-            {requirement.is_urgent && (
-              <span className="text-[10px] font-bold text-red-400 flex items-center gap-1">
-                <Zap className="w-3 h-3" /> URGENT
-              </span>
+            {requirement.is_verified_buyer && (
+              <span className="flex items-center gap-0.5 text-[10.5px] font-semibold text-[#FF5A00]"><BadgeCheck className="h-3.5 w-3.5" /> Verified buyer</span>
             )}
           </div>
+          <SheetTitle className="pr-8 text-[17px] font-black leading-snug text-foreground md:text-[19px]">{requirement.title}</SheetTitle>
+          <SheetDescription className="sr-only">Buying requirement details, quotations and chat</SheetDescription>
         </SheetHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="shrink-0 mx-4 mt-3 bg-card border border-border rounded-xl h-9 p-0.5">
-            <TabsTrigger value="overview" className="flex-1 text-[12px] h-8 rounded-lg data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white">
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="quotes" className="flex-1 text-[12px] h-8 rounded-lg data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white">
-              Quotes {quotes.length > 0 && <span className="ml-1 bg-[#FF5A00]/15 text-[#FF5A00] rounded-full px-1.5 text-[10px]">{quotes.length}</span>}
-            </TabsTrigger>
-            <TabsTrigger value="chat" className="flex-1 text-[12px] h-8 rounded-lg data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white">
-              Chat
-            </TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
+          <TabsList className="mx-4 mt-3 grid h-10 shrink-0 grid-cols-3 rounded-xl border border-border bg-card p-1">
+            {[
+              { id: 'overview', label: 'Overview' },
+              { id: 'quotes', label: isOwner ? 'Quotations' : 'My Quote', count: myQuotes.length },
+              { id: 'chat', label: 'Chat' },
+            ].map(t => (
+              <TabsTrigger key={t.id} value={t.id} className="h-8 rounded-lg text-[12.5px] font-semibold data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white">
+                {t.label}
+                {t.count ? <span className="ml-1 rounded-full bg-black/15 px-1.5 text-[10px]">{t.count}</span> : null}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
-          {/* Overview tab */}
-          <TabsContent value="overview" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
-            <DealStatusBar status={dealStatus} isBuyer={!!isBuyer} onAdvance={handleAdvanceDealStatus} />
-
-            {/* Requirement Reference Visual */}
-            <div className="rounded-xl overflow-hidden border border-border bg-muted/40 relative aspect-video max-h-48">
-              <SafeImage
-                src={requirement.attachment_url}
-                alt={requirement.title}
-                type="rfq"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-2 left-2 bg-background/85 backdrop-blur-sm border border-border/50 px-2 py-0.5 rounded text-[10px] font-medium text-foreground">
-                Requirement Visual Reference
-              </div>
+          {/* Overview: the whole requirement, scrolling inside the full-height panel */}
+          <TabsContent value="overview" className="mt-0 min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-6 pt-3 data-[state=inactive]:hidden">
+            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border bg-muted/40">
+              <SafeImage src={picture} alt={requirement.title} type="rfq" className="h-full w-full object-cover" />
+              <span className="absolute bottom-2 left-2 rounded-md border border-border/50 bg-background/85 px-2 py-0.5 text-[10px] font-medium text-foreground backdrop-blur-sm">
+                Reference picture
+              </span>
             </div>
 
-            {/* Details card */}
-            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3 text-[12px]">
-                <div>
-                  <p className="text-muted-foreground text-[10px] mb-0.5">Quantity</p>
-                  <p className="font-bold text-foreground">{requirement.quantity.toLocaleString()} {requirement.quantity_unit}</p>
+            <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {facts.map(({ icon: Icon, label, value, note }) => (
+                <div key={label} className="rounded-xl border border-border bg-card p-3">
+                  <dt className="flex items-center gap-1 text-[10.5px] font-medium text-muted-foreground">
+                    <Icon className="h-3.5 w-3.5 text-[#FF5A00]" aria-hidden="true" /> {label}
+                  </dt>
+                  <dd className="mt-1 break-words text-[14px] font-bold leading-snug text-foreground">{value}</dd>
+                  {note && <dd className="text-[10.5px] text-muted-foreground">{note}</dd>}
                 </div>
-                {requirement.destination_country && (
-                  <div>
-                    <p className="text-muted-foreground text-[10px] mb-0.5">Delivery Location</p>
-                    <p className="font-bold text-foreground">{requirement.destination_country}{requirement.destination_city ? `, ${requirement.destination_city}` : ''}</p>
-                  </div>
-                )}
-                {requirement.deadline && (
-                  <div>
-                    <p className="text-muted-foreground text-[10px] mb-0.5 flex items-center gap-1"><Calendar className="w-3 h-3" /> Deadline</p>
-                    <p className="font-bold text-foreground">{new Date(requirement.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                  </div>
-                )}
-                {(requirement.budget_max ?? requirement.budget_min) && (
-                  <div>
-                    <p className="text-muted-foreground text-[10px] mb-0.5">Budget</p>
-                    <p className="font-bold text-foreground">
-                      {requirement.currency} {(requirement.budget_max ?? requirement.budget_min)?.toLocaleString()}
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-orange-400 text-[10px] mb-0.5 flex items-center gap-1 font-bold"><Zap className="w-3 h-3 fill-current" /> Priority</p>
-                  <p className="font-extrabold text-orange-500 uppercase tracking-wider text-xs">Urgent RFQ</p>
+              ))}
+            </dl>
+
+            <DealStatusBar status={dealStatus} isBuyer={isOwner} onAdvance={handleAdvanceDealStatus} />
+
+            <section className="rounded-2xl border border-border bg-card p-3.5">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FF5A00]/15 text-[16px] font-black text-[#FF5A00]">
+                  {buyerName.charAt(0).toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-bold text-foreground">{buyerName}</p>
+                  <p className="truncate text-[11.5px] text-muted-foreground">
+                    {requirement.is_verified_buyer ? 'Verified buyer' : 'Buyer'}{place ? ` · ${place}` : ''}
+                  </p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground text-[10px] mb-0.5 flex items-center gap-1"><Package className="w-3 h-3" /> Quotes</p>
-                  <p className="font-bold text-[#FF5A00]">{requirement.quote_count}</p>
-                </div>
+                {requirement.is_verified_buyer && <BadgeCheck className="h-5 w-5 shrink-0 text-[#FF5A00]" aria-hidden="true" />}
               </div>
+              {!canSeeContact && (
+                <p className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-2 text-[11.5px] text-muted-foreground">
+                  <Lock className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" aria-hidden="true" />
+                  The buyer's phone and email are shown only to Premium Suppliers.
+                </p>
+              )}
+            </section>
 
-              {requirement.description && (
-                <div>
-                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">Description</p>
-                  <p className="text-[12px] text-foreground leading-relaxed">{withoutOutsideLinks(requirement.description)}</p>
-                </div>
-              )}
-              {gemUrl && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <GovernmentTenderBadge />
-                </div>
-              )}
-              {requirement.specifications && (!gemUrl || specificationProse(requirement.specifications)) && (
-                <div>
-                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">Specifications</p>
-                  <p className="text-[12px] text-foreground leading-relaxed whitespace-pre-wrap">{withoutOutsideLinks(gemUrl ? specificationProse(requirement.specifications) : requirement.specifications)}</p>
-                </div>
-              )}
-              {/* Only files stored by BulkSkart open from here; links to other websites are not shown */}
-              {requirement.attachment_url && isOwnUrl(requirement.attachment_url) && (
-                <a href={requirement.attachment_url} target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#FF5A00] hover:underline">
-                  <Upload className="w-3.5 h-3.5" /> View Attachment
-                </a>
-              )}
-              {requirement.is_verified_buyer && (
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#FF5A00]">
-                  <BadgeCheck className="w-3.5 h-3.5" /> Verified Buyer
-                </div>
-              )}
-
-              {/* Paid Subscription Companies Only Notice & Direct Message / Quote CTA */}
-              {!isBuyer && (
-                <div className="pt-2 border-t border-border flex flex-col gap-2">
-                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 flex items-start gap-2.5">
-                    <Lock className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-bold text-foreground">{contactMissing ? 'Quotation on BulkSkart' : 'Paid Subscription Companies Only'}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                        {contactMissing
-                          ? 'No buyer phone number is listed for this tender. You can still send a quotation.'
-                          : 'Only verified companies with an active paid plan can send direct messages and quotations to this buyer.'}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={async () => {
-                      if (!user) {
-                        setSubDialogReason('not_logged_in');
-                        setSubDialogOpen(true);
-                        return;
-                      }
-                      if (!company) {
-                        setSubDialogReason('not_registered_business');
-                        setSubDialogOpen(true);
-                        return;
-                      }
-                      const subCheck = await checkSupplierPaidSubscription(company.id, company);
-                      if (!subCheck.allowed) {
-                        setSubDialogReason(subCheck.reason);
-                        setSubDialogOpen(true);
-                        return;
-                      }
-                      const quota = await checkDirectMessageQuota(company.id, company);
-                      if (quota !== 'ok') {
-                        setSubDialogReason(quota);
-                        setSubDialogOpen(true);
-                        return;
-                      }
-                      setRespondDialogOpen(true);
-                    }}
-                    className="w-full bg-[#FF5A00] hover:bg-[#e04e00] text-white font-bold h-10 rounded-xl shadow-md gap-2"
-                  >
-                    <Send className="w-4 h-4" /> {contactMissing ? 'Send Quote' : 'Send Direct Quote / Message Buyer'}
-                  </Button>
-                </div>
-              )}
-            </div>
+            {description && (
+              <section className="rounded-2xl border border-border bg-card p-3.5">
+                <h3 className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Description</h3>
+                <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-foreground">{shown(description)}</p>
+              </section>
+            )}
+            {gemUrl && <div className="flex flex-wrap items-center gap-2"><GovernmentTenderBadge /></div>}
+            {specs && (
+              <section className="rounded-2xl border border-border bg-card p-3.5">
+                <h3 className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Specifications</h3>
+                <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-foreground">{shown(specs)}</p>
+              </section>
+            )}
+            {contactsHidden && (
+              <p className="flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
+                <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Phone numbers and emails in the text are hidden for members without a paid plan.
+              </p>
+            )}
+            {/* Only files stored by BulkSkart open from here; links to other websites are not shown */}
+            {requirement.attachment_url && isOwnUrl(requirement.attachment_url) && (
+              <a href={requirement.attachment_url} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-1 text-[12px] font-semibold text-[#FF5A00] hover:underline">
+                <Upload className="h-3.5 w-3.5" /> View attachment
+              </a>
+            )}
+            {contactMissing && (
+              <p className="px-1 text-[11px] text-muted-foreground">No buyer phone number is listed for this tender. You can still send a quotation on BulkSkart.</p>
+            )}
           </TabsContent>
 
-          {/* Quotes tab */}
-          <TabsContent value="quotes" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0">
-            {/* Auto-quotations panel (buyer only) — additive, above manual quotes */}
-            {isBuyer && requirement && (
-              <BuyerQuotationsPanel
-                requirementId={requirement.id}
-                requirementTitle={requirement.title}
-                buyerId={user?.id ?? ''}
-              />
+          {/* Quotations: the buyer's received quotations, or the supplier's own */}
+          <TabsContent value="quotes" className="mt-0 min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-6 pt-3 data-[state=inactive]:hidden">
+            {isOwner && (
+              <BuyerQuotationsPanel requirementId={requirement.id} requirementTitle={requirement.title} buyerId={user?.id ?? ''} />
             )}
-            {/* Manual quotations divider */}
-            {isBuyer && quotes.length > 0 && (
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pt-1">
-                Manual Supplier Responses
-              </p>
+            {isOwner && quotes.length > 0 && (
+              <p className="pt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Supplier quotations</p>
             )}
             {loadingQuotes ? (
               <div className="space-y-3">
-                {[1, 2].map(i => <div key={i} className="h-28 bg-card border border-border rounded-xl animate-pulse" />)}
+                {[1, 2].map(i => <div key={i} className="h-28 animate-pulse rounded-xl border border-border bg-card" />)}
               </div>
-            ) : quotes.length === 0 && !isBuyer ? (
-              <div className="text-center py-16">
-                <MessageSquare className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-[13px] font-semibold text-foreground">No responses yet</p>
-                <p className="text-[12px] text-muted-foreground">Suppliers will respond to your requirement soon.</p>
+            ) : myQuotes.length > 0 ? (
+              myQuotes.map(q => (
+                <QuoteCard key={q.id} q={q} isBuyer={isOwner} onAccept={handleAcceptQuote} onReject={handleRejectQuote} onChat={handleOpenChat} />
+              ))
+            ) : isOwner ? (
+              <div className="py-12 text-center">
+                <MessageSquare className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
+                <p className="text-[13px] font-semibold text-foreground">No quotations yet</p>
+                <p className="text-[12px] text-muted-foreground">Quotations from suppliers appear here as they arrive.</p>
+              </div>
+            ) : premium ? (
+              <div className="py-12 text-center">
+                <Send className="mx-auto mb-3 h-10 w-10 text-[#FF5A00]/60" />
+                <p className="text-[14px] font-bold text-foreground">You have not quoted on this RFQ yet</p>
+                <p className="mx-auto mt-1 max-w-xs text-[12.5px] text-muted-foreground">Send your price, MOQ and delivery time. The buyer sees it at once and can chat with you.</p>
+                <Button onClick={sendQuotation} className="mt-4 h-11 gap-2 rounded-xl bg-[#FF5A00] px-6 font-bold text-white hover:bg-[#e04e00]">
+                  <Send className="h-4 w-4" /> Send Quotation
+                </Button>
               </div>
             ) : (
-              quotes.map(q => (
-                <QuoteCard
-                  key={q.id}
-                  q={q}
-                  isBuyer={!!isBuyer}
-                  onAccept={handleAcceptQuote}
-                  onReject={handleRejectQuote}
-                  onChat={handleOpenChat}
-                />
-              ))
+              lockedPanel('Quotations are for Premium Suppliers', 'Only registered companies with an active paid plan can send quotations to buyers.')
             )}
           </TabsContent>
 
-          {/* Chat tab */}
-          <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 mt-0">
-            {!activeConvId ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                <MessageSquare className="w-10 h-10 text-muted-foreground/30 mb-3" />
-                <p className="text-[13px] font-semibold text-foreground mb-1">No active conversation</p>
+          {/* Chat with the buyer (Premium suppliers) or with a supplier who quoted (the buyer) */}
+          <TabsContent value="chat" className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
+            {activeConvId ? (
+              <ChatPanel conversationId={activeConvId} currentUserId={user?.id ?? ''} />
+            ) : isOwner ? (
+              <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
+                <MessageSquare className="mb-3 h-10 w-10 text-muted-foreground/30" />
+                <p className="mb-1 text-[13px] font-semibold text-foreground">No chat open</p>
                 <p className="text-[12px] text-muted-foreground">
-                  {quotes.length > 0
-                    ? 'Go to the Quotes tab and click "Chat / Negotiate" on a supplier response.'
-                    : 'Once suppliers respond, you can chat with them here.'}
+                  {quotes.length > 0 ? 'Open Quotations and tap "Chat / Negotiate" on a supplier.' : 'Suppliers who quote can chat with you here.'}
                 </p>
               </div>
+            ) : premium ? (
+              <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FF5A00]/12">
+                  <MessageSquare className="h-7 w-7 text-[#FF5A00]" />
+                </span>
+                <p className="mt-3 text-[15px] font-bold text-foreground">Chat with {buyerName}</p>
+                <p className="mx-auto mt-1 max-w-xs text-[12.5px] text-muted-foreground">Ask about specifications, quantity or delivery before you quote.</p>
+                <Button onClick={startChatWithBuyer} disabled={chatStarting} className="mt-4 h-11 gap-2 rounded-xl bg-[#FF5A00] px-6 font-bold text-white hover:bg-[#e04e00]">
+                  {chatStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />} Start chat
+                </Button>
+              </div>
             ) : (
-              <ChatPanel conversationId={activeConvId} currentUserId={user?.id ?? ''} />
+              <div className="flex-1 overflow-y-auto px-4">
+                {lockedPanel('Chat is for Premium Suppliers', 'Only registered companies with an active paid plan can chat with buyers.')}
+              </div>
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Actions: chat and quotation, for Premium suppliers */}
+        {showActionBar && (
+          <div className="shrink-0 border-t border-border bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
+            {!premium && (
+              <p className="mb-2 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                <Crown className="h-3.5 w-3.5 shrink-0 fill-[#FFC928] text-[#C98A00]" aria-hidden="true" />
+                Only Premium Suppliers (active paid plan) can chat and send quotations.
+              </p>
+            )}
+            <div className="grid grid-cols-[1fr_1.35fr] gap-2">
+              <Button variant="outline" onClick={startChatWithBuyer} disabled={chatStarting} className="h-11 gap-1.5 rounded-xl border-[#FF5A00]/50 font-bold text-[#E04E00] hover:bg-[#FF5A00]/10 dark:text-[#FF7A2E]">
+                {chatStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : premium ? <MessageSquare className="h-4 w-4" /> : <Lock className="h-4 w-4" />} Chat
+              </Button>
+              <Button onClick={sendQuotation} className="h-11 gap-1.5 rounded-xl bg-[#FF5A00] font-bold text-white shadow-md hover:bg-[#e04e00]">
+                {premium ? <Send className="h-4 w-4" /> : <Lock className="h-4 w-4" />} Send Quotation
+              </Button>
+            </div>
+          </div>
+        )}
 
         <SubscribeToContactDialog
           open={subDialogOpen}
@@ -644,7 +684,8 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
             supplierCompanyId={company.id}
             onResponded={() => {
               loadQuotes();
-              toast.success('Your quote has been submitted to the buyer!');
+              setActiveTab('quotes');
+              toast.success('Your quotation has been sent to the buyer!');
             }}
           />
         )}
