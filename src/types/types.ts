@@ -34,6 +34,8 @@ export interface Profile {
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
+  /** Admins who decide who else is an admin (migration 00070) */
+  is_super_admin?: boolean;
 }
 
 export interface Company {
