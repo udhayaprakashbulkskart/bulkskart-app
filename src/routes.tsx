@@ -74,6 +74,7 @@ const AdminDashboardFull    = lazy(() => import('./pages/dashboard/admin/AdminDa
 const AdminReportsPage      = lazy(() => import('./pages/dashboard/admin/AdminReportsPage'));
 const AdminPublicRequirementsPage = lazy(() => import('./pages/dashboard/admin/AdminPublicRequirementsPage'));
 const AdminPaymentsPage     = lazy(() => import('./pages/dashboard/admin/AdminPaymentsPage'));
+const SuperAdminPage        = lazy(() => import('./pages/dashboard/admin/SuperAdminPage'));
 const SupplierWalletPage    = lazy(() => import('./pages/dashboard/supplier/SupplierWalletPage'));
 const FactoryVisitsPage     = lazy(() => import('./pages/dashboard/shared/FactoryVisitsPage'));
 const AIMatchAnalyticsPage  = lazy(() => import('./pages/dashboard/admin/AIMatchAnalyticsPage'));
@@ -255,6 +256,7 @@ export const routes: RouteConfig[] = [
   { name: 'Admin Reports', path: '/dashboard/admin/reports', element: <AdminReportsPage /> },
   { name: 'Admin Public Requirements', path: '/dashboard/admin/public-requirements', element: <AdminPublicRequirementsPage /> },
   { name: 'Admin Payments', path: '/dashboard/admin/payments', element: <AdminPaymentsPage /> },
+  { name: 'Super Admin', path: '/dashboard/admin/super', element: <SuperAdminPage /> },
 
   // ── Company / Legal ───────────────────────────────────────────
   { name: 'About Us',      path: '/about',         element: <AboutPage />,        public: true },

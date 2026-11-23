@@ -21,12 +21,13 @@ export function resolveUserRole(
   const fromProfile = normalizeAppRole(profile?.role);
   if (fromProfile) return fromProfile;
 
+  // sign-up data comes from the browser, so it can say buyer or supplier but never makes anyone an admin
   const meta = user?.user_metadata || {};
-  return (
+  const fromMeta =
     normalizeAppRole(meta.role as string | undefined) ||
     normalizeAppRole(meta.account_role as string | undefined) ||
-    normalizeAppRole(meta.user_role as string | undefined)
-  );
+    normalizeAppRole(meta.user_role as string | undefined);
+  return fromMeta === 'admin' ? 'buyer' : fromMeta;
 }
 
 export function getDashboardPathForRole(role?: AppRole | null): string {
