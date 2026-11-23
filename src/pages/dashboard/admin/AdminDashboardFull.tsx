@@ -15,11 +15,17 @@ import {
   TrendingUp, Package, MessageSquare, Wallet, Shield,
 } from 'lucide-react';
 import PageMeta from '@/components/common/PageMeta';
+import { openPrivateDocument } from '@/lib/supplierMap/api';
 import AdminLoanRequests from '@/components/dashboard/AdminLoanRequests';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BarsChart, Gauge, Kpi, Mini, PageHeader, Panel, Segmented } from '@/components/dashboard/parts';
 import type { KpiTone } from '@/components/dashboard/parts';
 import { bucketByMonth, fetchMonthly, lastMonths, percentChange, sum } from '@/components/dashboard/series';
+
+/** Business documents are private: open them through a link that expires in 5 minutes. */
+const openDoc = async (url: string | null) => {
+  if (url && !(await openPrivateDocument(url))) toast.error('Could not open the document');
+};
 
 // ─── Types ───────────────────────────────────────────────────
 type CompanyRow = {
@@ -462,11 +468,11 @@ export default function AdminDashboardFull() {
                         <td className="px-3 py-3 text-xs">{c.gst_number || '—'}</td>
                         <td className="px-3 py-3">
                           <div className="flex gap-1 flex-wrap">
-                            {c.gst_doc_url && <a href={c.gst_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">GST</a>}
-                            {c.pan_doc_url && <a href={c.pan_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-500/10 text-[#FF5A00] rounded">PAN</a>}
-                            {c.reg_doc_url && <a href={c.reg_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">REG</a>}
-                            {c.factory_doc_url && <a href={c.factory_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">Factory</a>}
-                            {c.bank_doc_url && <a href={c.bank_doc_url} target="_blank" rel="noreferrer" className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">Bank</a>}
+                            {c.gst_doc_url && <button type="button" onClick={() => openDoc(c.gst_doc_url)} className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">GST</button>}
+                            {c.pan_doc_url && <button type="button" onClick={() => openDoc(c.pan_doc_url)} className="text-[10px] px-1.5 py-0.5 bg-orange-500/10 text-[#FF5A00] rounded">PAN</button>}
+                            {c.reg_doc_url && <button type="button" onClick={() => openDoc(c.reg_doc_url)} className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">REG</button>}
+                            {c.factory_doc_url && <button type="button" onClick={() => openDoc(c.factory_doc_url)} className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">Factory</button>}
+                            {c.bank_doc_url && <button type="button" onClick={() => openDoc(c.bank_doc_url)} className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded">Bank</button>}
                             {!c.gst_doc_url && !c.pan_doc_url && <span className="text-xs text-muted-foreground">None uploaded</span>}
                           </div>
                           {c.bank_account_name && <p className="text-xs text-muted-foreground mt-0.5">{c.bank_account_name} · {c.bank_ifsc}</p>}

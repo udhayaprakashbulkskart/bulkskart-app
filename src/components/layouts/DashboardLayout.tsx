@@ -13,7 +13,7 @@ import {
   Settings, LogOut, Menu, Globe, BarChart3, TrendingUp,
   Shield, Flag, CreditCard, Building2, UserCircle,
   Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
-  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown,
+  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown, MapPin, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -25,6 +25,7 @@ const UNPAID_SUPPLIER_ALLOWLIST = [
   '/dashboard/supplier/subscription',
   '/dashboard/supplier/profile',
   '/dashboard/supplier/verification',
+  '/dashboard/supplier/map-listing', // getting verified for the supplier map is free
   '/dashboard/supplier/messages',
   '/dashboard/supplier/notifications',
   '/dashboard/supplier/wallet', // their own money, plan or not
@@ -37,6 +38,7 @@ const UNPAID_SUPPLIER_ALLOWLIST = [
   '/dashboard/manufacturer/subscription',
   '/dashboard/manufacturer/profile',
   '/dashboard/manufacturer/verification',
+  '/dashboard/manufacturer/map-listing',
   '/dashboard/manufacturer/messages',
   '/dashboard/manufacturer/notifications',
   '/dashboard/manufacturer/overview',
@@ -83,6 +85,7 @@ export const supplierNavItems: NavItem[] = [
   { label: 'Messages', href: '/dashboard/supplier/messages', icon: MessageSquare },
   { label: 'Notifications', href: '/dashboard/supplier/notifications', icon: Bell },
   { label: 'Verification', href: '/dashboard/supplier/verification', icon: Shield },
+  { label: 'Supplier Map', href: '/dashboard/supplier/map-listing', icon: MapPin },
   { label: 'Disputes', href: '/dashboard/supplier/disputes', icon: Flag },
   { label: 'Analytics', href: '/dashboard/supplier/analytics', icon: BarChart3 },
   { label: 'Subscription', href: '/dashboard/supplier/subscription', icon: CreditCard },
@@ -92,6 +95,7 @@ export const supplierNavItems: NavItem[] = [
 export const adminNavItems: NavItem[] = [
   { label: 'Control Panel', href: '/dashboard/admin', icon: LayoutDashboard },
   { label: 'AI Match Analytics', href: '/dashboard/admin/ai-match-analytics', icon: Zap },
+  { label: 'Verifications', href: '/dashboard/admin/verifications', icon: ShieldCheck },
   { label: 'Reports', href: '/dashboard/admin/reports', icon: Flag },
   { label: 'Public Requirements', href: '/dashboard/admin/public-requirements', icon: Globe2 },
   { label: 'Payments', href: '/dashboard/admin/payments', icon: Wallet },

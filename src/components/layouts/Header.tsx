@@ -50,6 +50,7 @@ const navLinks = [
   { label: 'AI Import & Export Assistant', href: '/trade-assistant' },
   { label: 'My Quotations', href: '/my-quotations' },
   { label: 'Suppliers', href: '/manufacturers' },
+  { label: 'Supplier Map', href: '/supplier-map' },
   { label: 'Post RFQ', href: '/post-requirement' },
   { label: 'Trade Assurance', href: '/how-it-works' },
   { label: 'Pricing', href: '/pricing' },
@@ -545,11 +546,12 @@ export default function Header() {
       <nav className="dh-nav hidden md:block border-t border-border">
         <div className="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center overflow-x-auto scrollbar-none whitespace-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {navLinks.map((link, i) => (
+            {navLinks.map((link) => (
               <Link key={link.href} to={link.href}
                 {...getPrefetchHandlers(link.href)}
+                aria-current={isActive(link.href) ? 'page' : undefined}
                 className={`whitespace-nowrap px-3.5 lg:px-4 py-2.5 text-[12.5px] lg:text-[13px] font-medium transition-colors hover:text-primary border-b-2 ${
-                  i === 0 ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
+                  isActive(link.href) ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
                 }`}>
                 {link.label}
               </Link>
