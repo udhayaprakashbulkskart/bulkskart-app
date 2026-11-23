@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Lock, Eye, EyeOff, ShieldCheck, Sparkles, ArrowRight, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { CONTACT_LOCK_NOTE, contactUpgradeHref } from '@/lib/contactAccess';
 import {
   Dialog,
   DialogContent,
@@ -80,30 +81,12 @@ export default function MaskedPhone({
   const formatted = resolvedPhone ? formatPhone(resolvedPhone, country) : null;
   const masked = formatted ? maskPhone(formatted, country) : getCountryGuestMask(country);
 
-  // ── 1. Guest (not logged in) ──────────────────────────────────────
-  if (!user) {
-    return (
-      <span className={`inline-flex items-center gap-1.5 text-xs ${className}`}>
-        {showIcon && <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
-        <span className="text-muted-foreground font-mono tracking-wider select-none">
-          {masked}
-        </span>
-        <Link
-          to="/auth"
-          className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-primary hover:underline ml-1"
-        >
-          <Lock className="w-2.5 h-2.5" /> Login to reveal
-        </Link>
-      </span>
-    );
-  }
+  // ── 1. Not a paid subscriber (guests, buyers and unpaid manufacturers) ──
+  // Rule: only members with an active paid subscription can see contact numbers (admins count as paid).
+  const isLocked = !isPaidSubscriber;
+  const upgradeHref = contactUpgradeHref(profile?.role);
 
-  // ── 2. Logged-in Manufacturer without Paid Subscription ───────────
-  // Rule: Manufacturers subscription paid users only can see the contact numbers.
-  // Unpaid manufacturers cannot view contacts.
-  const isUnpaidManufacturer = profile?.role === 'supplier' && !isPaidSubscriber;
-
-  if (isUnpaidManufacturer) {
+  if (isLocked) {
     return (
       <>
         <span className={`inline-flex items-center gap-1.5 text-xs ${className}`}>
@@ -115,7 +98,7 @@ export default function MaskedPhone({
             type="button"
             onClick={() => setUpgradeModalOpen(true)}
             className="inline-flex items-center gap-1 text-[10px] font-bold text-[#FF5A1F] hover:text-[#e04f00] bg-[#FF5A1F]/10 hover:bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 px-2 py-0.5 rounded transition-all cursor-pointer"
-            title="Paid Subscription required to view contact number"
+            title="Paid subscription required to view contact number"
           >
             <Lock className="w-2.5 h-2.5" />
             <span>Subscribe to View</span>
@@ -130,10 +113,10 @@ export default function MaskedPhone({
                 <Lock className="w-6 h-6" />
               </div>
               <DialogTitle className="text-lg font-bold text-foreground">
-                Manufacturer Subscription Required
+                Paid Subscription Required
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-                Direct {contextDesc} are reserved exclusively for manufacturers with an active paid subscription plan.
+                {CONTACT_LOCK_NOTE} This includes {contextDesc}.
               </DialogDescription>
             </DialogHeader>
 
@@ -151,21 +134,27 @@ export default function MaskedPhone({
             </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2 mt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setUpgradeModalOpen(false)}
-                className="w-full sm:w-auto text-xs"
-              >
-                Cancel
-              </Button>
-              <Link to="/dashboard/supplier/subscription" className="w-full sm:w-auto">
+              {user ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setUpgradeModalOpen(false)}
+                  className="w-full sm:w-auto text-xs"
+                >
+                  Cancel
+                </Button>
+              ) : (
+                <Link to="/auth" className="w-full sm:w-auto">
+                  <Button variant="outline" size="sm" className="w-full text-xs">Already subscribed? Log in</Button>
+                </Link>
+              )}
+              <Link to={upgradeHref} className="w-full sm:w-auto">
                 <Button
                   size="sm"
                   className="w-full bg-[#FF5A1F] hover:bg-[#e04f00] text-white font-bold text-xs gap-1.5"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Upgrade Plan Now</span>
+                  <span>{profile?.role === 'supplier' ? 'Upgrade Plan Now' : 'See Paid Plans'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               </Link>
@@ -176,7 +165,7 @@ export default function MaskedPhone({
     );
   }
 
-  // ── 3. Logged in, no phone data available ─────────────────────────
+  // ── 2. Paid, but no phone data available ──────────────────────────
   if (!formatted) {
     return (
       <span className={`inline-flex items-center gap-1.5 text-xs text-muted-foreground ${className}`}>
@@ -186,7 +175,7 @@ export default function MaskedPhone({
     );
   }
 
-  // ── 4. Paid Subscriber Manufacturer, Buyer, or Admin ──────────────
+  // ── 3. Paid subscriber or admin ───────────────────────────────────
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs ${className}`}>
       {showIcon && <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}

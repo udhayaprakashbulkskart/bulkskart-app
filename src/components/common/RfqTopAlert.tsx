@@ -21,7 +21,7 @@ import {
   VISIBLE_MS,
   isNewRfq,
   rfqAlertsOff,
-  rfqBudgetPerUnit,
+  rfqBudget,
   rfqQuantity,
   setRfqAlertsOff,
   usableLeads,
@@ -175,7 +175,7 @@ export default function RfqTopAlert() {
   if (!active || !current) return null;
 
   const quantity = rfqQuantity(current);
-  const budget = rfqBudgetPerUnit(current);
+  const budget = rfqBudget(current);
   const fresh = isNewRfq(current.created_at);
 
   const close = () => {

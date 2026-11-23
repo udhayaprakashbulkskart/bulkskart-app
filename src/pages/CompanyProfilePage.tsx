@@ -10,6 +10,8 @@ import { supabase } from '@/db/supabase';
 import { copyText, supplierPublicUrl, telLink, waLink } from '@/lib/supplierPublicProfile';
 import type { Company, Product, CompanyCertification, CompanyReview } from '@/types/types';
 import { useAuth } from '@/contexts/AuthContext';
+import LockedContact from '@/components/common/LockedContact';
+import { canViewContacts, contactUpgradeHref } from '@/lib/contactAccess';
 import SafeImage from '@/components/common/SafeImage';
 import { resolveCompanyBranding } from '@/lib/contentImages';
 import {
@@ -57,7 +59,7 @@ function CertBadge({ cert }: { cert: CompanyCertification }) {
 export default function CompanyProfilePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile, isPaidSubscriber } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [certs, setCerts] = useState<CompanyCertification[]>([]);
@@ -69,13 +71,9 @@ export default function CompanyProfilePage() {
   const [visitOpen, setVisitOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const publicLinkRef = useRef<HTMLInputElement>(null);
-  const [owner, setOwner] = useState<{
-    full_name: string | null;
-    phone: string | null;
-    email: string | null;
-    whatsapp_number: string | null;
-    avatar_url: string | null;
-  } | null>(null);
+  const [owner, setOwner] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
+  // phone, WhatsApp and email: loaded only for people allowed to see them (see lib/contactAccess)
+  const [contact, setContact] = useState<{ phone: string | null; email: string | null; whatsapp_number: string | null } | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -93,7 +91,7 @@ export default function CompanyProfilePage() {
         if (co.owner_id) {
           const { data: ownerRow } = await supabase
             .from('profiles')
-            .select('full_name, phone, email, whatsapp_number, avatar_url')
+            .select('full_name, avatar_url')
             .eq('id', co.owner_id)
             .maybeSingle();
           setOwner(ownerRow);
@@ -102,6 +100,27 @@ export default function CompanyProfilePage() {
       setLoading(false);
     });
   }, [slug]);
+
+  const ownerId = company?.owner_id ?? null;
+  const canSeeContact = canViewContacts({ isPaidSubscriber, viewerId: user?.id, ownerId });
+  useEffect(() => {
+    if (!canSeeContact || !ownerId) {
+      setContact(null);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('profiles')
+      .select('phone, email, whatsapp_number')
+      .eq('id', ownerId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setContact(data ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [canSeeContact, ownerId]);
 
   if (loading) return (
     <MainLayout>
@@ -137,9 +156,9 @@ export default function CompanyProfilePage() {
     : company.years_in_business;
 
   const companyRecord = company as Company & { whatsapp_number?: string | null };
-  const phone = owner?.phone?.trim() || '';
-  const whatsapp = companyRecord.whatsapp_number?.trim() || owner?.whatsapp_number?.trim() || phone;
-  const email = owner?.email?.trim() || '';
+  const phone = canSeeContact ? contact?.phone?.trim() || '' : '';
+  const whatsapp = canSeeContact ? companyRecord.whatsapp_number?.trim() || contact?.whatsapp_number?.trim() || phone : '';
+  const email = canSeeContact ? contact?.email?.trim() || '' : '';
   const logoSrc = company.logo_url || owner?.avatar_url || resolveCompanyBranding({ company_name: company.company_name, industry: company.business_type || undefined }).logo;
 
   const publicUrl = supplierPublicUrl(company.slug);
@@ -660,6 +679,7 @@ export default function CompanyProfilePage() {
             <div className="bg-card border border-border rounded-xl p-3 md:p-4">
               <h3 className="text-sm font-semibold text-foreground mb-3">Contact</h3>
               <div className="space-y-2">
+                {!canSeeContact && <LockedContact upgradeHref={contactUpgradeHref(profile?.role)} />}
                 {phone ? (
                   <a href={telLink(phone)} className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm font-semibold text-foreground">
                     <Phone className="w-4 h-4 text-[#FF5A00] shrink-0" />
@@ -684,7 +704,7 @@ export default function CompanyProfilePage() {
                     <span>{[company.address, company.city, company.state, company.country, company.pincode].filter(Boolean).join(', ')}</span>
                   </p>
                 )}
-                {!phone && !whatsapp && !email && (
+                {canSeeContact && !phone && !whatsapp && !email && (
                   <p className="text-xs text-muted-foreground">This supplier has not added a public phone or email yet.</p>
                 )}
               </div>

@@ -33,7 +33,8 @@ import { RFQ_ALERTS_EVENT, rfqAlertsOff, setRfqAlertsOff } from '@/lib/rfqAlerts
 import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
 
 const PAGE_SIZE = 10;
-const REQ_SELECT = '*, profiles!buyer_id(id,full_name,email), categories!category_id(id,name,slug)';
+// no buyer email or phone here: the feed never shows them, and visitors cannot read them (migration 00069)
+const REQ_SELECT = '*, profiles!buyer_id(id,full_name), categories!category_id(id,name,slug)';
 const SAVED_KEY = 'bulkskart_saved_rfqs';
 const HOUR = 3600e3;
 const URGENT_BADGE_HOURS = 6; // red badge: ends within 6 hours
