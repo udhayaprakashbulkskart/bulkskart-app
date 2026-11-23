@@ -29,7 +29,7 @@ export const DISMISS_DAYS = 3;
 const SHOW_AFTER_MS = 3000;
 /** Pages where the popup would get in the way. */
 // the supplier map is a full-screen map with its own "list your business" prompt
-export const NO_POPUP_PATHS = /^\/(auth|login|register|signup|forgot-password|reset-password|dashboard|admin|checkout|payment|pay|supplier-map)(\/|$)/;
+export const NO_POPUP_PATHS = /^\/(auth|login|register|signup|forgot-password|reset-password|dashboard|admin|checkout|payment|pay|supplier-map|register-factory)(\/|$)/;
 
 function dismissedRecently(): boolean {
   try {

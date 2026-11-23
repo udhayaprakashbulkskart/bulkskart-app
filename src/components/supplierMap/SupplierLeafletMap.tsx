@@ -8,6 +8,7 @@ import 'leaflet/dist/leaflet.css';
 import './supplierMap.css';
 import type { MapSupplier } from '@/lib/supplierMap/types';
 import { WORLD_BOUNDS } from '@/lib/supplierMap/places';
+import { spreadPositions } from '@/lib/supplierMap/spread';
 import { baseTiles, satelliteTiles } from '@/lib/supplierMap/tiles';
 
 const FACTORY_SVG =
@@ -16,10 +17,16 @@ const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-export function factoryIcon(selected = false, label?: string): L.DivIcon {
+/** About 26 screen pixels in degrees at the map's zoom, so companies sharing a point stay apart when zoomed out. */
+function spreadRadius(m: L.Map | null): number {
+  const z = m?.getZoom() ?? 10;
+  return (26 * 360) / (256 * 2 ** z);
+}
+
+export function factoryIcon(selected = false, label?: string, verified = true): L.DivIcon {
   return L.divIcon({
     className: 'bsm-marker',
-    html: `<div class="bsm-pin${selected ? ' is-selected' : ''}" ${label ? `title="${esc(label)}"` : ''}><span class="bsm-pin-head">${FACTORY_SVG}</span><span class="bsm-pin-check">${CHECK_SVG}</span></div>`,
+    html: `<div class="bsm-pin${selected ? ' is-selected' : ''}${verified ? '' : ' is-premium'}" ${label ? `title="${esc(label)}"` : ''}><span class="bsm-pin-head">${FACTORY_SVG}</span>${verified ? `<span class="bsm-pin-check">${CHECK_SVG}</span>` : ''}</div>`,
     iconSize: selected ? [48, 58] : [38, 46],
     iconAnchor: selected ? [24, 56] : [19, 44],
   });
@@ -62,6 +69,8 @@ export default function SupplierLeafletMap({ suppliers, selectedId, onSelect, bu
   cb.current = { onSelect, onUserMove, onView };
   const pad = useRef(padding);
   pad.current = padding;
+  const suppliersRef = useRef(suppliers);
+  suppliersRef.current = suppliers;
 
   // create once
   useEffect(() => {
@@ -72,6 +81,15 @@ export default function SupplierLeafletMap({ suppliers, selectedId, onSelect, bu
     m.attributionControl.setPrefix(false);
     layer.current = L.layerGroup().addTo(m);
     const node = el.current;
+    // companies sharing a point (a city centre) are fanned out again after each zoom
+    m.on('zoomend', () => {
+      const list = suppliersRef.current;
+      const at = spreadPositions(list.map((s) => ({ id: s.company_id, lat: s.latitude, lng: s.longitude })), spreadRadius(m));
+      for (const [id, mk] of markers.current) {
+        const p = at.get(id);
+        if (p) mk.setLatLng(p);
+      }
+    });
     // tapping a marker pans the map to it; that is not the person exploring a new area
     const mark = (e: Event) => {
       if (!(e.target instanceof Element && e.target.closest('.leaflet-marker-icon'))) lastInput.current = Date.now();
@@ -118,14 +136,19 @@ export default function SupplierLeafletMap({ suppliers, selectedId, onSelect, bu
         markers.current.delete(id);
       }
     }
+    const at = spreadPositions(suppliers.map((s) => ({ id: s.company_id, lat: s.latitude, lng: s.longitude })), spreadRadius(map.current));
     for (const s of suppliers) {
-      const pos = L.latLng(s.latitude, s.longitude);
+      const pos = L.latLng(at.get(s.company_id) ?? [s.latitude, s.longitude]);
       const existing = markers.current.get(s.company_id);
       if (existing) {
         existing.setLatLng(pos);
         continue;
       }
-      const mk = L.marker(pos, { icon: factoryIcon(s.company_id === selectedId, s.company_name), keyboard: true, title: s.company_name, riseOnHover: true, alt: `${s.company_name}, verified manufacturer` });
+      const mk = L.marker(pos, {
+        icon: factoryIcon(s.company_id === selectedId, s.company_name, s.verified !== false),
+        keyboard: true, title: s.company_name, riseOnHover: true,
+        alt: `${s.company_name}, ${s.verified !== false ? 'verified manufacturer' : 'manufacturer'}`,
+      });
       mk.on('click', () => cb.current.onSelect(s.company_id));
       mk.addTo(g);
       markers.current.set(s.company_id, mk);
@@ -137,7 +160,7 @@ export default function SupplierLeafletMap({ suppliers, selectedId, onSelect, bu
   useEffect(() => {
     for (const [id, mk] of markers.current) {
       const s = suppliers.find((x) => x.company_id === id);
-      mk.setIcon(factoryIcon(id === selectedId, s?.company_name));
+      mk.setIcon(factoryIcon(id === selectedId, s?.company_name, s?.verified !== false));
       mk.setZIndexOffset(id === selectedId ? 1000 : 0);
     }
     const m = map.current;

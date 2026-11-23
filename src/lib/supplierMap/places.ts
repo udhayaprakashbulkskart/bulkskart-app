@@ -11,6 +11,8 @@ export interface Place {
   country: string;
   lat: number;
   lng: number;
+  /** other names people write ("Bombay", "Bangalore") */
+  aka?: string[];
 }
 
 /** South-west and north-east corners that frame the inhabited world. */
@@ -18,7 +20,7 @@ export const WORLD_BOUNDS: [[number, number], [number, number]] = [[-50, -150], 
 /** Mainland India, for the manufacturer pin picker when the factory is in India. */
 export const INDIA_BOUNDS: [[number, number], [number, number]] = [[6.5, 68.0], [35.7, 97.4]];
 
-const P = (name: string, country: string, lat: number, lng: number, region?: string): Place => ({ name, country, lat, lng, region });
+const P = (name: string, country: string, lat: number, lng: number, region?: string, aka?: string[]): Place => ({ name, country, lat, lng, region, aka });
 
 export const PLACES: Place[] = [
   // India
@@ -26,19 +28,19 @@ export const PLACES: Place[] = [
   P('Ahmedabad', 'India', 23.0225, 72.5714, 'Gujarat'),
   P('Aurangabad', 'India', 19.8762, 75.3433, 'Maharashtra'),
   P('Baddi', 'India', 30.9578, 76.7914, 'Himachal Pradesh'),
-  P('Bengaluru', 'India', 12.9716, 77.5946, 'Karnataka'),
+  P('Bengaluru', 'India', 12.9716, 77.5946, 'Karnataka', ['Bangalore']),
   P('Bhiwandi', 'India', 19.2813, 73.0483, 'Maharashtra'),
   P('Bhopal', 'India', 23.2599, 77.4126, 'Madhya Pradesh'),
   P('Bhubaneswar', 'India', 20.2961, 85.8245, 'Odisha'),
   P('Chandigarh', 'India', 30.7333, 76.7794, 'Chandigarh'),
-  P('Chennai', 'India', 13.0827, 80.2707, 'Tamil Nadu'),
+  P('Chennai', 'India', 13.0827, 80.2707, 'Tamil Nadu', ['Madras']),
   P('Coimbatore', 'India', 11.0168, 76.9558, 'Tamil Nadu'),
   P('Dehradun', 'India', 30.3165, 78.0322, 'Uttarakhand'),
-  P('Delhi', 'India', 28.6139, 77.209, 'Delhi'),
+  P('Delhi', 'India', 28.6139, 77.209, 'Delhi', ['New Delhi']),
   P('Erode', 'India', 11.341, 77.7172, 'Tamil Nadu'),
   P('Faridabad', 'India', 28.4089, 77.3178, 'Haryana'),
   P('Guwahati', 'India', 26.1445, 91.7362, 'Assam'),
-  P('Gurugram', 'India', 28.4595, 77.0266, 'Haryana'),
+  P('Gurugram', 'India', 28.4595, 77.0266, 'Haryana', ['Gurgaon']),
   P('Hosur', 'India', 12.7409, 77.8253, 'Tamil Nadu'),
   P('Hyderabad', 'India', 17.385, 78.4867, 'Telangana'),
   P('Indore', 'India', 22.7196, 75.8577, 'Madhya Pradesh'),
@@ -47,22 +49,22 @@ export const PLACES: Place[] = [
   P('Jamnagar', 'India', 22.4707, 70.0577, 'Gujarat'),
   P('Kanpur', 'India', 26.4499, 80.3319, 'Uttar Pradesh'),
   P('Karur', 'India', 10.9601, 78.0766, 'Tamil Nadu'),
-  P('Kochi', 'India', 9.9312, 76.2673, 'Kerala'),
-  P('Kolkata', 'India', 22.5726, 88.3639, 'West Bengal'),
+  P('Kochi', 'India', 9.9312, 76.2673, 'Kerala', ['Cochin']),
+  P('Kolkata', 'India', 22.5726, 88.3639, 'West Bengal', ['Calcutta']),
   P('Lucknow', 'India', 26.8467, 80.9462, 'Uttar Pradesh'),
   P('Ludhiana', 'India', 30.901, 75.8573, 'Punjab'),
   P('Madurai', 'India', 9.9252, 78.1198, 'Tamil Nadu'),
-  P('Mangaluru', 'India', 12.9141, 74.856, 'Karnataka'),
+  P('Mangaluru', 'India', 12.9141, 74.856, 'Karnataka', ['Mangalore']),
   P('Moradabad', 'India', 28.8386, 78.7733, 'Uttar Pradesh'),
   P('Morbi', 'India', 22.8173, 70.8377, 'Gujarat'),
-  P('Mumbai', 'India', 19.076, 72.8777, 'Maharashtra'),
-  P('Mysuru', 'India', 12.2958, 76.6394, 'Karnataka'),
+  P('Mumbai', 'India', 19.076, 72.8777, 'Maharashtra', ['Bombay']),
+  P('Mysuru', 'India', 12.2958, 76.6394, 'Karnataka', ['Mysore']),
   P('Nagpur', 'India', 21.1458, 79.0882, 'Maharashtra'),
   P('Nashik', 'India', 19.9975, 73.7898, 'Maharashtra'),
   P('Noida', 'India', 28.5355, 77.391, 'Uttar Pradesh'),
   P('Panipat', 'India', 29.3909, 76.9635, 'Haryana'),
   P('Patna', 'India', 25.5941, 85.1376, 'Bihar'),
-  P('Pune', 'India', 18.5204, 73.8567, 'Maharashtra'),
+  P('Pune', 'India', 18.5204, 73.8567, 'Maharashtra', ['Poona']),
   P('Raipur', 'India', 21.2514, 81.6296, 'Chhattisgarh'),
   P('Rajkot', 'India', 22.3039, 70.8022, 'Gujarat'),
   P('Ranchi', 'India', 23.3441, 85.3096, 'Jharkhand'),
@@ -70,11 +72,70 @@ export const PLACES: Place[] = [
   P('Sivakasi', 'India', 9.4533, 77.8024, 'Tamil Nadu'),
   P('Surat', 'India', 21.1702, 72.8311, 'Gujarat'),
   P('Thane', 'India', 19.2183, 72.9781, 'Maharashtra'),
-  P('Tiruppur', 'India', 11.1085, 77.3411, 'Tamil Nadu'),
-  P('Vadodara', 'India', 22.3072, 73.1812, 'Gujarat'),
+  P('Tiruppur', 'India', 11.1085, 77.3411, 'Tamil Nadu', ['Tirupur']),
+  P('Vadodara', 'India', 22.3072, 73.1812, 'Gujarat', ['Baroda']),
   P('Varanasi', 'India', 25.3176, 82.9739, 'Uttar Pradesh'),
   P('Vijayawada', 'India', 16.5062, 80.648, 'Andhra Pradesh'),
-  P('Visakhapatnam', 'India', 17.6868, 83.2185, 'Andhra Pradesh'),
+  P('Amritsar', 'India', 31.634, 74.8723, 'Punjab'),
+  P('Aligarh', 'India', 27.8974, 78.088, 'Uttar Pradesh'),
+  P('Ankleshwar', 'India', 21.6264, 73.0152, 'Gujarat'),
+  P('Bareilly', 'India', 28.367, 79.4304, 'Uttar Pradesh'),
+  P('Belagavi', 'India', 15.8497, 74.4977, 'Karnataka', ['Belgaum']),
+  P('Bhavnagar', 'India', 21.7645, 72.1519, 'Gujarat'),
+  P('Bhilai', 'India', 21.1938, 81.3509, 'Chhattisgarh'),
+  P('Bhiwadi', 'India', 28.2104, 76.8606, 'Rajasthan'),
+  P('Cuddalore', 'India', 11.748, 79.7714, 'Tamil Nadu'),
+  P('Cuttack', 'India', 20.4625, 85.883, 'Odisha'),
+  P('Dindigul', 'India', 10.3673, 77.9803, 'Tamil Nadu'),
+  P('Durgapur', 'India', 23.5204, 87.3119, 'West Bengal'),
+  P('Ernakulam', 'India', 9.9816, 76.2999, 'Kerala'),
+  P('Firozabad', 'India', 27.1592, 78.3957, 'Uttar Pradesh'),
+  P('Gangtok', 'India', 27.3389, 88.6065, 'Sikkim'),
+  P('Ghaziabad', 'India', 28.6692, 77.4538, 'Uttar Pradesh'),
+  P('Gorakhpur', 'India', 26.7606, 83.3732, 'Uttar Pradesh'),
+  P('Guntur', 'India', 16.3067, 80.4365, 'Andhra Pradesh'),
+  P('Gwalior', 'India', 26.2183, 78.1828, 'Madhya Pradesh'),
+  P('Haridwar', 'India', 29.9457, 78.1642, 'Uttarakhand'),
+  P('Hubballi', 'India', 15.3647, 75.124, 'Karnataka', ['Hubli']),
+  P('Imphal', 'India', 24.817, 93.9368, 'Manipur'),
+  P('Jabalpur', 'India', 23.1815, 79.9864, 'Madhya Pradesh'),
+  P('Jammu', 'India', 32.7266, 74.857, 'Jammu and Kashmir'),
+  P('Jamshedpur', 'India', 22.8046, 86.2029, 'Jharkhand'),
+  P('Jodhpur', 'India', 26.2389, 73.0243, 'Rajasthan'),
+  P('Kanchipuram', 'India', 12.8342, 79.7036, 'Tamil Nadu'),
+  P('Kolhapur', 'India', 16.705, 74.2433, 'Maharashtra'),
+  P('Kota', 'India', 25.2138, 75.8648, 'Rajasthan'),
+  P('Kozhikode', 'India', 11.2588, 75.7804, 'Kerala', ['Calicut']),
+  P('Manesar', 'India', 28.354, 76.9378, 'Haryana'),
+  P('Meerut', 'India', 28.9845, 77.7064, 'Uttar Pradesh'),
+  P('Mohali', 'India', 30.7046, 76.7179, 'Punjab'),
+  P('Namakkal', 'India', 11.2189, 78.1677, 'Tamil Nadu'),
+  P('Navi Mumbai', 'India', 19.033, 73.0297, 'Maharashtra'),
+  P('Nellore', 'India', 14.4426, 79.9865, 'Andhra Pradesh'),
+  P('Panaji', 'India', 15.4909, 73.8278, 'Goa', ['Goa']),
+  P('Port Blair', 'India', 11.6234, 92.7265, 'Andaman and Nicobar Islands'),
+  P('Prayagraj', 'India', 25.4358, 81.8463, 'Uttar Pradesh', ['Allahabad']),
+  P('Puducherry', 'India', 11.9416, 79.8083, 'Puducherry', ['Pondicherry']),
+  P('Rourkela', 'India', 22.2604, 84.8536, 'Odisha'),
+  P('Shillong', 'India', 25.5788, 91.8933, 'Meghalaya'),
+  P('Shimla', 'India', 31.1048, 77.1734, 'Himachal Pradesh'),
+  P('Siliguri', 'India', 26.7271, 88.3953, 'West Bengal'),
+  P('Solapur', 'India', 17.6599, 75.9064, 'Maharashtra'),
+  P('Sonipat', 'India', 28.9931, 77.0151, 'Haryana'),
+  P('Sriperumbudur', 'India', 12.9675, 79.9419, 'Tamil Nadu'),
+  P('Thanjavur', 'India', 10.787, 79.1378, 'Tamil Nadu'),
+  P('Thiruvananthapuram', 'India', 8.5241, 76.9366, 'Kerala', ['Trivandrum']),
+  P('Thoothukudi', 'India', 8.7642, 78.1348, 'Tamil Nadu', ['Tuticorin']),
+  P('Thrissur', 'India', 10.5276, 76.2144, 'Kerala'),
+  P('Tiruchirappalli', 'India', 10.7905, 78.7047, 'Tamil Nadu', ['Trichy']),
+  P('Tirunelveli', 'India', 8.7139, 77.7567, 'Tamil Nadu'),
+  P('Tirupati', 'India', 13.6288, 79.4192, 'Andhra Pradesh'),
+  P('Udaipur', 'India', 24.5854, 73.7125, 'Rajasthan'),
+  P('Ujjain', 'India', 23.1765, 75.7885, 'Madhya Pradesh'),
+  P('Vapi', 'India', 20.3893, 72.9106, 'Gujarat'),
+  P('Vellore', 'India', 12.9165, 79.1325, 'Tamil Nadu'),
+  P('Warangal', 'India', 17.9689, 79.5941, 'Telangana'),
+  P('Visakhapatnam', 'India', 17.6868, 83.2185, 'Andhra Pradesh', ['Vizag']),
   // South Asia
   P('Dhaka', 'Bangladesh', 23.8103, 90.4125),
   P('Chattogram', 'Bangladesh', 22.3569, 91.7832),
@@ -230,7 +291,8 @@ export const placeLabel = (p: Place): string => `${p.name}, ${p.country}`;
 export function findPlace(value: string): Place | undefined {
   const v = value.trim().toLowerCase();
   if (!v) return undefined;
-  return PLACES.find((p) => placeLabel(p).toLowerCase() === v) ?? PLACES.find((p) => p.name.toLowerCase() === v);
+  return PLACES.find((p) => placeLabel(p).toLowerCase() === v)
+    ?? PLACES.find((p) => p.name.toLowerCase() === v || p.aka?.some((a) => a.toLowerCase() === v));
 }
 
 const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -240,10 +302,10 @@ export function searchPlaces(query: string, limit = 8): Place[] {
   const q = fold(query.trim());
   if (!q) return [];
   const scored = PLACES.map((p) => {
-    const name = fold(p.name);
+    const names = [p.name, ...(p.aka ?? [])].map(fold);
     const country = fold(p.country);
     const region = fold(p.region ?? '');
-    const score = name.startsWith(q) ? 0 : country.startsWith(q) ? 1 : region.startsWith(q) ? 2 : name.includes(q) ? 3 : country.includes(q) ? 4 : -1;
+    const score = names.some((n) => n.startsWith(q)) ? 0 : country.startsWith(q) ? 1 : region.startsWith(q) ? 2 : names.some((n) => n.includes(q)) ? 3 : country.includes(q) ? 4 : -1;
     return { p, score };
   }).filter((x) => x.score >= 0);
   scored.sort((a, b) => a.score - b.score || a.p.name.localeCompare(b.p.name));

@@ -35,6 +35,7 @@ const CLOSING_DURATIONS = [
 export default function PostRequirementPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
@@ -70,6 +71,10 @@ export default function PostRequirementPage() {
     getCategories().then(cats => {
       if (cats && cats.length > 0) setCategories(cats);
     });
+
+    // "Request quotation" from the supplier map passes the product the buyer searched for
+    const asked = searchParams.get('q')?.trim();
+    if (asked) setForm((prev) => (prev.title ? prev : { ...prev, title: asked.slice(0, 120) }));
 
     const savedDraft = localStorage.getItem('bulkskart_rfq_draft');
     if (savedDraft) {

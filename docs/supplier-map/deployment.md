@@ -2,6 +2,21 @@
 
 ## 1. Database (Supabase SQL editor)
 
+**If 00071 is already live** (it is on www.bulkskart.com since 23 Nov 2026), run only
+`supabase/migrations/00072_supplier_map_paid_and_existing.sql`. It shows manufacturers with a paid plan, including
+existing profiles placed at their city. It is safe to run again.
+
+Check it with:
+
+```sql
+SELECT count(*) FROM public.map_places;                       -- about 270
+SELECT company_name, location_precision, verified FROM public.map_search_suppliers();
+```
+
+Paid companies without a city or a pin do not show; their map page in the dashboard tells them to add one.
+
+The first install was:
+
 1. Make sure migrations 00069 and 00070 have been run.
 2. Open `supabase/migrations/00071_supplier_map.sql`, paste the whole file into the SQL editor and run it. It is one
    transaction, it only adds things, and it is safe to run again.

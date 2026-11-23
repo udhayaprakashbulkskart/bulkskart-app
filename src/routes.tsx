@@ -30,6 +30,7 @@ const BlogDetailPage          = lazy(() => import('./pages/BlogDetailPage'));
 const AllCategoriesPage       = lazy(() => import('./pages/AllCategoriesPage'));
 // Live Verified Supplier Map (migration 00071)
 const SupplierMapPage         = lazy(() => import('./pages/SupplierMapPage'));
+const RegisterFactoryPage     = lazy(() => import('./pages/RegisterFactoryPage'));
 const SupplierMapListingPage  = lazy(() => import('./pages/dashboard/supplier/SupplierMapListingPage'));
 const AdminVerificationsPage  = lazy(() => import('./pages/dashboard/admin/AdminVerificationsPage'));
 
@@ -133,6 +134,7 @@ export const routes: RouteConfig[] = [
   { name: 'Product Detail', path: '/products/:slug', element: <ProductDetailPage />, public: true },
   { name: 'Categories Hub', path: '/categories', element: <AllCategoriesPage />, public: true },
   { name: 'Supplier Map', path: '/supplier-map', element: <SupplierMapPage />, public: true },
+  { name: 'Register Your Factory', path: '/register-factory', element: <RegisterFactoryPage />, public: true },
   { name: 'Categories Slug Hub', path: '/categories/:slug', element: <AllCategoriesPage />, public: true },
   { name: 'Category Route', path: '/category/:slug', element: <AllCategoriesPage />, public: true },
   { name: 'Login Alias', path: '/login', element: <AuthPage />, public: true },

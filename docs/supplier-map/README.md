@@ -1,6 +1,6 @@
 # Live Verified Supplier Map
 
-Buyers anywhere in the world find verified manufacturers near them, or in any country, on a map (`/supplier-map`).
+Buyers anywhere in the world find manufacturers with a paid BulkSkart plan near them, or in any country, on a map (`/supplier-map`); a green check marks the ones BulkSkart has verified.
 Manufacturers in India or abroad apply to be listed (`/dashboard/supplier/map-listing`), and admins check and approve
 them (`/dashboard/admin/verifications`).
 
@@ -42,24 +42,56 @@ The site's Download App popup and "New RFQ" alert stay off the map page so they 
 It is a separate module. It reuses the existing accounts, companies, products, auth, the private
 `verification-docs` storage bucket and the Instant Quote form. It deletes no data, and existing pages keep working.
 
-## Who appears on the map
+## Who appears on the map (migration 00072)
 
-The database decides this, in one function (`public.map_visible_company_ids()`, migration 00071). The search and
-detail functions the website calls go through it, so no page can show a business that does not qualify.
+The database decides this in one function, `public.map_visible_company_ids()`. The search and detail functions the
+website calls go through it, so no page can show a company that does not qualify.
 
-A company is shown only when **all** of these hold:
+A company is shown when **all** of these hold:
 
-| Rule | Column |
+| Rule | Where it comes from |
 | --- | --- |
-| Registration application approved by an admin | `business_verifications.status = 'approved'` |
-| Approval less than a year old (yearly recheck) | `business_verifications.recheck_due_at > now()` |
-| Company verified and not blocked | `companies.verification_status = 'verified'`, `NOT companies.is_blocked` |
-| Owner's account is an active supplier account | `profiles.status = 'active'`, `profiles.role = 'supplier'` |
-| At least one active product | `products.is_active` |
-| Factory location verified by an admin | `factory_locations.status = 'verified'` |
+| Active **paid** plan | a `subscriptions` row with status `active` that has not passed `ends_at` (the same rule as quotations) |
+| Active manufacturer account | `profiles.status = 'active'`, `profiles.role = 'supplier'` |
+| Not blocked, not rejected | `NOT companies.is_blocked`, `companies.verification_status <> 'rejected'`, and no rejected or suspended map application |
 | Not a demo/template company | owner `00000000-…-000000000001`, id prefix `e1000001-0000-0000-0000-` |
+| Somewhere to put it | see the placement order below |
 
-Pending, needs-info, rejected, suspended, blocked, inactive and demo companies never appear.
+Existing manufacturer profiles therefore show automatically. Products and the new registration application are not
+required.
+
+**Placement**, in this order:
+
+| Order | Placement | Label |
+| --- | --- | --- |
+| 1 | The factory pin, once an admin has checked it | `exact` |
+| 2 | The pin the manufacturer placed, not yet checked | `pinned` |
+| 3 | The centre of the city in the profile, from the `map_places` table (about 270 names, including older ones like Bombay and Cochin) | `city`, shown as "(approx.)" on cards |
+
+A profile with no city and no pin is not shown until it adds one; its map page tells the manufacturer this.
+
+**Two levels on the map:**
+- **Verified** (green check): BulkSkart verified the company (`verification_status = 'verified'`, not expired), and
+  no newer map application is waiting for review.
+- **Premium** (orange crown, no check): has a paid plan but is not verified yet. The card says "check its registration
+  documents before you pay".
+
+Buyers can tick **Verified by BulkSkart only** in the filters.
+
+## Register your factory (`/register-factory`)
+
+**The form.** One short page:
+- factory/business name, your name, mobile, email and password;
+- factory city and country;
+- what you make (optional);
+- agree to the terms.
+
+**What happens next.** It creates the same kind of manufacturer account as the full signup (the same code saves the
+account and the company). Then the plan step offers a plan, with an option to skip. Then the manufacturer lands on
+the Supplier Map listing page.
+
+**Links to it.** The empty map's only button, the "List your business" popup and the "Register your factory" buttons
+on the map all point here.
 
 ## Verification workflow
 

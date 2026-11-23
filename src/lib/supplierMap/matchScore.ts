@@ -68,7 +68,8 @@ export function matchSupplier(s: MapSupplier, input: MatchInput): MatchResult {
     // full points within 10 km, falling to a quarter at the edge of the search (or 500 km for all India)
     const edge = Math.max(input.radiusKm ?? 500, 20);
     const f = s.distance_km <= 10 ? 1 : Math.max(0.25, 1 - ((s.distance_km - 10) / (edge - 10)) * 0.75);
-    parts.push({ key: 'distance', label: 'Distance', points: Math.round(max * f), max, reason: `${formatKm(s.distance_km)} from you` });
+    const approx = s.location_precision === 'city';
+    parts.push({ key: 'distance', label: 'Distance', points: Math.round(max * f), max, reason: `${approx ? 'About ' : ''}${formatKm(s.distance_km)} from you${approx ? ' (city centre)' : ''}` });
   }
 
   if (input.orderQty && input.orderQty > 0) {
@@ -107,8 +108,12 @@ export function matchSupplier(s: MapSupplier, input: MatchInput): MatchResult {
   {
     const max = WEIGHTS.checks;
     const checked = [s.cin_verified && 'CIN/LLPIN', s.gst_verified && 'GSTIN', s.udyam_verified && 'Udyam', s.registry_verified && 'Company registry'].filter(Boolean) as string[];
-    const f = checked.length >= 2 ? 1 : checked.length === 1 ? 0.7 : 0.5;
-    parts.push({ key: 'checks', label: 'Registration', points: Math.round(max * f), max, reason: checked.length ? `${checked.join(' + ')} checked by BulkSkart` : 'Verified by BulkSkart' });
+    if (s.verified === false) {
+      parts.push({ key: 'checks', label: 'Verification', points: 0, max, reason: 'Not verified by BulkSkart yet' });
+    } else {
+      const f = checked.length >= 2 ? 1 : checked.length === 1 ? 0.7 : 0.5;
+      parts.push({ key: 'checks', label: 'Verification', points: Math.round(max * f), max, reason: checked.length ? `${checked.join(' + ')} checked by BulkSkart` : 'Verified by BulkSkart' });
+    }
   }
 
   if ((s.review_count ?? 0) > 0 && s.rating != null) {

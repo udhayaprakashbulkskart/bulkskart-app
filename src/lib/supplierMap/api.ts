@@ -33,10 +33,15 @@ export async function searchSuppliers(p: MapSearchParams): Promise<{ rows: MapSu
     p_limit: p.limit ?? 100,
     p_offset: p.offset ?? 0,
     p_country: p.country || null,
+    // sent only when used, so the page still works on a database without migration 00072
+    ...(p.verifiedOnly ? { p_verified_only: true } : {}),
   });
   if (error) return { rows: [], total: 0, error };
   const rows = ((data ?? []) as MapSupplier[]).map((r) => ({
     ...r,
+    // before migration 00072 the map held only verified factories at checked pins
+    verified: r.verified ?? true,
+    location_precision: r.location_precision ?? 'exact',
     latitude: Number(r.latitude),
     longitude: Number(r.longitude),
     distance_km: r.distance_km == null ? null : Number(r.distance_km),
@@ -50,7 +55,8 @@ export async function searchSuppliers(p: MapSearchParams): Promise<{ rows: MapSu
 
 export async function supplierDetail(companyId: string, lat?: number | null, lng?: number | null): Promise<{ detail: MapSupplierDetail | null; error: DbError }> {
   const { data, error } = await supabase.rpc('map_supplier_detail', { p_company_id: companyId, p_lat: lat ?? null, p_lng: lng ?? null });
-  return { detail: (data as MapSupplierDetail | null) ?? null, error };
+  const d = (data as MapSupplierDetail | null) ?? null;
+  return { detail: d ? { ...d, verified: d.verified ?? true, location_precision: d.location_precision ?? 'exact', products: Array.isArray(d.products) ? d.products : [] } : null, error };
 }
 
 /**
