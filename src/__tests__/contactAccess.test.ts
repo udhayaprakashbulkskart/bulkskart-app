@@ -32,3 +32,23 @@ describe('visitor queries never ask the database for profile contact columns', (
     expect(sql).toContain('CASE WHEN public.can_view_contacts(bp.user_id) THEN p.email END');
   });
 });
+
+describe('phone numbers and emails inside RFQ text', () => {
+  it('are hidden, while quantities, dates and street numbers stay', async () => {
+    const { maskContactsInText } = await import('@/lib/contactAccess');
+    const text = 'Need 2,000 Pcs by 28/12/2026. Cencora UK, 40-44 Floral Street. WhatsApp Number: +4474723229735, mail buyer@cencora.co.uk or call +91 98765 43210';
+    const out = maskContactsInText(text);
+    expect(out).not.toContain('4474723229735');
+    expect(out).not.toContain('98765 43210');
+    expect(out).not.toContain('buyer@cencora.co.uk');
+    expect(out).toContain('2,000 Pcs by 28/12/2026');
+    expect(out).toContain('40-44 Floral Street');
+  });
+  it('the RFQ panel shows them only to people allowed to see contacts, and fills the screen', () => {
+    const drawer = readFileSync('src/components/common/RequirementDetailDrawer.tsx', 'utf8');
+    expect(drawer).toContain('const shown = (text: string) => (canSeeContact ? text : maskContactsInText(text));');
+    // hidden tabs must not keep their height (the Chat tab used to take half the screen)
+    expect(drawer.match(/data-\[state=inactive\]:hidden/g)?.length).toBe(3);
+    expect(drawer).toContain('h-[100dvh]');
+  });
+});
