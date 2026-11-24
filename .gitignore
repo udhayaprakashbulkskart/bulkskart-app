@@ -13,6 +13,7 @@ dist-ssr
 output
 *.local
 package-lock.json
+!scripts/discovery/package-lock.json
 playwright-report
 test-results
 
