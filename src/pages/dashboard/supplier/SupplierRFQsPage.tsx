@@ -5,8 +5,6 @@ import { Calendar, CheckCircle, Clock, ExternalLink, Inbox, Lock, MapPin, Packag
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import PageMeta from '@/components/common/PageMeta';
 import ProtectedContact from '@/components/common/ProtectedContact';
-import { ExternalSourceLink, GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
-import { gemTenderUrl, sharedBuyerPhone } from '@/lib/externalListing';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -271,8 +269,6 @@ export default function SupplierRFQsPage() {
               {leads.map((lead) => {
                 const place = [lead.destination_city, lead.destination_country].filter(Boolean).join(', ');
                 const quoted = quotedIds.has(lead.id);
-                const gemUrl = gemTenderUrl(lead.specifications);
-                const contactMissing = Boolean(gemUrl) && !sharedBuyerPhone(lead.profiles?.phone);
                 return (
                   <div key={lead.id} className="bg-card border border-border rounded-xl px-3 py-2.5 md:px-3.5 md:py-3 hover:border-primary/30 transition-colors">
                     <div className="flex items-start justify-between gap-3">
@@ -282,13 +278,7 @@ export default function SupplierRFQsPage() {
                             {lead.title}
                           </Link>
                           {lead.created_at && <span className="text-[10px] font-semibold text-orange-500 shrink-0">{postedLabel(lead.created_at)}</span>}
-                          {gemUrl && <GovernmentTenderBadge />}
                         </div>
-                        {gemUrl && (
-                          <ExternalSourceLink href={gemUrl} className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF5A1F] hover:text-[#e04e00] mb-1">
-                            View bid on GeM
-                          </ExternalSourceLink>
-                        )}
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Package className="w-3 h-3" />
@@ -308,14 +298,10 @@ export default function SupplierRFQsPage() {
                           )}
                           {lead.categories?.name && <span>{lead.categories.name}</span>}
                         </div>
-                        {contactMissing ? (
-                          <p className="text-[11px] text-muted-foreground mt-1.5 pt-1 border-t border-border/40">No buyer phone number is listed for this tender.</p>
-                        ) : (
                         <div className="flex items-center gap-2 mt-1.5 pt-1 border-t border-border/40 text-xs">
                           <span className="text-muted-foreground text-[11px] font-medium shrink-0">Contact:</span>
                           <ProtectedContact phone={lead.profiles?.phone} country={lead.destination_country} contactType="buyer" variant="inline" allowPaidSupplierUnlock seed={lead.id} />
                         </div>
-                        )}
                       </div>
                       <div className="flex flex-col items-end gap-1.5 shrink-0">
                         {quoted ? (

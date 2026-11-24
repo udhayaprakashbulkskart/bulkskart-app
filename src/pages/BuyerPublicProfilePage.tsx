@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
 import { telLink, waLink } from '@/lib/supplierPublicProfile';
 import { CONTACT_LOCK_NOTE, canViewContacts, contactUpgradeHref } from '@/lib/contactAccess';
+import { withoutTenderImports } from '@/lib/rfqSources';
 
 interface BuyerPublic {
   user_id: string;
@@ -84,9 +85,9 @@ export default function BuyerPublicProfilePage() {
         setLoading(false);
         return;
       }
-      const { data: reqs } = await supabase
+      const { data: reqs } = await withoutTenderImports(supabase
         .from('requirements')
-        .select('id, title, quantity, quantity_unit, destination_city, destination_country, currency, budget_min, budget_max, images, status')
+        .select('id, title, quantity, quantity_unit, destination_city, destination_country, currency, budget_min, budget_max, images, status'))
         .eq('buyer_id', row.user_id)
         .eq('status', 'active')
         .order('created_at', { ascending: false })

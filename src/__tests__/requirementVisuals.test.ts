@@ -77,17 +77,11 @@ describe('requirement cards show only what the buyer saved', () => {
   it('uses the first line of the description, and nothing made up when it is empty', () => {
     expect(getRequirementVisualInfo(req({ description: '\nPure silk, 5.5 m\nMore text' }), 0, NOW).subtitle).toBe('Pure silk, 5.5 m');
     expect(getRequirementVisualInfo(req(), 0, NOW).subtitle).toBe('');
-    expect(getRequirementVisualInfo(req(), 0, NOW).governmentTenderUrl).toBeNull();
   });
 
-  it('keeps a GeM bid link and does not use the raw JSON as the subtitle', () => {
-    const url = 'https://bidplus.gem.gov.in/all-bids/GEM/2026/B/99';
-    const info = getRequirementVisualInfo(req({
-      description: null,
-      specifications: JSON.stringify({ source_url: url, source_name: 'GeM', item: 'HR coil' }),
-    }), 0, NOW);
-    expect(info.governmentTenderUrl).toBe(url);
-    expect(info.subtitle).toBe('Item: HR coil');
-    expect(getRequirementVisualInfo(req({ specifications: 'Grade: A' }), 0, NOW).governmentTenderUrl).toBeNull();
+  it('offers no outside tender link', () => {
+    const info = getRequirementVisualInfo(req({ specifications: 'Grade: A' }), 0, NOW);
+    expect(info).not.toHaveProperty('governmentTenderUrl');
+    expect(info.subtitle).toBe('Grade: A');
   });
 });

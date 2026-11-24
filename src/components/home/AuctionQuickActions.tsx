@@ -8,6 +8,7 @@ import {
 import SafeImage from '@/components/common/SafeImage';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/db/supabase';
+import { isImportedAuction, withoutImportedAuctions } from '@/lib/auctionListing';
 import CreateReverseAuctionDialog from '@/components/auctions/CreateReverseAuctionDialog';
 
 export interface LiveReverseAuctionItem {
@@ -43,14 +44,13 @@ export default function AuctionQuickActions() {
     async function loadAuctions() {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('auctions')
-          .select('*')
+        const { data: rows, error } = await withoutImportedAuctions(supabase.from('auctions').select('*'))
           .eq('auction_type', 'reverse')
           .order('created_at', { ascending: false })
           .limit(3);
+        const data = (rows ?? []).filter((row) => !isImportedAuction(row));
 
-        if (!error && data && data.length > 0 && isMounted) {
+        if (!error && data.length > 0 && isMounted) {
           const now = Date.now();
           const mapped: LiveReverseAuctionItem[] = data.map((d: any) => {
             const end = d.end_time ? new Date(d.end_time).getTime() : now;
