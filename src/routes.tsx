@@ -34,6 +34,8 @@ const RegisterFactoryPage     = lazy(() => import('./pages/RegisterFactoryPage')
 const SupplierMapListingPage  = lazy(() => import('./pages/dashboard/supplier/SupplierMapListingPage'));
 const AdminVerificationsPage  = lazy(() => import('./pages/dashboard/admin/AdminVerificationsPage'));
 const AdminDiscoveryPage      = lazy(() => import('./pages/dashboard/admin/AdminDiscoveryPage'));
+const LoanKycPage             = lazy(() => import('./pages/dashboard/LoanKycPage'));
+const AdminLoanKycPage        = lazy(() => import('./pages/dashboard/admin/AdminLoanKycPage'));
 const SupplierDirectoryPage   = lazy(() => import('./pages/SupplierDirectoryPage'));
 const CrawlerInfoPage         = lazy(() => import('./pages/CrawlerInfoPage'));
 
@@ -274,6 +276,8 @@ export const routes: RouteConfig[] = [
   { name: 'Super Admin', path: '/dashboard/admin/super', element: <SuperAdminPage /> },
   { name: 'Business Verifications', path: '/dashboard/admin/verifications', element: <AdminVerificationsPage /> },
   { name: 'Supplier Discovery', path: '/dashboard/admin/discovery', element: <AdminDiscoveryPage /> },
+  { name: 'Admin Loan KYC', path: '/dashboard/admin/loan-kyc', element: <AdminLoanKycPage /> },
+  { name: 'Business Loan & KYC', path: '/dashboard/loans', element: <LoanKycPage /> },
 
   // ── Company / Legal ───────────────────────────────────────────
   { name: 'About Us',      path: '/about',         element: <AboutPage />,        public: true },
