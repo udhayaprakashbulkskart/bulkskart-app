@@ -4,7 +4,7 @@ import {
   interpretAadhaarDocument, interpretBank, interpretDigilockerStatus, interpretGstin, interpretPan, keyedHash, nameSimilarity, readConfig,
 } from '../../supabase/functions/kyc/core';
 import {
-  isValidAccount, isValidCin, isValidGstin, isValidIfsc, isValidPan, isValidUdyam, maskPan, normaliseCin, normaliseUdyam, panHolderKind,
+  DOCUMENT_TYPES, isValidAccount, isValidCin, isValidGstin, isValidIfsc, isValidPan, isValidUdyam, maskPan, normaliseCin, normaliseUdyam, panHolderKind,
   safeFileName, sniffMime,
 } from '../../supabase/functions/kyc/validate';
 
@@ -46,6 +46,9 @@ describe('format checks', () => {
     expect(isValidCin('U12345TN2020PTC123456')).toBe(true);
     expect(normaliseCin('aab1234')).toBe('AAB-1234');
     expect(isValidCin('AAB-1234')).toBe(true);
+  });
+  it('a masked Aadhaar copy belongs to the Aadhaar step', () => {
+    expect(DOCUMENT_TYPES.aadhaar_masked.step).toBe('aadhaar');
   });
   it('trusts the file bytes, not the name', () => {
     expect(sniffMime(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]))).toBe('image/jpeg');

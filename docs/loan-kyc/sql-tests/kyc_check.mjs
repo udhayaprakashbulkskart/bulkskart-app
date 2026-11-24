@@ -1,5 +1,5 @@
 /**
- * Runs supabase/migrations/00075_loan_kyc.sql on an in-memory Postgres (PGlite) with Supabase's roles and checks who can
+ * Runs supabase/migrations/00076_loan_kyc.sql on an in-memory Postgres (PGlite) with Supabase's roles and checks who can
  * do what, and that nothing becomes "verified" except through a production provider check or an admin document review.
  *
  *   cd docs/loan-kyc/sql-tests
@@ -39,7 +39,7 @@ INSERT INTO profiles VALUES ('${ADMIN}', 'admin', 'Admin', 'admin@test.invalid')
 `);
 // loan_requests as created by 00058 (the parts the KYC migration relies on)
 await run(readFileSync(new URL('../../../supabase/migrations/00058_loan_requests.sql', import.meta.url), 'utf8'));
-const mig = readFileSync(new URL('../../../supabase/migrations/00075_loan_kyc.sql', import.meta.url), 'utf8');
+const mig = readFileSync(new URL('../../../supabase/migrations/00076_loan_kyc.sql', import.meta.url), 'utf8');
 await run(mig);
 await run(mig);
 ok(true, 'migration runs twice without error');
@@ -131,8 +131,8 @@ ok((await q(`SELECT account_last4 FROM bank_verifications WHERE user_id = '${BUY
 
 // ── submit needs the documents ──
 const sub1 = await as(BUYER, `SELECT public.kyc_submit('${app1.id}', true)`);
-ok(isErr(sub1, 'documents_missing') && sub1.includes('gst_certificate') && sub1.includes('udyam_certificate') && sub1.includes('bank_proof') && !sub1.includes('pan_card'),
-  'submitting lists the missing documents (no PAN card needed once PAN is verified)', sub1);
+ok(isErr(sub1, 'documents_missing') && sub1.includes('gst_certificate') && sub1.includes('udyam_certificate') && sub1.includes('bank_proof') && sub1.includes('aadhaar_masked') && !sub1.includes('pan_card'),
+  'submitting lists the missing documents (masked Aadhaar while Aadhaar is not verified; no PAN card once PAN is verified)', sub1);
 ok(isErr(await as(BUYER, `SELECT public.kyc_submit('${app1.id}', false)`), 'share_consent_required'), 'submitting needs consent to share with the lending partner');
 const doc = (step, type, n) => `SELECT public.kyc_service_add_document('${BUYER}', '${step}', '${type}', '${type}.pdf', 'application/pdf', 20000, '${String(n).repeat(64).slice(0, 64)}', '${BUYER}/${type}-${n}', 'iv', 'k1')`;
 ok(isErr(await svc(`SELECT public.kyc_service_add_document('${BUYER}', 'bank', 'bank_statement', 'x.exe', 'application/x-msdownload', 100, '${SHA}', 'p/x', 'iv', 'k1')`), 'check'), 'only JPG, PNG and PDF are accepted');
@@ -140,7 +140,8 @@ ok(isErr(await svc(`SELECT public.kyc_service_add_document('${BUYER}', 'bank', '
 const dGst = await svc(doc('business', 'gst_certificate', 1));
 const dUdyam = await svc(doc('business', 'udyam_certificate', 2));
 const dBank = await svc(doc('bank', 'cancelled_cheque', 3));
-ok([dGst, dUdyam, dBank].every((d) => typeof d === 'string' && !isErr(d)), 'documents recorded');
+const dAadhaar = await svc(doc('aadhaar', 'aadhaar_masked', 5));
+ok([dGst, dUdyam, dBank, dAadhaar].every((d) => typeof d === 'string' && !isErr(d)), 'documents recorded (including the masked Aadhaar)');
 ok((await as(BUYER, `SELECT public.kyc_submit('${app1.id}', true)`)) === 'in_progress', 'submitted: status Verification In Progress');
 ok((await q(`SELECT stage FROM loan_applications WHERE id = '${app1.id}'`))[0].stage === 'verification', 'the application moves to Verification');
 ok(isErr(await svc(`SELECT public.kyc_service_save_bank('${BUYER}', 'Someone Else', '1111', 'bh2', 'HDFC0001234', 'c', 'i', 'k1')`), 'kyc_locked'), 'details are locked while under review');
@@ -155,7 +156,6 @@ ok(list.total === 1 && list.rows[0].id === app1.id && list.counts.review === 1, 
 const detail = await as(ADMIN, `SELECT public.admin_kyc_detail('${app1.id}')`);
 ok(detail.profile && !('pan_hash' in detail.profile) && detail.documents.every((d) => !('storage_path' in d) && !('enc_iv' in d)), 'admin detail never includes hashes, storage paths or keys');
 ok(isErr(await as(ADMIN, `SELECT public.admin_kyc_decision('${prof1}', 'approve')`), 'steps_not_verified'), 'KYC cannot be approved before every step is verified');
-ok(isErr(await as(ADMIN, `SELECT public.admin_kyc_step_action('${prof1}', 'aadhaar', 'verify_by_document')`), 'aadhaar_digilocker_only'), 'an admin cannot verify Aadhaar by document');
 ok(isErr(await as(ADMIN, `SELECT public.admin_kyc_step_action('${prof1}', 'business', 'verify_by_document')`), 'accepted_document_required'), 'verifying by document needs an accepted document');
 ok(isErr(await as(ADMIN, `SELECT public.admin_kyc_document_action('${dUdyam}', 'reject')`), 'note_required'), 'rejecting a document needs a reason');
 await as(ADMIN, `SELECT public.admin_kyc_document_action('${dGst}', 'accept')`);
@@ -194,6 +194,21 @@ ok((await as(ADMIN, `SELECT public.admin_kyc_decision('${prof2}', 'reject', 'Doc
 ok(isErr(await svc(`SELECT public.kyc_service_save_pan('${LATE}', 'ABXXXXXX4F', 'h9', 'X Y', 'c', 'i', 'k1')`), 'kyc_rejected'), 'a rejected applicant cannot keep editing');
 ok((await as(ADMIN, `SELECT public.admin_kyc_decision('${prof2}', 'reopen', 'Applicant explained; reopened')`)) === 'resubmission_required', 'an admin can reopen a rejected KYC');
 
+// ── manual review without a provider: Aadhaar from a masked copy ──
+const prof3 = await as(OTHER, `SELECT public.kyc_give_consent(NULL, '2026-11-24', '${SHA}')`);
+const dMasked = await svc(`SELECT public.kyc_service_add_document('${OTHER}', 'aadhaar', 'aadhaar_masked', 'aadhaar.pdf', 'application/pdf', 30000, '${'6'.repeat(64)}', '${OTHER}/aadhaar', 'iv', 'k1')`);
+ok(typeof dMasked === 'string' && !isErr(dMasked), 'an applicant can upload a masked Aadhaar copy');
+ok(isErr(await as(ADMIN, `SELECT public.admin_kyc_step_action('${prof3}', 'aadhaar', 'verify_by_document', 'QR checked')`), 'accepted_document_required'), 'Aadhaar is not verified before the copy is accepted');
+await as(ADMIN, `SELECT public.admin_kyc_document_action('${dMasked}', 'accept')`);
+await as(ADMIN, `SELECT public.admin_kyc_step_action('${prof3}', 'aadhaar', 'verify_by_document', 'Masked copy and QR code checked')`);
+const p3 = await profile(OTHER);
+ok(p3.aadhaar_status === 'verified' && p3.aadhaar_verified_via === 'document_review', 'an admin verifies Aadhaar from the accepted masked copy, labelled as a document review');
+ok(isErr(await svc(`SELECT public.kyc_service_record_check('${OTHER}', 'aadhaar', 'aadhaar_digilocker', 'cashfree', 'sandbox', 'verified', '1', 'x1', '{}', NULL)`), 'verified_needs_production_provider'), 'a provider still cannot verify from sandbox');
+// LATE's KYC was reopened above; use it for an unmasked upload
+const dFull = await svc(`SELECT public.kyc_service_add_document('${LATE}', 'aadhaar', 'aadhaar_masked', 'aadhaar-full.jpg', 'image/jpeg', 30000, '${'7'.repeat(64)}', '${LATE}/aadhaar-full', 'iv', 'k1')`);
+await as(ADMIN, `SELECT public.admin_kyc_document_action('${dFull}', 'reject', 'All 12 digits are visible. Upload the masked Aadhaar.')`);
+ok((await svc(`SELECT public.kyc_service_expired_documents()`)).some((e) => e.id === dFull), 'a rejected Aadhaar copy (e.g. not masked) is queued for deletion at once');
+
 // ── documents and audit ──
 const where = await svc(`SELECT public.kyc_service_document_for('${OTHER}', '${dGst}')`);
 ok(isErr(where, 'not_found'), "another user cannot open someone else's document");
@@ -205,17 +220,19 @@ ok((await q(`SELECT count(*)::int n FROM kyc_audit_logs WHERE action = 'document
 ok(isErr(await q(`UPDATE kyc_audit_logs SET action = 'x'`).catch((e) => `ERROR: ${e.message}`), 'append-only'), 'the audit log cannot be changed');
 ok(isErr(await q(`DELETE FROM kyc_audit_logs`).catch((e) => `ERROR: ${e.message}`), 'append-only'), 'or deleted');
 const myLogs = await as(BUYER, `SELECT count(*)::int FROM kyc_audit_logs`);
-const otherLogs = await as(OTHER, `SELECT count(*)::int FROM kyc_audit_logs`);
-ok(myLogs > 5 && otherLogs === 0, 'applicants see only their own history');
+const otherSees = await as(OTHER, `SELECT count(*)::int FROM kyc_audit_logs WHERE subject_user_id IS DISTINCT FROM '${OTHER}'`);
+ok(myLogs > 5 && otherSees === 0, 'applicants see only their own history');
 
 // ── retention ──
 await run(`UPDATE kyc_documents SET delete_after = now() - interval '1 day' WHERE id = '${dGst}'`);
 const expired = await svc(`SELECT public.kyc_service_expired_documents()`);
-ok(expired.length === 1 && expired[0].id === dGst, 'expired documents are listed for deletion');
+ok(expired.some((e) => e.id === dGst), 'expired documents are listed for deletion');
 ok((await svc(`SELECT public.kyc_service_mark_purged(NULL, ARRAY['${dGst}']::uuid[])`)) === 1, 'and marked purged after the file is deleted');
 ok(isErr(await svc(`SELECT public.kyc_service_document_for('${BUYER}', '${dGst}')`), 'not_found'), 'a purged document can no longer be opened');
 ok(isErr(await as(ADMIN, `SELECT public.admin_kyc_update_settings(${J({ document_retention_days: 5 })})`), 'check'), 'retention below 30 days is refused');
 ok((await as(ADMIN, `SELECT public.admin_kyc_update_settings(${J({ document_retention_days: 2555 })})`)).document_retention_days === 2555, 'admins can set the retention period');
+ok((await as(ADMIN, `SELECT public.admin_kyc_update_settings(${J({ review_hours: 4 })})`)).review_hours === 4, 'admins can set the promised call-back time');
+ok(isErr(await as(ADMIN, `SELECT public.admin_kyc_update_settings(${J({ review_hours: 0 })})`), 'check'), 'the call-back time must be at least 1 hour');
 
 // ── account deletion still works ──
 ok(!isErr(await q(`DELETE FROM profiles WHERE id = '${LATE}'`).then(() => 'ok').catch((e) => `ERROR: ${e.message}`)), 'deleting an account removes its KYC rows and keeps the audit log');

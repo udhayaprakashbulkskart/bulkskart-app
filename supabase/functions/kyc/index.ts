@@ -1,5 +1,5 @@
 /**
- * kyc — the only way KYC data and documents get in or out (migration 00075).
+ * kyc — the only way KYC data and documents get in or out (migration 00076).
  *
  * The caller must be signed in (Authorization: Bearer <user JWT>). Everything is written through kyc_service_* database
  * functions, which enforce the rules again. Full PAN and account numbers are encrypted here (AES-256-GCM with
@@ -89,7 +89,7 @@ async function record(db: SupabaseClient, user: string, step: string, checkType:
 }
 
 const pending = (what: string): Interpretation => ({
-  outcome: 'integration_pending', message: `${what}: integration pending. Your details are saved and will be checked once the verification service is connected.`,
+  outcome: 'integration_pending', message: `${what}: automatic check not connected (integration pending). Our team will verify it from your documents.`,
   fields: {}, result: {}, providerRef: null,
 });
 
