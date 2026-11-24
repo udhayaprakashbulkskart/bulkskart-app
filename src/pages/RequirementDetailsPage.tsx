@@ -32,9 +32,7 @@ import { QUOTE_ACCESS_NOTE } from '@/lib/quoteAccess';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
 import AIQuotationModal from '@/components/common/AIQuotationModal';
 import SubmitQuotationWizard from '@/components/rfq/SubmitQuotationWizard';
-import { GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
 import ProtectedContact from '@/components/common/ProtectedContact';
-import { gemTenderUrl, sharedBuyerPhone, specificationProse } from '@/lib/externalListing';
 import ReportItemModal from '@/components/common/ReportItemModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
@@ -376,16 +374,14 @@ export default function RequirementDetailsPage() {
   const budget = hasBudget ? formatPriceRange(req.budget_min, req.budget_max, req.currency, req.currency || 'INR', undefined, { openEnded: false }) : null;
   const deadlinePassed = Boolean(req.deadline && new Date(req.deadline).getTime() < Date.now() - 24 * 60 * 60 * 1000);
   const isOpen = req.status === 'active' && !deadlinePassed;
-  const gemUrl = gemTenderUrl(req.specifications);
   // phone numbers and emails a buyer typed into the text: only for paid members (and never in search snippets)
   const showText = (text: string) => (canViewContacts({ isPaidSubscriber, viewerId: user?.id, ownerId: req.buyer_id }) ? text : maskContactsInText(text));
   const publicText = (text?: string | null) => maskContactsInText(withoutOutsideLinks(text ?? '')).replace(/\s+/g, ' ').trim();
-  const specText = showText((gemUrl ? specificationProse(req.specifications) : req.specifications) ?? '');
+  const specText = showText(req.specifications ?? '');
   // tender imports and demo rows stay out of search results
   const keepOutOfSearch = isOutsideListing(req) || isSeededRequirement(req);
   const specs = parseSpecs(specText);
   const buyer = req.profiles as (Requirement['profiles'] & { company_name?: string | null }) | undefined;
-  const contactMissing = Boolean(gemUrl) && !sharedBuyerPhone(buyer?.phone);
   const buyerName = buyer?.company_name || buyer?.full_name || 'Buyer';
   const memberSince = buyer?.created_at ? new Date(buyer.created_at).getFullYear() : null;
   const quoteCount = quotes.length;
@@ -403,12 +399,10 @@ export default function RequirementDetailsPage() {
         {busy === 'quote' ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
         {myQuotes.length > 0 ? 'Send a New Quote' : 'Send Quote'}
       </button>
-      {!contactMissing && (
       <button type="button" onClick={handleMessageBuyer} disabled={busy === 'message'} className="fk-btn is-ghost">
         {busy === 'message' ? <Loader2 className="animate-spin" aria-hidden="true" /> : <MessageSquare aria-hidden="true" />}
         Message Buyer
       </button>
-      )}
     </div>
   );
 
@@ -467,7 +461,6 @@ export default function RequirementDetailsPage() {
                 <span className="sr-only">Copy the requirement number</span>
               </button>
               {req.created_at && <span className="text-xs text-muted-foreground">{postedLabel(req.created_at)}</span>}
-              {gemUrl && <GovernmentTenderBadge />}
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground leading-tight">{req.title}</h1>
             <LoanEligibleTag size="sm" />
@@ -795,14 +788,8 @@ export default function RequirementDetailsPage() {
                 </dl>
                 {!isPoster && (
                   <div className="mt-3 space-y-2">
-                    {contactMissing ? (
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        No buyer phone number is listed for this tender. You can still send a quotation.
-                      </p>
-                    ) : (
-                      <ProtectedContact phone={buyer?.phone} country={req.destination_country} contactType="buyer" variant="card" allowPaidSupplierUnlock seed={req.id} />
-                    )}
-                    {(isSupplier || company) && !contactMissing && (
+                    <ProtectedContact phone={buyer?.phone} country={req.destination_country} contactType="buyer" variant="card" allowPaidSupplierUnlock seed={req.id} />
+                    {(isSupplier || company) && (
                       <button
                         type="button"
                         onClick={handleMessageBuyer}

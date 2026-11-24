@@ -53,6 +53,23 @@ export function withoutOutsideLinks(text?: string | null): string {
   return text.replace(LINK, (link) => (isOwnUrl(link) ? link : '')).replace(/[ \t]{2,}/g, ' ').trim();
 }
 
+/**
+ * A government tender copied from the GeM portal (Government e-Marketplace). BulkSkart does not list these: they are
+ * never shown, and a link to one opens as not found. Matched on the importer's own wording or a gem.gov.in link, so a
+ * buyer who mentions GeM in their own requirement, or sells gem stones, is not caught.
+ */
+export const TENDER_IMPORT_PREFIX = 'Government buyer requirement published on GeM';
+
+/** Leaves out, in the query itself, government tenders copied from the GeM portal. */
+export function withoutTenderImports<Q extends { or: (filters: string) => Q }>(query: Q): Q {
+  return query.or(`description.is.null,description.not.like.${TENDER_IMPORT_PREFIX.replace(/ /g, '*')}*`);
+}
+
+export function isTenderImport(req: Pick<Requirement, 'title' | 'description' | 'specifications'>): boolean {
+  const text = [req.title, req.description, req.specifications].filter(Boolean).join(' \n ');
+  return (req.description ?? '').trim().startsWith(TENDER_IMPORT_PREFIX) || /gem\.gov\.in/i.test(text);
+}
+
 /** A listing taken from a tender portal or another website, or one that sends people there. */
 export function isOutsideListing(req: Pick<Requirement, 'title' | 'description' | 'specifications'>): boolean {
   const text = [req.title, req.description, req.specifications].filter(Boolean).join(' \n ');

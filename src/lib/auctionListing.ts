@@ -4,7 +4,6 @@
  * something out the field is null and the card leaves it out.
  */
 import { supabase } from '@/db/supabase';
-import { readExternalAuction, type ExternalAuctionInfo } from '@/lib/externalListing';
 import { formatMoney, productCurrency } from '@/lib/productPrice';
 
 export type AuctionPhaseKey = 'scheduled' | 'live' | 'ended' | 'sold' | 'unsold' | 'review' | 'cancelled';
@@ -37,8 +36,44 @@ export interface AuctionListing {
   /** the seller's company name, when it could be read */
   sellerName: string | null;
   categoryId: string | null;
-  /** a public GeM (or other) listing. Normal auctions leave this unset. */
-  external: ExternalAuctionInfo;
+}
+
+/**
+ * Keys that an importer of lots from other websites wrote into `specifications`. An auction a BulkSkart seller
+ * creates never has them. Such imported lots are not shown anywhere on BulkSkart.
+ */
+const IMPORTED_LOT_KEYS = ['external_listing', 'source_url', 'source_name', 'source_auction_id', 'seller_org', 'reference_no'] as const;
+
+function specRecord(specifications: unknown): Record<string, unknown> | null {
+  if (specifications && typeof specifications === 'object' && !Array.isArray(specifications)) return specifications as Record<string, unknown>;
+  if (typeof specifications !== 'string' || !specifications.trim().startsWith('{')) return null;
+  try {
+    const parsed = JSON.parse(specifications) as unknown;
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * True for a lot copied from another website (for example a government e-marketplace) rather than listed by a seller
+ * here. A lot with a BulkSkart seller is always the seller's own, whatever its text says.
+ */
+export function isImportedAuction(
+  row: { specifications?: unknown; description?: unknown; seller_id?: unknown; seller_company_id?: unknown } | null | undefined,
+): boolean {
+  if (!row || row.seller_id || row.seller_company_id) return false;
+  const specs = specRecord(row.specifications);
+  if (specs && IMPORTED_LOT_KEYS.some((key) => specs[key] !== undefined && specs[key] !== null && specs[key] !== '')) return true;
+  const specText = typeof row.specifications === 'string' ? row.specifications : specs ? JSON.stringify(specs) : '';
+  const text = `${typeof row.description === 'string' ? row.description : ''} ${specText}`;
+  // case-sensitive "GeM" (the portal's own spelling), so "gem stones" are not caught
+  return /\bGeM\b/.test(text) || /gem\.gov\.in/i.test(text);
+}
+
+/** Leaves imported lots out in the query itself, so a page of results is never filled with them. */
+export function withoutImportedAuctions<Q extends { is: (column: string, value: null) => Q }>(query: Q): Q {
+  return query.is('specifications->>external_listing', null).is('specifications->>source_url', null);
 }
 
 /** Stock-photo hosts: a picture from these was put there by the old site, not uploaded by the seller. */
@@ -75,7 +110,6 @@ function text(value: unknown): string | null {
 }
 
 export function toAuctionListing(row: any, sellerName: string | null = null): AuctionListing {
-  const external = readExternalAuction(row.specifications, text(row.description));
   return {
     id: String(row.id),
     auctionNumber: text(row.auction_number) ?? `AUC-${String(row.id).replace(/-/g, '').slice(0, 6).toUpperCase()}`,
@@ -99,9 +133,8 @@ export function toAuctionListing(row: any, sellerName: string | null = null): Au
     image: sellerPhoto(row.images),
     sellerId: text(row.seller_id),
     sellerCompanyId: text(row.seller_company_id),
-    sellerName: external.external && external.sellerOrg ? external.sellerOrg : sellerName,
+    sellerName,
     categoryId: text(row.category_id),
-    external,
   };
 }
 
@@ -146,11 +179,13 @@ async function sellerNames(companyIds: string[]): Promise<Map<string, string>> {
   return names;
 }
 
-/** The newest auctions with their sellers' company names. */
+/** The newest auctions listed by BulkSkart sellers, with their company names. Imported lots are left out. */
 export async function getAuctionListings(limit = 120): Promise<{ rows: AuctionListing[]; error: string | null }> {
-  const { data, error } = await supabase.from('auctions').select('*').order('created_at', { ascending: false }).limit(limit);
+  const { data, error } = await withoutImportedAuctions(supabase.from('auctions').select('*'))
+    .order('created_at', { ascending: false })
+    .limit(limit);
   if (error) return { rows: [], error: error.message };
-  const raw = Array.isArray(data) ? data : [];
+  const raw = (Array.isArray(data) ? data : []).filter((row) => !isImportedAuction(row));
   const names = await sellerNames(raw.map((row) => row.seller_company_id)).catch(() => new Map<string, string>());
   return { rows: raw.map((row) => toAuctionListing(row, names.get(row.seller_company_id) ?? null)), error: null };
 }

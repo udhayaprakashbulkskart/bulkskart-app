@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { isOutsideListing, isOwnUrl, outsideLinksIn, withoutOutsideLinks } from '@/lib/rfqSources';
+import { isOutsideListing, isOwnUrl, isTenderImport, outsideLinksIn, withoutOutsideLinks } from '@/lib/rfqSources';
 
 const src = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
@@ -23,6 +23,25 @@ describe('RFQs stay on BulkSkart', () => {
     expect(isOutsideListing({ title: 'Office chairs – GeM bid 2026', description: null, specifications: null })).toBe(true);
     expect(isOutsideListing({ title: 'Precious gem stones, 2 kg', description: null, specifications: null })).toBe(false);
     expect(isOutsideListing({ title: 'Commercial Electric Deep Fryer – 10L', description: '50 pieces, delivery to Bengaluru', specifications: '230 V, 10 litre' })).toBe(false);
+  });
+
+  it('recognises GeM government tenders, which are never listed or opened', () => {
+    // the wording of the GeM rows in production
+    expect(isTenderImport({ title: 'All Terrain Vehicle (MHA)', description: 'Government buyer requirement published on GeM (Government e-Marketplace). Bid GEM/2026/B/8283895.', specifications: null })).toBe(true);
+    expect(isTenderImport({ title: 'HR coil', description: null, specifications: '{"source_url":"https://bidplus.gem.gov.in/all-bids/GEM/2026/B/99"}' })).toBe(true);
+    expect(isTenderImport({ title: 'Precious gem stones, 2 kg', description: 'Loose gemstones for jewellery', specifications: null })).toBe(false);
+    // a real buyer naming GeM in their own words keeps their requirement
+    expect(isTenderImport({ title: 'Steel chairs', description: 'Need chairs as per GeM specification, 500 pcs', specifications: null })).toBe(false);
+    expect(isTenderImport({ title: 'Cotton T-shirts', description: '5000 pcs to Chennai', specifications: 'GSM: 180' })).toBe(false);
+  });
+
+  it('has no GeM links, buttons or badges left in the code', () => {
+    for (const file of ['src/lib/externalListing.ts', 'src/components/common/ExternalSourceLink.tsx']) expect(existsSync(join(process.cwd(), file))).toBe(false);
+    for (const file of ['src/pages/AuctionsHubPage.tsx', 'src/pages/ForwardAuctionDetailPage.tsx', 'src/components/home/LiveReverseAuctionsRail.tsx', 'src/pages/RequirementsPage.tsx',
+      'src/pages/RequirementDetailsPage.tsx', 'src/components/common/RequirementDetailDrawer.tsx', 'src/pages/dashboard/supplier/SupplierRFQsPage.tsx', 'src/lib/requirementVisuals.ts']) {
+      const code = src(file);
+      expect(code, file).not.toMatch(/View (bid )?on GeM|gem\.gov\.in|Government tender|Public auction|source listing/i);
+    }
   });
 
   it('removes outside links from RFQ text but keeps BulkSkart ones', () => {

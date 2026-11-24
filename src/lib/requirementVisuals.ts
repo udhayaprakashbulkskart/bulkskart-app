@@ -1,4 +1,3 @@
-import { gemTenderUrl, specificationProse } from '@/lib/externalListing';
 import type { Requirement } from '@/types/types';
 
 /**
@@ -30,8 +29,6 @@ export interface RequirementVisualInfo {
   subtitle: string;
   cleanTitle: string;
   quantityDisplay: string;
-  /** GeM bid link when the specifications carry one, otherwise null */
-  governmentTenderUrl: string | null;
 }
 
 const HOUR = 3_600_000;
@@ -103,8 +100,7 @@ export function getRequirementVisualInfo(
   const place = placeLabel(req);
   const deadline = deadlineEnd(req.deadline);
   const quotes = Number(req.quote_count) || 0;
-  const governmentTenderUrl = gemTenderUrl(req.specifications);
-  const specLine = governmentTenderUrl ? specificationProse(req.specifications) : req.specifications;
+  const specLine = req.specifications;
 
   let orderAttribute = '';
   let attributeIcon: RequirementVisualInfo['attributeIcon'] = 'none';
@@ -128,6 +124,5 @@ export function getRequirementVisualInfo(
     subtitle: firstLine(req.description) || firstLine(specLine),
     cleanTitle: (req.title ?? '').trim() || 'Untitled requirement',
     quantityDisplay: quantityLabel(req),
-    governmentTenderUrl,
   };
 }

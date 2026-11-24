@@ -15,6 +15,7 @@ import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import BrandLogo from '@/components/common/BrandLogo';
 import { resolveRfqImage } from '@/lib/contentImages';
+import { withoutOutsideOrDemoRfqs } from '@/lib/rfqSources';
 
 const DISMISS_KEY = 'bsk_live_buyer_alert_dismissed';
 const LEGACY_DISMISS_KEY = 'bsk_lead_popup_session';
@@ -34,12 +35,14 @@ function isTestTitle(title: string): boolean {
 }
 
 function activeFilters(nowIso: string) {
-  return supabase
-    .from('requirements')
-    .select(LEAD_SELECT)
-    .eq('status', 'active')
-    .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
-    .or(`deadline.is.null,deadline.gt.${nowIso}`);
+  return withoutOutsideOrDemoRfqs(
+    supabase
+      .from('requirements')
+      .select(LEAD_SELECT)
+      .eq('status', 'active')
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .or(`deadline.is.null,deadline.gt.${nowIso}`),
+  );
 }
 
 function timeAgo(iso?: string | null): string | null {

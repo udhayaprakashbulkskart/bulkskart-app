@@ -13,8 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
-import { auctionMoney, auctionPhase, secondsLeft, sellerPhoto } from '@/lib/auctionListing';
-import { EXTERNAL_SPEC_KEYS, readExternalAuction, viewOnSourceLabel } from '@/lib/externalListing';
+import { auctionPhase, isImportedAuction, secondsLeft, sellerPhoto } from '@/lib/auctionListing';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
@@ -26,7 +25,6 @@ import {
 import BidderProfileModal from '@/components/auctions/BidderProfileModal';
 import { createOrder, updateQuotationStatus } from '@/lib/api';
 import AuctionLiveChat from '@/components/auctions/AuctionLiveChat';
-import { ExternalSourceLink, PublicAuctionBadge } from '@/components/common/ExternalSourceLink';
 import ProtectedContact from '@/components/common/ProtectedContact';
 
 /** Bidder names carry a "(You)" style suffix on the viewer's own bids. */
@@ -87,7 +85,8 @@ export default function ForwardAuctionDetailPage() {
         const lookup = supabase.from('auctions').select('*');
         const { data, error } = await (isUuid ? lookup.eq('id', key) : lookup.eq('auction_number', key)).limit(1).maybeSingle();
 
-        if (!error && data && isMounted) {
+        // a lot copied from another website is not a BulkSkart auction: it gets the not-found page
+        if (!error && data && !isImportedAuction(data) && isMounted) {
           const remSec = secondsLeft(data.end_time);
           setSecondsRemaining(remSec);
           setIsSoldConcluded(auctionPhase({ status: data.status || 'live', startTime: data.start_time, endTime: data.end_time }).ended);
@@ -113,25 +112,21 @@ export default function ForwardAuctionDetailPage() {
           const hasRealBids = Boolean(bidsData && bidsData.length > 0);
           const realLeadingBid = hasRealBids ? Number(bidsData![0].bid_amount) : null;
           const realLeadingBidder = hasRealBids ? (bidsData![0].bidder_company_name || bidsData![0].bidder_name || 'Bidder') : null;
-          const publicSource = readExternalAuction(data.specifications, data.description);
-          const rawQty = Number(data.total_quantity);
-          const rawStart = Number(data.starting_price);
-
           setAuction({
             ...data,
             auction_type: data.auction_type || 'reverse',
             title: data.title,
-            starting_price: publicSource.external ? (rawStart > 0 ? rawStart : null) : (Number(data.starting_price) || 0),
-            current_highest_bid: publicSource.external && !(Number(realLeadingBid) > 0) ? null : realLeadingBid,
+            starting_price: Number(data.starting_price) || 0,
+            current_highest_bid: realLeadingBid,
             highest_bidder_name: (realLeadingBidder || data.highest_bidder_name || '').replace(/INFOPOD/gi, 'UDHAYAPRAKASH'),
             min_bid_increment: Number(data.min_bid_increment) || 1,
-            total_quantity: publicSource.external ? (rawQty > 0 ? rawQty : null) : (Number(data.total_quantity) || 1),
+            total_quantity: Number(data.total_quantity) || 1,
             quantity_unit: data.quantity_unit || 'Units',
             images: (Array.isArray(data.images) ? data.images : []).filter((img: unknown) => typeof img === 'string' && sellerPhoto([img])),
             specifications: data.specifications || {},
-            manufacturer_name: publicSource.sellerOrg || sellerName || (publicSource.external ? '' : 'Seller'),
-            seller_slug: publicSource.sellerOrg ? null : sellerSlug,
-            seller_verified: publicSource.sellerOrg ? false : sellerVerified
+            manufacturer_name: sellerName || 'Seller',
+            seller_slug: sellerSlug,
+            seller_verified: sellerVerified
           });
 
           if (hasRealBids && isMounted) {
@@ -294,8 +289,7 @@ export default function ForwardAuctionDetailPage() {
     }
 
     const rawQuantity = Number(auction.total_quantity);
-    const listedHere = !readExternalAuction(auction.specifications, auction.description).external;
-    const quantity = rawQuantity > 0 ? rawQuantity : (listedHere ? 1 : 0);
+    const quantity = rawQuantity > 0 ? rawQuantity : 1;
     if (!quantity) {
       toast.error('This listing has no quantity, so an order cannot be created from it.');
       return;
@@ -547,13 +541,6 @@ export default function ForwardAuctionDetailPage() {
     );
   }
 
-  const publicAuction = readExternalAuction(auction.specifications, auction.description);
-  const isPublicAuction = publicAuction.external;
-  const publicQty = isPublicAuction && Number(auction.total_quantity) > 0 ? Number(auction.total_quantity) : null;
-  const publicPrice = isPublicAuction ? auctionMoney(Number(auction.starting_price) > 0 ? Number(auction.starting_price) : null, auction.currency || 'INR') : null;
-  const publicLeading = isPublicAuction ? auctionMoney(Number(auction.current_highest_bid) > 0 ? Number(auction.current_highest_bid) : null, auction.currency || 'INR') : null;
-  const sourceButtonClass = 'inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl bg-[#FF5A1F] hover:bg-[#e04f1a] text-white text-xs font-bold shadow-sm';
-
   return (
     <MainLayout>
       <div className="bg-background pb-6">
@@ -644,9 +631,8 @@ export default function ForwardAuctionDetailPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FF5A1F] text-white">
-                      {isPublicAuction ? 'Public auction' : '60-Min Live Auction'}
+                      60-Min Live Auction
                     </span>
-                    {isPublicAuction && <PublicAuctionBadge />}
                     <span className="text-[11px] font-mono font-bold text-muted-foreground">
                       {auction.auction_number}
                     </span>
@@ -660,9 +646,7 @@ export default function ForwardAuctionDetailPage() {
                     {auction.title}
                   </h1>
                   <p className="text-xs text-muted-foreground">
-                    {isPublicAuction
-                      ? [publicQty !== null ? `${publicQty.toLocaleString('en-IN')} ${auction.quantity_unit}` : null, auction.delivery_location].filter(Boolean).join(' • ')
-                      : `Lot Size: ${auction.total_quantity?.toLocaleString('en-IN')} ${auction.unit} • ${auction.city}, ${auction.state}`}
+                    {`Lot Size: ${auction.total_quantity?.toLocaleString('en-IN')} ${auction.unit} • ${auction.city}, ${auction.state}`}
                   </p>
                 </div>
               </div>
@@ -681,30 +665,19 @@ export default function ForwardAuctionDetailPage() {
                 </div>
 
                 {/* Leading Bid */}
-                {!(isPublicAuction && !publicLeading) && (
                 <div className="px-3.5 py-1.5 rounded-2xl bg-muted/50 border border-border flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-orange-600" />
                   <div>
                     <div className="text-[9px] font-semibold text-muted-foreground uppercase">Leading Bid</div>
                     <div className="text-xs sm:text-sm font-black text-foreground">
-                      {isPublicAuction
-                        ? (publicLeading ? `${publicLeading}/${auction.quantity_unit || 'Unit'}` : '')
-                        : auction.current_highest_bid !== null
+                      {auction.current_highest_bid !== null
                         ? `₹${Number(auction.current_highest_bid).toLocaleString('en-IN')}/${auction.quantity_unit || 'Unit'}`
                         : 'No bids yet'}
                     </div>
                   </div>
                 </div>
-                )}
-
-                {isPublicAuction && publicAuction.sourceUrl && (
-                  <ExternalSourceLink href={publicAuction.sourceUrl} className={sourceButtonClass}>
-                    {viewOnSourceLabel(publicAuction.sourceName)}
-                  </ExternalSourceLink>
-                )}
 
                 {/* Quick Bid Button */}
-                {!isPublicAuction && (
                 <form onSubmit={handlePlaceBid} className="flex items-center gap-1.5">
                   <div className="relative w-28 sm:w-32">
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">₹</span>
@@ -727,7 +700,6 @@ export default function ForwardAuctionDetailPage() {
                     {!user ? 'Sign in to participate' : submittingBid ? 'Submitting...' : 'Submit Bid'}
                   </Button>
                 </form>
-                )}
 
                 {/* Exit Full Page Button */}
                 <Button
@@ -759,9 +731,8 @@ export default function ForwardAuctionDetailPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FF5A1F] text-white flex items-center gap-1 shadow-sm">
-                    <Flame className="w-3 h-3 fill-white" /> {isPublicAuction ? 'Public auction' : '60-Minute Live Reverse Auction'}
+                    <Flame className="w-3 h-3 fill-white" /> 60-Minute Live Reverse Auction
                   </span>
-                  {isPublicAuction && <PublicAuctionBadge />}
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-muted border border-border text-foreground">
                     {auction.auction_number}
                   </span>
@@ -777,29 +748,21 @@ export default function ForwardAuctionDetailPage() {
                 </div>
 
                 <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight leading-snug">
-                  {isPublicAuction ? auction.title : `60 Minutes: Sell Your Bulk Product Lot — ${auction.title}`}
+                  {`60 Minutes: Sell Your Bulk Product Lot — ${auction.title}`}
                 </h1>
 
                 <p className="text-xs text-muted-foreground mt-1 max-w-3xl leading-relaxed">
-                  {isPublicAuction
-                    ? 'This lot is a public auction. Bids are placed on the source listing, not on BulkSkart.'
-                    : 'A live reverse auction is when a manufacturer has a bulk product they want to sell within 60 minutes through real-time bidding.'}
+                  A live reverse auction is when a manufacturer has a bulk product they want to sell within 60 minutes through real-time bidding.
                 </p>
-                {isPublicAuction && publicAuction.sourceUrl && (
-                  <ExternalSourceLink href={publicAuction.sourceUrl} className={`${sourceButtonClass} mt-3`}>
-                    {viewOnSourceLabel(publicAuction.sourceName)}
-                  </ExternalSourceLink>
-                )}
               </div>
 
               {/* Manufacturer Tag */}
-              {(!isPublicAuction || auction.manufacturer_name) && (
               <div className="p-3 rounded-2xl bg-muted/40 border border-border/60 shrink-0 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#FF5A1F]/15 text-[#FF5A1F] flex items-center justify-center font-bold">
                   <Building2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-[10px] text-muted-foreground font-semibold uppercase">{isPublicAuction ? 'Seller' : 'Listing Manufacturer'}</div>
+                  <div className="text-[10px] text-muted-foreground font-semibold uppercase">Listing Manufacturer</div>
                   {auction.seller_slug ? (
                     <Link
                       to={`/companies/${auction.seller_slug}`}
@@ -816,12 +779,11 @@ export default function ForwardAuctionDetailPage() {
                   )}
                 </div>
               </div>
-              )}
             </div>
           </div>
 
           {/* ── 60-Minute Auction Sold / Concluded Banner (When Timer Expires) ── */}
-          {isSoldConcluded && !isPublicAuction && (
+          {isSoldConcluded && (
             <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-orange-950/40 via-orange-900/30 to-neutral-900 border-2 border-orange-500/50 shadow-lg text-white">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
                 <div className="flex items-start gap-3.5">
@@ -891,7 +853,7 @@ export default function ForwardAuctionDetailPage() {
                   <div className="absolute top-4 left-4 flex items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-red-600 text-white shadow-lg">
                       <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                      {isPublicAuction ? 'PUBLIC AUCTION' : 'LIVE 60-MIN SALE'}
+                      LIVE 60-MIN SALE
                     </span>
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-black/80 backdrop-blur-md text-white shadow-lg border border-white/20">
                       <Clock className="w-3.5 h-3.5 text-red-400" />
@@ -900,12 +862,10 @@ export default function ForwardAuctionDetailPage() {
                   </div>
 
                   {/* Anti-Sniping Indicator */}
-                  {!isPublicAuction && (
                   <div className="absolute bottom-4 left-4 bg-black/75 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-xl flex items-center gap-1 border border-white/10">
                     <ShieldCheck className="w-3.5 h-3.5 text-[#FF5A1F]" />
                     <span>+2 Min Anti-Sniping Active</span>
                   </div>
-                  )}
                 </div>
 
                 {auction.images && auction.images.length > 1 && (
@@ -938,7 +898,7 @@ export default function ForwardAuctionDetailPage() {
 
                 {auction.specifications && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-                    {Object.entries(auction.specifications).filter(([key]) => !isPublicAuction || !(EXTERNAL_SPEC_KEYS as readonly string[]).includes(key)).map(([key, val]: [string, any]) => (
+                    {Object.entries(auction.specifications).map(([key, val]: [string, any]) => (
                       <div key={key} className="p-3 rounded-2xl bg-muted/40 border border-border/60">
                         <div className="text-[11px] font-semibold text-muted-foreground">{key}</div>
                         <div className="text-xs sm:text-sm font-bold text-foreground mt-0.5">{String(val)}</div>
@@ -1037,9 +997,7 @@ export default function ForwardAuctionDetailPage() {
                         <Gavel className="w-8 h-8 opacity-40 text-[#FF5A1F] mb-2" />
                         <p className="font-bold text-sm text-foreground">No bids yet</p>
                         <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                          {isPublicAuction
-                            ? 'Bids on this lot are placed on the public listing.'
-                            : 'Be the first verified buyer to submit a live bid for this lot.'}
+                          Be the first verified buyer to submit a live bid for this lot.
                         </p>
                       </div>
                     ) : (
@@ -1195,7 +1153,7 @@ export default function ForwardAuctionDetailPage() {
 
                             {/* Action Buttons: strictly only for authenticated buyers when valid quote exists */}
                             <div className="flex items-center justify-end gap-2 mt-3 pt-2">
-                              {isPublicAuction ? null : !user ? (
+                              {!user ? (
                                 <Button
                                   size="sm"
                                   onClick={() => setAuthDialogOpen(true)}
@@ -1250,10 +1208,10 @@ export default function ForwardAuctionDetailPage() {
                 <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
                   <div>
                     <span className="text-[11px] font-bold text-[#FF5A1F] uppercase tracking-wider flex items-center gap-1">
-                      <Flame className="w-3.5 h-3.5 fill-[#FF5A1F]" /> {isPublicAuction ? 'Public auction' : '60-Minute Bidding Room'}
+                      <Flame className="w-3.5 h-3.5 fill-[#FF5A1F]" /> 60-Minute Bidding Room
                     </span>
                     <h2 className="text-lg sm:text-xl font-bold text-foreground">
-                      {isPublicAuction ? 'Open the source listing' : 'Place Real-Time Bid'}
+                      Place Real-Time Bid
                     </h2>
                   </div>
                   {isSoldConcluded ? (
@@ -1268,30 +1226,6 @@ export default function ForwardAuctionDetailPage() {
                   )}
                 </div>
 
-                {isPublicAuction && (
-                  <div className="space-y-3">
-                    {auction.manufacturer_name ? (
-                      <p className="text-sm font-bold text-foreground">{auction.manufacturer_name}</p>
-                    ) : null}
-                    {publicQty !== null && (
-                      <p className="text-sm text-muted-foreground">{publicQty.toLocaleString('en-IN')} {auction.quantity_unit}</p>
-                    )}
-                    {publicPrice && (
-                      <p className="text-2xl sm:text-3xl font-bold text-[#FF5A1F]">{publicPrice}{auction.quantity_unit ? ` / ${auction.quantity_unit}` : ''}</p>
-                    )}
-                    {publicAuction.sourceUrl ? (
-                      <ExternalSourceLink href={publicAuction.sourceUrl} className={`${sourceButtonClass} w-full`}>
-                        {viewOnSourceLabel(publicAuction.sourceName)}
-                      </ExternalSourceLink>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">This public auction is not open for bids on BulkSkart.</p>
-                    )}
-                    <p className="text-[11px] text-muted-foreground">Bids are placed on the public listing, not on BulkSkart.</p>
-                  </div>
-                )}
-
-                {!isPublicAuction && (
-                <>
                 {/* Price Display */}
                 <div className="p-4 rounded-2xl bg-orange-50/50 dark:bg-[#FF5A1F]/10 border border-[#FF5A1F]/30 mb-4">
                   <div className="text-xs text-muted-foreground font-semibold flex items-center justify-between">
@@ -1476,8 +1410,6 @@ export default function ForwardAuctionDetailPage() {
                     <strong className="text-foreground">Anti-Sniping Protected:</strong> Bids placed within the final 2 minutes extend the countdown by +2 minutes for transparent price discovery.
                   </div>
                 </div>
-                </>
-                )}
 
                 {/* Posting fee: shown only when the payment server verified it (fee_paid_at is set by the server alone) */}
                 {auction.fee_paid_at && (

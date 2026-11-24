@@ -33,8 +33,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import BuyerQuotationsPanel from './BuyerQuotationsPanel';
 import SubscribeToContactDialog, { type SubscriptionReason } from './SubscribeToContactDialog';
 import SupplierRespondDialog from './SupplierRespondDialog';
-import { GovernmentTenderBadge } from '@/components/common/ExternalSourceLink';
-import { gemTenderUrl, sharedBuyerPhone, specificationProse } from '@/lib/externalListing';
 import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
 import { canViewContacts, contactUpgradeHref, maskContactsInText } from '@/lib/contactAccess';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
@@ -425,9 +423,7 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
   const dealStatus: string = requirement.deal_status ?? 'active';
   // @ts-expect-error extended col
   const isUrgent: boolean = Boolean(requirement.is_urgent);
-  const gemUrl = gemTenderUrl(requirement.specifications);
   const buyer = requirement.profiles as { full_name?: string | null; company_name?: string | null; phone?: string | null } | undefined;
-  const contactMissing = Boolean(gemUrl) && !sharedBuyerPhone(buyer?.phone);
   const buyerName = buyer?.company_name || buyer?.full_name || 'Buyer';
   const place = placeLabel(requirement);
   const left = timeLeft(requirement);
@@ -436,8 +432,8 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
   const shown = (text: string) => (canSeeContact ? text : maskContactsInText(text));
   const tidy = (text: string) => text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
   const description = requirement.description ? tidy(withoutOutsideLinks(requirement.description)) : '';
-  const specs = requirement.specifications && (!gemUrl || specificationProse(requirement.specifications))
-    ? tidy(withoutOutsideLinks(gemUrl ? specificationProse(requirement.specifications) : requirement.specifications))
+  const specs = requirement.specifications
+    ? tidy(withoutOutsideLinks(requirement.specifications))
     : '';
   const contactsHidden = shown(description) !== description || shown(specs) !== specs;
   const myQuotes = isOwner ? quotes : quotes.filter(q => q.supplier_id === user?.id);
@@ -558,7 +554,6 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                 <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-foreground">{shown(description)}</p>
               </section>
             )}
-            {gemUrl && <div className="flex flex-wrap items-center gap-2"><GovernmentTenderBadge /></div>}
             {specs && (
               <section className="rounded-2xl border border-border bg-card p-3.5">
                 <h3 className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Specifications</h3>
@@ -576,9 +571,6 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                 className="inline-flex items-center gap-1.5 px-1 text-[12px] font-semibold text-[#FF5A00] hover:underline">
                 <Upload className="h-3.5 w-3.5" /> View attachment
               </a>
-            )}
-            {contactMissing && (
-              <p className="px-1 text-[11px] text-muted-foreground">No buyer phone number is listed for this tender. You can still send a quotation on BulkSkart.</p>
             )}
           </TabsContent>
 

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/db/supabase', () => ({ supabase: {} }));
 
-import { auctionMoney, auctionPhase, secondsLeft, sellerPhoto, toAuctionListing } from '@/lib/auctionListing';
+import { auctionMoney, auctionPhase, isImportedAuction, secondsLeft, sellerPhoto, toAuctionListing } from '@/lib/auctionListing';
 
 const NOW = new Date('2026-11-16T12:00:00Z').getTime();
 const at = (ms: number) => new Date(NOW + ms).toISOString();
@@ -24,8 +24,7 @@ describe('auction lists show auctions as stored', () => {
     expect(lot.startingPrice).toBeNull();
     expect(lot.totalBids).toBe(0);
     expect(lot.currency).toBe('INR');
-    expect(lot.external.external).toBe(false);
-    expect(lot.external.sourceUrl).toBeNull();
+    expect(lot).not.toHaveProperty('external');
   });
 
   it('reads the phase from the status and the auction\'s own times', () => {
@@ -43,24 +42,25 @@ describe('auction lists show auctions as stored', () => {
     expect(secondsLeft(null, NOW)).toBe(0);
   });
 
-  it('keeps a public GeM lot\'s seller and does not invent a quantity or price', () => {
-    const lot = toAuctionListing(
-      {
-        id: 'gem-1',
-        title: 'HR coils',
-        status: 'live',
-        total_quantity: 0,
-        starting_price: 0,
-        description: 'Bid at https://bidplus.gem.gov.in/all-bids/GEM/2026/B/12345',
-        specifications: { external_listing: 'true', seller_org: 'SAIL', source_name: 'GeM' },
-      },
-      'Importer account',
-    );
-    expect(lot.external.external).toBe(true);
-    expect(lot.external.sourceUrl).toBe('https://bidplus.gem.gov.in/all-bids/GEM/2026/B/12345');
-    expect(lot.sellerName).toBe('SAIL');
-    expect(lot.totalQuantity).toBe(0);
-    expect(lot.startingPrice).toBe(0);
+  it('recognises lots copied from the GeM portal or another website, so they are never shown', () => {
+    // the shape of the GeM rows in production
+    expect(isImportedAuction({
+      description: 'Forward auction on GeM',
+      specifications: { external_listing: true, source: 'GeM', source_url: 'https://forwardauction.gem.gov.in/x', source_auction_id: '1', seller_org: 'Org' },
+    })).toBe(true);
+    expect(isImportedAuction({ specifications: { external_listing: 'true' } })).toBe(true);
+    expect(isImportedAuction({ specifications: { source_url: 'https://example.com/lot/9' } })).toBe(true);
+    expect(isImportedAuction({ specifications: '{"reference_no":"GEM/2026/A/1"}' })).toBe(true);
+    expect(isImportedAuction({ description: 'See https://bidplus.gem.gov.in/all-bids/GEM/2026/B/12345', specifications: {} })).toBe(true);
+    expect(isImportedAuction({ description: 'Lot listed on GeM', specifications: {} })).toBe(true);
+  });
+
+  it('keeps a seller\'s own auction, gem stones included, even when its text mentions GeM', () => {
+    expect(isImportedAuction({ seller_id: 'u1', description: 'Also sold on GeM earlier', specifications: {} })).toBe(false);
+    expect(isImportedAuction({ description: 'Mild steel coils, 2 mm', specifications: { Grade: 'IS 2062', Thickness: '2 mm' } })).toBe(false);
+    expect(isImportedAuction({ description: 'Loose gem stones and gemstone beads', specifications: { Stone: 'gem quality ruby' } })).toBe(false);
+    expect(isImportedAuction({ description: null, specifications: null })).toBe(false);
+    expect(isImportedAuction(null)).toBe(false);
   });
 
   it('formats money in the lot\'s currency and leaves out prices that were not given', () => {

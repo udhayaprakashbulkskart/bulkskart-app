@@ -800,6 +800,7 @@ export async function getRequirements(options?: {
   if (options?.cursor) query = query.lt('created_at', options.cursor);
   // For live-polling: fetch only rows newer than last known timestamp
   if (options?.newerThan) query = query.gt('created_at', options.newerThan);
+  query = withoutTenderImports(query);
 
   const { data } = await query;
   if (!Array.isArray(data)) return [];
@@ -821,6 +822,7 @@ export async function getRequirements(options?: {
   for (const item of data) {
     if (!item || !item.id) continue;
     if (isPublicListing(item as Requirement)) continue; // public listings from other marketplaces have their own section
+    if (isTenderImport(item as Requirement)) continue;
     if (excludeIdSet.has(item.id)) continue;
     if (item.req_number && excludeReqNumSet.has(item.req_number)) continue;
 
@@ -862,7 +864,7 @@ export async function getRequirementById(id: string): Promise<Requirement | null
 
   const query = supabase.from('requirements').select(await forViewer('*, profiles!buyer_id(*), categories!category_id(*)'));
   const { data } = await (isUuid ? query.eq('id', key) : query.ilike('req_number', key)).limit(1).maybeSingle();
-  if (!data || isSeededRequirement(data)) return null;
+  if (!data || isSeededRequirement(data) || isTenderImport(data as Requirement)) return null;
   return data as Requirement;
 }
 
@@ -898,11 +900,13 @@ function isoDay(date: Date): string {
  */
 function openRequirementsQuery(columns: string, filters: OpenRequirementFilters, head = false) {
   const now = new Date();
-  let query = supabase
-    .from('requirements')
-    .select(columns, { count: 'exact', head })
-    .eq('status', 'active')
-    .or(`deadline.is.null,deadline.gte.${isoDay(now)}`);
+  let query = withoutTenderImports(
+    supabase
+      .from('requirements')
+      .select(columns, { count: 'exact', head })
+      .eq('status', 'active')
+      .or(`deadline.is.null,deadline.gte.${isoDay(now)}`),
+  );
   if (!INCLUDE_TEMPLATE_SEED_DATA) query = query.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
   if (filters.categoryIds?.length) query = query.in('category_id', filters.categoryIds);
   const term = filterTerm(filters.search);
@@ -931,7 +935,7 @@ export async function getOpenRequirements(
 
     const { data, count, error } = await query;
     if (error) return { rows: [], total: 0, error: error.message };
-    const rows = ((data ?? []) as unknown as Requirement[]).filter((row) => !isSeededRequirement(row));
+    const rows = ((data ?? []) as unknown as Requirement[]).filter((row) => !isSeededRequirement(row) && !isTenderImport(row));
     return { rows, total: count ?? rows.length, error: null };
   } catch (e) {
     return { rows: [], total: 0, error: (e as Error)?.message || 'Requirements could not be loaded' };
@@ -1876,7 +1880,7 @@ export type RequirementStatusFilter = 'all' | 'urgent' | 'new' | 'expiring' | 'l
  * One page of open buyer requirements from the database, with the real total for the same filters.
  * "urgent"/"expiring" = deadline within 7/3 days, "new"/"live" = posted in the last 3 days/24 hours.
  */
-import { isOutsideListing, withoutOutsideOrDemoRfqs } from '@/lib/rfqSources';
+import { isOutsideListing, isTenderImport, withoutOutsideOrDemoRfqs, withoutTenderImports } from '@/lib/rfqSources';
 import { isPublicListing } from '@/lib/publicListings';
 
 export async function getRequirementsPage(q: {
