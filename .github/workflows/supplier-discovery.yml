@@ -1,0 +1,73 @@
+# Supplier & product discovery (docs/supplier-discovery/README.md).
+# Every 2 hours: run the jobs admins queued on Dashboard -> Admin -> Discovery, then recheck what is due.
+# It saves only through the discovery_worker_* database functions (migration 00074).
+#
+# Secrets (Settings -> Secrets and variables -> Actions). Only SUPABASE_SERVICE_ROLE_KEY is required; without it
+# the run does nothing.
+#   SUPABASE_SERVICE_ROLE_KEY
+#   BRAVE_SEARCH_API_KEY, or GOOGLE_CSE_KEY + GOOGLE_CSE_ID       for search jobs
+#   GST_VERIFY_URL, GST_VERIFY_API_KEY, GST_VERIFY_AUTH_HEADER,
+#   GST_VERIFY_EXTRA_HEADERS                                       authorised GST verification (a GST Suvidha Provider)
+#   ANTHROPIC_API_KEY                                              optional product descriptions written from the facts
+
+name: Supplier discovery
+
+on:
+  schedule:
+    - cron: '23 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run_url:
+        description: 'Only read this one website and print what would be stored (saves nothing)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supplier-discovery
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: scripts/discovery
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: scripts/discovery/package-lock.json
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Test
+        run: npm test
+
+      - name: Discover and recheck
+        env:
+          SUPABASE_URL: https://www.bulkskart.com
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          GOOGLE_CSE_KEY: ${{ secrets.GOOGLE_CSE_KEY }}
+          GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          GST_VERIFY_URL: ${{ secrets.GST_VERIFY_URL }}
+          GST_VERIFY_API_KEY: ${{ secrets.GST_VERIFY_API_KEY }}
+          GST_VERIFY_AUTH_HEADER: ${{ secrets.GST_VERIFY_AUTH_HEADER }}
+          GST_VERIFY_EXTRA_HEADERS: ${{ secrets.GST_VERIFY_EXTRA_HEADERS }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DISCOVERY_TIME_BUDGET_MIN: '45'
+          DRY_RUN_URL: ${{ inputs.dry_run_url }}
+        run: |
+          if [ -n "$DRY_RUN_URL" ]; then
+            node src/worker.mjs --dry-run --seed "$DRY_RUN_URL"
+          else
+            node src/worker.mjs
+          fi

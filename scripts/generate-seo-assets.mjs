@@ -35,6 +35,11 @@ const STATIC_PAGES = [
     description: 'Search verified factories, exporters, and OEM manufacturers. Filter by certification and connect on BulkSkart.',
   },
   {
+    path: '/directory',
+    title: 'Supplier Directory – GST-Checked Indian Manufacturers | BulkSkart',
+    description: 'Indian manufacturers whose GST registration was checked and found active, with the products listed on their own websites.',
+  },
+  {
     path: '/supplier-map',
     title: 'Live Verified Supplier Map – Find Manufacturers Near You | BulkSkart',
     description: 'Find verified Indian manufacturers near you on a live map. Every factory is checked by BulkSkart: registration, location and active products.',
