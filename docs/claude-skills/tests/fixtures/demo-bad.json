@@ -1,7 +1,7 @@
 {
   "batch": 902,
   "companies": [
-    {"seq": 1, "company_name": "Tata Textiles Pvt Ltd", "city": "Surat", "description": "ISO 9001 certified, India's leading mill. Call 98765 43210 or sales@example.com", "is_verified": true, "gst_number": "24AABCT1234A1Z5"}
+    {"seq": 1, "company_name": "Tata Textiles Pvt Ltd", "city": "Surat", "description": "ISO 9001 certified, India's leading mill. Call 98765 43210 or sales@example.com", "is_verified": true, "gst_number": "NOT-A-REAL-NUMBER"}
   ],
   "products": [
     {"company_id": "0b1c2d3e-0000-0000-0000-000000000001", "category_slug": "textiles-apparel", "name": "Shirt", "description": "Best selling", "moq": 0, "price_min": 500, "price_max": 100, "images": ["https://images.example.com/shirt.jpg"]}
