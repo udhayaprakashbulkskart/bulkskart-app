@@ -33,6 +33,9 @@ const SupplierMapPage         = lazy(() => import('./pages/SupplierMapPage'));
 const RegisterFactoryPage     = lazy(() => import('./pages/RegisterFactoryPage'));
 const SupplierMapListingPage  = lazy(() => import('./pages/dashboard/supplier/SupplierMapListingPage'));
 const AdminVerificationsPage  = lazy(() => import('./pages/dashboard/admin/AdminVerificationsPage'));
+const AdminDiscoveryPage      = lazy(() => import('./pages/dashboard/admin/AdminDiscoveryPage'));
+const SupplierDirectoryPage   = lazy(() => import('./pages/SupplierDirectoryPage'));
+const CrawlerInfoPage         = lazy(() => import('./pages/CrawlerInfoPage'));
 
 // ─── Lazy: auth-required pages ────────────────────────────────────────────────
 const PostRequirementPage     = lazy(() => import('./pages/PostRequirementPage'));
@@ -135,6 +138,9 @@ export const routes: RouteConfig[] = [
   { name: 'Categories Hub', path: '/categories', element: <AllCategoriesPage />, public: true },
   { name: 'Supplier Map', path: '/supplier-map', element: <SupplierMapPage />, public: true },
   { name: 'Register Your Factory', path: '/register-factory', element: <RegisterFactoryPage />, public: true },
+  { name: 'Supplier Directory', path: '/directory', element: <SupplierDirectoryPage />, public: true },
+  { name: 'Supplier Directory Entry', path: '/directory/:id', element: <SupplierDirectoryPage />, public: true },
+  { name: 'Discovery Bot', path: '/bot', element: <CrawlerInfoPage />, public: true },
   { name: 'Categories Slug Hub', path: '/categories/:slug', element: <AllCategoriesPage />, public: true },
   { name: 'Category Route', path: '/category/:slug', element: <AllCategoriesPage />, public: true },
   { name: 'Login Alias', path: '/login', element: <AuthPage />, public: true },
@@ -267,6 +273,7 @@ export const routes: RouteConfig[] = [
   { name: 'Admin Payments', path: '/dashboard/admin/payments', element: <AdminPaymentsPage /> },
   { name: 'Super Admin', path: '/dashboard/admin/super', element: <SuperAdminPage /> },
   { name: 'Business Verifications', path: '/dashboard/admin/verifications', element: <AdminVerificationsPage /> },
+  { name: 'Supplier Discovery', path: '/dashboard/admin/discovery', element: <AdminDiscoveryPage /> },
 
   // ── Company / Legal ───────────────────────────────────────────
   { name: 'About Us',      path: '/about',         element: <AboutPage />,        public: true },

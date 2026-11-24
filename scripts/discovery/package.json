@@ -1,0 +1,15 @@
+{
+  "name": "bulkskart-discovery-worker",
+  "private": true,
+  "description": "Finds real manufacturers and products on public business websites for BulkSkart (see docs/supplier-discovery).",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node src/worker.mjs",
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.13.0",
+    "node-html-parser": "9.0.7"
+  }
+}
