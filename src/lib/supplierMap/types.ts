@@ -45,6 +45,8 @@ export interface MapSupplier {
   registry_verified: boolean;
   /** verified by BulkSkart (green check); every company on the map has an active paid plan */
   verified: boolean;
+  /** has an active paid plan; false for manufacturers shown from before the paid-only map (00075) */
+  paid?: boolean;
   verified_since: string | null;
   matched_products: MapProduct[];
   product_count: number;
