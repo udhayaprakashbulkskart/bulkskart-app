@@ -16,6 +16,8 @@
  *   remove_document { id }
  *   document { id }                          returns the decrypted file (owner or admin; every opening is logged)
  *   purge                                    admin: deletes documents past their retention date
+ *   credit_doc { id }                        a business-credit document (lender KFS / agreement): owner or admin
+ * POST multipart/form-data with action=credit_doc_upload, application_id, kind, file → admin uploads a lender document
  * POST multipart/form-data with action=upload, step, doc_type, file   → encrypted upload (JPG, PNG or PDF)
  *
  * Environment: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, KYC_ENCRYPTION_KEY (32 random bytes, base64), optional
@@ -51,7 +53,7 @@ const json = (status: number, body: unknown) =>
 
 function dbError(e: { message?: string } | null): HttpError {
   const m = e?.message ?? 'database_error';
-  const code = m.match(/(consent_required|kyc_rejected|kyc_locked|step_locked|invalid_[a-z]+|cin_required|business_pan_required|file_too_large|too_many_documents|not_found|details_missing)/)?.[1];
+  const code = m.match(/(consent_required|kyc_rejected|kyc_locked|step_locked|invalid_[a-z]+|cin_required|business_pan_required|file_too_large|too_many_documents|not_found|details_missing|admin_only|wrong_stage)/)?.[1];
   return new HttpError(code === 'not_found' ? 404 : 409, code ?? 'database_error');
 }
 
@@ -272,6 +274,46 @@ serve(async (req) => {
 
       case 'document': {
         const meta = await rpc<{ path: string; iv: string; key_id: string; mime_type: string; file_name: string }>(db, 'kyc_service_document_for', { p_actor: user, p_doc: String(body.id || '') });
+        if (meta.key_id !== c.keyId) throw new HttpError(409, 'key_rotated');
+        const dl = await db.storage.from(BUCKET).download(meta.path);
+        if (dl.error || !dl.data) throw new HttpError(404, 'not_found');
+        const plain = await decryptBytes(key as CryptoKey, meta.iv, new Uint8Array(await dl.data.arrayBuffer()));
+        return new Response(plain as unknown as BodyInit, {
+          status: 200,
+          headers: { ...CORS, 'Content-Type': meta.mime_type, 'Content-Disposition': `inline; filename="${meta.file_name}"`, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
+        });
+      }
+
+      case 'credit_doc_upload': {
+        if (!state.is_admin) throw new HttpError(403, 'admin_only');
+        const appId = String(form?.get('application_id') || '');
+        const kind = String(form?.get('kind') || '');
+        const file = form?.get('file');
+        if (!/^[0-9a-f-]{36}$/i.test(appId)) throw new HttpError(400, 'not_found');
+        if (!['kfs', 'loan_agreement', 'sanction_letter', 'other'].includes(kind)) throw new HttpError(400, 'invalid_document_type');
+        if (!(file instanceof File)) throw new HttpError(400, 'file_required');
+        if (file.size > 10 * 1048576) throw new HttpError(413, 'file_too_large');
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const mime = sniffMime(bytes);
+        if (!mime) throw new HttpError(415, 'unsupported_file');
+        const enc = await encryptBytes(key as CryptoKey, bytes);
+        const path = `credit/${appId}/${crypto.randomUUID()}.bin`;
+        const up = await db.storage.from(BUCKET).upload(path, enc.data, { contentType: 'application/octet-stream', upsert: false });
+        if (up.error) throw new HttpError(502, 'storage_error');
+        try {
+          const id = await rpc<string>(db, 'credit_service_add_document', {
+            p_actor: user, p_app: appId, p_kind: kind, p_file_name: safeFileName(file.name, mime), p_mime: mime, p_size: bytes.length,
+            p_sha256: await sha256Hex(bytes), p_path: path, p_iv: enc.iv, p_key_id: c.keyId,
+          });
+          return json(200, { id });
+        } catch (e) {
+          await db.storage.from(BUCKET).remove([path]);
+          throw e;
+        }
+      }
+
+      case 'credit_doc': {
+        const meta = await rpc<{ path: string; iv: string; key_id: string; mime_type: string; file_name: string }>(db, 'credit_service_document_for', { p_actor: user, p_doc: String(body.id || '') });
         if (meta.key_id !== c.keyId) throw new HttpError(409, 'key_rotated');
         const dl = await db.storage.from(BUCKET).download(meta.path);
         if (dl.error || !dl.data) throw new HttpError(404, 'not_found');

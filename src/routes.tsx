@@ -36,6 +36,8 @@ const AdminVerificationsPage  = lazy(() => import('./pages/dashboard/admin/Admin
 const AdminDiscoveryPage      = lazy(() => import('./pages/dashboard/admin/AdminDiscoveryPage'));
 const LoanKycPage             = lazy(() => import('./pages/dashboard/LoanKycPage'));
 const AdminLoanKycPage        = lazy(() => import('./pages/dashboard/admin/AdminLoanKycPage'));
+const BusinessCreditPage      = lazy(() => import('./pages/dashboard/supplier/BusinessCreditPage'));
+const AdminCreditPage         = lazy(() => import('./pages/dashboard/admin/AdminCreditPage'));
 const SupplierDirectoryPage   = lazy(() => import('./pages/SupplierDirectoryPage'));
 const CrawlerInfoPage         = lazy(() => import('./pages/CrawlerInfoPage'));
 
@@ -277,6 +279,9 @@ export const routes: RouteConfig[] = [
   { name: 'Business Verifications', path: '/dashboard/admin/verifications', element: <AdminVerificationsPage /> },
   { name: 'Supplier Discovery', path: '/dashboard/admin/discovery', element: <AdminDiscoveryPage /> },
   { name: 'Admin Loan KYC', path: '/dashboard/admin/loan-kyc', element: <AdminLoanKycPage /> },
+  { name: 'Admin Business Credit', path: '/dashboard/admin/credit', element: <AdminCreditPage /> },
+  { name: 'Business Credit', path: '/dashboard/supplier/credit', element: <BusinessCreditPage /> },
+  { name: 'Manufacturer Business Credit', path: '/dashboard/manufacturer/credit', element: <BusinessCreditPage /> },
   { name: 'Business Loan & KYC', path: '/dashboard/loans', element: <LoanKycPage /> },
 
   // ── Company / Legal ───────────────────────────────────────────

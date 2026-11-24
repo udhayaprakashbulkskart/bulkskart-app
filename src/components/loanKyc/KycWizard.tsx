@@ -37,7 +37,8 @@ function report(r: FnResult, okText: string) {
 interface Props {
   data: MyKyc;
   checks: Checks;
-  application: LoanApplication;
+  /** the loan application, or null when KYC is done for business credit */
+  application: LoanApplication | null;
   reload: () => Promise<void>;
 }
 
@@ -426,19 +427,19 @@ function BankStep({ p, data, checks, reload }: { p: KycProfile; data: MyKyc; che
 
 // ── 5. Review & submit ─────────────────────────────────────────────────────────────────────────────────────────────────
 function ReviewStep({ p, data, checks, application, reload, onGo }: {
-  p: KycProfile; data: MyKyc; checks: Checks; application: LoanApplication; reload: () => Promise<void>; onGo: (s: StepKey) => void;
+  p: KycProfile; data: MyKyc; checks: Checks; application: LoanApplication | null; reload: () => Promise<void>; onGo: (s: StepKey) => void;
 }) {
-  const [share, setShare] = useState(Boolean(application.share_consent_at));
+  const [share, setShare] = useState(Boolean(application?.share_consent_at));
   const [busy, setBusy] = useState(false);
   const detailsDone = Boolean(p.pan_masked && p.entity_type && data.bank);
   const blocked = (['pan', 'aadhaar', 'business', 'bank'] as const).some((s) => p[`${s}_status` as const] === 'resubmission_required' || p[`${s}_status` as const] === 'rejected');
   const underReview = p.review_status === 'in_progress';
-  const alreadyShared = Boolean(application.share_consent_at) && (underReview || p.review_status === 'verified');
+  const alreadyShared = (application ? Boolean(application.share_consent_at) : true) && (underReview || p.review_status === 'verified');
   const canSubmit = detailsDone && !blocked && data.missing.length === 0 && share && !underReview && !p.rejected_at && !alreadyShared;
 
   const submit = async () => {
     setBusy(true);
-    try { await submitKyc(application.id); toast.success(`Submitted. Our team will verify your details and call you within ${data.settings?.review_hours ?? 2} working hours.`); await reload(); }
+    try { await submitKyc(application?.id ?? null); toast.success(`Submitted. Our team will verify your details and call you within ${data.settings?.review_hours ?? 2} working hours.`); await reload(); }
     catch (e) { toast.error(e instanceof Error ? e.message : 'Could not submit.'); }
     finally { setBusy(false); }
   };
@@ -471,8 +472,8 @@ function ReviewStep({ p, data, checks, application, reload, onGo }: {
       {!underReview && !alreadyShared && !p.rejected_at && (
         <>
           <CheckRow checked={share} onCheckedChange={setShare}>
-            I confirm the details are correct and agree that BulkSkart may share my KYC and this loan application with a lending partner (bank or NBFC)
-            for deciding on this loan. BulkSkart is not the lender.
+            I confirm the details are correct and agree that BulkSkart may share my KYC{application ? ' and this loan application' : ''} with a lending partner (bank or NBFC)
+            for deciding on my {application ? 'loan' : 'business credit application'}. BulkSkart is not the lender.
           </CheckRow>
           <KitButton onClick={submit} disabled={!canSubmit || busy}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />} Submit for verification

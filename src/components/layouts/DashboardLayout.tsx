@@ -13,7 +13,7 @@ import {
   Settings, LogOut, Menu, Globe, BarChart3, TrendingUp,
   Shield, Flag, CreditCard, Building2, UserCircle,
   Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
-  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown, MapPin, ShieldCheck, FileSearch, Landmark,
+  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown, MapPin, ShieldCheck, FileSearch, Landmark, IndianRupee,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -23,6 +23,8 @@ import '@/components/dashboard/dashboard.css';
 const UNPAID_SUPPLIER_ALLOWLIST = [
   '/dashboard/supplier',
   '/dashboard/supplier/subscription',
+  '/dashboard/supplier/credit',
+  '/dashboard/manufacturer/credit',
   '/dashboard/supplier/profile',
   '/dashboard/supplier/verification',
   '/dashboard/supplier/map-listing', // getting verified for the supplier map is free
@@ -82,6 +84,7 @@ export const supplierNavItems: NavItem[] = [
   { label: 'Orders', href: '/dashboard/supplier/orders', icon: Building2 },
   { label: 'Wallet', href: '/dashboard/supplier/wallet', icon: Wallet },
   { label: 'Payouts', href: '/dashboard/supplier/payouts', icon: Wallet },
+  { label: 'Business Credit', href: '/dashboard/supplier/credit', icon: IndianRupee },
   { label: 'Business Loan', href: '/dashboard/loans', icon: Landmark },
   { label: 'Factory Visits', href: '/dashboard/supplier/visits', icon: Factory },
   { label: 'Messages', href: '/dashboard/supplier/messages', icon: MessageSquare },
@@ -103,6 +106,7 @@ export const adminNavItems: NavItem[] = [
   { label: 'Public Requirements', href: '/dashboard/admin/public-requirements', icon: Globe2 },
   { label: 'Payments', href: '/dashboard/admin/payments', icon: Wallet },
   { label: 'Loan KYC', href: '/dashboard/admin/loan-kyc', icon: Landmark },
+  { label: 'Business Credit', href: '/dashboard/admin/credit', icon: IndianRupee },
 ];
 
 /** Shown to super admins only: who is an admin (see SuperAdminPage). */

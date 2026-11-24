@@ -59,6 +59,7 @@ export default function LoanKycPage() {
   const [checks, setChecks] = useState<Checks | null>(null);
   const [error, setError] = useState<string | null>(null);
   const handledReturn = useRef(false);
+  const forCreditRef = useRef(false);
 
   const reload = useCallback(async () => {
     try {
@@ -73,6 +74,7 @@ export default function LoanKycPage() {
 
   useEffect(() => {
     (async () => {
+      if (params.get('for') === 'credit') forCreditRef.current = true;
       await claimPendingRequest();
       // back from DigiLocker
       const ref = params.get('ref');
@@ -86,13 +88,16 @@ export default function LoanKycPage() {
         } catch (e) {
           toast.error(e instanceof Error ? e.message : 'Could not read the DigiLocker result.');
         }
-        setParams({}, { replace: true });
+        setParams(forCreditRef.current ? { for: 'credit' } : {}, { replace: true });
       }
       await reload();
     })();
   }, [params, reload, setParams]);
 
   const active = data?.applications.find((a) => a.stage !== 'withdrawn' && a.stage !== 'decision') ?? null;
+  // KYC is also needed for BulkSkart Business Credit, which has no loan application here
+  const forCredit = params.get('for') === 'credit';
+  const kycOpen = Boolean(active || forCredit || data?.profile?.consent_at);
 
   return (
     <DashboardLayout>
@@ -111,23 +116,28 @@ export default function LoanKycPage() {
 
         {data && checks && (
           <>
-            {data.applications.length === 0 ? (
+            {forCredit && (
+              <p className="rounded-xl border border-[#FF5A00]/40 bg-[#FF5A00]/10 p-3 text-[12.5px]">
+                KYC for <b>BulkSkart Business Credit</b>. When it is verified, go back to <Link to="/dashboard/supplier/credit" className="font-bold underline">Business Credit</Link>.
+              </p>
+            )}
+            {data.applications.length === 0 && !kycOpen ? (
               <div className="space-y-3 rounded-2xl border border-border bg-card p-6 text-center">
                 <p className="font-black">You have no loan applications yet.</p>
                 <p className="text-sm text-muted-foreground">Work out the monthly payment on the loan calculator and submit a loan request. Then come back here to complete your KYC.</p>
                 <Link to="/loan-calculator" className="fk-btn is-primary inline-flex"><Calculator className="h-4 w-4" aria-hidden="true" /> Open the loan calculator</Link>
               </div>
-            ) : (
+            ) : data.applications.length > 0 ? (
               <section className="space-y-3" aria-label="Applications">
                 {data.applications.map((a) => <ApplicationCard key={a.id} app={a} reload={reload} />)}
               </section>
-            )}
+            ) : null}
 
-            {active && (
+            {kycOpen && (
               <>
                 <IntegrationNotice checks={checks} />
                 {!data.profile?.consent_at ? (
-                  <ConsentCard applicationId={active.id} reload={reload} />
+                  <ConsentCard applicationId={active?.id ?? null} reload={reload} />
                 ) : (
                   <>
                     <KycSummary data={data} checks={checks} />
@@ -184,7 +194,7 @@ function ApplicationCard({ app, reload }: { app: LoanApplication; reload: () => 
   );
 }
 
-function ConsentCard({ applicationId, reload }: { applicationId: string; reload: () => Promise<void> }) {
+function ConsentCard({ applicationId, reload }: { applicationId: string | null; reload: () => Promise<void> }) {
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const start = async () => {
