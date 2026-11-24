@@ -1,0 +1,25 @@
+{
+  "batch": 901,
+  "companies": [
+    {"seq": 1, "company_name": "Noyyal Knit Works", "business_type": "Manufacturer", "city": "Tiruppur", "state": "Tamil Nadu", "country": "India",
+     "description": "Knitwear unit making cotton and blended T-shirts, polos and sweatshirts for private labels.", "tagline": "Cotton knitwear for private labels",
+     "year_established": 2011, "employee_count_range": "101-200", "key_products": ["T-shirts", "Polo shirts"], "export_destinations": ["UAE"],
+     "payment_terms": ["30% advance, 70% before dispatch"], "production_capacity": "About 40,000 pcs per month", "moq_policy": "500 pcs per style",
+     "packaging_details": "Polybag per piece, 50 pcs per 5-ply carton"},
+    {"seq": 2, "company_name": "Morbi Glaze Tiles", "city": "Morbi", "state": "Gujarat", "description": "Vitrified floor and wall tiles in 600x600 and 600x1200 mm for builders and dealers.", "employee_count_range": "51-100"}
+  ],
+  "products": [
+    {"company_seq": 1, "category_slug": "textiles-apparel", "name": "Cotton Round-Neck T-Shirt, 180 GSM Bio-Washed", "description": "Plain round-neck T-shirt in combed cotton single jersey for uniforms and promotions. Owner's choice of print.",
+     "specifications": {"Fabric": "100% combed cotton", "GSM": "180 ± 5", "Sizes": "S–XXL"}, "moq": 500, "moq_unit": "pcs", "price_min": 145, "price_max": 210, "tags": ["t-shirt", "cotton"]},
+    {"company_seq": 2, "category_slug": "construction-building", "name": "Glazed Vitrified Floor Tile 600x600 mm, Matt", "description": "Matt finish GVT tile for homes and showrooms, 4 tiles per box.",
+     "specifications": "Size: 600 x 600 mm\nThickness: 9 mm\nFinish: Matt", "moq": 500, "moq_unit": "sq m", "price_min": 330, "price_max": 520, "price_currency": "INR"},
+    {"company_id": "e1000001-0000-0000-0000-000000000003", "category_slug": "machinery-industrial", "name": "Monoblock Pump 1 HP", "description": "Self-priming monoblock pump for domestic water supply.", "moq": 20, "moq_unit": "pcs"}
+  ],
+  "requirements": [
+    {"seq": 1, "category_slug": "textiles-apparel", "title": "Cotton Round-Neck T-Shirts, 180 GSM, White", "description": "Use: school sports day kits. Quantity: 5000 Pcs (one-time).",
+     "specifications": {"Fabric": "100% cotton", "GSM": "180"}, "quantity": 5000, "quantity_unit": "Pcs", "destination_country": "India", "destination_city": "Chennai",
+     "deadline": "2030-01-15", "budget_min": 650000, "budget_max": 900000, "posted_days_ago": 3, "expires_in_days": 14},
+    {"seq": 2, "category_slug": "agriculture-food", "title": "Turmeric Finger, Salem Variety", "description": "Use: spice packing unit. Budget: not stated.", "quantity": 10, "quantity_unit": "Metric Tons (MT)",
+     "destination_country": "UAE", "destination_city": "Dubai", "currency": "USD", "status": "closed"}
+  ]
+}
