@@ -9,6 +9,7 @@ const footerLinks = {
     { label: 'Browse Products', href: '/products' },
     { label: 'Categories', href: '/categories' },
     { label: 'Manufacturers', href: '/manufacturers' },
+    { label: 'Supplier Directory', href: '/directory' },
     { label: 'Countries', href: '/manufacturers' },
   ],
   'For Suppliers': [

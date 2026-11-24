@@ -25,7 +25,8 @@ export default defineConfig({
     env: {
       NODE_ENV: "test",
     },
-    exclude: ["**/node_modules/**", "**/*.browser.test.*"],
+    // scripts/discovery has its own tests, run with node --test (npm test in that folder)
+    exclude: ["**/node_modules/**", "**/*.browser.test.*", "scripts/discovery/**"],
   },
   resolve: {
     dedupe: ["react", "react-dom"],
