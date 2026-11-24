@@ -45,6 +45,8 @@ export interface LoanRequestPayload {
   tenure_months: number;
   monthly_installment: number;
   goods_needed: string | null;
+  /** SHA-256 of a token kept in this browser, so a visitor can attach the request to their account after signing in. */
+  claim_token_hash?: string | null;
 }
 
 export function emptyLoanDraft(): LoanRequestDraft {
@@ -135,5 +137,13 @@ export function installmentForRequestedAmount(quote: LoanQuote, loanAmount: numb
 
 export async function submitLoanRequest(payload: LoanRequestPayload): Promise<void> {
   const { error } = await supabase.from('loan_requests').insert(payload);
-  if (error) throw error;
+  if (!error) return;
+  // Before migration 00075 the claim column does not exist: the request itself must still go through.
+  if (payload.claim_token_hash && /claim_token_hash/.test(error.message ?? '')) {
+    const { claim_token_hash: _unused, ...rest } = payload;
+    const retry = await supabase.from('loan_requests').insert(rest);
+    if (retry.error) throw retry.error;
+    return;
+  }
+  throw error;
 }
