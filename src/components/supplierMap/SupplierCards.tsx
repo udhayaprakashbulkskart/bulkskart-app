@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BadgeCheck, Crown, Boxes, Building2, CalendarClock, ChevronRight, Clock3, ExternalLink, Factory, Info, MapPin, Navigation,
-  Package, Send, Sparkles, Star, X,
+  Package, Send, ShieldAlert, Sparkles, Star, X,
 } from 'lucide-react';
 import type { MapProduct, MapSupplier, MapSupplierDetail } from '@/lib/supplierMap/types';
 import { formatKm, type MatchResult, STOCK_LABEL, timeAgo } from '@/lib/supplierMap/matchScore';
@@ -40,6 +40,21 @@ export function PremiumBadge({ small = false }: { small?: boolean }) {
       <Crown className={small ? 'h-3 w-3' : 'h-3.5 w-3.5'} aria-hidden="true" /> Premium
     </span>
   );
+}
+
+/** Shown on manufacturers who were on BulkSkart before the paid-only map (migration 00075): no plan and not verified. */
+export function UnverifiedBadge({ small = false }: { small?: boolean }) {
+  return (
+    <span className={cn('inline-flex shrink-0 items-center gap-1 rounded-full bg-muted font-bold text-muted-foreground', small ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]')}>
+      <ShieldAlert className={small ? 'h-3 w-3' : 'h-3.5 w-3.5'} aria-hidden="true" /> Unverified
+    </span>
+  );
+}
+
+/** Green check, Premium (paid, not yet verified) or Unverified (no plan). */
+export function StatusBadge({ s, small = false }: { s: Pick<MapSupplier, 'verified' | 'paid'>; small?: boolean }) {
+  if (s.verified) return <VerifiedBadge small={small} />;
+  return s.paid === false ? <UnverifiedBadge small={small} /> : <PremiumBadge small={small} />;
 }
 
 /** "Coimbatore, Tamil Nadu", with "(approx.)" when the point is only the city centre. */
@@ -94,7 +109,7 @@ export function SupplierCard({ s, match, selected, onSelect, onQuote, compact = 
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="truncate text-[14.5px] font-black leading-tight">{s.company_name}</span>
-            {s.verified ? <VerifiedBadge small /> : <PremiumBadge small />}
+            <StatusBadge s={s} small />
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-muted-foreground">
             <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3" aria-hidden="true" />{locationText(s)}</span>
@@ -188,7 +203,7 @@ export function SupplierDetailPanel({ s, detail, loading, match, onClose, onQuot
           <div className="min-w-0 flex-1">
             <h2 className="text-[18px] font-black leading-tight">{s.company_name}</h2>
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              {s.verified ? <VerifiedBadge /> : <PremiumBadge />}
+              <StatusBadge s={s} />
               <MatchPill match={match} />
               {(s.review_count ?? 0) > 0 && s.rating != null ? (
                 <span className="inline-flex items-center gap-0.5 text-[12px] font-bold"><Star className="h-3.5 w-3.5 fill-[#F5B301] text-[#F5B301]" aria-hidden="true" />{Number(s.rating).toFixed(1)} <span className="font-normal text-muted-foreground">({s.review_count} review{s.review_count === 1 ? '' : 's'})</span></span>
@@ -219,6 +234,13 @@ export function SupplierDetailPanel({ s, detail, loading, match, onClose, onQuot
               ? `: registration checked in the official company registry${registryCountry ? ` of ${registryCountry}` : ''}`
               : checks.length ? `: ${checks.join(', ')} checked on the government portal` : ' verified by BulkSkart'}
             {s.verified_since ? ` (since ${new Date(s.verified_since).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })})` : ''}.
+          </p>
+        </section>
+        ) : s.paid === false ? (
+        <section className="rounded-2xl border border-border bg-muted/40 p-3">
+          <h3 className="flex items-center gap-1.5 text-[13px] font-black text-muted-foreground"><ShieldAlert className="h-4 w-4" aria-hidden="true" /> Unverified business</h3>
+          <p className="mt-1 text-[12px] leading-snug text-muted-foreground">
+            BulkSkart has not verified this business and it has no BulkSkart plan. The pin is the centre of the city in its profile. Check its registration documents before you pay.
           </p>
         </section>
         ) : (

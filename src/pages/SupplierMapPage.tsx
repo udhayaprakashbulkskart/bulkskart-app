@@ -681,7 +681,7 @@ export default function SupplierMapPage() {
                     ) : rows.length === 0 ? (
                       <div className="p-3 text-center text-[12.5px] text-muted-foreground">
                         <Factory className="mx-auto mb-2 h-8 w-8 text-[#FF5A00]" aria-hidden="true" />
-                        Manufacturers with an active BulkSkart plan appear here. A green check means BulkSkart has verified them.
+                        Manufacturers with an active BulkSkart plan appear here, along with manufacturers already on BulkSkart, marked Unverified. A green check means BulkSkart has verified them.
                       </div>
                     ) : view === 'map' ? list('grid-cols-1') : (
                       <p className="p-3 text-center text-[12.5px] text-muted-foreground">Pick a supplier to see the details here.</p>
