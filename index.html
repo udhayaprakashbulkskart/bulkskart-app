@@ -185,23 +185,33 @@
     </script>
     <!-- End Google Tag Manager -->
 
-    <!-- Opening screen for the installed app (home-screen icon): cartons stacking up, no logo.
-         Shown once per app launch, never on normal website visits. Add ?splash to any address to preview it. -->
+    <!-- Opening screen for the installed app (home-screen icon): cartons stack up and the BulkSkart name rises letter by
+         letter. No logo image. Shown once per app launch, never on normal website visits. Add ?splash to any address to
+         preview it. -->
     <style>
-      #app-splash{position:fixed;inset:0;z-index:2147483647;display:none;flex-direction:column;align-items:center;justify-content:center;gap:30px;background:#0A0A0F;transition:opacity .45s ease,visibility .45s ease}
+      #app-splash{position:fixed;inset:0;z-index:2147483647;display:none;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:radial-gradient(60% 45% at 50% 46%,rgba(255,90,0,.16),rgba(255,90,0,0) 70%),#0A0A0F;transition:opacity .45s ease,visibility .45s ease;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
       html.is-app #app-splash{display:flex}
       #app-splash.sp-hide{opacity:0;visibility:hidden}
       .sp-stack{position:relative;width:92px;height:80px}
-      .sp-box{position:absolute;width:42px;height:36px;border-radius:7px;background:#FF5A00;box-shadow:inset 0 -6px 0 rgba(0,0,0,.18);opacity:0;animation:sp-drop 1.9s cubic-bezier(.3,.7,.4,1) infinite}
+      .sp-box{position:absolute;width:42px;height:36px;border-radius:7px;background:#FF5A00;box-shadow:inset 0 -6px 0 rgba(0,0,0,.18);opacity:0;animation:sp-drop .7s cubic-bezier(.3,.7,.4,1) forwards}
       .sp-box::after{content:"";position:absolute;top:0;bottom:6px;left:50%;width:8px;margin-left:-4px;background:rgba(0,0,0,.16)}
       .sp-b1{left:2px;bottom:0}
-      .sp-b2{right:2px;bottom:0;background:#FF7A2E;animation-delay:.18s}
-      .sp-b3{left:25px;bottom:40px;background:#FFFFFF;animation-delay:.36s}
-      .sp-bar{width:124px;height:3px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}
+      .sp-b2{right:2px;bottom:0;background:#FF7A2E;animation-delay:.16s}
+      .sp-b3{left:25px;bottom:40px;background:#FFFFFF;animation-delay:.32s}
+      .sp-word{display:flex;font-size:40px;font-weight:900;letter-spacing:-.02em;line-height:1;color:#FFFFFF}
+      .sp-word span{display:inline-block;opacity:0;transform:translateY(18px);animation:sp-rise .5s cubic-bezier(.2,.8,.3,1) forwards}
+      .sp-word .sp-o{color:#FF5A00}
+      .sp-word span:nth-child(1){animation-delay:.45s}.sp-word span:nth-child(2){animation-delay:.5s}.sp-word span:nth-child(3){animation-delay:.55s}
+      .sp-word span:nth-child(4){animation-delay:.6s}.sp-word span:nth-child(5){animation-delay:.68s}.sp-word span:nth-child(6){animation-delay:.73s}
+      .sp-word span:nth-child(7){animation-delay:.78s}.sp-word span:nth-child(8){animation-delay:.83s}.sp-word span:nth-child(9){animation-delay:.88s}
+      .sp-tag{margin-top:-10px;font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.62);opacity:0;animation:sp-fade .5s ease 1.1s forwards}
+      .sp-bar{width:140px;height:3px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;opacity:0;animation:sp-fade .4s ease 1.2s forwards}
       .sp-bar i{display:block;width:40%;height:100%;border-radius:3px;background:#FF5A00;animation:sp-slide 1.1s ease-in-out infinite}
-      @keyframes sp-drop{0%{opacity:0;transform:translateY(-64px)}24%{opacity:1;transform:translateY(0)}31%{transform:translateY(-5px)}37%{transform:translateY(0)}82%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(0)}}
+      @keyframes sp-drop{0%{opacity:0;transform:translateY(-64px)}60%{opacity:1;transform:translateY(0)}78%{transform:translateY(-5px)}100%{opacity:1;transform:translateY(0)}}
+      @keyframes sp-rise{to{opacity:1;transform:translateY(0)}}
+      @keyframes sp-fade{to{opacity:1}}
       @keyframes sp-slide{0%{transform:translateX(-100%)}100%{transform:translateX(310%)}}
-      @media (prefers-reduced-motion:reduce){.sp-box{opacity:1;animation:none}.sp-bar i{width:100%;animation:none}}
+      @media (prefers-reduced-motion:reduce){.sp-box,.sp-word span,.sp-tag,.sp-bar{opacity:1;transform:none;animation:none}.sp-bar i{width:100%;animation:none}}
     </style>
     <script>
       (function() {
@@ -239,6 +249,8 @@
     </noscript>
     <div id="app-splash" aria-hidden="true">
       <div class="sp-stack"><span class="sp-box sp-b1"></span><span class="sp-box sp-b2"></span><span class="sp-box sp-b3"></span></div>
+      <div class="sp-word"><span>B</span><span>u</span><span>l</span><span>k</span><span class="sp-o">S</span><span class="sp-o">k</span><span class="sp-o">a</span><span class="sp-o">r</span><span class="sp-o">t</span></div>
+      <div class="sp-tag">B2B wholesale marketplace</div>
       <div class="sp-bar"><i></i></div>
     </div>
     <div id="root"></div>
@@ -252,8 +264,8 @@
         function hide() {
           if (done) return;
           done = true;
-          // Show the animation for at least 1.6 s from launch, then fade into the app.
-          var wait = Math.max(0, 1600 - (window.performance ? performance.now() : 0));
+          // Let the animation finish (about 2 s from launch), then fade into the app.
+          var wait = Math.max(0, 2000 - (window.performance ? performance.now() : 0));
           setTimeout(function() {
             splash.classList.add('sp-hide');
             setTimeout(function() { splash.remove(); document.documentElement.classList.remove('is-app'); }, 500);
