@@ -30,6 +30,13 @@ const FILTERS: { key: string; label: string }[] = [
   { key: 'all', label: 'All' },
 ];
 
+/** How long a submitted application has waited; past the promised time it is shown in red (the promise is in working hours). */
+function SinceSubmitted({ at, hours }: { at: string; hours: number }) {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(at).getTime()) / 60000));
+  const text = mins < 60 ? `${mins} min` : mins < 2880 ? `${Math.floor(mins / 60)} h ${mins % 60} min` : `${Math.floor(mins / 1440)} days`;
+  return <span className={mins > hours * 60 ? 'font-bold text-red-600 dark:text-red-400' : 'font-bold text-foreground'}>Waiting {text} since submission</span>;
+}
+
 /** Asks for a reason (the applicant sees it). Returns null when cancelled. */
 function askReason(what: string): string | null {
   const v = window.prompt(`${what}\n\nWrite the reason. The applicant will see it.`);
@@ -46,6 +53,10 @@ export default function AdminLoanKycPage() {
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [reviewHours, setReviewHours] = useState(2);
+  useEffect(() => {
+    supabase.from('kyc_settings').select('review_hours').maybeSingle().then(({ data }) => { if (data?.review_hours) setReviewHours(data.review_hours); });
+  }, []);
 
   const load = useCallback(async () => {
     try { setList(await adminApplications(filter, query)); setError(null); }
@@ -60,7 +71,7 @@ export default function AdminLoanKycPage() {
         <header className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="flex items-center gap-2 text-2xl font-black"><ShieldCheck className="h-6 w-6 text-[#FF5A00]" aria-hidden="true" /> Loan KYC</h1>
           <div className="flex gap-2">
-            <KitButton variant="ghost" onClick={() => setShowSettings((v) => !v)}><Settings2 className="h-4 w-4" aria-hidden="true" /> Retention</KitButton>
+            <KitButton variant="ghost" onClick={() => setShowSettings((v) => !v)}><Settings2 className="h-4 w-4" aria-hidden="true" /> Settings</KitButton>
             <KitButton variant="ghost" onClick={load}><RefreshCw className="h-4 w-4" aria-hidden="true" /> Refresh</KitButton>
           </div>
         </header>
@@ -106,7 +117,10 @@ export default function AdminLoanKycPage() {
                         </div>
                       </div>
                       <StageTracker app={r} />
-                      <p className="text-[11.5px] text-muted-foreground">Updated {when(r.updated_at)}{r.docs_to_review ? ` · ${r.docs_to_review} document(s) to review` : ''}</p>
+                      <p className="text-[11.5px] text-muted-foreground">
+                        {r.submitted_at && r.kyc_status === 'in_progress' ? <SinceSubmitted at={r.submitted_at} hours={reviewHours} /> : <>Updated {when(r.updated_at)}</>}
+                        {r.docs_to_review ? ` · ${r.docs_to_review} document(s) to review` : ''}
+                      </p>
                     </button>
                   </li>
                 ))}
@@ -299,7 +313,7 @@ function StepRow({ step, d, busy, act }: {
       <p className="text-[12.5px] text-muted-foreground">{details.filter(Boolean).join(' · ') || 'Not provided yet'}</p>
       {p.step_notes?.[step] && <p className="text-[12px]">Note: {p.step_notes[step]}</p>}
       <div className="flex flex-wrap gap-1.5">
-        {step !== 'aadhaar' && st !== 'verified' && (
+        {st !== 'verified' && (
           <button type="button" className="fk-btn is-primary !min-h-[34px] !px-3 !text-[12px]" disabled={busy === key}
             onClick={() => act(key, () => adminStepAction(p.id, step, 'verify_by_document', 'Verified from the accepted documents'), 'Step verified by document review')}>
             Verify from documents
@@ -318,7 +332,12 @@ function StepRow({ step, d, busy, act }: {
             onClick={() => act(key, () => adminStepAction(p.id, step, 'reopen'), 'Step reopened')}>Reopen</button>
         )}
       </div>
-      {step === 'aadhaar' && <p className="text-[11.5px] text-muted-foreground">Aadhaar can only be verified by the applicant through DigiLocker.</p>}
+      {step === 'aadhaar' && st !== 'verified' && (
+        <p className="text-[11.5px] text-muted-foreground">
+          Accept only a masked Aadhaar (first 8 digits hidden); reject a full one. Scan its QR code with UIDAI's official mAadhaar or Aadhaar QR Scanner
+          app and check the name and photo match before you verify.
+        </p>
+      )}
     </li>
   );
 }
@@ -328,13 +347,13 @@ function SettingsCard() {
   const [s, setS] = useState<KycSettings | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    supabase.from('kyc_settings').select('document_retention_days, abandoned_retention_days, max_file_mb, consent_version').maybeSingle()
+    supabase.from('kyc_settings').select('document_retention_days, abandoned_retention_days, max_file_mb, review_hours, consent_version').maybeSingle()
       .then(({ data }) => setS((data ?? null) as KycSettings | null));
   }, []);
   if (!s) return null;
   const save = async () => {
     setBusy(true);
-    try { setS(await adminUpdateSettings({ document_retention_days: s.document_retention_days, abandoned_retention_days: s.abandoned_retention_days, max_file_mb: s.max_file_mb })); toast.success('Saved'); }
+    try { setS(await adminUpdateSettings({ document_retention_days: s.document_retention_days, abandoned_retention_days: s.abandoned_retention_days, max_file_mb: s.max_file_mb, review_hours: s.review_hours })); toast.success('Saved'); }
     catch (e) { toast.error(e instanceof Error ? e.message : 'Could not save.'); }
     finally { setBusy(false); }
   };
@@ -350,8 +369,9 @@ function SettingsCard() {
   };
   return (
     <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
-      <h2 className="font-black">Document retention</h2>
-      <div className="grid gap-2 sm:grid-cols-3">
+      <h2 className="font-black">Settings</h2>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <Field htmlFor={`${ids}-0`} label="Call back within (working hours)" hint="Shown to applicants; 1 – 72"><TextInput id={`${ids}-0`} type="number" min={1} max={72} value={s.review_hours} onChange={(e) => setS({ ...s, review_hours: Number(e.target.value) })} /></Field>
         <Field htmlFor={`${ids}-1`} label="Keep after submission (days)" hint="30 – 3650"><TextInput id={`${ids}-1`} type="number" min={30} max={3650} value={s.document_retention_days} onChange={(e) => setS({ ...s, document_retention_days: Number(e.target.value) })} /></Field>
         <Field htmlFor={`${ids}-2`} label="Keep if never submitted or withdrawn (days)" hint="7 – 1825"><TextInput id={`${ids}-2`} type="number" min={7} max={1825} value={s.abandoned_retention_days} onChange={(e) => setS({ ...s, abandoned_retention_days: Number(e.target.value) })} /></Field>
         <Field htmlFor={`${ids}-3`} label="Largest file (MB)" hint="1 – 10"><TextInput id={`${ids}-3`} type="number" min={1} max={10} value={s.max_file_mb} onChange={(e) => setS({ ...s, max_file_mb: Number(e.target.value) })} /></Field>

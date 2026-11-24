@@ -14,6 +14,7 @@ export type EntityType = (typeof ENTITY_TYPES)[number];
 
 export const DOCUMENT_TYPES = {
   pan_card: { step: 'pan', label: 'PAN card' },
+  aadhaar_masked: { step: 'aadhaar', label: 'Masked Aadhaar (first 8 digits hidden)' },
   gst_certificate: { step: 'business', label: 'GST registration certificate' },
   udyam_certificate: { step: 'business', label: 'Udyam registration certificate' },
   incorporation_certificate: { step: 'business', label: 'Certificate of incorporation' },

@@ -31,11 +31,12 @@ partner's name.
 - queues: To review, Resubmission, KYC in progress, KYC verified, With partner, Decided, Rejected, Withdrawn;
 - per application: the applicant, every step with its details, documents to view, accept, reject or ask again for,
   the checks, and the audit log;
-- per step: *Verify from documents* (never for Aadhaar), *Request resubmission*, *Reject*, *Reopen*;
+- per step: *Verify from documents* (for Aadhaar, only from a masked copy), *Request resubmission*, *Reject*, *Reopen*;
 - KYC decision: *Approve* (only when all four steps are verified), *Request resubmission*, *Reject* (final, with a
   reason), *Reopen*;
 - lending partner: *Mark as sent* (partner name and reference), then *Record partner's decision*;
-- retention settings and *Delete expired documents now*.
+- settings (call-back time, retention) and *Delete expired documents now*;
+- in the review queue, how long each submitted application has waited (red after the promised call-back time).
 
 Every rejection or resubmission request needs a reason, and the applicant sees it.
 
@@ -57,7 +58,7 @@ label.
 
 ## What can make something "verified"
 
-Only two things can mark a step verified. The database enforces both (migration 00075):
+Only two things can mark a step verified. The database enforces both (migration 00076):
 1. **A check by the provider in its production environment**, recorded by the `kyc` edge function with the service
    role. Sandbox (test) answers are stored as `test_only` and never verify. The function treats an answer as valid only
    when it has the exact fields the provider documents as valid:
@@ -68,15 +69,22 @@ Only two things can mark a step verified. The database enforces both (migration 
 
    A valid answer with a weak name match goes to an admin. Anything unexpected is an error.
 2. **An admin who accepted a document for that step and chose *Verify from documents*.** It is labelled "verified by a
-   BulkSkart reviewer from your documents". This route is not available for Aadhaar.
+   BulkSkart reviewer from your documents". For Aadhaar it needs an accepted masked Aadhaar copy.
 
 Applicants cannot write any KYC table. All changes go through functions that check the caller. Every function call is
 written to `kyc_audit_logs`, which cannot be updated or deleted.
 
-## Aadhaar: DigiLocker only
+## Aadhaar: masked copy, or DigiLocker
 
-Cashfree's documentation (read 24 Nov 2026) says OTP-based offline Aadhaar (OKYC) verification "is no longer
-compliant" and has been withdrawn. Aadhaar is therefore verified only through **DigiLocker**:
+**Masked Aadhaar copy (always available).** The applicant uploads the masked Aadhaar from the official myAadhaar website,
+which hides the first 8 digits. The reviewer:
+- rejects a full Aadhaar with all 12 digits visible; a rejected Aadhaar copy is queued for deletion at once;
+- scans the copy's QR code with UIDAI's official app (mAadhaar or Aadhaar QR Scanner);
+- checks that the name and photo match;
+- then chooses *Verify from documents*.
+
+**DigiLocker (when connected).** Cashfree's documentation (read 24 Nov 2026) says OTP-based offline Aadhaar (OKYC)
+verification "is no longer compliant" and has been withdrawn, so the provider route is **DigiLocker**:
 - The applicant is sent to DigiLocker's own site, signs in there, and chooses to share their Aadhaar. BulkSkart never
   sees the OTP or PIN.
 - DigiLocker sends the applicant back to `/dashboard/loans?kyc=aadhaar&ref=…`, and the edge function fetches the
@@ -110,10 +118,14 @@ compliant" and has been withdrawn. Aadhaar is therefore verified only through **
   - They are deleted after 180 days if the application is never submitted or is withdrawn.
   - Both periods can be set in the admin page.
   - *Delete expired documents now* deletes the files and marks the records `purged`.
-- **Never stored:** Aadhaar OTPs, DigiLocker credentials, the full Aadhaar number, or the Aadhaar photo, date of birth
-  and address.
+- **Never stored:**
+  - Aadhaar OTPs and DigiLocker credentials;
+  - the full Aadhaar number as data;
+  - the photo, date of birth and address returned by DigiLocker.
 
-## Tables (migration `00075_loan_kyc.sql`)
+  A full Aadhaar copy uploaded by mistake is queued for deletion as soon as a reviewer rejects it.
+
+## Tables (migration `00076_loan_kyc.sql`)
 
 | Table | Holds |
 | --- | --- |
@@ -123,7 +135,7 @@ compliant" and has been withdrawn. Aadhaar is therefore verified only through **
 | `verification_requests` | Every provider check and admin document review: outcome, environment, message, minimal result |
 | `bank_verifications` | Account holder, last 4 digits, IFSC, bank name, name at bank, how it was verified |
 | `kyc_audit_logs` | Append-only log of every action, with who did it |
-| `kyc_settings` | Retention periods, largest file size, consent version |
+| `kyc_settings` | Call-back time promised to applicants (working hours, default 2), retention periods, largest file size, consent version |
 | `kyc_private.secrets` | Encrypted PAN, business PAN and bank account number (no API access) |
 
 `loan_requests` gains `claim_token_hash`. A visitor who requests a loan before signing in keeps a random token in
@@ -131,7 +143,7 @@ their browser. After they sign in, `/dashboard/loans` uses it to attach the requ
 
 ## Setup
 
-1. **Database.** Run `supabase/migrations/00075_loan_kyc.sql` in the Supabase SQL editor. It is one transaction and safe
+1. **Database.** Run `supabase/migrations/00076_loan_kyc.sql` in the Supabase SQL editor. It is one transaction and safe
    to run again. Until it runs, the loan form keeps working: it retries without the new column.
 2. **Edge function.** Copy `supabase/functions/kyc/` (`index.ts`, `core.ts`, `validate.ts`) to the server's edge-runtime
    functions folder, next to `razorpay-verify-payment`, and restart the functions service. CI does not deploy edge
@@ -154,6 +166,22 @@ their browser. After they sign in, `/dashboard/loans` uses it to attach the requ
 - **Encryption key only:** uploads and admin document review work, and provider checks stay pending.
 - **Key and provider keys:** the checks run as well.
 
+## Running without a verification provider (manual review)
+
+No Cashfree account is needed to start. Do setup steps 1–3 with only `KYC_ENCRYPTION_KEY` in step 3:
+- Applicants enter everything and upload copies: PAN card, masked Aadhaar, GST / Udyam / incorporation certificates and
+  business PAN as they apply, and a cancelled cheque or bank statement.
+- The automatic checks show **Integration Pending**. Nothing is marked verified automatically.
+- After submitting, applicants see: "Our team verifies your details and documents and calls you on your registered
+  number within 2 working hours." Change the hours under *Settings* on the admin page.
+- Reviewers verify each step from the documents. PAN and GSTIN can be checked on the official Income Tax and GST
+  portals; the bank account from the cancelled cheque or statement.
+- The review queue shows how long each application has waited; past the promised time it turns red. That count is in
+  clock time, so applications submitted after hours turn red overnight.
+
+Only promise a time the team can keep. "Working hours" is what applicants read, so they are not promised calls at night
+or on holidays.
+
 **Not checked by a provider:** Udyam and CIN. The provider's Udyam and CIN APIs were not confirmed, so these are
 verified by a reviewer from the uploaded certificates.
 
@@ -168,8 +196,8 @@ verified by a reviewer from the uploaded certificates.
 
 | Where | What | Result (24 Nov 2026) |
 | --- | --- | --- |
-| `docs/loan-kyc/sql-tests/kyc_check.mjs` | The migration on PGlite with Supabase roles: permissions, consent, "verified" rules (sandbox, provider, Aadhaar), documents, submission, resubmission, admin review, partner hand-off and decision, rejection, audit log, retention, account deletion | 88 / 88 |
-| `src/__tests__/loanKycCore.test.ts` | Format checks, file sniffing, integration status, AES-GCM and HMAC, Cashfree signature, and reading the provider's documented example answers (PAN, GSTIN, bank, DigiLocker) | 26 / 26 |
+| `docs/loan-kyc/sql-tests/kyc_check.mjs` | The migration on PGlite with Supabase roles: permissions, consent, "verified" rules (sandbox, provider, Aadhaar), masked-Aadhaar manual review, documents, submission, resubmission, admin review, partner hand-off and decision, rejection, audit log, retention, call-back setting, account deletion | 94 / 94 |
+| `src/__tests__/loanKycCore.test.ts` | Format checks, file sniffing, integration status, AES-GCM and HMAC, Cashfree signature, and reading the provider's documented example answers (PAN, GSTIN, bank, DigiLocker) | 27 / 27 |
 | Browser (Playwright, stubbed API) | `/dashboard/loans` and `/dashboard/admin/loan-kyc`, phone and desktop, dark and light | no overflow, no page errors |
 
 Run the database checks with:

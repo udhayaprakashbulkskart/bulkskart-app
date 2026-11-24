@@ -7,8 +7,9 @@
 --   • Applicants can read their own rows and nothing else. They cannot write any table directly.
 --   • Every change goes through a function that checks who is calling, and is written to kyc_audit_logs (append-only).
 --   • A step becomes "verified" only (a) from a check by the configured provider in its PRODUCTION environment, recorded
---     by the kyc edge function with the service role, or (b) by an admin who reviewed the uploaded documents
---     (never for Aadhaar: Aadhaar is verified only through DigiLocker). Sandbox results never verify anything.
+--     by the kyc edge function with the service role, or (b) by an admin who accepted the uploaded documents for that
+--     step (for Aadhaar: a masked Aadhaar copy, first 8 digits hidden). Sandbox results never verify anything.
+--     Without a provider, everything is collected and BulkSkart staff verify it from the documents (manual review).
 --   • Full PAN and bank account numbers are stored only encrypted (AES-256-GCM, key held by the edge function, not the
 --     database) in kyc_private.secrets; the readable tables keep a masked value and a keyed hash. Aadhaar: last 4 digits.
 --   • Documents are stored encrypted in the private "kyc-documents" bucket, which has no storage policies: only the edge
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS public.kyc_settings (
   document_retention_days   integer NOT NULL DEFAULT 1825 CHECK (document_retention_days BETWEEN 30 AND 3650),
   abandoned_retention_days  integer NOT NULL DEFAULT 180 CHECK (abandoned_retention_days BETWEEN 7 AND 1825),
   max_file_mb               integer NOT NULL DEFAULT 5 CHECK (max_file_mb BETWEEN 1 AND 10),
+  review_hours              integer NOT NULL DEFAULT 2 CHECK (review_hours BETWEEN 1 AND 72),   -- promised call-back time, in working hours
   consent_version           text NOT NULL DEFAULT '2026-11-24',
   updated_at                timestamptz NOT NULL DEFAULT now(),
   updated_by                uuid
@@ -60,7 +62,7 @@ CREATE TABLE IF NOT EXISTS public.kyc_profiles (
   -- Aadhaar (DigiLocker only; never the full number)
   aadhaar_last4          text CHECK (aadhaar_last4 IS NULL OR aadhaar_last4 ~ '^[0-9]{4}$'),
   aadhaar_name           text,
-  aadhaar_verified_via   text CHECK (aadhaar_verified_via IN ('digilocker')),
+  aadhaar_verified_via   text CHECK (aadhaar_verified_via IN ('digilocker', 'document_review')),
   -- Business
   entity_type            text CHECK (entity_type IN ('proprietorship', 'partnership', 'llp', 'private_limited', 'public_limited', 'other')),
   business_name          text,
@@ -92,7 +94,7 @@ CREATE TABLE IF NOT EXISTS public.kyc_profiles (
   -- "verified" always says how
   CONSTRAINT kyc_profiles_verified_how_ck CHECK (
     (pan_status <> 'verified' OR pan_verified_via IS NOT NULL)
-    AND (aadhaar_status <> 'verified' OR aadhaar_verified_via = 'digilocker')
+    AND (aadhaar_status <> 'verified' OR aadhaar_verified_via IS NOT NULL)
     AND (business_status <> 'verified' OR business_verified_via IS NOT NULL)
     AND (status <> 'verified' OR (pan_status = 'verified' AND aadhaar_status = 'verified' AND business_status = 'verified'
                                   AND bank_status = 'verified' AND review_status = 'verified')))
@@ -134,8 +136,8 @@ CREATE TABLE IF NOT EXISTS public.kyc_documents (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   kyc_profile_id   uuid NOT NULL REFERENCES public.kyc_profiles(id) ON DELETE CASCADE,
   user_id          uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  step             text NOT NULL CHECK (step IN ('pan', 'business', 'bank', 'other')),
-  doc_type         text NOT NULL CHECK (doc_type IN ('pan_card', 'gst_certificate', 'udyam_certificate', 'incorporation_certificate',
+  step             text NOT NULL CHECK (step IN ('pan', 'aadhaar', 'business', 'bank', 'other')),
+  doc_type         text NOT NULL CHECK (doc_type IN ('pan_card', 'aadhaar_masked', 'gst_certificate', 'udyam_certificate', 'incorporation_certificate',
                                                      'partnership_deed', 'business_pan_card', 'cancelled_cheque', 'bank_statement', 'other')),
   file_name        text NOT NULL CHECK (char_length(file_name) BETWEEN 1 AND 120),
   mime_type        text NOT NULL CHECK (mime_type IN ('image/jpeg', 'image/png', 'application/pdf')),
@@ -305,6 +307,7 @@ BEGIN
   SELECT coalesce(array_agg(DISTINCT doc_type), ARRAY[]::text[]) INTO have
     FROM public.kyc_documents WHERE kyc_profile_id = p_profile AND status IN ('uploaded', 'accepted');
   IF p.pan_status <> 'verified' AND NOT 'pan_card' = ANY (have) THEN need := array_append(need, 'pan_card'); END IF;
+  IF p.aadhaar_status <> 'verified' AND NOT 'aadhaar_masked' = ANY (have) THEN need := array_append(need, 'aadhaar_masked'); END IF;
   IF p.business_status <> 'verified' THEN
     IF p.gstin IS NOT NULL AND NOT 'gst_certificate' = ANY (have) THEN need := array_append(need, 'gst_certificate'); END IF;
     IF p.udyam_number IS NOT NULL AND NOT 'udyam_certificate' = ANY (have) THEN need := array_append(need, 'udyam_certificate'); END IF;
@@ -806,7 +809,10 @@ BEGIN
   st := CASE p_action WHEN 'accept' THEN 'accepted' WHEN 'reject' THEN 'rejected' WHEN 'request_resubmission' THEN 'resubmission_required' END;
   IF st IS NULL THEN RAISE EXCEPTION 'invalid_action'; END IF;
   IF st <> 'accepted' AND char_length(btrim(coalesce(p_note, ''))) < 3 THEN RAISE EXCEPTION 'note_required'; END IF;
-  UPDATE public.kyc_documents SET status = st, review_note = nullif(btrim(coalesce(p_note, '')), ''), reviewed_by = me, reviewed_at = now() WHERE id = d.id;
+  -- an Aadhaar copy that is not accepted (for example a full, unmasked Aadhaar) is deleted at the next clean-up
+  UPDATE public.kyc_documents SET status = st, review_note = nullif(btrim(coalesce(p_note, '')), ''), reviewed_by = me, reviewed_at = now(),
+         delete_after = CASE WHEN d.doc_type = 'aadhaar_masked' AND st <> 'accepted' THEN now() ELSE delete_after END
+   WHERE id = d.id;
   IF st = 'resubmission_required' THEN
     UPDATE public.kyc_profiles SET review_status = CASE WHEN review_status = 'verified' THEN review_status ELSE 'resubmission_required' END,
            step_notes = step_notes || jsonb_build_object('review', btrim(p_note)), updated_at = now()
@@ -817,7 +823,7 @@ BEGIN
   RETURN st;
 END $$;
 
--- p_action: 'verify_by_document' (not Aadhaar; needs an accepted document for the step) | 'reject' | 'request_resubmission' | 'reopen'
+-- p_action: 'verify_by_document' (needs an accepted document for the step; for Aadhaar a masked copy) | 'reject' | 'request_resubmission' | 'reopen'
 CREATE OR REPLACE FUNCTION public.admin_kyc_step_action(p_profile uuid, p_step text, p_action text, p_note text DEFAULT NULL) RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE me uuid := public.kyc_require_admin(); k public.kyc_profiles; st text; note text := nullif(btrim(coalesce(p_note, '')), '');
@@ -827,7 +833,6 @@ BEGIN
   IF p_step NOT IN ('pan', 'aadhaar', 'business', 'bank') THEN RAISE EXCEPTION 'invalid_step'; END IF;
   IF p_action IN ('reject', 'request_resubmission') AND char_length(coalesce(note, '')) < 3 THEN RAISE EXCEPTION 'note_required'; END IF;
   IF p_action = 'verify_by_document' THEN
-    IF p_step = 'aadhaar' THEN RAISE EXCEPTION 'aadhaar_digilocker_only'; END IF;
     IF NOT EXISTS (SELECT 1 FROM public.kyc_documents WHERE kyc_profile_id = k.id AND step = p_step AND status = 'accepted') THEN
       RAISE EXCEPTION 'accepted_document_required';
     END IF;
@@ -842,7 +847,7 @@ BEGIN
   IF p_step = 'pan' THEN
     UPDATE public.kyc_profiles SET pan_status = st, pan_verified_via = CASE WHEN st = 'verified' THEN 'document_review' ELSE NULL END WHERE id = k.id;
   ELSIF p_step = 'aadhaar' THEN
-    UPDATE public.kyc_profiles SET aadhaar_status = st, aadhaar_verified_via = NULL WHERE id = k.id;
+    UPDATE public.kyc_profiles SET aadhaar_status = st, aadhaar_verified_via = CASE WHEN st = 'verified' THEN 'document_review' ELSE NULL END WHERE id = k.id;
   ELSIF p_step = 'business' THEN
     UPDATE public.kyc_profiles SET business_status = st, business_verified_via = CASE WHEN st = 'verified' THEN 'document_review' ELSE NULL END WHERE id = k.id;
   ELSE
@@ -940,6 +945,7 @@ BEGIN
     document_retention_days = coalesce((p->>'document_retention_days')::int, document_retention_days),
     abandoned_retention_days = coalesce((p->>'abandoned_retention_days')::int, abandoned_retention_days),
     max_file_mb = coalesce((p->>'max_file_mb')::int, max_file_mb),
+    review_hours = coalesce((p->>'review_hours')::int, review_hours),
     updated_at = now(), updated_by = me
   RETURNING to_jsonb(kyc_settings.*) INTO res;
   PERFORM public.kyc_log(NULL, NULL, NULL, me, 'admin', 'settings_updated', p);

@@ -27,7 +27,7 @@ export function stepEditable(p: KycProfile, step: Exclude<StepKey, 'review'>): b
 
 function report(r: FnResult, okText: string) {
   if (r.outcome === 'verified') toast.success('Verified.');
-  else if (r.outcome === 'integration_pending') toast.message('Saved. Verification: Integration Pending', { description: r.message ?? undefined });
+  else if (r.outcome === 'integration_pending') toast.message('Saved', { description: 'Automatic check: Integration Pending. Our team will verify it from your documents.' });
   else if (r.outcome === 'invalid') toast.error(r.message ?? 'Not accepted. Please check the details.');
   else if (r.outcome === 'error') toast.error(r.message ?? 'The check could not be completed. Please try again.');
   else if (r.message) toast.message(okText, { description: r.message });
@@ -67,7 +67,7 @@ export default function KycWizard({ data, checks, application, reload }: Props) 
       </div>
       <div className="p-4 sm:p-5" role="tabpanel">
         {tab === 'pan' && <PanStep p={p} data={data} checks={checks} reload={reload} />}
-        {tab === 'aadhaar' && <AadhaarStep p={p} checks={checks} />}
+        {tab === 'aadhaar' && <AadhaarStep p={p} data={data} checks={checks} reload={reload} />}
         {tab === 'business' && <BusinessStep p={p} data={data} checks={checks} reload={reload} />}
         {tab === 'bank' && <BankStep p={p} data={data} checks={checks} reload={reload} />}
         {tab === 'review' && <ReviewStep p={p} data={data} checks={checks} application={application} reload={reload} onGo={setTab} />}
@@ -104,7 +104,7 @@ function checkBadge(state: string) {
 
 // ── documents for one step ─────────────────────────────────────────────────────────────────────────────────────────────
 function StepDocuments({ step, types, data, checks, editable, reload }: {
-  step: 'pan' | 'business' | 'bank'; types: DocumentType[]; data: MyKyc; checks: Checks; editable: boolean; reload: () => Promise<void>;
+  step: 'pan' | 'aadhaar' | 'business' | 'bank'; types: DocumentType[]; data: MyKyc; checks: Checks; editable: boolean; reload: () => Promise<void>;
 }) {
   const ids = useId();
   const [docType, setDocType] = useState<DocumentType>(types[0]);
@@ -217,7 +217,7 @@ function PanStep({ p, data, checks, reload }: { p: KycProfile; data: MyKyc; chec
 }
 
 // ── 2. Aadhaar ─────────────────────────────────────────────────────────────────────────────────────────────────────────
-function AadhaarStep({ p, checks }: { p: KycProfile; checks: Checks }) {
+function AadhaarStep({ p, data, checks, reload }: { p: KycProfile; data: MyKyc; checks: Checks; reload: () => Promise<void> }) {
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const editable = stepEditable(p, 'aadhaar');
@@ -237,18 +237,17 @@ function AadhaarStep({ p, checks }: { p: KycProfile; checks: Checks }) {
 
   return (
     <div>
-      <StepHeader p={p} step="aadhaar">{checkBadge(checks.aadhaar)}</StepHeader>
+      <StepHeader p={p} step="aadhaar" />
       {p.aadhaar_status === 'verified' ? (
         <p className="text-[13px]">Aadhaar <b className="font-mono">XXXX XXXX {p.aadhaar_last4}</b>{p.aadhaar_name ? ` · ${p.aadhaar_name}` : ''}</p>
       ) : (
         <div className="space-y-3 text-[13px] leading-relaxed">
           <p>
-            Aadhaar is verified only through <b>DigiLocker</b>, the Government of India's document wallet. You sign in on DigiLocker's own site
-            with your Aadhaar-linked mobile number and choose to share your Aadhaar. BulkSkart never sees or stores your OTP, PIN or full
-            Aadhaar number: only your name and the last 4 digits.
+            Upload a <b>masked Aadhaar</b>: the copy from the official myAadhaar website (UIDAI) that hides the first 8 digits. Please do not
+            upload a full Aadhaar with all 12 digits visible; it will be rejected. Our team checks it and calls you back.
           </p>
           {pending ? (
-            <p className="flex flex-wrap items-center gap-2 text-muted-foreground"><PendingBadge /> DigiLocker is not connected yet. You can complete the other steps now.</p>
+            <p className="flex flex-wrap items-center gap-2 text-muted-foreground"><PendingBadge /> Instant verification through DigiLocker is not connected yet.</p>
           ) : editable ? (
             <>
               <CheckRow checked={consent} onCheckedChange={setConsent}>
@@ -257,11 +256,15 @@ function AadhaarStep({ p, checks }: { p: KycProfile; checks: Checks }) {
               <KitButton onClick={start} disabled={!consent || busy}>
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Fingerprint className="h-4 w-4" aria-hidden="true" />} Continue to DigiLocker
               </KitButton>
-              <p className="text-[11.5px] text-muted-foreground">The DigiLocker link is valid for 10 minutes. You will come back to this page afterwards.</p>
+              <p className="text-[11.5px] text-muted-foreground">
+                Or verify instantly through DigiLocker: you sign in on DigiLocker's own site and choose to share your Aadhaar. BulkSkart never sees
+                your OTP or PIN and keeps only your name and the last 4 digits. The link is valid for 10 minutes.
+              </p>
             </>
           ) : null}
         </div>
       )}
+      {p.aadhaar_status !== 'verified' && <StepDocuments step="aadhaar" types={['aadhaar_masked']} data={data} checks={checks} editable={editable} reload={reload} />}
     </div>
   );
 }
@@ -435,7 +438,7 @@ function ReviewStep({ p, data, checks, application, reload, onGo }: {
 
   const submit = async () => {
     setBusy(true);
-    try { await submitKyc(application.id); toast.success('Submitted for verification.'); await reload(); }
+    try { await submitKyc(application.id); toast.success(`Submitted. Our team will verify your details and call you within ${data.settings?.review_hours ?? 2} working hours.`); await reload(); }
     catch (e) { toast.error(e instanceof Error ? e.message : 'Could not submit.'); }
     finally { setBusy(false); }
   };
@@ -464,9 +467,7 @@ function ReviewStep({ p, data, checks, application, reload, onGo }: {
           <b>Documents still needed:</b> {data.missing.map((d) => DOC_LABEL[d] ?? d).join(', ')}.
         </div>
       )}
-      {p.aadhaar_status !== 'verified' && (
-        <p className="text-[12.5px] text-muted-foreground">You can submit before Aadhaar is verified, but KYC is only completed once Aadhaar is verified through DigiLocker.</p>
-      )}
+      <p className="text-[12.5px] text-muted-foreground">After you submit, our team verifies your details and documents and calls you on your registered number within {data.settings?.review_hours ?? 2} working hours.</p>
       {!underReview && !alreadyShared && !p.rejected_at && (
         <>
           <CheckRow checked={share} onCheckedChange={setShare}>
@@ -479,7 +480,7 @@ function ReviewStep({ p, data, checks, application, reload, onGo }: {
           {!detailsDone && <p className="text-[12px] text-muted-foreground">Complete PAN, business and bank first.</p>}
         </>
       )}
-      {underReview && <p className="text-[13px]">Submitted on {new Date(p.submitted_at ?? '').toLocaleDateString('en-IN')}. A BulkSkart reviewer is checking your KYC.</p>}
+      {underReview && <p className="text-[13px]">Submitted on {new Date(p.submitted_at ?? '').toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}. Our team is verifying your details and will call you within {data.settings?.review_hours ?? 2} working hours.</p>}
       <p className="text-[11.5px] text-muted-foreground">
         Documents are kept for {data.settings?.document_retention_days ?? '—'} days after submission ({data.settings?.abandoned_retention_days ?? '—'} days if the application is not submitted or is withdrawn), then deleted.
       </p>

@@ -111,8 +111,8 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
               Thanks {sentName}. We have your loan amount and contact details. The BulkSkart team will reach you on the phone or email you entered.
             </p>
             <p className={`mt-2 text-xs leading-relaxed ${landing ? 'text-neutral-300' : 'text-muted-foreground'}`}>
-              Next step: complete your KYC (PAN, Aadhaar through DigiLocker, business and bank details). BulkSkart is not the lender: after you
-              submit, a lending partner (bank or NBFC) reviews your application and decides on the loan.
+              Next step: complete your KYC (PAN, Aadhaar, business and bank details, with copies of the documents). Our team verifies it and
+              calls you back. BulkSkart is not the lender: a lending partner (bank or NBFC) reviews your application and decides on the loan.
             </p>
             <Link
               to={signedIn ? '/dashboard/loans' : `/login?redirect=${encodeURIComponent('/dashboard/loans')}`}

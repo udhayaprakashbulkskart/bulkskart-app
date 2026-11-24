@@ -54,13 +54,13 @@ export function IntegrationNotice({ checks }: { checks: Checks }) {
   const pending = (Object.entries(checks) as [keyof Checks, string][]).filter(([, v]) => v === 'integration_pending').map(([k]) => k);
   const sandbox = Object.values(checks).includes('sandbox');
   if (!pending.length && !sandbox) return null;
-  const names: Record<keyof Checks, string> = { documents: 'secure document storage', pan: 'PAN check', aadhaar: 'Aadhaar (DigiLocker)', gstin: 'GSTIN check', bank: 'bank account check' };
+  const names: Record<keyof Checks, string> = { documents: 'secure document storage', pan: 'PAN check', aadhaar: 'instant Aadhaar check (DigiLocker)', gstin: 'GSTIN check', bank: 'bank account check' };
   return (
     <div className="rounded-2xl border border-dashed border-border bg-muted/40 p-3 text-[12.5px] leading-relaxed">
       {pending.length > 0 && (
         <p><b>Integration Pending:</b> {pending.map((k) => names[k]).join(', ')}. {pending.includes('documents')
-          ? 'Nothing can be uploaded or checked until this is connected.'
-          : 'Those details are saved and will be checked once the service is connected; nothing is marked verified until then.'}</p>
+          ? 'Nothing can be uploaded until this is connected.'
+          : 'Our team verifies those details from the documents you upload and calls you back.'}</p>
       )}
       {sandbox && <p className="mt-1"><b>Test mode:</b> the verification service is in sandbox mode. Test results are never treated as verified.</p>}
     </div>

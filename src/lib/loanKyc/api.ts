@@ -1,5 +1,5 @@
 /**
- * Business loan KYC (migration 00075 + the kyc edge function).
+ * Business loan KYC (migration 00076 + the kyc edge function).
  * Reads go straight to the tables (row-level security returns only the applicant's own rows, or everything to an admin).
  * Every change goes through a database function or the kyc edge function; the browser never marks anything verified.
  */
@@ -80,7 +80,7 @@ export interface LoanApplication {
 
 export interface KycDocument {
   id: string;
-  step: 'pan' | 'business' | 'bank' | 'other';
+  step: 'pan' | 'aadhaar' | 'business' | 'bank' | 'other';
   doc_type: DocumentType;
   file_name: string;
   mime_type: string;
@@ -130,6 +130,7 @@ export interface KycSettings {
   document_retention_days: number;
   abandoned_retention_days: number;
   max_file_mb: number;
+  review_hours: number;
   consent_version: string;
 }
 
@@ -156,7 +157,7 @@ export const STATUS_LABEL: Record<KycStatus, string> = {
 
 export const STEP_LABEL: Record<StepKey, string> = {
   pan: 'PAN',
-  aadhaar: 'Aadhaar (DigiLocker)',
+  aadhaar: 'Aadhaar',
   business: 'Business',
   bank: 'Bank account',
   review: 'Review & submit',
@@ -212,8 +213,8 @@ export const VERIFIED_VIA_LABEL: Record<string, string> = {
 // ── consent ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const CONSENT_VERSION = '2026-11-24';
 export const CONSENT_TEXT = [
-  'I agree that BulkSkart may collect my PAN, my Aadhaar details shared by me through DigiLocker (name and the last 4 digits only), my business registration details (GSTIN, Udyam, CIN, business PAN), my bank account details and the documents I upload, to verify my identity and my business for this business loan application.',
-  'These details are checked with the official records through BulkSkart\'s authorised verification provider, and reviewed by BulkSkart staff.',
+  'I agree that BulkSkart may collect my PAN, my Aadhaar (a masked copy with the first 8 digits hidden, or my name and the last 4 digits shared by me through DigiLocker), my business registration details (GSTIN, Udyam, CIN, business PAN), my bank account details and the documents I upload, to verify my identity and my business for this business loan application.',
+  'BulkSkart staff check these details and documents, and, where it is connected, BulkSkart\'s authorised verification provider checks them with the official records.',
   'BulkSkart is not a lender. My application and KYC are shared with a lending partner (a bank or NBFC) only after I submit it and confirm, and only for deciding on this loan. The lending partner makes the loan decision.',
   'Numbers and documents are stored encrypted, and only I and authorised BulkSkart reviewers can open my documents. They are deleted after the retention period shown on this page. I can withdraw an application at any time; withdrawing stops processing and starts the deletion period.',
 ];
@@ -310,7 +311,7 @@ async function callKyc(body: Record<string, unknown> | FormData): Promise<FnResu
 // ── applicant ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 export async function loadMyKyc(): Promise<MyKyc> {
   const [settings, profile, apps, docs, checks, bank, logs] = await Promise.all([
-    supabase.from('kyc_settings').select('document_retention_days, abandoned_retention_days, max_file_mb, consent_version').maybeSingle(),
+    supabase.from('kyc_settings').select('document_retention_days, abandoned_retention_days, max_file_mb, review_hours, consent_version').maybeSingle(),
     supabase.from('kyc_profiles').select('*').maybeSingle(),
     supabase.from('loan_applications').select('*').order('created_at', { ascending: false }),
     supabase.from('kyc_documents').select('id, step, doc_type, file_name, mime_type, size_bytes, status, review_note, reviewed_at, uploaded_at, delete_after')
@@ -417,7 +418,7 @@ export function nextSteps(k: MyKyc, checks: Checks): string[] {
     if (st === 'resubmission_required' || st === 'rejected') out.push(`Update ${STEP_LABEL[s]}: ${(p.step_notes?.[s] ?? 'see the note on that step').replace(/\.+$/, '')}.`);
   }
   if (!p.pan_masked) out.push('Enter your PAN.');
-  if (p.aadhaar_status !== 'verified') out.push(checks.aadhaar === 'integration_pending' ? 'Aadhaar through DigiLocker: integration pending. You can finish the other steps now.' : 'Verify your Aadhaar through DigiLocker.');
+  if (p.aadhaar_status !== 'verified' && checks.aadhaar !== 'integration_pending' && !k.missing.includes('aadhaar_masked')) out.push('Verify your Aadhaar through DigiLocker (optional: your masked Aadhaar copy is enough).');
   if (!p.entity_type) out.push('Add your business details.');
   if (!k.bank) out.push('Add the bank account for the loan.');
   for (const d of k.missing) {
@@ -429,8 +430,8 @@ export function nextSteps(k: MyKyc, checks: Checks): string[] {
       out.push(`Replace "${DOC_LABEL[d.doc_type]}"${d.review_note ? `: ${d.review_note.replace(/\.+$/, '')}.` : '.'}`);
     }
   }
-  if (!out.length || out.every((t) => t.startsWith('Aadhaar') || t.startsWith('Verify your Aadhaar'))) {
-    if (p.review_status === 'in_progress') out.push('Nothing to do now: BulkSkart is reviewing your KYC.');
+  if (!out.length || out.every((t) => t.startsWith('Verify your Aadhaar'))) {
+    if (p.review_status === 'in_progress') out.push(`Nothing to do now: our team is verifying your details and will call you within ${k.settings?.review_hours ?? 2} working hours.`);
     else if (p.review_status !== 'verified' || !active.share_consent_at) out.push('Review and submit your KYC.');
     else if (active.stage === 'verification') out.push('Your KYC is verified. BulkSkart will send your application to a lending partner.');
     else if (active.stage === 'partner_review') out.push(`Your application is with ${active.lending_partner}. They will contact you about the loan.`);
