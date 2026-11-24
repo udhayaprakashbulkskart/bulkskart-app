@@ -13,7 +13,7 @@ import {
   Settings, LogOut, Menu, Globe, BarChart3, TrendingUp,
   Shield, Flag, CreditCard, Building2, UserCircle,
   Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
-  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown, MapPin, ShieldCheck, FileSearch,
+  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown, MapPin, ShieldCheck, FileSearch, Landmark,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -64,6 +64,7 @@ export const buyerNavItems: NavItem[] = [
   { label: 'Notifications', href: '/dashboard/buyer/notifications', icon: Bell },
   { label: 'Saved Manufacturers', href: '/dashboard/buyer/saved-manufacturers', icon: Building2 },
   { label: 'KYC Verification', href: '/dashboard/buyer/verification', icon: Shield },
+  { label: 'Business Loan', href: '/dashboard/loans', icon: Landmark },
   { label: 'Disputes', href: '/dashboard/buyer/disputes', icon: Flag },
   { label: 'Profile', href: '/dashboard/buyer/profile', icon: Settings },
   { label: 'Shipping Calculator', href: '/shipping-calculator', icon: Truck, tool: true },
@@ -81,6 +82,7 @@ export const supplierNavItems: NavItem[] = [
   { label: 'Orders', href: '/dashboard/supplier/orders', icon: Building2 },
   { label: 'Wallet', href: '/dashboard/supplier/wallet', icon: Wallet },
   { label: 'Payouts', href: '/dashboard/supplier/payouts', icon: Wallet },
+  { label: 'Business Loan', href: '/dashboard/loans', icon: Landmark },
   { label: 'Factory Visits', href: '/dashboard/supplier/visits', icon: Factory },
   { label: 'Messages', href: '/dashboard/supplier/messages', icon: MessageSquare },
   { label: 'Notifications', href: '/dashboard/supplier/notifications', icon: Bell },
@@ -100,6 +102,7 @@ export const adminNavItems: NavItem[] = [
   { label: 'Reports', href: '/dashboard/admin/reports', icon: Flag },
   { label: 'Public Requirements', href: '/dashboard/admin/public-requirements', icon: Globe2 },
   { label: 'Payments', href: '/dashboard/admin/payments', icon: Wallet },
+  { label: 'Loan KYC', href: '/dashboard/admin/loan-kyc', icon: Landmark },
 ];
 
 /** Shown to super admins only: who is an admin (see SuperAdminPage). */

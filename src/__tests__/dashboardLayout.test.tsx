@@ -149,6 +149,7 @@ describe('Dashboard shell: the top bar', () => {
       'Notifications',
       'Saved Manufacturers',
       'KYC Verification',
+      'Business Loan',
       'Disputes',
       'Profile',
       'Shipping Calculator',
@@ -174,6 +175,7 @@ describe('Dashboard shell: the top bar', () => {
       'Orders',
       'Wallet',
       'Payouts',
+      'Business Loan',
       'Factory Visits',
       'Messages',
       'Notifications',
@@ -191,7 +193,7 @@ describe('Dashboard shell: the top bar', () => {
   it('has six sections for an admin: control panel, analytics, verifications, reports, public requirements and payments', () => {
     signIn('admin');
     renderAt('/dashboard/admin');
-    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Verifications', 'Discovery', 'Reports', 'Public Requirements', 'Payments']);
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Verifications', 'Discovery', 'Reports', 'Public Requirements', 'Payments', 'Loan KYC']);
   });
 
   it('has no More button: nothing in the menu is hidden behind a button', () => {
@@ -412,6 +414,7 @@ describe('Dashboard shell: the menu on a phone', () => {
       'Notifications',
       'Saved Manufacturers',
       'KYC Verification',
+      'Business Loan',
       'Disputes',
       'Profile',
       'Shipping Calculator',

@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +14,7 @@ import {
   type LoanRequestDraft,
   type LoanRequestErrors,
 } from '@/lib/loanRequest';
+import { createClaimToken } from '@/lib/loanKyc/api';
 import '@/components/formkit/formkit.css';
 
 interface LoanRequestFormProps {
@@ -43,6 +45,7 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
   const [errors, setErrors] = useState<LoanRequestErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [sentName, setSentName] = useState('');
+  const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
     if (editedAmount.current) return;
@@ -81,9 +84,13 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
     setSubmitting(true);
     try {
       const { data } = await supabase.auth.getSession();
-      const payload = buildLoanRequestPayload(draft, quote, currency, data.session?.user?.id ?? null);
+      const userId = data.session?.user?.id ?? null;
+      const payload = buildLoanRequestPayload(draft, quote, currency, userId);
       if (!payload) return;
+      // not signed in: a token in this browser lets the visitor attach the request to their account later, for KYC
+      if (!userId) payload.claim_token_hash = await createClaimToken();
       await submitLoanRequest(payload);
+      setSignedIn(Boolean(userId));
       setSentName(payload.full_name);
       toast.success('Loan request submitted. We will contact you shortly.');
     } catch {
@@ -103,6 +110,16 @@ function LoanRequestForm({ tone = 'page', currency, quote, money }: LoanRequestF
             <p className={`mt-1 text-xs leading-relaxed ${landing ? 'text-neutral-300' : 'text-muted-foreground'}`}>
               Thanks {sentName}. We have your loan amount and contact details. The BulkSkart team will reach you on the phone or email you entered.
             </p>
+            <p className={`mt-2 text-xs leading-relaxed ${landing ? 'text-neutral-300' : 'text-muted-foreground'}`}>
+              Next step: complete your KYC (PAN, Aadhaar, business and bank details, with copies of the documents). Our team verifies it and
+              calls you back. BulkSkart is not the lender: a lending partner (bank or NBFC) reviews your application and decides on the loan.
+            </p>
+            <Link
+              to={signedIn ? '/dashboard/loans' : `/login?redirect=${encodeURIComponent('/dashboard/loans')}`}
+              className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-xs font-bold text-white"
+            >
+              {signedIn ? 'Continue to KYC' : 'Sign in to continue with KYC'} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
         </div>
       </div>
