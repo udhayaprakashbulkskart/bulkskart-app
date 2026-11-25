@@ -194,7 +194,7 @@ describe('Dashboard shell: the top bar', () => {
   it('has six sections for an admin: control panel, analytics, verifications, reports, public requirements and payments', () => {
     signIn('admin');
     renderAt('/dashboard/admin');
-    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Verifications', 'Discovery', 'Reports', 'Public Requirements', 'Payments', 'Loan KYC', 'Business Credit']);
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Verifications', 'Discovery', 'Reports', 'Public Requirements', 'Payments', 'Loan KYC', 'Business Credit', 'Password Resets']);
   });
 
   it('has no More button: nothing in the menu is hidden behind a button', () => {

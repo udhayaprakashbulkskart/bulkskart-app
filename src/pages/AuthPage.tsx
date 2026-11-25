@@ -13,6 +13,7 @@ import { Globe, Shield, Eye, EyeOff, Upload, AlertCircle, CheckCircle, ArrowRigh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Actions, Done, Field, FormDialog, IconBox, KitButton, TextInput, fk } from '@/components/formkit';
+import PasswordResetRequest from '@/components/auth/PasswordResetRequest';
 import { CITY_NAMES } from '@/lib/signup/places';
 import { Checkbox } from '@/components/ui/checkbox';
 import { trackSignUp } from '@/lib/analytics';
@@ -294,37 +295,10 @@ export default function AuthPage() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPw, setLoginPw] = useState('');
 
-  // Forgot password state
+  // Forgot password: no e-mail link and no OTP; the team confirms by phone (PasswordResetRequest)
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotSent, setForgotSent] = useState(false);
-  const [forgotError, setForgotError] = useState('');
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const email = forgotEmail.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setForgotError(email ? 'Please enter a valid e-mail address.' : 'Please enter your e-mail address.');
-      document.getElementById('forgot-email')?.focus();
-      return;
-    }
-    setForgotLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?tab=login`,
-      });
-      if (error) {
-        toast.error(error.message || 'Failed to send password reset email');
-      } else {
-        setForgotSent(true);
-      }
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to send password reset email');
-    } finally {
-      setForgotLoading(false);
-    }
-  };
 
   // Buyer register state — GST removed (not needed for buyers)
   const [buyerData, setBuyerData] = useState({ fullName: '', email: '', phone: '', password: '', companyName: '', city: '', country: 'India' });
@@ -677,8 +651,6 @@ export default function AuthPage() {
                       type="button"
                       onClick={() => {
                         setForgotEmail(loginEmail.trim());
-                        setForgotSent(false);
-                        setForgotError('');
                         setForgotOpen(true);
                       }}
                       className="text-sm font-semibold text-[#FF5A00] hover:underline"
@@ -1094,54 +1066,10 @@ export default function AuthPage() {
             Reset <em>Password</em>
           </>
         }
-        description="Enter the e-mail you use for BulkSkart and we will send you a link to choose a new password."
+        description="Set a new password here. Our team calls the mobile number on your account to confirm it is you, then it starts working."
         width={560}
       >
-        {forgotSent ? (
-          <Done
-            title="Check your inbox"
-            actions={
-              <Actions single>
-                <KitButton onClick={() => setForgotOpen(false)}>Back to Log In</KitButton>
-              </Actions>
-            }
-          >
-            <p>
-              If an account uses <b>{forgotEmail.trim()}</b>, a reset link is on its way. Open it on this device to set a new password.
-            </p>
-          </Done>
-        ) : (
-          <form onSubmit={handleForgotPassword} noValidate className="fk-form fk-stack">
-            <Field htmlFor="forgot-email" label="E-mail address" required error={forgotError}>
-              <IconBox icon={Mail}>
-                <TextInput
-                  id="forgot-email"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  value={forgotEmail}
-                  onChange={(e) => {
-                    setForgotEmail(e.target.value);
-                    if (forgotError) setForgotError('');
-                  }}
-                  placeholder="you@company.com"
-                  invalid={Boolean(forgotError)}
-                  aria-describedby={forgotError ? 'forgot-email-error' : undefined}
-                  iconPadding
-                />
-              </IconBox>
-            </Field>
-            <Actions>
-              <KitButton type="submit" disabled={forgotLoading}>
-                {forgotLoading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
-                {forgotLoading ? 'Sending…' : 'Send Reset Link'}
-              </KitButton>
-              <KitButton variant="ghost" onClick={() => setForgotOpen(false)} disabled={forgotLoading}>
-                Cancel
-              </KitButton>
-            </Actions>
-          </form>
-        )}
+        {forgotOpen && <PasswordResetRequest initialEmail={forgotEmail} onBusy={setForgotLoading} onClose={() => setForgotOpen(false)} />}
       </FormDialog>
     </div>
   );
