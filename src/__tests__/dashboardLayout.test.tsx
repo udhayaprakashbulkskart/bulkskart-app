@@ -237,6 +237,100 @@ describe('Dashboard shell: the top bar', () => {
   });
 });
 
+describe('Dashboard shell: a menu too long for one row (a laptop window)', () => {
+  // jsdom has no layout, so the menu's sizes are given here: 2000 px of pills in an 800 px row by default
+  const size = { scroll: 2000, client: 800 };
+  const left = new WeakMap<Element, number>();
+  const isNav = (el: Element) => el.classList.contains('dsh-nav');
+  let spies: Array<{ mockRestore: () => void }> = [];
+  const scrollBy = vi.fn();
+
+  beforeEach(() => {
+    size.scroll = 2000;
+    size.client = 800;
+    scrollBy.mockClear();
+    spies = [
+      vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (this: Element) {
+        return isNav(this) ? size.scroll : 0;
+      }),
+      vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) {
+        return isNav(this) ? size.client : 0;
+      }),
+      vi.spyOn(Element.prototype, 'scrollLeft', 'get').mockImplementation(function (this: Element) {
+        return left.get(this) ?? 0;
+      }),
+      vi.spyOn(Element.prototype, 'scrollLeft', 'set').mockImplementation(function (this: Element, value: number) {
+        left.set(this, Math.max(0, Math.min(value, size.scroll - size.client)));
+      }),
+      // every pill is 100 px wide, one after the other
+      vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (this: HTMLElement) {
+        const pills = this.parentElement ? [...this.parentElement.querySelectorAll('.dsh-tab')] : [];
+        return Math.max(0, pills.indexOf(this)) * 100;
+      }),
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.classList.contains('dsh-tab') ? 100 : 0;
+      }),
+    ];
+    (Element.prototype as unknown as { scrollBy: unknown }).scrollBy = scrollBy;
+  });
+  afterEach(() => {
+    for (const spy of spies) spy.mockRestore();
+    delete (Element.prototype as unknown as { scrollBy?: unknown }).scrollBy;
+  });
+
+  const nav = () => screen.getByRole('navigation', { name: 'Dashboard sections' });
+
+  it('starts with the open section in the middle of the row, with arrows to both sides', () => {
+    signIn('supplier');
+    renderAt('/dashboard/supplier/wallet');
+    // Wallet is the 9th pill: 800 − (800 − 100) / 2
+    expect(nav().scrollLeft).toBe(450);
+    expect(screen.getByRole('button', { name: 'Show earlier sections' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show more sections' })).toBeInTheDocument();
+    expect(nav()).toHaveClass('has-left', 'has-right');
+  });
+
+  it('slides along the row from its arrows', async () => {
+    const user = userEvent.setup();
+    signIn('supplier');
+    renderAt('/dashboard/supplier/wallet');
+    await user.click(screen.getByRole('button', { name: 'Show more sections' }));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 480, behavior: 'smooth' });
+    await user.click(screen.getByRole('button', { name: 'Show earlier sections' }));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: -480, behavior: 'smooth' });
+  });
+
+  it('shows only the right arrow at the start of the row, and updates as the row moves', () => {
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    expect(screen.queryByRole('button', { name: 'Show earlier sections' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show more sections' })).toBeInTheDocument();
+    act(() => {
+      nav().scrollLeft = 1200;
+      fireEvent.scroll(nav());
+    });
+    expect(screen.getByRole('button', { name: 'Show earlier sections' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show more sections' })).not.toBeInTheDocument();
+  });
+
+  it('moves the row sideways with an ordinary mouse wheel', () => {
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    const notHandled = fireEvent.wheel(nav(), { deltaY: 120 });
+    expect(notHandled).toBe(false);
+    expect(nav().scrollLeft).toBe(120);
+  });
+
+  it('has no arrows, and leaves the wheel alone, when every section fits', () => {
+    size.scroll = 800;
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    expect(screen.queryByRole('button', { name: /sections$/ })).not.toBeInTheDocument();
+    expect(fireEvent.wheel(nav(), { deltaY: 120 })).toBe(true);
+    expect(nav().scrollLeft).toBe(0);
+  });
+});
+
 describe('Dashboard shell: the round buttons', () => {
   it('has a plus that posts a requirement for a buyer and adds a product for a supplier, and none for an admin', () => {
     signIn('buyer');

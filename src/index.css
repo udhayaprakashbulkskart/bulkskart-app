@@ -113,6 +113,18 @@
     @apply bg-background text-foreground antialiased text-[13.5px] leading-relaxed;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     letter-spacing: 0.005em;
+    /* a long e-mail, URL, GSTIN or product code wraps instead of pushing the page wider than the screen */
+    overflow-wrap: break-word;
+  }
+
+  /* responsive guards for every page (zero specificity, so any class on the element still wins):
+     embedded media never wider than its box, and a grid column may shrink below its longest word or table
+     instead of stretching the page (wide tables scroll inside their own overflow-x-auto box) */
+  :where(iframe, embed, object) {
+    max-width: 100%;
+  }
+  :where(.grid) > * {
+    min-width: 0;
   }
 
   h1 {
