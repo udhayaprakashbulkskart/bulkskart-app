@@ -24,13 +24,16 @@ const footerLinks = {
     { label: 'AI Import & Export Assistance', href: '/trade-assistant' },
     { label: 'Buyer Resources', href: '/how-it-works' },
     { label: 'Trade Guide', href: '/how-it-works' },
-    { label: 'FAQs', href: '/how-it-works' },
+    { label: 'FAQs', href: '/faq' },
   ],
   Company: [
     { label: 'About Us', href: '/about' },
     { label: 'Careers', href: '/careers' },
     { label: 'Blog', href: '/blog' },
     { label: 'Contact Us', href: '/contact' },
+    { label: 'IndiaMART Alternative', href: '/indiamart-alternative' },
+    { label: 'TradeIndia Alternative', href: '/tradeindia-alternative' },
+    { label: 'Alibaba Alternative', href: '/alibaba-alternative' },
   ],
   Legal: [
     { label: 'Terms & Conditions', href: '/terms' },

@@ -10,6 +10,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { alternatives, categorySeo, prerenderPages, readCatalog, readContent, writePrerendered } from './seo-prerender.mjs';
 
 const SITE = 'https://www.bulkskart.com';
 
@@ -71,7 +72,7 @@ const STATIC_PAGES = [
   },
   {
     path: '/blog',
-    title: 'B2B Sourcing Guides & Global Trade Insights | Bulkskart Blog',
+    title: 'B2B Sourcing Guides & Global Trade Insights | BulkSkart Blog',
     description: 'Guides on bulk sourcing, manufacturers, and trade on BulkSkart.',
   },
 ];
@@ -120,22 +121,35 @@ function injectRouteMeta(html, pages) {
   return without.replace('</head>', `${script}\n</head>`);
 }
 
-/** The 41 category pages, from src/data/categoryCatalog.ts (same wording as categorySeo() in AllCategoriesPage). */
+/** The category pages, from src/data/categoryCatalog.ts (same wording as categorySeo() in AllCategoriesPage). */
 function categoryPages() {
-  const source = fs.readFileSync(path.resolve('src/data/categoryCatalog.ts'), 'utf8');
-  const blocks = source.split(/\n\s*slug: "/).slice(1);
-  return blocks.map((block) => {
-    const slug = block.slice(0, block.indexOf('"'));
-    const title = (block.match(/title: "([^"]+)"/) || [])[1] || slug;
-    const subs = [...block.matchAll(/\{ name: "([^"]+)"/g)].map((m) => m[1]);
-    const examples = subs.slice(0, 4).join(', ');
-    return {
-      path: `/categories/${slug}`,
-      title: `${title} — Bulk & Wholesale Suppliers in India | BulkSkart`,
-      description: `Buy ${title.toLowerCase()} in bulk from manufacturers and wholesale suppliers in India: ${examples} and more. Compare quotes or post a free RFQ on BulkSkart.`,
-    };
+  return readCatalog().map((c) => {
+    const seo = categorySeo(c);
+    return { path: `/categories/${c.slug}`, title: seo.title, description: seo.description };
   });
 }
+
+/** The FAQ and the "… alternative" pages (wording in src/data/seoContent.json). */
+function contentPages() {
+  const content = readContent();
+  return [
+    { path: '/faq', title: content.faqPage.title, description: content.faqPage.description },
+    ...alternatives(content, readCatalog()).map((page) => ({ path: `/${page.slug}`, title: page.title, description: page.description })),
+  ];
+}
+
+/** Public landing pages whose title is set by the page itself; listed in the sitemap so they are found. */
+const HUB_PATHS = [
+  '/b2b-marketplace',
+  '/wholesale-suppliers',
+  '/bulk-products',
+  '/bulk-suppliers',
+  '/manufacturers-in-india',
+  '/manufacturers-in-tamil-nadu',
+  '/manufacturers-in-coimbatore',
+  '/manufacturers-in-chennai',
+  '/wholesale-suppliers-in-india',
+];
 
 // A requirement worth listing: posted by a BulkSkart buyer, still open, not a tender import, demo row or outside link.
 const OUTSIDE = /(?:\bgem\.gov\.in\b|\.gov\.in\b|\.nic\.in\b|\beprocure\b|\bcppp\b|\be-?tenders?\b|\bindiamart\b|\btradeindia\b|\bexportersindia\b|\balibaba\.com\b|https?:\/\/|www\.)/i;
@@ -177,9 +191,14 @@ export async function generateSeoAssets(distDir) {
   const indexPath = path.join(distDir, 'index.html');
   if (!fs.existsSync(indexPath)) return;
   const html = fs.readFileSync(indexPath, 'utf8');
-  const pages = [...STATIC_PAGES, ...categoryPages()];
+  const pages = [...STATIC_PAGES, ...contentPages(), ...categoryPages()];
   const home = pages.find(page => page.path === '/') || STATIC_PAGES[0];
-  fs.writeFileSync(indexPath, injectRouteMeta(applyMeta(html, home), pages));
+  const shell = injectRouteMeta(applyMeta(html, home), pages);
+  fs.writeFileSync(indexPath, shell);
+
+  // real text for crawlers that do not run JavaScript (served by nginx from dist/_seo, see scripts/seo-prerender.mjs)
+  const written = writePrerendered(distDir, shell, prerenderPages(readCatalog(), readContent(), STATIC_PAGES));
+  console.log(`[seo] pre-rendered ${written.length} pages into dist/_seo`);
 
   const base = process.env.VITE_SUPABASE_URL;
   const key = process.env.VITE_SUPABASE_ANON_KEY;
@@ -205,7 +224,7 @@ export async function generateSeoAssets(distDir) {
     const companyUrls = companies.map(row => row.slug).filter(Boolean).map(slug => absolute(`/companies/${slug}`));
     const categoryUrls = [absolute('/categories'), ...categoryPages().map(page => absolute(page.path))];
     const unique = list => [...new Set(list)];
-    const mainUrls = STATIC_PAGES.map(page => absolute(page.path));
+    const mainUrls = unique([...STATIC_PAGES, ...contentPages()].map(page => absolute(page.path)).concat(HUB_PATHS.map(absolute)));
     fs.writeFileSync(path.join(distDir, 'sitemap-main.xml'), urlset(mainUrls));
     fs.writeFileSync(path.join(distDir, 'sitemap-products.xml'), urlset(unique(productUrls)));
     fs.writeFileSync(path.join(distDir, 'sitemap-rfqs.xml'), urlset(unique(requirementUrls)));
