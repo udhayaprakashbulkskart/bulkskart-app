@@ -25,6 +25,8 @@ const ShippingCalculatorPage  = lazy(() => import('./pages/ShippingCalculatorPag
 const LoanCalculatorPage      = lazy(() => import('./pages/LoanCalculatorPage'));
 const TradeAssistantPage      = lazy(() => import('./pages/TradeAssistantPage'));
 const SEOHubPage              = lazy(() => import('./pages/SEOHubPage'));
+const FaqPage                = lazy(() => import('./pages/FaqPage'));
+const AlternativePage        = lazy(() => import('./pages/AlternativePage'));
 const BlogDetailPage          = lazy(() => import('./pages/BlogDetailPage'));
 // All categories and subcategories on one page (the earlier hub, pages/CategoriesPage.tsx, is kept in the repo)
 const AllCategoriesPage       = lazy(() => import('./pages/AllCategoriesPage'));
@@ -137,6 +139,10 @@ export const routes: RouteConfig[] = [
   { name: 'Manufacturers in Chennai', path: '/manufacturers-in-chennai', element: <SEOHubPage forcedSlug="manufacturers-in-chennai" />, public: true },
   { name: 'Wholesale Suppliers in India', path: '/wholesale-suppliers-in-india', element: <SEOHubPage forcedSlug="wholesale-suppliers-in-india" />, public: true },
   { name: 'Dynamic Sourcing Hub', path: '/hub/:slug', element: <SEOHubPage />, public: true },
+  { name: 'FAQ', path: '/faq', element: <FaqPage />, public: true },
+  { name: 'IndiaMART Alternative', path: '/indiamart-alternative', element: <AlternativePage slug="indiamart-alternative" />, public: true },
+  { name: 'TradeIndia Alternative', path: '/tradeindia-alternative', element: <AlternativePage slug="tradeindia-alternative" />, public: true },
+  { name: 'Alibaba Alternative', path: '/alibaba-alternative', element: <AlternativePage slug="alibaba-alternative" />, public: true },
 
   // ── Public Dynamic Catalog & Entity Pages ────────────────────
   { name: 'Product Detail', path: '/products/:slug', element: <ProductDetailPage />, public: true },

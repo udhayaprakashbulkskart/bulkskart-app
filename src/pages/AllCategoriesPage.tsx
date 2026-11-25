@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import MainLayout from '@/components/layouts/MainLayout';
 import PageMeta from '@/components/common/PageMeta';
+import SeoFaqList from '@/components/common/SeoFaqList';
+import { categoryFaq } from '@/lib/seoContent';
 import { CATEGORY_CATALOG, type CatalogCategory } from '@/data/categoryCatalog';
 
 const ICONS: Record<string, LucideIcon> = {
@@ -102,6 +104,22 @@ export function categorySeo(c: CatalogCategory) {
   return { title, description, intro };
 }
 
+/** Every category as an ItemList, for search engines (the build's pre-rendered /categories page carries the same). */
+export function categoriesItemList() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'BulkSkart product categories',
+    numberOfItems: CATEGORY_CATALOG.length,
+    itemListElement: CATEGORY_CATALOG.map((c, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: c.title,
+      url: `https://www.bulkskart.com/categories/${c.slug}`,
+    })),
+  };
+}
+
 export default function AllCategoriesPage() {
   const { slug: routeSlug } = useParams<{ slug?: string }>();
   // /categories/<category>: that category's own page; anything else lists every category
@@ -166,6 +184,7 @@ export default function AllCategoriesPage() {
   };
   const navList = words.length > 0 ? visible : CATEGORY_CATALOG;
   const seo = routeCat ? categorySeo(routeCat) : null;
+  const faq = routeCat ? categoryFaq(routeCat) : [];
 
   return (
     <MainLayout>
@@ -176,6 +195,7 @@ export default function AllCategoriesPage() {
           canonical={`https://www.bulkskart.com/categories/${routeCat.slug}`}
           ogImage={`https://www.bulkskart.com${routeCat.banner}`}
           breadcrumbs={[{ name: 'Home', item: '/' }, { name: 'Categories', item: '/categories' }, { name: routeCat.title, item: `/categories/${routeCat.slug}` }]}
+          faq={faq.map((item) => ({ question: item.q, answer: item.a }))}
         />
       ) : (
         <PageMeta
@@ -183,6 +203,7 @@ export default function AllCategoriesPage() {
           description={`Browse all ${CATEGORY_CATALOG.length} BulkSkart categories and ${TOTAL_SUBCATEGORIES} subcategories: electronics, industrial supplies, construction, apparel, FMCG, medical, packaging, chemicals, services and more.`}
           canonical="https://www.bulkskart.com/categories"
           breadcrumbs={[{ name: 'Home', item: '/' }, { name: 'Categories', item: '/categories' }]}
+          jsonLd={categoriesItemList()}
         />
       )}
 
@@ -327,6 +348,16 @@ export default function AllCategoriesPage() {
               <Link to="/categories" className="inline-flex items-center gap-1.5 text-[13.5px] font-bold text-[#E04E00] hover:underline dark:text-[#FF8A3D]">
                 Browse all {CATEGORY_CATALOG.length} categories <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
+            )}
+
+            {/* ── Questions about this category (also its FAQPage data) ── */}
+            {routeCat && words.length === 0 && (
+              <section aria-labelledby="cat-faq-title">
+                <h2 id="cat-faq-title" className="mb-3 text-[17px] font-black tracking-tight sm:text-[20px]">
+                  {routeCat.title}: frequently asked questions
+                </h2>
+                <SeoFaqList items={faq} headingLevel="h3" />
+              </section>
             )}
 
             {/* ── Post RFQ ── */}

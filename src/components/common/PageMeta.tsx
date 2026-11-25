@@ -90,7 +90,7 @@ export default function PageMeta({
 }: PageMetaProps) {
   useEffect(() => {
     // 1. Formatted Title
-    const formattedTitle = title.toLowerCase().includes('bulkskart') ? title : `${title} | Bulkskart`;
+    const formattedTitle = title.toLowerCase().includes('bulkskart') ? title : `${title} | BulkSkart`;
     document.title = formattedTitle;
 
     const setMetaTag = (attr: 'name' | 'property', attrVal: string, content: string) => {

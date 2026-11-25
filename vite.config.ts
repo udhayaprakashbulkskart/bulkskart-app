@@ -19,14 +19,19 @@ function versionStampPlugin(): Plugin {
     return payload;
   };
 
+  // the folder this build writes to (dist/ unless --outDir says otherwise), so the SEO files land next to its index.html
+  let outDir = path.resolve(__dirname, "dist");
   return {
     name: "bulkskart-version-stamp",
+    configResolved(config) {
+      outDir = path.resolve(config.root, config.build.outDir);
+    },
     buildStart() {
       stamp();
     },
     async closeBundle() {
       const { generateSeoAssets } = await import("./scripts/generate-seo-assets.mjs");
-      await generateSeoAssets(path.resolve(__dirname, "dist"));
+      await generateSeoAssets(outDir);
     },
   };
 }
