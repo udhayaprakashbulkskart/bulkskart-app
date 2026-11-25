@@ -8,6 +8,7 @@ import PageMeta from '@/components/common/PageMeta';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BrandLogo from '@/components/common/BrandLogo';
 import { supabase } from '@/db/supabase';
+import WhatsAppPasswordReset from '@/components/auth/WhatsAppPasswordReset';
 import { toast } from 'sonner';
 import { Globe, Shield, Eye, EyeOff, Upload, AlertCircle, CheckCircle, ArrowRight, Package, Mail, Loader2, Send, Lock, User, Phone, Building2, MapPin, Receipt, Hash } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -298,33 +299,6 @@ export default function AuthPage() {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotSent, setForgotSent] = useState(false);
-  const [forgotError, setForgotError] = useState('');
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const email = forgotEmail.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setForgotError(email ? 'Please enter a valid e-mail address.' : 'Please enter your e-mail address.');
-      document.getElementById('forgot-email')?.focus();
-      return;
-    }
-    setForgotLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?tab=login`,
-      });
-      if (error) {
-        toast.error(error.message || 'Failed to send password reset email');
-      } else {
-        setForgotSent(true);
-      }
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to send password reset email');
-    } finally {
-      setForgotLoading(false);
-    }
-  };
 
   // Buyer register state — GST removed (not needed for buyers)
   const [buyerData, setBuyerData] = useState({ fullName: '', email: '', phone: '', password: '', companyName: '', city: '', country: 'India' });
@@ -677,8 +651,6 @@ export default function AuthPage() {
                       type="button"
                       onClick={() => {
                         setForgotEmail(loginEmail.trim());
-                        setForgotSent(false);
-                        setForgotError('');
                         setForgotOpen(true);
                       }}
                       className="text-sm font-semibold text-[#FF5A00] hover:underline"
@@ -1094,54 +1066,21 @@ export default function AuthPage() {
             Reset <em>Password</em>
           </>
         }
-        description="Enter the e-mail you use for BulkSkart and we will send you a link to choose a new password."
+        description="Get a 6-digit code on the WhatsApp number of your BulkSkart account, then choose a new password."
         width={560}
       >
-        {forgotSent ? (
-          <Done
-            title="Check your inbox"
-            actions={
-              <Actions single>
-                <KitButton onClick={() => setForgotOpen(false)}>Back to Log In</KitButton>
-              </Actions>
-            }
-          >
-            <p>
-              If an account uses <b>{forgotEmail.trim()}</b>, a reset link is on its way. Open it on this device to set a new password.
-            </p>
-          </Done>
-        ) : (
-          <form onSubmit={handleForgotPassword} noValidate className="fk-form fk-stack">
-            <Field htmlFor="forgot-email" label="E-mail address" required error={forgotError}>
-              <IconBox icon={Mail}>
-                <TextInput
-                  id="forgot-email"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  value={forgotEmail}
-                  onChange={(e) => {
-                    setForgotEmail(e.target.value);
-                    if (forgotError) setForgotError('');
-                  }}
-                  placeholder="you@company.com"
-                  invalid={Boolean(forgotError)}
-                  aria-describedby={forgotError ? 'forgot-email-error' : undefined}
-                  iconPadding
-                />
-              </IconBox>
-            </Field>
-            <Actions>
-              <KitButton type="submit" disabled={forgotLoading}>
-                {forgotLoading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
-                {forgotLoading ? 'Sending…' : 'Send Reset Link'}
-              </KitButton>
-              <KitButton variant="ghost" onClick={() => setForgotOpen(false)} disabled={forgotLoading}>
-                Cancel
-              </KitButton>
-            </Actions>
-          </form>
-        )}
+        <WhatsAppPasswordReset
+          key={forgotOpen ? 'open' : 'closed'}
+          initialEmail={forgotEmail}
+          onBusy={setForgotLoading}
+          onClose={() => setForgotOpen(false)}
+          onDone={(email) => {
+            setForgotOpen(false);
+            setLoginEmail(email);
+            setActiveTab('login');
+            toast.success('Password changed. Log in with your new password.');
+          }}
+        />
       </FormDialog>
     </div>
   );
