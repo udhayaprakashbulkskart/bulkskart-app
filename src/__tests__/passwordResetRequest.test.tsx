@@ -44,22 +44,41 @@ const fill = (email: string, phone: string, pw: string, pw2 = pw) => {
 };
 const save = () => fireEvent.click(screen.getByRole('button', { name: /save new password/i }));
 
-describe('forgot password on the login page: no link, no OTP', () => {
-  it('saves the new password as a request and says the team will call', async () => {
-    rpc.mockResolvedValueOnce({ data: { status: 'received' }, error: null });
-    render(<PasswordResetRequest initialEmail="Owner@Mills.invalid" onBusy={() => {}} onClose={() => {}} />);
+describe('forgot password on the login page: no link, no OTP, no admin', () => {
+  it('changes the password at once when the mobile number matches, then goes back to log in', async () => {
+    rpc.mockResolvedValueOnce({ data: { status: 'changed' }, error: null });
+    const onChanged = vi.fn();
+    render(<PasswordResetRequest initialEmail="Owner@Mills.invalid" onBusy={() => {}} onClose={() => {}} onChanged={onChanged} />);
     expect(screen.getByLabelText(/e-mail address/i)).toHaveValue('Owner@Mills.invalid');
     expect(screen.queryByText(/reset link/i)).toBeNull();
     fill(' Owner@Mills.invalid ', '+91 98765 43210', 'NewPass123');
     save();
-    await screen.findByText('Request received');
+    await screen.findByText('Password changed');
     expect(rpc).toHaveBeenCalledWith('pwreset_request', { p_email: 'owner@mills.invalid', p_phone: '+91 98765 43210', p_password: 'NewPass123' });
-    expect(screen.getByText(/will call the mobile number registered on it/i)).toBeInTheDocument();
-    expect(screen.getByText(/no link or code will be sent/i)).toBeInTheDocument();
+    expect(screen.getByText(/every other device/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Log in now' }));
+    expect(onChanged).toHaveBeenCalledWith('Owner@Mills.invalid');
+  });
+
+  it('says so when the number does not match, and changes nothing', async () => {
+    rpc.mockResolvedValueOnce({ data: { status: 'no_match' }, error: null });
+    render(<PasswordResetRequest initialEmail="owner@mills.invalid" onBusy={() => {}} onClose={() => {}} onChanged={() => {}} />);
+    fill('owner@mills.invalid', '9000099999', 'NewPass123');
+    save();
+    expect(await screen.findByText(/do not match an account/i)).toBeInTheDocument();
+    expect(screen.queryByText('Password changed')).toBeNull();
+  });
+
+  it('tells an admin account that a super admin confirms first', async () => {
+    rpc.mockResolvedValueOnce({ data: { status: 'queued' }, error: null });
+    render(<PasswordResetRequest initialEmail="admin@test.invalid" onBusy={() => {}} onClose={() => {}} onChanged={() => {}} />);
+    fill('admin@test.invalid', '9000000001', 'AdminNew123');
+    save();
+    expect(await screen.findByText('Waiting for a super admin')).toBeInTheDocument();
   });
 
   it('checks the fields before sending anything', () => {
-    render(<PasswordResetRequest initialEmail="" onBusy={() => {}} onClose={() => {}} />);
+    render(<PasswordResetRequest initialEmail="" onBusy={() => {}} onClose={() => {}} onChanged={() => {}} />);
     save();
     expect(screen.getByText('Please enter your e-mail address.')).toBeInTheDocument();
     expect(screen.getByText('Please enter your mobile number.')).toBeInTheDocument();
@@ -73,19 +92,19 @@ describe('forgot password on the login page: no link, no OTP', () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
-  it('says so when there have been too many requests, or the request could not be sent', async () => {
+  it('says so when there have been too many tries, or the request could not be sent', async () => {
     rpc.mockResolvedValueOnce({ data: { status: 'too_many' }, error: null });
-    render(<PasswordResetRequest initialEmail="owner@mills.invalid" onBusy={() => {}} onClose={() => {}} />);
+    render(<PasswordResetRequest initialEmail="owner@mills.invalid" onBusy={() => {}} onClose={() => {}} onChanged={() => {}} />);
     fill('owner@mills.invalid', '9876543210', 'NewPass123');
     save();
-    expect(await screen.findByRole('alert')).toHaveTextContent(/too many requests/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/too many tries/i);
     rpc.mockResolvedValueOnce({ data: null, error: { message: 'network' } });
     save();
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/could not be sent/i));
   });
 
   it('can show the passwords it is typed into', () => {
-    render(<PasswordResetRequest initialEmail="" onBusy={() => {}} onClose={() => {}} />);
+    render(<PasswordResetRequest initialEmail="" onBusy={() => {}} onClose={() => {}} onChanged={() => {}} />);
     expect(document.getElementById('forgot-pw')).toHaveAttribute('type', 'password');
     fireEvent.click(screen.getByRole('button', { name: /show passwords/i }));
     expect(document.getElementById('forgot-pw')).toHaveAttribute('type', 'text');
@@ -98,7 +117,7 @@ const row = {
   full_name: 'Mill Owner', role: 'supplier', company_name: 'Test Mills Pvt Ltd', account_created_at: null, requests_same_ip_24h: 1, decided_by_name: null,
 };
 
-describe('admin: Password Resets', () => {
+describe('admin: Password Resets (admin accounts wait for a super admin)', () => {
   it('lists a request with the number to call, warns when the typed number differs, and approves only after the call is ticked', async () => {
     rpc.mockImplementation(async (name: string) => {
       if (name === 'admin_pwreset_requests') return { data: { rows: [row], pending: 1 }, error: null };
@@ -121,11 +140,15 @@ describe('admin: Password Resets', () => {
     expect(toastMock.success).toHaveBeenCalled();
   });
 
-  it('rejects without the tick, and shows decided requests on the other tab', async () => {
+  it('rejects without the tick, and shows owner changes and wrong-number tries in the history', async () => {
     rpc.mockImplementation(async (name: string, args: { p_view?: string }) => {
       if (name === 'admin_pwreset_requests') {
         return args.p_view === 'done'
-          ? { data: { rows: [{ ...row, id: 'r2', status: 'rejected', decided_at: '2026-11-25T04:00:00Z', decided_by_name: 'Admin One', note: 'No answer' }], pending: 0 }, error: null }
+          ? { data: { rows: [
+              { ...row, id: 'r2', status: 'rejected', decided_at: '2026-11-25T04:00:00Z', decided_by_name: 'Admin One', note: 'No answer' },
+              { ...row, id: 'r3', email: 'buyer@test.invalid', status: 'changed', decided_at: '2026-11-25T05:00:00Z' },
+              { ...row, id: 'r4', email: 'victim@test.invalid', status: 'no_match', decided_at: '2026-11-25T06:00:00Z' },
+            ], pending: 0 }, error: null }
           : { data: { rows: [row], pending: 1 }, error: null };
       }
       return { data: { status: 'rejected' }, error: null };
@@ -134,8 +157,11 @@ describe('admin: Password Resets', () => {
     const card = await screen.findByRole('article', { name: /owner@mills.invalid/ });
     fireEvent.click(within(card).getByRole('button', { name: /reject/i }));
     await waitFor(() => expect(rpc).toHaveBeenCalledWith('admin_pwreset_decide', { p_id: 'r1', p_approve: false, p_note: null }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Decided' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'History' }));
     expect(await screen.findByText(/by Admin One/)).toBeInTheDocument();
+    expect(screen.getByText('Changed by the owner (number matched)')).toBeInTheDocument();
+    expect(screen.getByText('Wrong mobile number: not changed')).toBeInTheDocument();
+    expect(screen.getByText(/nothing was changed/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /approve new password/i })).toBeNull();
   });
 

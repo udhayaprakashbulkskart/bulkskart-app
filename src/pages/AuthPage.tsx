@@ -295,7 +295,7 @@ export default function AuthPage() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPw, setLoginPw] = useState('');
 
-  // Forgot password: no e-mail link and no OTP; the team confirms by phone (PasswordResetRequest)
+  // Forgot password: e-mail + registered mobile number + new password; no link, no OTP (PasswordResetRequest)
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
@@ -1066,10 +1066,21 @@ export default function AuthPage() {
             Reset <em>Password</em>
           </>
         }
-        description="Set a new password here. Our team calls the mobile number on your account to confirm it is you, then it starts working."
+        description="Enter your e-mail, the mobile number on your account and a new password. No e-mail link, no OTP."
         width={560}
       >
-        {forgotOpen && <PasswordResetRequest initialEmail={forgotEmail} onBusy={setForgotLoading} onClose={() => setForgotOpen(false)} />}
+        {forgotOpen && (
+          <PasswordResetRequest
+            initialEmail={forgotEmail}
+            onBusy={setForgotLoading}
+            onClose={() => setForgotOpen(false)}
+            onChanged={(email) => {
+              setLoginEmail(email);
+              setLoginPw('');
+              setForgotOpen(false);
+            }}
+          />
+        )}
       </FormDialog>
     </div>
   );

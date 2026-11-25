@@ -1,10 +1,10 @@
 /**
- * "Forgot password?" with no e-mail link and no OTP: the visitor types their e-mail, their mobile number and the new
- * password, and saves. BulkSkart's team calls the mobile number registered on the account to confirm it is really
- * them, then the new password starts working (src/lib/passwordResetRequest.ts, migration 00079).
+ * "Forgot password?" with no e-mail link, no OTP and no admin: the visitor types their e-mail, the mobile number registered
+ * on the account and the new password, and saves. When the number matches, the new password works at once (and every
+ * other device is signed out); admin accounts wait for a super admin (src/lib/passwordResetRequest.ts, migration 00079).
  */
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, Loader2, Lock, Mail, PhoneCall, Smartphone } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck, Smartphone } from 'lucide-react';
 import { Actions, Done, Field, IconBox, KitButton, TextInput } from '@/components/formkit';
 import { EMAIL_RE, normalizeMobile, passwordProblem, requestPasswordReset, resetRequestMessage } from '@/lib/passwordResetRequest';
 
@@ -12,11 +12,13 @@ interface Props {
   initialEmail: string;
   onBusy: (busy: boolean) => void;
   onClose: () => void;
+  /** after the password changed: back to the login form with this e-mail filled in */
+  onChanged: (email: string) => void;
 }
 
 type Errors = Partial<Record<'email' | 'phone' | 'pw' | 'pw2' | 'form', string>>;
 
-export default function PasswordResetRequest({ initialEmail, onBusy, onClose }: Props) {
+export default function PasswordResetRequest({ initialEmail, onBusy, onClose, onChanged }: Props) {
   const [email, setEmail] = useState(initialEmail);
   const [phone, setPhone] = useState('');
   const [pw, setPw] = useState('');
@@ -24,7 +26,7 @@ export default function PasswordResetRequest({ initialEmail, onBusy, onClose }: 
   const [show, setShow] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [result, setResult] = useState<'changed' | 'queued' | null>(null);
 
   useEffect(() => {
     onBusy(busy);
@@ -51,8 +53,8 @@ export default function PasswordResetRequest({ initialEmail, onBusy, onClose }: 
     setErrors({});
     const status = await requestPasswordReset({ email: cleanEmail, phone, password: pw });
     setBusy(false);
-    if (status === 'received') {
-      setSent(true);
+    if (status === 'changed' || status === 'queued') {
+      setResult(status);
       setPw('');
       setPw2('');
       return;
@@ -60,13 +62,29 @@ export default function PasswordResetRequest({ initialEmail, onBusy, onClose }: 
     if (status === 'invalid_email') setErrors({ email: resetRequestMessage(status) });
     else if (status === 'invalid_phone') setErrors({ phone: resetRequestMessage(status) });
     else if (status === 'weak_password') setErrors({ pw: resetRequestMessage(status) });
+    else if (status === 'no_match') setErrors({ phone: resetRequestMessage(status) });
     else setErrors({ form: resetRequestMessage(status) });
   };
 
-  if (sent) {
+  if (result === 'changed') {
     return (
       <Done
-        title="Request received"
+        title="Password changed"
+        actions={
+          <Actions single>
+            <KitButton onClick={() => onChanged(email.trim())}>Log in now</KitButton>
+          </Actions>
+        }
+      >
+        <p>Your new password is saved. Log in with it now. Every other device that was signed in to this account has been signed out.</p>
+      </Done>
+    );
+  }
+
+  if (result === 'queued') {
+    return (
+      <Done
+        title="Waiting for a super admin"
         actions={
           <Actions single>
             <KitButton onClick={onClose}>Back to Log In</KitButton>
@@ -74,10 +92,9 @@ export default function PasswordResetRequest({ initialEmail, onBusy, onClose }: 
         }
       >
         <p>
-          If <b>{email.trim()}</b> has a BulkSkart account, our team will call the mobile number registered on it to confirm it is you, usually within
-          2 hours. Right after that call, log in with the new password you just set.
+          This is an admin account, so for safety a super admin confirms the change by calling its registered mobile number first. Your new password
+          works right after that; until then the old one still works.
         </p>
-        <p className="mt-2 text-[12.5px] text-muted-foreground">Until then your old password keeps working. No link or code will be sent.</p>
       </Done>
     );
   }
@@ -102,7 +119,7 @@ export default function PasswordResetRequest({ initialEmail, onBusy, onClose }: 
           />
         </IconBox>
       </Field>
-      <Field htmlFor="forgot-phone" label="Mobile number on your account" required error={errors.phone} hint="We call this number to confirm it is you">
+      <Field htmlFor="forgot-phone" label="Mobile number on your account" required error={errors.phone} hint={errors.phone ? undefined : 'The number you registered with BulkSkart'}>
         <IconBox icon={Smartphone}>
           <TextInput
             id="forgot-phone"
@@ -161,10 +178,10 @@ export default function PasswordResetRequest({ initialEmail, onBusy, onClose }: 
         {show ? 'Hide passwords' : 'Show passwords'}
       </button>
       <p className="flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-[12.5px] leading-relaxed text-muted-foreground">
-        <PhoneCall className="mt-0.5 h-4 w-4 shrink-0 text-[#FF5A00]" aria-hidden="true" />
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#FF5A00]" aria-hidden="true" />
         <span>
-          For your safety our team calls the mobile number registered on your account before the new password starts working. No e-mail link and no
-          OTP needed.
+          No e-mail link and no OTP. If the mobile number matches your account, your new password works straight away and every other device is
+          signed out.
         </span>
       </p>
       {errors.form && (

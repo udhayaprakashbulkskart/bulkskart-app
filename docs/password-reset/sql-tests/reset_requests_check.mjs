@@ -85,90 +85,78 @@ ok((await ask('owner@mills.invalid', '9876543210', 'onlyletters', '198.51.100.1'
 ok((await ask('owner@mills.invalid', '9876543210', `${'a'.repeat(72)}1`, '198.51.100.1')).status === 'weak_password', 'a password over 72 bytes (bcrypt limit) is refused');
 ok((await reqs()).length === 0, 'refused requests are not stored');
 
-// an e-mail with no account: the same answer, nothing for the admins
+const pwOf = async (id) => (await q(`SELECT encrypted_password AS p FROM auth.users WHERE id = '${id}'`))[0].p;
+const count = async (sql) => Number((await q(sql))[0].n);
+
+// nothing changes without the right number, and every "no" looks the same
 const none = await ask('nobody@test.invalid', '9876543210', 'NewPass123', '198.51.100.2');
-ok(none.status === 'received', 'an unknown e-mail gets the same answer (no hint whether it is registered)', none);
+ok(none.status === 'no_match', 'an unknown e-mail: no_match', none);
+const wrong = await ask('owner@mills.invalid', '9000099999', 'NewPass123', '198.51.100.2');
+ok(wrong.status === 'no_match', 'the right e-mail with a different number gets the very same answer', wrong);
+ok(await pwOf(OWNER) === 'old-hash-owner', '…and the password is not changed');
+ok((await ask('buyer@test.invalid', '9123456789', 'NewPass123', '198.51.100.2')).status === 'no_match', 'an account with no number on it cannot be reset this way');
 let rows = await reqs();
-ok(rows.length === 1 && rows[0].status === 'no_account' && rows[0].password_hash === null, 'it is kept only for the limits, without a password hash', rows);
+ok(rows.every((r) => r.password_hash === null) && rows.map((r) => r.status).join() === 'no_account,no_match,no_match', 'the tries are logged, without any password hash', rows.map((r) => r.status));
 
-// a real request
-const r1 = await ask('  OWNER@mills.invalid ', '+91 98765 43210', 'NewPass123', '198.51.100.3');
-ok(r1.status === 'received', 'the owner\'s request is received', r1);
-rows = (await reqs()).filter((r) => r.user_id === OWNER);
-ok(rows.length === 1 && rows[0].status === 'pending', 'one pending request for the account (e-mail matched without case or spaces)');
-ok(rows[0].password_hash && !rows[0].password_hash.includes('NewPass123') && rows[0].password_hash.startsWith('$2a$10$'), 'only a bcrypt-style hash of the new password is stored', rows[0].password_hash);
-ok((await q(`SELECT extensions.crypt('NewPass123', '${rows[0].password_hash}') = '${rows[0].password_hash}' AS m`))[0].m, 'the hash checks against the new password the way Supabase Auth checks it');
-ok(rows[0].ip === '198.51.100.3' && rows[0].phone_given === '9876543210' && rows[0].phone_registered === '+91 98765 43210', 'the address, the typed number and the registered number are kept for the admin', rows[0]);
-const notes = await q(`SELECT user_id FROM notifications WHERE title = 'Password reset request' ORDER BY user_id`);
-ok(notes.length === 3 && notes.every((n) => [ADMIN, SUPER, OTHER_ADMIN].includes(n.user_id)), 'every admin is notified', notes);
+// the right number: changed at once, no admin
+const r1 = await ask('  OWNER@mills.invalid ', '098765-43210', 'NewPass123', '198.51.100.3');
+ok(r1.status === 'changed', 'e-mail (any case or spaces) + the registered number (any format) changes the password at once', r1);
+const newHash = await pwOf(OWNER);
+ok(newHash !== 'old-hash-owner' && newHash.startsWith('$2a$10$') && !newHash.includes('NewPass123'), 'the account gets a bcrypt-style hash, never the password', newHash);
+ok((await q(`SELECT extensions.crypt('NewPass123', '${newHash}') = '${newHash}' AS m`))[0].m, 'the hash checks against the new password the way Supabase Auth checks it');
+ok(await count(`SELECT count(*) AS n FROM auth.sessions WHERE user_id = '${OWNER}'`) === 0 && await count(`SELECT count(*) AS n FROM auth.refresh_tokens WHERE user_id = '${OWNER}'`) === 0, 'the account is signed out everywhere');
+ok(await count(`SELECT count(*) AS n FROM auth.sessions WHERE user_id = '${BUYER}'`) === 1, 'other accounts stay signed in');
+ok(await count(`SELECT count(*) AS n FROM notifications WHERE user_id = '${OWNER}' AND title = 'Your password was changed'`) === 1, 'the owner is told the password changed');
+ok(await count(`SELECT count(*) AS n FROM notifications WHERE title LIKE '%reset request%'`) === 0, 'no admin is bothered for an ordinary account');
+const changedRow = (await reqs()).find((r) => r.status === 'changed');
+ok(changedRow && changedRow.password_hash === null && changedRow.user_id === OWNER && changedRow.ip === '198.51.100.3', 'the change is logged (who, from where), without the hash', changedRow);
 
-// a second request replaces the first
-const r2 = await ask('owner@mills.invalid', '9000099999', 'Another456', '198.51.100.4');
-rows = (await reqs()).filter((r) => r.user_id === OWNER);
-ok(r2.status === 'received' && rows.length === 2 && rows[0].status === 'superseded' && rows[0].password_hash === null && rows[1].status === 'pending', 'a newer request replaces the waiting one and wipes its hash', rows.map((r) => r.status));
-
-// the admin's list
-let list = await admin(ADMIN, `SELECT public.admin_pwreset_requests('pending')`);
-ok(list.pending === 1 && list.rows.length === 1, 'the admin sees one pending request (not the unknown e-mail, not the replaced one)', list);
-const row = list.rows[0];
-ok(row.full_name === 'Mill Owner' && row.company_name === 'Test Mills Pvt Ltd' && row.role === 'supplier', 'with the name, role and company', row);
-ok(row.phone_given === '9000099999' && row.phone_match === false && row.phone_registered === '+91 98765 43210', 'and a warning that the typed number is not the registered one', row);
-
-// approving needs a pending request; a non-super admin cannot reset an admin
+// admin accounts wait for a super admin
 const adminReq = await ask('other.admin@test.invalid', '9000000003', 'AdminNew789', '198.51.100.5');
-ok(adminReq.status === 'received', 'an admin account can ask too');
-const adminRow = (await reqs()).find((r) => r.user_id === OTHER_ADMIN);
-ok(isErr(await admin(ADMIN, `SELECT public.admin_pwreset_decide('${adminRow.id}', true, NULL)`), 'super_admin_only'), 'only a super admin can approve a reset of an admin account');
-ok((await q(`SELECT encrypted_password FROM auth.users WHERE id = '${OTHER_ADMIN}'`))[0].encrypted_password === 'old-hash-other', '…and the admin\'s password is untouched');
+ok(adminReq.status === 'queued', 'an admin account with the right number is queued, not changed', adminReq);
+ok(await pwOf(OTHER_ADMIN) === 'old-hash-other', '…its password stays as it was for now');
+const supNotes = await q(`SELECT user_id FROM notifications WHERE title = 'Admin password reset request'`);
+ok(supNotes.length === 1 && supNotes[0].user_id === SUPER, 'only the super admin is notified', supNotes);
+let list = await admin(ADMIN, `SELECT public.admin_pwreset_requests('pending')`);
+ok(list.pending === 1 && list.rows.length === 1 && list.rows[0].email === 'other.admin@test.invalid' && list.rows[0].phone_match === true, 'the admin page lists the admin request with the number check', list);
+const adminRow = (await reqs()).find((r) => r.user_id === OTHER_ADMIN && r.status === 'pending');
+ok(adminRow.password_hash && adminRow.password_hash.startsWith('$2a$10$'), 'a queued request keeps only the hash');
+ok(isErr(await admin(ADMIN, `SELECT public.admin_pwreset_decide('${adminRow.id}', true, NULL)`), 'super_admin_only'), 'an ordinary admin cannot approve it');
+ok(isErr(await admin(BUYER, `SELECT public.admin_pwreset_decide('${adminRow.id}', true, NULL)`), 'admin_only'), 'nor can anyone else');
+await run(`INSERT INTO auth.sessions (user_id) VALUES ('${OTHER_ADMIN}')`);
 const sup = await admin(SUPER, `SELECT public.admin_pwreset_decide('${adminRow.id}', true, 'Called 9000000003')`);
-ok(sup.status === 'approved', 'a super admin can', sup);
+ok(sup.status === 'approved', 'the super admin approves after the call', sup);
+ok(await pwOf(OTHER_ADMIN) === adminRow.password_hash && await count(`SELECT count(*) AS n FROM auth.sessions WHERE user_id = '${OTHER_ADMIN}'`) === 0, 'the admin account gets the new password and is signed out everywhere');
+ok((await reqs()).find((r) => r.id === adminRow.id).password_hash === null, 'the hash is wiped once decided');
+ok((await admin(SUPER, `SELECT public.admin_pwreset_decide('${adminRow.id}', true, NULL)`)).status === 'already_approved', 'a request cannot be used twice');
 
-// approve the owner's request
-const pend = (await reqs()).find((r) => r.user_id === OWNER && r.status === 'pending');
-const hash = pend.password_hash;
-const ap = await admin(ADMIN, `SELECT public.admin_pwreset_decide('${pend.id}', true, 'Called the registered number, owner confirmed')`);
-ok(ap.status === 'approved', 'the admin approves after the call', ap);
-ok((await q(`SELECT encrypted_password FROM auth.users WHERE id = '${OWNER}'`))[0].encrypted_password === hash, 'the account now has the new password');
-ok(Number((await q(`SELECT count(*) AS n FROM auth.sessions WHERE user_id = '${OWNER}'`))[0].n) === 0 && Number((await q(`SELECT count(*) AS n FROM auth.refresh_tokens WHERE user_id = '${OWNER}'`))[0].n) === 0, 'the account is signed out everywhere');
-ok(Number((await q(`SELECT count(*) AS n FROM auth.sessions WHERE user_id = '${BUYER}'`))[0].n) === 1, 'other accounts stay signed in');
-const done = (await reqs()).find((r) => r.id === pend.id);
-ok(done.status === 'approved' && done.password_hash === null && done.decided_by === ADMIN, 'the request is closed, its hash wiped, the admin recorded', done);
-ok((await q(`SELECT count(*) AS n FROM notifications WHERE user_id = '${OWNER}' AND title = 'Your password was changed'`))[0].n == 1, 'the owner is told the password changed');
-ok((await admin(ADMIN, `SELECT public.admin_pwreset_decide('${pend.id}', true, NULL)`)).status === 'already_approved', 'a request cannot be used twice');
+// reject and expiry (admin requests)
+await ask('admin@test.invalid', '9000000001', 'AdminNew111', '198.51.100.6');
+const a2 = (await reqs()).find((r) => r.user_id === ADMIN && r.status === 'pending');
+ok((await admin(SUPER, `SELECT public.admin_pwreset_decide('${a2.id}', false, 'No answer')`)).status === 'rejected', 'a super admin can reject');
+ok(await pwOf(ADMIN) === 'old-hash-admin' && (await reqs()).find((r) => r.id === a2.id).password_hash === null, 'a rejected request changes nothing and its hash is wiped');
+await ask('admin@test.invalid', '9000000001', 'AdminNew222', '198.51.100.7');
+const a3 = (await reqs()).find((r) => r.user_id === ADMIN && r.status === 'pending');
+await run(`UPDATE pwrequest.requests SET expires_at = now() - interval '1 second' WHERE id = '${a3.id}'`);
+list = await admin(SUPER, `SELECT public.admin_pwreset_requests('pending')`);
+ok(list.pending === 0 && list.rows.length === 0, 'an admin request older than 48 hours drops off the list');
+ok((await reqs()).find((r) => r.id === a3.id).status === 'expired' && (await admin(SUPER, `SELECT public.admin_pwreset_decide('${a3.id}', true, NULL)`)).status === 'already_expired', 'it expires and cannot be approved');
 
-// reject
-await ask('buyer@test.invalid', '9123456789', 'BuyerNew123', '198.51.100.6');
-const bReq = (await reqs()).find((r) => r.user_id === BUYER && r.status === 'pending');
-const rj = await admin(ADMIN, `SELECT public.admin_pwreset_decide('${bReq.id}', false, 'No answer on the registered number')`);
-ok(rj.status === 'rejected', 'the admin can reject', rj);
-ok((await q(`SELECT encrypted_password FROM auth.users WHERE id = '${BUYER}'`))[0].encrypted_password === 'old-hash-buyer', 'a rejected request changes nothing');
-ok((await reqs()).find((r) => r.id === bReq.id).password_hash === null, 'and its hash is wiped');
-
-// expiry
-await ask('buyer@test.invalid', '9123456789', 'BuyerNew456', '198.51.100.7');
-const eReq = (await reqs()).find((r) => r.user_id === BUYER && r.status === 'pending');
-await run(`UPDATE pwrequest.requests SET expires_at = now() - interval '1 second' WHERE id = '${eReq.id}'`);
-list = await admin(ADMIN, `SELECT public.admin_pwreset_requests('pending')`);
-ok(list.pending === 0 && list.rows.length === 0, 'a request older than 48 hours drops off the list', list);
-const exp = (await reqs()).find((r) => r.id === eReq.id);
-ok(exp.status === 'expired' && exp.password_hash === null, 'it expires and its hash is wiped', exp);
-ok((await admin(ADMIN, `SELECT public.admin_pwreset_decide('${eReq.id}', true, NULL)`)).status === 'already_expired', 'an expired request cannot be approved');
-
-// the "done" list
+// the "done" list: changes and wrong-number tries, never unknown e-mails
 list = await admin(ADMIN, `SELECT public.admin_pwreset_requests('done')`);
-const approvedRow = list.rows.find((x) => x.id === pend.id);
-ok(approvedRow && approvedRow.status === 'approved' && approvedRow.decided_by_name === 'Admin One' && !list.rows.some((x) => x.status === 'no_account'), 'decided requests show who decided; unknown e-mails never appear', list.rows.map((x) => x.status));
+const statuses = list.rows.map((x) => x.status);
+ok(statuses.includes('changed') && statuses.includes('no_match') && statuses.includes('approved') && !statuses.includes('no_account'), 'the admin can see owner changes and wrong-number tries; unknown e-mails never appear', statuses);
+ok(list.rows.find((x) => x.id === adminRow.id).decided_by_name === 'Super Admin', 'and who approved an admin reset');
 
 // limits
-const third = await ask('buyer@test.invalid', '9123456789', 'BuyerNew789', '198.51.100.8');
-ok(third.status === 'received', 'a third request for the same e-mail in a day is still taken', third);
-const fourth = await ask('BUYER@test.invalid', '9123456789', 'BuyerNew000', '198.51.100.9');
-ok(fourth.status === 'too_many', 'the fourth in a day is refused', fourth);
-for (let i = 0; i < 5; i++) await ask(`ip${i}@test.invalid`, '9123456789', 'Whatever123', '192.0.2.50');
-ok((await ask('ip9@test.invalid', '9123456789', 'Whatever123', '192.0.2.50')).status === 'too_many', 'a sixth request from one address in an hour is refused');
-ok((await ask('ip9@test.invalid', '9123456789', 'Whatever123', '192.0.2.51')).status === 'received', 'another address is not affected');
-await run(`INSERT INTO pwrequest.requests (email, phone_given, ip, status) SELECT 'flood' || g || '@test.invalid', '9123456789', 'x' || g, 'no_account' FROM generate_series(1, 60) g`);
-ok((await ask('late@test.invalid', '9123456789', 'Whatever123', '192.0.2.99')).status === 'too_many', 'more than 60 requests in an hour in total are refused (protects the admins\' list)');
+for (let i = 0; i < 3; i++) await ask('owner@mills.invalid', '9000099999', 'Whatever123', `203.0.113.${10 + i}`);
+ok((await ask('owner@mills.invalid', '9876543210', 'Whatever123', '203.0.113.20')).status === 'too_many', 'after 5 tries in a day an e-mail is refused, even with the right number');
+ok(await pwOf(OWNER) === newHash, '…and its password stays as it was');
+for (let i = 0; i < 10; i++) await ask(`ip${i}@test.invalid`, '9123456789', 'Whatever123', '192.0.2.50');
+ok((await ask('ip99@test.invalid', '9123456789', 'Whatever123', '192.0.2.50')).status === 'too_many', 'an 11th try from one address in an hour is refused');
+ok((await ask('ip99@test.invalid', '9123456789', 'Whatever123', '192.0.2.51')).status === 'no_match', 'another address is not affected');
+await run(`INSERT INTO pwrequest.requests (email, phone_given, ip, status) SELECT 'flood' || g || '@test.invalid', '9123456789', 'x' || g, 'no_account' FROM generate_series(1, 100) g`);
+ok((await ask('late@test.invalid', '9123456789', 'Whatever123', '192.0.2.99')).status === 'too_many', 'more than 100 tries in an hour in total are refused');
 
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');
 process.exit(failed ? 1 : 0);

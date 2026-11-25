@@ -1,7 +1,8 @@
 /**
- * Password reset requests (no e-mail link, no OTP): a visitor set a new password on the login page; the admin calls
- * the mobile number registered on the account, confirms it is the owner, then approves (the new password starts working
- * and the account is signed out everywhere) or rejects. Migration 00079.
+ * Password resets (no e-mail link, no OTP). Ordinary accounts change their password themselves on the login page when the
+ * mobile number matches; this page shows that history and the wrong-number tries. Admin accounts wait here until a super
+ * admin calls the registered number and approves (the new password then works and the account is signed out everywhere).
+ * Migration 00079.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, Check, KeyRound, Loader2, Phone, RefreshCw, X } from 'lucide-react';
@@ -17,6 +18,8 @@ const STATUS_LABEL: Record<AdminResetRequest['status'], string> = {
   rejected: 'Rejected',
   expired: 'Expired (48 h)',
   superseded: 'Replaced by a newer request',
+  changed: 'Changed by the owner (number matched)',
+  no_match: 'Wrong mobile number: not changed',
 };
 
 const when = (iso: string | null) =>
@@ -95,6 +98,13 @@ function RequestCard({ row, onDone }: { row: AdminResetRequest; onDone: () => vo
           </dd>
         </div>
       </dl>
+
+      {row.status === 'no_match' && (
+        <p className="mt-3 text-[12.5px] text-muted-foreground">
+          Someone tried to reset this password with a number that is not on the account. Nothing was changed. Many of these for one account can mean
+          someone is trying to take it over.
+        </p>
+      )}
 
       {pending && row.phone_match === false && (
         <p className="mt-3 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/5 px-3 py-2 text-[12.5px] text-foreground">
@@ -178,7 +188,8 @@ export default function AdminPasswordResetsPage() {
               <KeyRound className="h-5 w-5 text-primary" aria-hidden="true" /> Password Resets
             </h1>
             <p className="text-sm text-muted-foreground">
-              People who forgot their password set a new one on the login page. Call the registered mobile number, confirm it is the owner, then approve.
+              Accounts reset their own password on the login page when the mobile number matches. Admin accounts wait here: a super admin calls the
+              registered number, confirms it is the owner, then approves.
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={load} disabled={loading} className="gap-1.5">
@@ -198,7 +209,7 @@ export default function AdminPasswordResetsPage() {
                 view === key ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-foreground/80 hover:border-primary/40'
               }`}
             >
-              {key === 'pending' ? `Waiting${pending !== null ? ` (${pending})` : ''}` : 'Decided'}
+              {key === 'pending' ? `Waiting${pending !== null ? ` (${pending})` : ''}` : 'History'}
             </button>
           ))}
         </div>
@@ -216,7 +227,7 @@ export default function AdminPasswordResetsPage() {
           </div>
         ) : rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card py-14 text-center">
-            <p className="text-sm font-semibold text-foreground">{view === 'pending' ? 'No password reset is waiting.' : 'No decided requests yet.'}</p>
+            <p className="text-sm font-semibold text-foreground">{view === 'pending' ? 'No admin password reset is waiting.' : 'No password resets yet.'}</p>
           </div>
         ) : (
           <div className="space-y-3">
