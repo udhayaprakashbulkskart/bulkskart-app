@@ -1,10 +1,10 @@
 /**
- * Forgotten password without an e-mail link or an OTP (migration 00079):
- * the visitor sets the new password, BulkSkart's team confirms by calling the registered mobile number, then approves.
+ * Forgotten password without an e-mail link, an OTP or an admin (migration 00079): e-mail + the mobile number registered on
+ * the account + the new password. A matching number changes it at once; admin accounts wait for a super admin.
  */
 import { supabase } from '@/db/supabase';
 
-export type ResetRequestStatus = 'received' | 'invalid_email' | 'invalid_phone' | 'weak_password' | 'too_many' | 'error';
+export type ResetRequestStatus = 'changed' | 'queued' | 'no_match' | 'invalid_email' | 'invalid_phone' | 'weak_password' | 'too_many' | 'error';
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -32,7 +32,7 @@ export async function requestPasswordReset(input: { email: string; phone: string
   });
   if (error) return 'error';
   const status = (data as { status?: string } | null)?.status;
-  return (['received', 'invalid_email', 'invalid_phone', 'weak_password', 'too_many'] as const).find((s) => s === status) ?? 'error';
+  return (['changed', 'queued', 'no_match', 'invalid_email', 'invalid_phone', 'weak_password', 'too_many'] as const).find((s) => s === status) ?? 'error';
 }
 
 export function resetRequestMessage(status: ResetRequestStatus): string {
@@ -40,14 +40,15 @@ export function resetRequestMessage(status: ResetRequestStatus): string {
     case 'invalid_email': return 'Please enter a valid e-mail address.';
     case 'invalid_phone': return 'Enter your 10-digit mobile number.';
     case 'weak_password': return 'Use 8 to 72 characters, with letters and at least one number.';
-    case 'too_many': return 'Too many requests for now. Our team will call you about the request you already sent, or please contact BulkSkart support.';
+    case 'no_match': return 'This e-mail and mobile number do not match an account. Use the mobile number you registered with.';
+    case 'too_many': return 'Too many tries for now. Please try again tomorrow, or contact BulkSkart support.';
     default: return 'The request could not be sent. Check your connection and try again.';
   }
 }
 
 /* ── admin ── */
 
-export type ResetRequestState = 'pending' | 'approved' | 'rejected' | 'expired' | 'superseded';
+export type ResetRequestState = 'pending' | 'approved' | 'rejected' | 'expired' | 'superseded' | 'changed' | 'no_match';
 
 export interface AdminResetRequest {
   id: string;
