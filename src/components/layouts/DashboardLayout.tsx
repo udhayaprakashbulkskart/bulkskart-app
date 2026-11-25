@@ -13,6 +13,7 @@ import {
   Settings, LogOut, Menu, Globe, BarChart3, TrendingUp,
   Shield, Flag, CreditCard, Building2, UserCircle,
   Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
+  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown, MapPin, ShieldCheck, FileSearch, Landmark, IndianRupee,
   ChevronLeft, ChevronRight,
   KeyRound,
 } from 'lucide-react';
