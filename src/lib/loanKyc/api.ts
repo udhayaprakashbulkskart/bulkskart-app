@@ -377,7 +377,8 @@ export async function openDocument(id: string): Promise<void> {
   }
 }
 
-export const submitKyc = (applicationId: string) => rpc<KycStatus>('kyc_submit', { p_application_id: applicationId, p_share_consent: true });
+/** Submit KYC for review: for a loan application, or with no application (for BulkSkart Business Credit). */
+export const submitKyc = (applicationId: string | null) => rpc<KycStatus>('kyc_submit', { p_application_id: applicationId, p_share_consent: true });
 export const withdrawApplication = (applicationId: string) => rpc<null>('loan_withdraw_application', { p_application_id: applicationId });
 
 // A visitor who requested a loan before signing in gets a token in this browser; after sign-in it attaches the request.
@@ -409,7 +410,7 @@ export async function claimPendingRequest(): Promise<string | null> {
 export function nextSteps(k: MyKyc, checks: Checks): string[] {
   const p = k.profile;
   const active = k.applications.find((a) => a.stage !== 'withdrawn' && a.stage !== 'decision');
-  if (!active) return k.applications.length ? [] : ['Request a loan from the loan calculator to start an application.'];
+  if (!active && !p?.consent_at) return k.applications.length ? [] : ['Request a loan from the loan calculator to start an application.'];
   if (!p?.consent_at) return ['Read and accept the KYC consent to start.'];
   if (p.status === 'rejected') return ['Your KYC was rejected. Contact BulkSkart support if you think this is a mistake.'];
   const out: string[] = [];
@@ -432,9 +433,9 @@ export function nextSteps(k: MyKyc, checks: Checks): string[] {
   }
   if (!out.length || out.every((t) => t.startsWith('Verify your Aadhaar'))) {
     if (p.review_status === 'in_progress') out.push(`Nothing to do now: our team is verifying your details and will call you within ${k.settings?.review_hours ?? 2} working hours.`);
-    else if (p.review_status !== 'verified' || !active.share_consent_at) out.push('Review and submit your KYC.');
-    else if (active.stage === 'verification') out.push('Your KYC is verified. BulkSkart will send your application to a lending partner.');
-    else if (active.stage === 'partner_review') out.push(`Your application is with ${active.lending_partner}. They will contact you about the loan.`);
+    else if (p.review_status !== 'verified' || (active && !active.share_consent_at)) out.push('Review and submit your KYC.');
+    else if (active?.stage === 'verification') out.push('Your KYC is verified. BulkSkart will send your application to a lending partner.');
+    else if (active?.stage === 'partner_review') out.push(`Your application is with ${active?.lending_partner}. They will contact you about the loan.`);
   }
   return out;
 }
