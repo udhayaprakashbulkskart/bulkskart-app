@@ -8,6 +8,7 @@ const DownloadAppPopup = lazy(() => import('@/components/common/DownloadAppPopup
 import AutoImageSyncManager from '@/components/common/AutoImageSyncManager';
 import VersionCheckSafetyNet from '@/components/common/VersionCheckSafetyNet';
 import PageSkeleton from '@/components/common/PageSkeleton';
+import RequireAuth, { needsAccount } from '@/components/common/RequireAuth';
 import PasswordRecoveryDialog from '@/components/common/PasswordRecoveryDialog';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -62,7 +63,7 @@ const App: React.FC = () => {
             <Suspense fallback={<PageSkeleton />}>
               <Routes>
                 {routes.map((route, index) => (
-                  <Route key={index} path={route.path} element={route.element} />
+                  <Route key={index} path={route.path} element={needsAccount(route.path) ? <RequireAuth>{route.element}</RequireAuth> : route.element} />
                 ))}
                 {/* SEO-friendly 404 handler without indiscriminate redirect */}
                 <Route path="*" element={<NotFound />} />
