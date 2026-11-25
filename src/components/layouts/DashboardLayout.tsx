@@ -12,8 +12,8 @@ import {
   LayoutDashboard, Package, FileText, MessageSquare, Bell,
   Settings, LogOut, Menu, Globe, BarChart3, TrendingUp,
   Shield, Flag, CreditCard, Building2, UserCircle,
-  Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
-  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown, MapPin, ShieldCheck, FileSearch, Landmark, IndianRupee, KeyRound,
+  Warehouse, Zap, Truck, Sparkles, Lock, Calculator, KeyRound,
+  Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown, MapPin, ShieldCheck, FileSearch, Landmark, IndianRupee,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
