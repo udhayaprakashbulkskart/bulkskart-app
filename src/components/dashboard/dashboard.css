@@ -358,6 +358,7 @@ html.dash-active .dsh-mi.is-danger {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap; /* "Contacts locked" was splitting over two lines on a phone */
 }
 html.dash-active .dsh-menu-label {
   padding: 8px 12px 4px;
@@ -447,6 +448,15 @@ html.dash-active .dsh-sheet .dsh-brand {
 }
 .dsh-content > * {
   animation: dsh-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+/* fill the screen: pages were capped (max-w-4xl … 7xl) for the old sidebar layout, which left wide empty sides on
+   1366–1920 px screens. Lists, tables and overviews now use the room the shell gives (as wide as the bar); a page of
+   mostly fields (4xl) grows to a comfortable width. Narrow forms (3xl and less) keep their width on purpose. */
+html.dash-active .dsh-content :is(.max-w-5xl, .max-w-6xl, .max-w-7xl).mx-auto {
+  max-width: none;
+}
+html.dash-active .dsh-content .max-w-4xl.mx-auto {
+  max-width: min(100%, 1240px);
 }
 .dpage {
   display: flex;
@@ -593,8 +603,155 @@ html.dash-active .dsh-sheet .dsh-brand {
     background: var(--g-accent-grad);
   }
 }
-/* two or three rows of pills would cover too much of a short or narrow window, so there the bar scrolls away with the page */
-@media (min-width: 860px) and (max-height: 820px), (min-width: 860px) and (max-width: 1099px) {
+/* the arrows at the ends of a one-row menu (shown only while there is more to see that way) */
+.dsh-navarrow {
+  display: none;
+}
+@media (min-width: 860px) {
+  .dsh-nav {
+    position: relative;
+  }
+  .dsh-navarrow {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    align-self: end;
+    z-index: 1;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin-bottom: 1px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--g-line-2);
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    box-shadow: 0 6px 14px -8px rgba(2, 6, 20, 0.6);
+    cursor: pointer;
+  }
+  .dsh-navarrow:hover {
+    background: hsl(var(--primary));
+    border-color: hsl(var(--primary));
+    color: #fff;
+  }
+  .dsh-navarrow.is-left {
+    justify-self: start;
+  }
+  .dsh-navarrow.is-right {
+    justify-self: end;
+  }
+  .dsh-navarrow svg {
+    width: 15px;
+    height: 15px;
+  }
+  /* the unpaid notice is one slim line under the bar: the page, not the banner, gets the screen */
+  .dsh-notice {
+    flex-wrap: nowrap;
+    margin-top: 8px;
+    padding: 6px 8px 6px 10px;
+    border-radius: 999px;
+  }
+  .dsh-notice > :first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .dsh-notice > :first-child > div {
+    display: flex;
+    align-items: center;
+    gap: 0 8px;
+    min-width: 0;
+  }
+  .dsh-notice b {
+    flex: none;
+    white-space: nowrap;
+  }
+  .dsh-notice .dsh-flag {
+    flex: none;
+    margin-left: 0;
+  }
+  .dsh-notice p {
+    min-width: 0;
+    margin-top: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .dsh-notice-ico {
+    width: 28px;
+    height: 28px;
+  }
+  .dsh-notice .dbtn {
+    height: 30px;
+    padding: 0 13px;
+  }
+}
+/* a laptop (narrow or short window, e.g. 1366×768, or 1093×615 at 125% Windows scaling): a long menu stays ONE row
+   that slides sideways instead of wrapping onto two or three rows, and the bar is tighter, so the page starts high up */
+@media (min-width: 860px) and (max-width: 1279px), (min-width: 860px) and (max-height: 820px) {
+  .dsh {
+    padding-top: 8px;
+  }
+  .dsh-bar {
+    top: 8px;
+    border-radius: 24px;
+  }
+  .dsh-bar-in {
+    row-gap: 4px;
+    padding-block: 5px;
+  }
+  .dsh-bar-in > .dsh-brand,
+  .dsh-bar-in > .dsh-tools {
+    min-height: 38px;
+  }
+  .dsh-bar-in .dsh-ibtn,
+  .dsh-bar-in .dsh-plus,
+  .dsh-bar-in .dsh-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  .dsh-nav.is-stacked {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding: 5px 0 1px;
+  }
+  .dsh-nav.is-stacked::-webkit-scrollbar {
+    display: none;
+  }
+  /* centred while it fits, starting at the left once it slides */
+  .dsh-nav.is-stacked > :first-child {
+    margin-left: auto;
+  }
+  .dsh-nav.is-stacked > :last-child {
+    margin-right: auto;
+  }
+  .dsh-nav.is-stacked .dsh-tab {
+    flex: none;
+    height: 30px;
+    padding: 0 11px;
+  }
+  .dsh-nav.is-stacked.has-right {
+    -webkit-mask-image: linear-gradient(to left, transparent 0, #000 48px);
+    mask-image: linear-gradient(to left, transparent 0, #000 48px);
+  }
+  .dsh-nav.is-stacked.has-left {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 48px);
+    mask-image: linear-gradient(to right, transparent 0, #000 48px);
+  }
+  .dsh-nav.is-stacked.has-left.has-right {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%);
+  }
+  .dsh-navarrow.is-stacked {
+    display: grid;
+  }
+  .dsh-content {
+    margin-top: 12px;
+  }
+}
+/* on a really short window even the slim bar would sit over the page all the time, so there it scrolls away */
+@media (min-width: 860px) and (max-height: 700px) {
   .dsh-bar.is-stacked {
     position: relative;
     top: 0;
@@ -619,6 +776,24 @@ html.dash-active .dsh-sheet .dsh-brand {
   .dsh-ibtn.is-hide-sm {
     display: none;
   }
+  /* the unpaid notice on a phone: the two buttons share one row under the text */
+  .dsh-notice {
+    gap: 8px 10px;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 20px;
+  }
+  .dsh-notice > :last-child {
+    width: 100%;
+  }
+  .dsh-notice .dbtn {
+    flex: 1 1 0;
+    height: 32px;
+    padding: 0 10px;
+  }
+  .dsh-notice p {
+    font-size: 11px;
+  }
 }
 
 /* ───────────── 3. parts ───────────── */
@@ -631,7 +806,8 @@ html.dash-active .dsh-sheet .dsh-brand {
   padding: 4px 4px 0;
 }
 .dhead-title {
-  font-size: clamp(1.75rem, 3.2vw, 2.4rem);
+  /* 3.2vw made the greeting 35 px on a 1093 px laptop window: a poster, not a page title */
+  font-size: clamp(1.6rem, 0.9rem + 1.3vw, 2.3rem);
   font-weight: 600;
   line-height: 1.05;
   letter-spacing: -0.03em;

@@ -616,13 +616,13 @@ export default function ProductDetailPage() {
                         <h2 className="text-lg font-bold text-foreground mb-3">Key Specifications</h2>
                         {specsRows.length > 0 ? (
                           <>
-                            <div className="rounded-xl border border-border overflow-hidden">
+                            <div className="rounded-xl border border-border overflow-x-auto">
                               <table className="w-full text-sm">
                                 <tbody>
                                   {(showAllSpecs ? specsRows : specsRows.slice(0, 6)).map(([key, val], i) => (
                                     <tr key={key} className={i % 2 === 0 ? 'bg-muted/30' : 'bg-background'}>
                                       <td className="px-3 py-2.5 text-muted-foreground font-medium w-[45%] text-xs">{key}</td>
-                                      <td className="px-3 py-2.5 text-foreground font-semibold text-xs">{val}</td>
+                                      <td className="px-3 py-2.5 text-foreground font-semibold text-xs [overflow-wrap:anywhere]">{val}</td>
                                     </tr>
                                   ))}
                                 </tbody>
@@ -686,13 +686,13 @@ export default function ProductDetailPage() {
                   <div>
                     <h2 className="text-lg font-bold text-foreground mb-4">Technical Specifications</h2>
                     {specsRows.length > 0 ? (
-                      <div className="rounded-xl border border-border overflow-hidden">
+                      <div className="rounded-xl border border-border overflow-x-auto">
                         <table className="w-full text-sm">
                           <tbody>
                             {specsRows.map(([key, val], i) => (
                               <tr key={key} className={i % 2 === 0 ? 'bg-muted/30' : 'bg-background'}>
                                 <td className="px-4 py-3 text-muted-foreground font-medium w-[45%]">{key}</td>
-                                <td className="px-4 py-3 text-foreground font-semibold">{val}</td>
+                                <td className="px-4 py-3 text-foreground font-semibold [overflow-wrap:anywhere]">{val}</td>
                               </tr>
                             ))}
                           </tbody>
