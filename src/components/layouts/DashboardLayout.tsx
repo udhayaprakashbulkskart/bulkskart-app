@@ -14,6 +14,7 @@ import {
   Shield, Flag, CreditCard, Building2, UserCircle,
   Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
   Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown, MapPin, ShieldCheck, FileSearch, Landmark, IndianRupee,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -150,10 +151,59 @@ interface NavBarProps {
   stacked: boolean;
 }
 
-/** The pill menu in the bar: every section is shown, none is hidden behind a button. */
+/**
+ * The pill menu in the bar: every section is in it, none is hidden behind a "More" button. On a big screen a long menu
+ * wraps onto a second row; on a laptop (narrow or short window) it stays one row that slides sideways (arrows, the
+ * mouse wheel, a swipe or Tab), with the open section brought into view, so the bar does not eat the screen.
+ */
 function NavBar({ items, isActive, unpaid, stacked }: NavBarProps) {
+  const navRef = useRef<HTMLElement>(null);
+  const [edges, setEdges] = useState({ left: false, right: false });
+  const location = useLocation();
   const pages = items.filter((item) => !item.tool);
   const tools = items.filter((item) => item.tool);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return undefined;
+    const update = () => {
+      const max = nav.scrollWidth - nav.clientWidth;
+      const left = max > 1 && nav.scrollLeft > 1;
+      const right = max > 1 && nav.scrollLeft < max - 1;
+      setEdges((was) => (was.left === left && was.right === right ? was : { left, right }));
+    };
+    // the mouse wheel moves a one-row menu sideways (most mice only scroll up and down)
+    const onWheel = (event: WheelEvent) => {
+      if (nav.scrollWidth - nav.clientWidth < 2 || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      event.preventDefault();
+      // Firefox counts the wheel in lines, other browsers in pixels
+      nav.scrollLeft += event.deltaMode === 1 ? event.deltaY * 40 : event.deltaY;
+    };
+    update();
+    nav.addEventListener('scroll', update, { passive: true });
+    nav.addEventListener('wheel', onWheel, { passive: false });
+    const watcher = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+    watcher?.observe(nav);
+    return () => {
+      nav.removeEventListener('scroll', update);
+      nav.removeEventListener('wheel', onWheel);
+      watcher?.disconnect();
+    };
+  }, []);
+
+  // bring the open section into view when the menu is one sliding row
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector<HTMLElement>('.dsh-tab.is-active');
+    if (!nav || !active || nav.scrollWidth - nav.clientWidth < 2) return;
+    nav.scrollLeft = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
+  }, [location.pathname]);
+
+  const slide = (direction: 1 | -1) => {
+    const nav = navRef.current;
+    if (nav) nav.scrollBy({ left: direction * Math.max(160, nav.clientWidth * 0.6), behavior: 'smooth' });
+  };
+
   const pill = (item: NavItem) => {
     const Icon = item.icon;
     const active = isActive(item.href);
@@ -167,11 +217,28 @@ function NavBar({ items, isActive, unpaid, stacked }: NavBarProps) {
   };
 
   return (
-    <nav className={cn('dsh-nav', stacked && 'is-stacked')} aria-label="Dashboard sections">
-      {pages.map(pill)}
-      {tools.length > 0 && <span className="dsh-sep" aria-hidden="true" />}
-      {tools.map(pill)}
-    </nav>
+    <>
+      <nav
+        ref={navRef}
+        className={cn('dsh-nav', stacked && 'is-stacked', edges.left && 'has-left', edges.right && 'has-right')}
+        aria-label="Dashboard sections"
+      >
+        {pages.map(pill)}
+        {tools.length > 0 && <span className="dsh-sep" aria-hidden="true" />}
+        {tools.map(pill)}
+      </nav>
+      {/* mouse users' way along a one-row menu; keyboard users reach every section with Tab */}
+      {edges.left && (
+        <button type="button" className={cn('dsh-navarrow is-left', stacked && 'is-stacked')} tabIndex={-1} aria-label="Show earlier sections" onClick={() => slide(-1)}>
+          <ChevronLeft aria-hidden="true" />
+        </button>
+      )}
+      {edges.right && (
+        <button type="button" className={cn('dsh-navarrow is-right', stacked && 'is-stacked')} tabIndex={-1} aria-label="Show more sections" onClick={() => slide(1)}>
+          <ChevronRight aria-hidden="true" />
+        </button>
+      )}
+    </>
   );
 }
 
