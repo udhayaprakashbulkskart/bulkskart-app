@@ -15,6 +15,7 @@ import {
   Warehouse, Zap, Truck, Sparkles, Lock, Calculator,
   Search, LifeBuoy, Plus, Sun, Moon, Factory, Wallet, Globe2, Crown, MapPin, ShieldCheck, FileSearch, Landmark, IndianRupee,
   ChevronLeft, ChevronRight,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -108,6 +109,7 @@ export const adminNavItems: NavItem[] = [
   { label: 'Payments', href: '/dashboard/admin/payments', icon: Wallet },
   { label: 'Loan KYC', href: '/dashboard/admin/loan-kyc', icon: Landmark },
   { label: 'Business Credit', href: '/dashboard/admin/credit', icon: IndianRupee },
+  { label: 'Password Resets', href: '/dashboard/admin/password-resets', icon: KeyRound },
 ];
 
 /** Shown to super admins only: who is an admin (see SuperAdminPage). */
