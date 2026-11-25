@@ -7,13 +7,14 @@ import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowDownToLine, BadgeCheck, Banknote, CalendarClock, Check, CircleDashed, FileText, Gauge, History, IndianRupee, Info, Landmark, Loader2,
-  ShieldCheck, Sparkles, Wallet,
+  Nfc, ShieldCheck, Sparkles, Wallet,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import PageMeta from '@/components/common/PageMeta';
 import { CheckRow, Field, KitButton, TextArea, TextInput } from '@/components/formkit';
 import '@/components/formkit/formkit.css';
+import './credit.css';
 import { cn } from '@/lib/utils';
 import { day, money, when } from '@/lib/loanKyc/api';
 import {
@@ -67,28 +68,120 @@ export default function BusinessCreditPage() {
   );
 }
 
+/** Counts up to a value once (skipped when the viewer prefers less motion). */
+function useCountUp(target: number, ms = 1400): number {
+  const [v, setV] = useState(target);
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setV(target); return; }
+    let raf = 0;
+    const t0 = performance.now();
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / ms);
+      setV(Math.round(target * (1 - (1 - k) ** 3)));
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  return v;
+}
+
+const lakh = (n: number) => `₹${(n / 100000).toLocaleString('en-IN', { maximumFractionDigits: 2 })} Lakh`;
+
 function Hero({ s }: { s: CreditState }) {
   const p = s.program;
+  const open = s.applications.find((b) => OPEN_STAGES.includes(b.application.stage))?.application;
+  // the card shows the lender's approved amount once there is one; until then, the most that can be applied for
+  const approved = open?.lender_decision === 'approved' && open.approved_amount ? Number(open.approved_amount) : null;
+  const amount = approved ?? Number(p.max_amount);
+  const shown = useCountUp(amount);
+  const ready = Boolean(open && ['agreement_accepted', 'active'].includes(open.stage));
+  const eyebrow = approved ? `Approved by ${p.partner?.name ?? 'your lender'}` : s.eligible_amount > 0 ? 'You can apply for up to' : 'Credit limit up to';
+  const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-[#FF5A00]/30 bg-[radial-gradient(120%_120%_at_100%_0%,rgba(255,90,0,0.35),rgba(255,90,0,0)_55%),linear-gradient(135deg,#0A0A0F_0%,#17110D_60%,#0A0A0F_100%)] p-5 text-white sm:p-7">
-      <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full border border-[#FF5A00]/25" aria-hidden="true" />
-      <div className="pointer-events-none absolute -right-2 top-10 h-28 w-28 rounded-full border border-[#FF5A00]/20" aria-hidden="true" />
-      <p className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em] text-[#FF8A3D]"><Sparkles className="h-4 w-4" aria-hidden="true" /> BulkSkart Business Credit</p>
-      <h1 className="mt-2 text-[28px] font-black leading-tight sm:text-4xl">Business credit up to <span className="text-[#FF5A00]">{money(p.max_amount)}</span><span className="align-super text-base text-white/60">*</span></h1>
-      <div className="mt-3 flex flex-wrap gap-2 text-[12.5px] font-bold">
-        <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">{p.tenure_months}-month repayment</span>
-        {p.zero_interest_confirmed
-          ? <span className="rounded-full bg-[#FF5A00] px-3 py-1 text-white">0% interest</span>
-          : <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">Interest and fees as set out in the lender's Key Fact Statement</span>}
-        <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">Paid straight into your bank account</span>
+    <section className="bc-hero relative overflow-hidden rounded-3xl border border-[#FF5A00]/25 p-5 text-white sm:p-8">
+      <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        {/* the card */}
+        <div className="bc-stage order-first flex justify-center lg:order-last">
+          <div className="relative w-full max-w-[430px]">
+            <div className="bc-glow" aria-hidden="true" />
+            <div className="bc-card" role="img" aria-label={`BulkSkart Business Credit: ${eyebrow.toLowerCase()} ${money(amount)}, ${p.tenure_months} months${approved ? '' : ', subject to lender approval'}`}>
+              <div className="bc-shine" aria-hidden="true" />
+              <div className="relative flex h-full flex-col justify-between p-4 sm:p-6" aria-hidden="true">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-[17px] font-black leading-none tracking-tight">Bulk<span className="text-[#FF5A00]">Skart</span></p>
+                    <p className="mt-1 text-[9.5px] font-bold uppercase tracking-[0.28em] text-white/60">Business Credit</p>
+                  </div>
+                  <Nfc className="h-6 w-6 text-white/70" />
+                </div>
+                <div className="flex items-center gap-3"><span className="bc-chip" /></div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#FFB27A]">{eyebrow}</p>
+                  <p className="bc-amount text-[30px] font-black leading-tight min-[400px]:text-[34px] sm:text-[40px]">{money(shown)}</p>
+                </div>
+                <div className="flex items-end justify-between gap-2 whitespace-nowrap text-[8.5px] font-bold uppercase tracking-[0.12em] sm:gap-3 sm:text-[9.5px] sm:tracking-[0.14em]">
+                  <span><span className="block text-white/50">Tenure</span><span className="text-[10.5px] tracking-normal sm:text-[12px]">{p.tenure_months} months</span></span>
+                  <span><span className="block text-white/50">Interest</span><span className="text-[10.5px] tracking-normal sm:text-[12px]">{p.zero_interest_confirmed ? '0% p.a.' : 'As per KFS'}</span></span>
+                  <span className="text-right"><span className="block text-white/50">{approved ? 'Lender' : 'Subject to'}</span><span className="text-[10.5px] tracking-normal sm:text-[12px]">{approved ? (p.partner?.name ?? 'Approved') : 'Lender approval'}</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* the pitch */}
+        <div className="min-w-0 space-y-4">
+          <p className="inline-flex items-center gap-2 rounded-full border border-[#FF5A00]/40 bg-[#FF5A00]/10 px-3 py-1 text-[11.5px] font-bold uppercase tracking-[0.16em] text-[#FF8A3D]">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> BulkSkart Business Credit
+          </p>
+          <h1 className="text-[30px] font-black leading-[1.08] sm:text-[42px]">
+            {approved && ready ? <>Your credit of <span className="text-[#FF5A00]">{lakh(approved)}</span> is ready</>
+              : approved ? <><span className="text-[#FF5A00]">{lakh(approved)}</span> approved: accept the offer</> : <>Up to <span className="text-[#FF5A00]">{lakh(Number(p.max_amount))}</span> to grow your factory</>}
+          </h1>
+          <p className="max-w-xl text-[14px] leading-relaxed text-white/70">
+            Working capital for raw material, big orders and new machines. Repay over {p.tenure_months} months; the money goes straight into your bank account.
+          </p>
+          <ul className="grid gap-2 text-[13px] sm:grid-cols-3">
+            {[
+              [IndianRupee, `Up to ${lakh(Number(p.max_amount))}`],
+              [CalendarClock, `${p.tenure_months}-month repayment`],
+              p.zero_interest_confirmed ? [BadgeCheck, '0% interest'] : [FileText, 'Clear terms (KFS) first'],
+            ].map(([Icon, text]) => {
+              const I = Icon as typeof Wallet;
+              return (
+                <li key={text as string} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 font-bold">
+                  <I className="h-4 w-4 shrink-0 text-[#FF5A00]" aria-hidden="true" /> {text as string}
+                </li>
+              );
+            })}
+          </ul>
+          <div className="flex flex-wrap gap-2">
+            {approved ? (
+              <button type="button" onClick={() => go('kfs-card')} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#FF5A00] px-5 text-sm font-black text-white shadow-lg shadow-orange-950/40 transition-transform active:scale-[0.98]">
+                <FileText className="h-4 w-4" aria-hidden="true" /> View offer
+              </button>
+            ) : (
+              <>
+                <button type="button" onClick={() => go('amt-card')} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#FF5A00] px-5 text-sm font-black text-white shadow-lg shadow-orange-950/40 transition-transform active:scale-[0.98]">
+                  <IndianRupee className="h-4 w-4" aria-hidden="true" /> Choose your amount
+                </button>
+                <button type="button" onClick={() => go('elig-card')} className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/20 px-5 text-sm font-bold text-white hover:bg-white/10">
+                  <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Check eligibility
+                </button>
+              </>
+            )}
+          </div>
+          <p className="text-[11px] leading-relaxed text-white/50">
+            BulkSkart is not a lender. Credit is offered, approved and paid by {p.live && p.partner
+              ? <>{p.partner.legal_name} ({p.partner.entity_type === 'bank' ? 'a bank' : 'an NBFC'} registered with the RBI{p.partner.rbi_registration_no ? `, ${p.partner.rbi_registration_no}` : ''})</>
+              : 'a regulated lending partner (bank or NBFC)'}; approval and the amount are its decision.
+            {p.zero_interest_confirmed ? ' 0% interest as confirmed by the lending partner; any fee and the APR are in the KFS before you accept.' : ''}
+            {!p.live && <> Lending partner: <b className="text-white/80">Integration Pending</b>; you can check eligibility and apply now.</>}
+          </p>
+        </div>
       </div>
-      <p className="mt-4 max-w-3xl text-[12px] leading-relaxed text-white/65">
-        * BulkSkart is not a lender. Credit is offered, approved and paid by {p.live && p.partner
-          ? <><b className="text-white">{p.partner.legal_name}</b> ({p.partner.entity_type === 'bank' ? 'a bank' : 'an NBFC'} registered with the RBI{p.partner.rbi_registration_no ? `, ${p.partner.rbi_registration_no}` : ''})</>
-          : 'a regulated lending partner (bank or NBFC)'}; approval and the amount are its decision and are not guaranteed.
-        {p.zero_interest_confirmed ? ' 0% interest as confirmed by the lending partner; any processing fee and the annual percentage rate (APR) are shown in the KFS before you accept.' : ''}
-        {!p.live && <> Lending partner: <b className="text-white">Integration Pending</b>. You can check eligibility and apply now; applications go to the partner once it is live.</>}
-      </p>
     </section>
   );
 }
@@ -143,7 +236,7 @@ function Eligibility({ s }: { s: CreditState }) {
   ];
   const passed = rows.filter((r) => s.checks[r.key]).length;
   return (
-    <section className="space-y-3 rounded-2xl border border-border bg-card p-4" aria-labelledby="elig">
+    <section id="elig-card" className="scroll-mt-24 space-y-3 rounded-2xl border border-border bg-card p-4" aria-labelledby="elig">
       <div className="flex items-center justify-between gap-2">
         <h2 id="elig" className="flex items-center gap-2 text-base font-black"><ShieldCheck className="h-5 w-5 text-[#FF5A00]" aria-hidden="true" /> Eligibility checker</h2>
         <span className="text-[12px] font-bold text-muted-foreground">{passed} of 5</span>
@@ -191,7 +284,7 @@ function AmountCard({ s, draft, reload }: { s: CreditState; draft: AppBundle | n
   };
 
   return (
-    <section className="space-y-4 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-labelledby="amt">
+    <section id="amt-card" className="scroll-mt-24 space-y-4 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-labelledby="amt">
       <h2 id="amt" className="flex items-center gap-2 text-base font-black"><IndianRupee className="h-5 w-5 text-[#FF5A00]" aria-hidden="true" /> Select your credit amount</h2>
       {suspended ? <p className="text-[13px]">Business credit is paused for your account. Please contact BulkSkart support.</p> : (
         <>
@@ -305,7 +398,7 @@ function KfsCard({ b, s, reload }: { b: AppBundle; s: CreditState; reload: () =>
     finally { setBusy(false); }
   };
   return (
-    <section className="space-y-3 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-labelledby="kfs">
+    <section id="kfs-card" className="scroll-mt-24 space-y-3 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-labelledby="kfs">
       <h2 id="kfs" className="flex items-center gap-2 text-base font-black"><FileText className="h-5 w-5 text-[#FF5A00]" aria-hidden="true" /> Key Fact Statement and loan agreement</h2>
       <p className="text-[12.5px] text-muted-foreground">Issued by the lender on {day(a.lender_decided_at)}. Read both before accepting.</p>
       <dl className="grid gap-x-4 gap-y-2 rounded-xl bg-muted/40 p-3 text-[13px] sm:grid-cols-2">
