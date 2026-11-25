@@ -1,0 +1,254 @@
+{
+  "faqPage": {
+    "title": "BulkSkart FAQ: How the B2B Wholesale Marketplace Works",
+    "description": "Answers about BulkSkart: what it is, whether it is free for buyers, how to post an RFQ, how suppliers are verified, how it differs from IndiaMART, and more."
+  },
+  "brandFaq": [
+    {
+      "q": "What is BulkSkart?",
+      "a": "BulkSkart (bulkskart.com) is a B2B wholesale marketplace. Buyers find manufacturers and wholesale suppliers, compare quotations and post buying requirements (RFQs); manufacturers list their products and reply to buyers. BulkSkart is run by Tech Pod AI Database Private Limited, an Indian company.",
+      "links": [
+        {
+          "label": "About BulkSkart",
+          "href": "/about"
+        }
+      ]
+    },
+    {
+      "q": "Is BulkSkart free for buyers?",
+      "a": "Yes. Signing up as a buyer, browsing products and suppliers, and posting a buying requirement (RFQ) on BulkSkart are free.",
+      "links": [
+        {
+          "label": "Post a free requirement",
+          "href": "/post-requirement"
+        }
+      ]
+    },
+    {
+      "q": "How do I post a buying requirement (RFQ) on BulkSkart?",
+      "a": "Open Post Requirement, describe the product, the quantity, your budget and the delivery location, and submit it. Suppliers who deal in that product can send you quotations, and you compare them in your BulkSkart dashboard.",
+      "links": [
+        {
+          "label": "Post Requirement",
+          "href": "/post-requirement"
+        }
+      ]
+    },
+    {
+      "q": "How do manufacturers and suppliers sell on BulkSkart?",
+      "a": "Register as a manufacturer, set up your business profile and list your products. Replying to buyers' requirements and seeing buyer contact details need a paid supplier plan; the Pricing page shows the current plans.",
+      "links": [
+        {
+          "label": "Supplier plans",
+          "href": "/pricing"
+        }
+      ]
+    },
+    {
+      "q": "Are suppliers on BulkSkart verified?",
+      "a": "Suppliers can complete verification on BulkSkart, where their business details such as their GST registration are checked, and verified suppliers carry a verified mark. The BulkSkart supplier directory lists only manufacturers whose GST registration was found active. For a large order, still ask for samples and documents, or book a factory visit.",
+      "links": [
+        {
+          "label": "Supplier directory",
+          "href": "/directory"
+        }
+      ]
+    },
+    {
+      "q": "Is BulkSkart only for India?",
+      "a": "No. Most manufacturers on BulkSkart are in India, and buyers anywhere in the world can post requirements and reach Indian manufacturers and exporters. Businesses outside India can also list themselves on the BulkSkart supplier map.",
+      "links": [
+        {
+          "label": "Supplier map",
+          "href": "/supplier-map"
+        }
+      ]
+    },
+    {
+      "q": "What products can I buy on BulkSkart?",
+      "a": "BulkSkart has {categoryCount} categories and {subcategoryCount} subcategories, including electronics and home appliances, industrial and engineering supplies, construction material, apparel and garments, FMCG and groceries, hospital and medical supplies, packaging, chemicals, mechanical parts, agriculture and automobile parts.",
+      "links": [
+        {
+          "label": "All categories",
+          "href": "/categories"
+        }
+      ]
+    },
+    {
+      "q": "How is BulkSkart different from IndiaMART?",
+      "a": "Both are B2B marketplaces. On BulkSkart a buyer posts one requirement and compares the quotations in one dashboard, phone numbers and e-mail addresses are not shown publicly, and suppliers can be checked against their GST registration. BulkSkart is not affiliated with IndiaMART.",
+      "links": [
+        {
+          "label": "BulkSkart as an IndiaMART alternative",
+          "href": "/indiamart-alternative"
+        }
+      ]
+    },
+    {
+      "q": "Can I see a supplier's phone number on BulkSkart?",
+      "a": "Phone numbers and e-mail addresses are not shown publicly on BulkSkart, to protect members from spam calls. You reach suppliers through BulkSkart: send an enquiry from a product or post a requirement.",
+      "links": []
+    },
+    {
+      "q": "Does BulkSkart give business loans?",
+      "a": "BulkSkart is not a lender. Buyers and manufacturers can request a business loan on BulkSkart; BulkSkart collects the KYC documents and shares the application with a lending partner (a bank or NBFC), which decides on the loan, its amount and its terms.",
+      "links": [
+        {
+          "label": "Order loan calculator",
+          "href": "/loan-calculator"
+        }
+      ]
+    },
+    {
+      "q": "Does BulkSkart have AI tools?",
+      "a": "Yes. BulkSkart's AI assistant helps buyers describe what they need and matches requirements with suppliers in BulkSkart's own catalogue, and manufacturers on the higher plans can draft quotations with AI.",
+      "links": [
+        {
+          "label": "AI trade assistant",
+          "href": "/trade-assistant"
+        }
+      ]
+    },
+    {
+      "q": "Who owns BulkSkart?",
+      "a": "BulkSkart is a product of Tech Pod AI Database Private Limited, India.",
+      "links": [
+        {
+          "label": "About BulkSkart",
+          "href": "/about"
+        }
+      ]
+    },
+    {
+      "q": "How do I contact BulkSkart?",
+      "a": "Use the Contact page on bulkskart.com for support, partnerships and trade enquiries.",
+      "links": [
+        {
+          "label": "Contact BulkSkart",
+          "href": "/contact"
+        }
+      ]
+    }
+  ],
+  "alternatives": [
+    {
+      "slug": "indiamart-alternative",
+      "competitor": "IndiaMART",
+      "title": "IndiaMART Alternative for Buyers & Manufacturers | BulkSkart",
+      "description": "Looking for an IndiaMART alternative? Post free RFQs, compare quotes from Indian manufacturers and keep your phone number private on BulkSkart, the B2B wholesale marketplace.",
+      "h1": "Looking for an IndiaMART alternative? Meet BulkSkart",
+      "intro": "IndiaMART is one of the best-known B2B directories in India. If you are comparing B2B marketplaces before you buy or sell in bulk, here is how BulkSkart works, so you can decide what fits your business. Many businesses use more than one marketplace.",
+      "points": [
+        "Post one free buying requirement (RFQ) and compare the quotations in one dashboard",
+        "Phone numbers and e-mail addresses are not shown publicly, so your number is not passed around",
+        "Suppliers can be checked against their GST registration, and verified suppliers carry a verified mark",
+        "{categoryCount} categories, from electronics and machinery to textiles, chemicals and packaging",
+        "Open to buyers worldwide who want to source from Indian manufacturers",
+        "AI tools that match your requirement with suppliers on BulkSkart"
+      ],
+      "faq": [
+        {
+          "q": "Is BulkSkart a good alternative to IndiaMART?",
+          "a": "BulkSkart is a B2B marketplace where buyers post free requirements and compare quotations from Indian manufacturers, with contact details kept private. Whether it suits you depends on your products and your buyers, and you can use BulkSkart alongside other marketplaces."
+        },
+        {
+          "q": "Is BulkSkart free for buyers?",
+          "a": "Yes. Signing up as a buyer, browsing and posting a buying requirement (RFQ) on BulkSkart are free."
+        },
+        {
+          "q": "Is BulkSkart part of IndiaMART?",
+          "a": "No. BulkSkart is run by Tech Pod AI Database Private Limited and is not affiliated with, endorsed by or sponsored by IndiaMART."
+        },
+        {
+          "q": "Can a manufacturer list on BulkSkart and IndiaMART at the same time?",
+          "a": "Yes. A business can list on more than one marketplace. On BulkSkart, replying to buyers' requirements needs a paid supplier plan."
+        }
+      ]
+    },
+    {
+      "slug": "tradeindia-alternative",
+      "competitor": "TradeIndia",
+      "title": "TradeIndia Alternative: B2B Marketplace for Bulk Buyers | BulkSkart",
+      "description": "Comparing TradeIndia alternatives? On BulkSkart buyers post free requirements, compare quotations from Indian manufacturers and keep their contact details private.",
+      "h1": "Looking for a TradeIndia alternative? Try BulkSkart",
+      "intro": "TradeIndia is a long-running Indian B2B portal. If you are weighing up B2B marketplaces, this is how BulkSkart works for bulk buyers and for manufacturers, so you can choose what fits how you trade.",
+      "points": [
+        "Post one free requirement and get quotations from suppliers who deal in that product",
+        "Compare every quotation in your BulkSkart dashboard",
+        "Contact details stay private: phone numbers and e-mails are not shown publicly",
+        "A directory of manufacturers whose GST registration was found active",
+        "{categoryCount} categories and {subcategoryCount} subcategories of bulk products and services",
+        "Buyers from any country can source from Indian manufacturers and exporters"
+      ],
+      "faq": [
+        {
+          "q": "Is BulkSkart similar to TradeIndia?",
+          "a": "Both are B2B marketplaces for bulk buying and selling. On BulkSkart buyers post free requirements and compare quotations in one dashboard, and contact details are not shown publicly."
+        },
+        {
+          "q": "Is BulkSkart free?",
+          "a": "Free for buyers. Manufacturers can create a profile and list products, and reply to buyers' requirements on a paid supplier plan."
+        },
+        {
+          "q": "Is BulkSkart connected with TradeIndia?",
+          "a": "No. BulkSkart is run by Tech Pod AI Database Private Limited and is not affiliated with, endorsed by or sponsored by TradeIndia."
+        }
+      ]
+    },
+    {
+      "slug": "alibaba-alternative",
+      "competitor": "Alibaba",
+      "title": "Alibaba Alternative for Sourcing from Indian Manufacturers | BulkSkart",
+      "description": "Want an Alibaba alternative for sourcing from India? Post a free requirement on BulkSkart and compare quotations from Indian manufacturers and exporters.",
+      "h1": "An Alibaba alternative for sourcing from India",
+      "intro": "Alibaba.com is a global B2B marketplace. If you want to buy directly from Indian manufacturers and exporters, BulkSkart is built for that: post what you need with your delivery country and compare the quotations you receive.",
+      "points": [
+        "Indian manufacturers and exporters across {categoryCount} categories",
+        "Post a free requirement with your delivery country and target price",
+        "Compare quotations side by side in one dashboard",
+        "Manufacturers' GST registration can be checked; verified suppliers carry a verified mark",
+        "Contact details stay private until you choose to talk",
+        "Shipping and order-loan calculators to plan the landed cost"
+      ],
+      "faq": [
+        {
+          "q": "Can buyers outside India use BulkSkart?",
+          "a": "Yes. Buyers anywhere in the world can post a requirement on BulkSkart and get quotations from Indian manufacturers and exporters."
+        },
+        {
+          "q": "Is BulkSkart free for international buyers?",
+          "a": "Yes. Posting a requirement and comparing quotations is free for buyers, in India and abroad."
+        },
+        {
+          "q": "Is BulkSkart related to Alibaba?",
+          "a": "No. BulkSkart is run by Tech Pod AI Database Private Limited, India, and is not affiliated with, endorsed by or sponsored by Alibaba."
+        }
+      ]
+    }
+  ],
+  "alternativeChecklist": [
+    "How are suppliers verified, and can you see what was checked?",
+    "Who can see your phone number and e-mail address?",
+    "Can you post one requirement and receive several quotations?",
+    "What does a supplier pay, and what does that plan include?",
+    "Are the listings and buyer requests real and current?"
+  ],
+  "categoryFaq": [
+    {
+      "q": "Where can I buy {lower} in bulk?",
+      "a": "On BulkSkart you can source {lower} in bulk from manufacturers and wholesale suppliers in India. Browse {count} subcategories such as {examples}, compare suppliers, or post a free buying requirement (RFQ) and receive quotations."
+    },
+    {
+      "q": "How do I get quotes for {lower} from several suppliers?",
+      "a": "Post one free requirement on BulkSkart with the product, quantity and delivery location. Suppliers who deal in {lower} can send you quotations, and you compare them in your BulkSkart dashboard."
+    },
+    {
+      "q": "Are {lower} suppliers on BulkSkart verified?",
+      "a": "Suppliers can complete verification on BulkSkart, where business details such as the GST registration are checked, and verified suppliers carry a verified mark. For a large order, also ask for samples and documents before you pay."
+    },
+    {
+      "q": "Can buyers outside India source {lower} on BulkSkart?",
+      "a": "Yes. Buyers in any country can post a requirement with their delivery country, and Indian manufacturers and exporters of {lower} can quote."
+    }
+  ]
+}
