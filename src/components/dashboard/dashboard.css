@@ -1,5 +1,5 @@
 /*
- * The dashboard look ("glass"): a floating glass bar with a pill menu on top, frosted cards, pill-shaped bars with a hatched
+ * The dashboard look ("glass"): a glass sidebar on the left and a slim floating header, frosted cards, pill-shaped bars with a hatched
  * fill, a fan-shaped gauge, inverse pill buttons and soft glows.
  *
  * The colours are BulkSkart's own. Nothing here has a colour of its own except the orange: every surface, line and text uses
@@ -7,7 +7,7 @@
  * site's dark navy with the brand orange, and follows the light / dark choice like the rest of the site.
  *
  * 1. Variables built from the site's tokens, and the page canvas.
- * 2. Shell: the floating top bar, the pill menu, the round buttons, the mobile menu.
+ * 2. Shell: the left sidebar (the phone drawer is the same list), the slim header with its round buttons, notices.
  * 3. Parts: page header, panel, KPI card, chart, gauge, small stats, dark card, account card.
  * 4. What the older pages share: cards, tabs, buttons, tables, pop-ups.
  */
@@ -54,10 +54,10 @@ html.dash-active.light {
 /* ───────────── 2. shell ───────────── */
 .dsh {
   --dsh-pad: 44px; /* room left under the page */
+  --dsh-side: 252px; /* the sidebar's width */
   position: relative;
   isolation: isolate;
   min-height: 100dvh;
-  padding: 10px 14px var(--dsh-pad);
   color: hsl(var(--foreground));
 }
 /* the canvas: the site's own background with soft orange glows, like the glow under the reel's cards */
@@ -74,13 +74,211 @@ html.dash-active.light {
     hsl(var(--background));
 }
 
+/* the sidebar: on a laptop or desktop it is fixed on the left, full height, and scrolls on its own; the page (header,
+   notice, content) sits to its right and takes the rest of the width. Below 1024px it is the drawer behind the hamburger. */
+.dsh-side {
+  display: none;
+}
+.dsh-main {
+  min-width: 0;
+  padding: 10px 16px var(--dsh-pad);
+}
+@media (min-width: 1024px) {
+  .dsh-side {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 45;
+    display: flex;
+    width: var(--dsh-side);
+    background: hsl(var(--card) / 0.8);
+    border-right: 1px solid var(--g-glass-edge);
+    box-shadow: var(--g-shine), 18px 0 40px -32px rgba(2, 6, 20, 0.6);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    backdrop-filter: blur(18px) saturate(1.3);
+  }
+  .dsh-main {
+    margin-left: var(--dsh-side);
+    padding: 10px 20px var(--dsh-pad);
+  }
+}
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .dsh {
+    --dsh-side: 230px;
+  }
+  .dsh-main {
+    padding-inline: 14px;
+  }
+}
+
+/* the menu list, in the sidebar and in the phone drawer */
+.dsb {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.dsb-head {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px 18px 12px;
+  border-bottom: 1px solid var(--g-line);
+}
+.dsb-head .dsh-brand img {
+  height: 30px;
+}
+.dsb-role {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: hsl(var(--primary) / 0.14);
+  color: hsl(var(--primary));
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dsb-list {
+  position: relative; /* the open section's offset is measured from here */
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  padding: 6px 10px 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--g-line-2) transparent;
+}
+.dsb-heading {
+  flex: none;
+  margin: 12px 12px 3px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--g-ink-3);
+}
+.dsb-link {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--g-ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.dsb-link svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: var(--g-ink-3);
+  transition: color 0.15s ease;
+}
+.dsb-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.dsb-link:hover {
+  background: var(--g-fill-2);
+  color: hsl(var(--foreground));
+}
+.dsb-link:hover svg {
+  color: hsl(var(--primary));
+}
+/* the open page, in BulkSkart orange */
+.dsb-link.is-active {
+  background: var(--g-accent-grad);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), var(--g-accent-glow);
+}
+.dsb-link.is-active svg {
+  color: #fff;
+}
+.dsb-link .dsh-flag {
+  flex: none;
+  padding: 0 6px;
+  font-size: 9px;
+}
+.dsb-link.is-active .dsh-flag {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.dsb-link.is-danger,
+.dsb-link.is-danger svg {
+  color: var(--g-red);
+}
+.dsb-link:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -2px;
+}
+.dsb-foot {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px 12px;
+  border-top: 1px solid var(--g-line);
+}
+.dsb-foot .dsb-link {
+  min-height: 34px;
+  font-size: 12.5px;
+}
+/* a short window (a laptop at 125% scaling): tighter rows, so more of the list shows */
+@media (max-height: 760px) {
+  .dsb-head {
+    gap: 6px;
+    padding: 12px 16px 9px;
+  }
+  .dsb-head .dsh-brand img {
+    height: 26px;
+  }
+  .dsb-link {
+    min-height: 33px;
+  }
+  .dsb-heading {
+    margin-top: 9px;
+  }
+  .dsb-foot {
+    padding-block: 6px 8px;
+  }
+  .dsb-foot .dsb-link {
+    min-height: 30px;
+  }
+}
+
+/* the sidebar has "AI Trade Help", so on a laptop or desktop dashboard the site's floating launcher (which sat over the
+   page's cards) only shows while the chat is open, as its close button */
+@media (min-width: 1024px) {
+  html.dash-active .ai-launcher[data-open='false'] {
+    display: none;
+  }
+}
+
+/* the header: search, add, theme, notifications and the account */
 .dsh-bar {
   position: sticky;
   top: 10px;
   z-index: 40;
   max-width: 1600px;
   margin: 0 auto;
-  border-radius: 28px;
+  border-radius: 20px;
   background: hsl(var(--card) / 0.74);
   border: 1px solid var(--g-glass-edge);
   box-shadow: var(--g-shine), 0 20px 44px -22px rgba(2, 6, 20, 0.7);
@@ -91,12 +289,9 @@ html.dash-active.light {
 .dsh-bar-in {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 10px 8px 14px;
-}
-.dsh-bar-in > .dsh-brand,
-.dsh-bar-in > .dsh-tools {
-  min-height: 42px;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 10px 8px 12px;
 }
 .dsh-brand {
   display: flex;
@@ -115,88 +310,24 @@ html.dash-active.light {
   place-items: center;
   width: 38px;
   height: 38px;
-  margin-left: -4px;
-  border-radius: 50%;
+  border-radius: 12px;
   border: 1px solid var(--g-line-2);
   background: var(--g-fill-2);
   color: hsl(var(--foreground));
 }
-
-/* the pill menu */
-.dsh-nav {
-  display: none;
-  align-items: center;
-  gap: 2px;
-  margin-inline: auto;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--g-fill);
-  border: 1px solid var(--g-line);
-  box-shadow: var(--g-shine);
+@media (min-width: 1024px) {
+  .dsh-bar-in > .dsh-burger,
+  .dsh-bar-in > .dsh-brand {
+    display: none;
+  }
 }
-.dsh-tab {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--g-ink-2);
-  font-size: 12.5px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-}
-.dsh-tab svg {
-  width: 14px;
-  height: 14px;
-  flex: none;
-}
-.dsh-tab > svg:first-child {
-  display: none;
-}
-.dsh-tab:hover {
-  background: var(--g-fill-2);
-  color: hsl(var(--foreground));
-}
-.dsh-tab.is-active {
-  background: var(--g-accent-grad);
-  color: #fff;
-  font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28), var(--g-accent-glow);
-}
-.dsh-tab.is-active > svg:first-child {
-  display: block;
-}
-/* the flag on the Subscription section of a manufacturer who has not paid */
-.dsh-tab .dsh-flag {
-  margin-left: 2px;
-  padding: 0 6px;
-  font-size: 9px;
-}
-.dsh-tab.is-active .dsh-flag {
-  background: rgba(255, 255, 255, 0.28);
-  color: #fff;
-}
-.dsh-sep {
-  align-self: center;
-  flex: none;
-  width: 1px;
-  height: 16px;
-  margin: 0 6px;
-  background: var(--g-line-2);
-}
-
-/* round buttons at the right */
 .dsh-tools {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
-  margin-left: auto;
+  min-width: 0;
 }
 .dsh-ibtn {
   position: relative;
@@ -240,12 +371,6 @@ html.dash-active.light {
   width: 18px;
   height: 18px;
 }
-.dsh-ibtn.dsh-ai {
-  border-color: hsl(var(--primary) / 0.45);
-  background: radial-gradient(circle at 30% 28%, #ffd2ae 0%, #ff7a2e 52%, #e04f00 100%);
-  color: #fff;
-  box-shadow: 0 8px 18px -8px hsl(var(--primary) / 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
 .dsh-avatar {
   display: grid;
   flex: none;
@@ -262,7 +387,6 @@ html.dash-active.light {
   cursor: pointer;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
-.dsh-tab:focus-visible,
 .dsh-ibtn:focus-visible,
 .dsh-plus:focus-visible,
 .dsh-avatar:focus-visible,
@@ -272,22 +396,25 @@ html.dash-active.light {
   outline-offset: 2px;
 }
 
-/* search that opens under the bar */
+/* the search: a box at the left of the header; on a phone it drops down under the header from its button */
 .dsh-search {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 10px;
-  z-index: 5;
   display: flex;
+  flex: 0 1 460px;
   align-items: center;
   gap: 8px;
-  width: min(440px, calc(100vw - 28px));
-  padding: 6px 8px 6px 14px;
+  min-width: 0;
+  height: 40px;
+  margin-right: auto;
+  padding: 0 8px 0 14px;
   border-radius: 999px;
-  background: hsl(var(--popover));
+  background: var(--g-fill);
   border: 1px solid var(--g-line-2);
-  box-shadow: 0 24px 50px -18px rgba(2, 6, 20, 0.7);
-  color: hsl(var(--popover-foreground));
+  color: hsl(var(--foreground));
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.dsh-search:focus-within {
+  border-color: hsl(var(--primary) / 0.7);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.18);
 }
 .dsh-search svg {
   width: 16px;
@@ -303,18 +430,45 @@ html.dash-active.light {
   background: transparent !important;
   box-shadow: none !important;
   outline: none;
-  color: hsl(var(--popover-foreground));
+  color: inherit;
   font-size: 13px;
 }
 .dsh-search kbd {
-  padding: 2px 7px;
+  padding: 1px 8px;
   border-radius: 8px;
   background: var(--g-fill-2);
   font-size: 11px;
   color: var(--g-ink-3);
 }
+.dsh-search-btn {
+  display: none;
+}
+@media (max-width: 767px) {
+  .dsh-search {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: 0;
+    z-index: 5;
+    display: none;
+    height: 46px;
+    margin: 0;
+    background: hsl(var(--popover));
+    color: hsl(var(--popover-foreground));
+    box-shadow: 0 24px 50px -18px rgba(2, 6, 20, 0.7);
+  }
+  .dsh-search.is-open {
+    display: flex;
+  }
+  .dsh-search kbd {
+    display: none;
+  }
+  .dsh-search-btn {
+    display: grid;
+  }
+}
 
-/* menus that open from the bar (they live in a portal, so they use the site's popover colours) */
+/* menus that open from the header (they live in a portal, so they use the site's popover colours) */
 html.dash-active .dsh-menu {
   min-width: 232px;
   padding: 6px;
@@ -383,10 +537,15 @@ html.dash-active .dsh-who span {
   color: var(--g-ink-3);
 }
 
-/* the mobile menu */
+/* the drawer behind the hamburger (phone and tablet): the same sidebar, sliding in from the left. It scrolls as one, so
+   the list is never squeezed above the buttons under it */
 html.dash-active .dsh-sheet {
-  width: min(310px, 88vw);
-  padding: 14px 12px 24px;
+  display: flex;
+  flex-direction: column;
+  width: min(300px, 86vw);
+  max-width: none;
+  padding: 0;
+  gap: 0;
   border: 0;
   border-right: 1px solid var(--g-line-2);
   background: radial-gradient(120% 55% at 0% 0%, hsl(var(--primary) / 0.14), transparent 60%), hsl(var(--background));
@@ -394,50 +553,19 @@ html.dash-active .dsh-sheet {
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-html.dash-active .dsh-sheet .dsh-brand {
-  margin: 2px 0 6px 4px;
+html.dash-active .dsh-sheet .dsb {
+  height: auto;
+  min-height: 100%;
 }
-.dsh-slist {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 12px;
+html.dash-active .dsh-sheet .dsb-list {
+  flex: 1 0 auto;
+  overflow: visible;
 }
-.dsh-slink {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 40px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--g-fill);
-  color: var(--g-ink-2);
-  font-size: 13.5px;
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
+html.dash-active .dsh-sheet .dsb-head {
+  padding-right: 48px; /* room for the close button */
 }
-.dsh-slink svg {
-  width: 16px;
-  height: 16px;
-  flex: none;
-}
-.dsh-slink.is-active {
-  background: var(--g-accent-grad);
-  color: #fff;
-  font-weight: 600;
-}
-.dsh-slink.is-danger {
-  color: var(--g-red);
-}
-.dsh-slabel {
-  margin: 12px 14px 2px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--g-ink-3);
+html.dash-active .dsh-sheet .dsb-foot > :not(.dsb-link) {
+  margin: 2px 2px 4px;
 }
 
 /* the page itself */
@@ -449,9 +577,9 @@ html.dash-active .dsh-sheet .dsh-brand {
 .dsh-content > * {
   animation: dsh-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-/* fill the screen: pages were capped (max-w-4xl … 7xl) for the old sidebar layout, which left wide empty sides on
-   1366–1920 px screens. Lists, tables and overviews now use the room the shell gives (as wide as the bar); a page of
-   mostly fields (4xl) grows to a comfortable width. Narrow forms (3xl and less) keep their width on purpose. */
+/* fill the screen: pages were capped (max-w-4xl … 7xl) for an older layout, which left wide empty sides. Lists, tables
+   and overviews use the room beside the sidebar; a page of mostly fields (4xl) grows to a comfortable width. Narrow
+   forms (3xl and less) keep their width on purpose. */
 html.dash-active .dsh-content :is(.max-w-5xl, .max-w-6xl, .max-w-7xl).mx-auto {
   max-width: none;
 }
@@ -483,7 +611,7 @@ html.dash-active .dsh-content .max-w-4xl.mx-auto {
   animation-delay: 0.2s;
 }
 
-/* a notice: under the bar (unpaid manufacturers) and inside pages */
+/* a notice: under the header (unpaid manufacturers) and inside pages */
 .dsh-notice,
 .dnotice {
   display: flex;
@@ -500,7 +628,7 @@ html.dash-active .dsh-content .max-w-4xl.mx-auto {
 }
 .dsh-notice {
   max-width: 1600px;
-  margin: 14px auto 0;
+  margin: 12px auto 0;
 }
 .dsh-notice b,
 .dnotice b {
@@ -548,105 +676,10 @@ html.dash-active .dsh-content .max-w-4xl.mx-auto {
   background: var(--g-red-bg);
   color: var(--g-red);
 }
-
-@media (min-width: 860px) {
-  .dsh-burger {
-    display: none;
-  }
-  /* logo, menu and buttons share a grid: a short menu sits between the logo and the buttons ... */
-  .dsh-bar-in {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    column-gap: 12px;
-    row-gap: 8px;
-  }
-  .dsh-brand {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .dsh-nav {
-    display: flex;
-    grid-column: 2;
-    grid-row: 1;
-    justify-self: center;
-  }
-  .dsh-tools {
-    grid-column: 3;
-    grid-row: 1;
-    margin-left: 0;
-  }
-  /* ... and a long one has a row to itself under them, showing every section and wrapping if it has to */
-  .dsh-nav.is-stacked {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    flex-wrap: wrap;
-    justify-content: center;
-    justify-self: stretch;
-    gap: 4px;
-    margin: 0;
-    padding: 8px 0 2px;
-    border: 0;
-    border-top: 1px solid var(--g-line);
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-  .dsh-nav.is-stacked .dsh-tab {
-    height: 32px;
-    padding: 0 12px;
-    background: var(--g-fill);
-  }
-  .dsh-nav.is-stacked .dsh-tab:hover {
-    background: var(--g-fill-2);
-  }
-  .dsh-nav.is-stacked .dsh-tab.is-active {
-    background: var(--g-accent-grad);
-  }
-}
-/* the arrows at the ends of a one-row menu (shown only while there is more to see that way) */
-.dsh-navarrow {
-  display: none;
-}
-@media (min-width: 860px) {
-  .dsh-nav {
-    position: relative;
-  }
-  .dsh-navarrow {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    align-self: end;
-    z-index: 1;
-    place-items: center;
-    width: 28px;
-    height: 28px;
-    margin-bottom: 1px;
-    padding: 0;
-    border-radius: 50%;
-    border: 1px solid var(--g-line-2);
-    background: hsl(var(--card));
-    color: hsl(var(--foreground));
-    box-shadow: 0 6px 14px -8px rgba(2, 6, 20, 0.6);
-    cursor: pointer;
-  }
-  .dsh-navarrow:hover {
-    background: hsl(var(--primary));
-    border-color: hsl(var(--primary));
-    color: #fff;
-  }
-  .dsh-navarrow.is-left {
-    justify-self: start;
-  }
-  .dsh-navarrow.is-right {
-    justify-self: end;
-  }
-  .dsh-navarrow svg {
-    width: 15px;
-    height: 15px;
-  }
-  /* the unpaid notice is one slim line under the bar: the page, not the banner, gets the screen */
+/* the unpaid notice is one slim line under the header: the page, not the banner, gets the screen */
+@media (min-width: 768px) {
   .dsh-notice {
     flex-wrap: nowrap;
-    margin-top: 8px;
     padding: 6px 8px 6px 10px;
     border-radius: 999px;
   }
@@ -684,23 +717,18 @@ html.dash-active .dsh-content .max-w-4xl.mx-auto {
     padding: 0 13px;
   }
 }
-/* a laptop (narrow or short window, e.g. 1366×768, or 1093×615 at 125% Windows scaling): a long menu stays ONE row
-   that slides sideways instead of wrapping onto two or three rows, and the bar is tighter, so the page starts high up */
-@media (min-width: 860px) and (max-width: 1279px), (min-width: 860px) and (max-height: 820px) {
-  .dsh {
+/* a short window (1366×768, or 1093×615 at 125% Windows scaling): a slimmer header, so the page starts high up */
+@media (min-width: 768px) and (max-height: 820px) {
+  .dsh-main {
     padding-top: 8px;
   }
   .dsh-bar {
     top: 8px;
-    border-radius: 24px;
+    border-radius: 18px;
   }
   .dsh-bar-in {
-    row-gap: 4px;
+    min-height: 50px;
     padding-block: 5px;
-  }
-  .dsh-bar-in > .dsh-brand,
-  .dsh-bar-in > .dsh-tools {
-    min-height: 38px;
   }
   .dsh-bar-in .dsh-ibtn,
   .dsh-bar-in .dsh-plus,
@@ -708,73 +736,37 @@ html.dash-active .dsh-content .max-w-4xl.mx-auto {
     width: 36px;
     height: 36px;
   }
-  .dsh-nav.is-stacked {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    padding: 5px 0 1px;
-  }
-  .dsh-nav.is-stacked::-webkit-scrollbar {
-    display: none;
-  }
-  /* centred while it fits, starting at the left once it slides */
-  .dsh-nav.is-stacked > :first-child {
-    margin-left: auto;
-  }
-  .dsh-nav.is-stacked > :last-child {
-    margin-right: auto;
-  }
-  .dsh-nav.is-stacked .dsh-tab {
-    flex: none;
-    height: 30px;
-    padding: 0 11px;
-  }
-  .dsh-nav.is-stacked.has-right {
-    -webkit-mask-image: linear-gradient(to left, transparent 0, #000 48px);
-    mask-image: linear-gradient(to left, transparent 0, #000 48px);
-  }
-  .dsh-nav.is-stacked.has-left {
-    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 48px);
-    mask-image: linear-gradient(to right, transparent 0, #000 48px);
-  }
-  .dsh-nav.is-stacked.has-left.has-right {
-    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%);
-  }
-  .dsh-navarrow.is-stacked {
-    display: grid;
+  .dsh-search {
+    height: 36px;
   }
   .dsh-content {
     margin-top: 12px;
   }
 }
-/* on a really short window even the slim bar would sit over the page all the time, so there it scrolls away */
-@media (min-width: 860px) and (max-height: 700px) {
-  .dsh-bar.is-stacked {
-    position: relative;
-    top: 0;
-  }
-}
-@media (max-width: 859px) {
+@media (max-width: 767px) {
   .dsh {
     --dsh-pad: 40px;
+  }
+  .dsh-main {
     padding: 8px 10px var(--dsh-pad);
   }
   .dsh-bar {
     top: 8px;
-    border-radius: 24px;
+    border-radius: 18px;
   }
   .dsh-bar-in {
     gap: 8px;
-    padding: 7px 8px 7px 12px;
+    min-height: 52px;
+    padding: 6px 8px;
   }
   .dsh-brand img {
     height: 25px;
   }
-  .dsh-ibtn.is-hide-sm {
-    display: none;
+  .dsh-tools {
+    gap: 6px;
+  }
+  .dsh-content {
+    margin-top: 12px;
   }
   /* the unpaid notice on a phone: the two buttons share one row under the text */
   .dsh-notice {
@@ -793,6 +785,23 @@ html.dash-active .dsh-content .max-w-4xl.mx-auto {
   }
   .dsh-notice p {
     font-size: 11px;
+  }
+}
+/* a small phone: smaller round buttons, and the light / dark switch moves into the menu */
+@media (max-width: 479px) {
+  .dsh-bar-in .dsh-ibtn,
+  .dsh-bar-in .dsh-plus,
+  .dsh-bar-in .dsh-avatar,
+  .dsh-burger {
+    width: 34px;
+    height: 34px;
+  }
+  .dsh-ibtn.dsh-theme {
+    display: none;
+  }
+  .dsh-brand img {
+    height: 23px;
+    max-width: 112px;
   }
 }
 
@@ -1685,7 +1694,7 @@ html.dash-active :is(input:not([type='checkbox']):not([type='radio']):not([type=
 html.dash-active .dsh-content :is(button, a).rounded-md:not([role='combobox']):not(.dbar):not([role='tab']) {
   border-radius: 999px;
 }
-html.dash-active :is(.bg-primary, .bg-\[\#FF5A00\]):not(.dbar-pill):not(.dsh-tab):not(.dsh-mi) {
+html.dash-active :is(.bg-primary, .bg-\[\#FF5A00\]):not(.dbar-pill):not(.dsb-link):not(.dsh-mi) {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 8px 18px -10px hsl(var(--primary) / 0.7);
 }
 

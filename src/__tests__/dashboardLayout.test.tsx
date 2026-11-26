@@ -129,14 +129,16 @@ describe('Dashboard shell: the look', () => {
 
 const labelsOf = (items: HTMLElement[]) => items.map((item) => item.textContent);
 
-describe('Dashboard shell: the top bar', () => {
+describe('Dashboard shell: the sidebar', () => {
   it('has the logo, which leads to the home page', () => {
     signIn('buyer');
     renderAt('/dashboard/buyer');
-    expect(screen.getByRole('link', { name: 'BulkSkart home' })).toHaveAttribute('href', '/');
+    const logos = screen.getAllByRole('link', { name: 'BulkSkart home' });
+    expect(logos.length).toBeGreaterThan(0);
+    for (const logo of logos) expect(logo).toHaveAttribute('href', '/');
   });
 
-  it('shows every section of a buyer as a pill, the calculators last, and marks the one that is open', () => {
+  it('lists every section of a buyer, the calculators last, and marks the one that is open', () => {
     signIn('buyer');
     renderAt('/dashboard/buyer/orders');
     expect(labelsOf(menu().getAllByRole('link'))).toEqual([
@@ -161,7 +163,7 @@ describe('Dashboard shell: the top bar', () => {
     expect(menu().getByRole('link', { name: 'Order Loan Calculator' })).toHaveAttribute('href', '/loan-calculator');
   });
 
-  it('shows every section of a supplier as a pill, and marks only Overview on the overview page', () => {
+  it('lists every section of a supplier, and marks only Overview on the overview page', () => {
     signIn('supplier');
     renderAt('/dashboard/supplier');
     expect(labelsOf(menu().getAllByRole('link'))).toEqual([
@@ -191,147 +193,164 @@ describe('Dashboard shell: the top bar', () => {
     expect(menu().getByRole('link', { name: 'My Products' })).not.toHaveAttribute('aria-current');
   });
 
-  it('has six sections for an admin: control panel, analytics, verifications, reports, public requirements and payments', () => {
-    signIn('admin');
-    renderAt('/dashboard/admin');
-    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Verifications', 'Discovery', 'Reports', 'Public Requirements', 'Payments', 'Loan KYC', 'Business Credit', 'Password Resets']);
+  it('gives every section its own icon', () => {
+    for (const role of ['buyer', 'supplier', 'admin'] as const) {
+      signIn(role, role === 'admin' ? { profile: { role, is_super_admin: true } } : {});
+      const view = renderAt(`/dashboard/${role}`);
+      for (const link of menu().getAllByRole('link')) expect(link.querySelector('svg'), link.textContent ?? '').not.toBeNull();
+      view.unmount();
+    }
   });
 
-  it('has no More button: nothing in the menu is hidden behind a button', () => {
+  it('groups the supplier sections under headings, in the same order', () => {
+    signIn('supplier');
+    renderAt('/dashboard/supplier');
+    const nav = screen.getByRole('navigation', { name: 'Dashboard sections' });
+    const order = [...nav.children].map((child) => child.textContent);
+    expect(order.indexOf('Catalogue & sales')).toBe(order.indexOf('My Products') - 1);
+    expect(order.indexOf('Money')).toBe(order.indexOf('Wallet') - 1);
+    expect(order.indexOf('Inbox')).toBe(order.indexOf('Factory Visits') - 1);
+    expect(order.indexOf('Trust & growth')).toBe(order.indexOf('Verification') - 1);
+    expect(order.indexOf('Account')).toBe(order.indexOf('Subscription') - 1);
+  });
+
+  it('has the admin sections, and Super Admin only for a super admin', () => {
+    signIn('admin');
+    const admin = renderAt('/dashboard/admin');
+    expect(labelsOf(menu().getAllByRole('link'))).toEqual(['Control Panel', 'AI Match Analytics', 'Verifications', 'Discovery', 'Reports', 'Public Requirements', 'Payments', 'Loan KYC', 'Business Credit', 'Password Resets']);
+    admin.unmount();
+    signIn('admin', { profile: { role: 'admin', is_super_admin: true } });
+    renderAt('/dashboard/admin/super');
+    expect(menu().getByRole('link', { name: 'Super Admin' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('is a sidebar beside the page: no section is in the header, and nothing is hidden behind a More button', () => {
     for (const role of ['buyer', 'supplier', 'admin'] as const) {
       signIn(role);
       const view = renderAt(`/dashboard/${role}`);
+      const nav = screen.getByRole('navigation', { name: 'Dashboard sections' });
+      const side = nav.closest('aside');
+      expect(side).toHaveClass('dsh-side');
+      // the page and its header sit next to the sidebar, not inside it
+      const main = document.querySelector('.dsh-main');
+      expect(main?.parentElement).toBe(side?.parentElement);
+      expect(main?.querySelector('.dsh-content')).toHaveTextContent('the page');
+      const header = within(document.querySelector('.dsh-bar') as HTMLElement);
+      expect(header.queryByRole('navigation')).not.toBeInTheDocument();
+      expect(header.queryByRole('link', { name: 'Overview' })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /More/ })).not.toBeInTheDocument();
       view.unmount();
     }
   });
 
-  it('gives a menu of more than four sections a row of its own', () => {
-    signIn('buyer');
-    const buyer = renderAt('/dashboard/buyer');
-    expect(document.querySelector('.dsh-bar')).toHaveClass('is-stacked');
-    expect(menu().getByRole('link', { name: 'Overview' }).closest('nav')).toHaveClass('is-stacked');
-    buyer.unmount();
-    signIn('supplier');
-    const supplier = renderAt('/dashboard/supplier');
-    expect(document.querySelector('.dsh-bar')).toHaveClass('is-stacked');
-    supplier.unmount();
-    signIn('admin');
-    renderAt('/dashboard/admin');
-    expect(document.querySelector('.dsh-bar')).toHaveClass('is-stacked');
-  });
-
-  it('opens a section from the menu', async () => {
+  it('opens a section from the sidebar', async () => {
     const user = userEvent.setup();
     signIn('buyer');
     renderAt('/dashboard/buyer');
     await user.click(menu().getByRole('link', { name: 'Saved Manufacturers' }));
     expect(where()).toBe('/dashboard/buyer/saved-manufacturers');
+    expect(menu().getByRole('link', { name: 'Saved Manufacturers' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('marks a section that used to be hidden, like Disputes, when it is open', () => {
+  it('marks a section deep in the list, like Disputes, when it is open', () => {
     signIn('buyer');
     renderAt('/dashboard/buyer/disputes');
     expect(menu().getByRole('link', { name: 'Disputes' })).toHaveAttribute('aria-current', 'page');
     expect(menu().getByRole('link', { name: 'Profile' })).not.toHaveAttribute('aria-current');
   });
+
+  it('has the AI trade help, the help desk and the marketplace under the list', () => {
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    const side = within(document.querySelector('.dsh-side') as HTMLElement);
+    expect(side.getByRole('link', { name: 'Help Desk' })).toHaveAttribute('href', '/contact');
+    expect(side.getByRole('link', { name: 'Marketplace' })).toHaveAttribute('href', '/');
+    const opened = vi.fn();
+    window.addEventListener('open-ai-chat', opened);
+    fireEvent.click(side.getByRole('button', { name: 'AI Trade Help' }));
+    window.removeEventListener('open-ai-chat', opened);
+    expect(opened).toHaveBeenCalledTimes(1);
+  });
 });
 
-describe('Dashboard shell: a menu too long for one row (a laptop window)', () => {
-  // jsdom has no layout, so the menu's sizes are given here: 2000 px of pills in an 800 px row by default
-  const size = { scroll: 2000, client: 800 };
-  const left = new WeakMap<Element, number>();
-  const isNav = (el: Element) => el.classList.contains('dsh-nav');
+describe('Dashboard shell: a sidebar longer than the window', () => {
+  // jsdom has no layout, so the sizes are given here: a 400 px window onto a 1000 px list, every section 40 px high
+  const size = { scroll: 1000, client: 400 };
+  const top = new WeakMap<Element, number>();
+  const isList = (el: Element) => el.classList.contains('dsb-list');
   let spies: Array<{ mockRestore: () => void }> = [];
-  const scrollBy = vi.fn();
+  const intoView = vi.fn();
 
   beforeEach(() => {
-    size.scroll = 2000;
-    size.client = 800;
-    scrollBy.mockClear();
+    size.scroll = 1000;
+    size.client = 400;
+    intoView.mockClear();
     spies = [
-      vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (this: Element) {
-        return isNav(this) ? size.scroll : 0;
+      vi.spyOn(Element.prototype, 'scrollHeight', 'get').mockImplementation(function (this: Element) {
+        return isList(this) ? size.scroll : 0;
       }),
-      vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) {
-        return isNav(this) ? size.client : 0;
+      vi.spyOn(Element.prototype, 'clientHeight', 'get').mockImplementation(function (this: Element) {
+        return isList(this) ? size.client : 0;
       }),
-      vi.spyOn(Element.prototype, 'scrollLeft', 'get').mockImplementation(function (this: Element) {
-        return left.get(this) ?? 0;
+      vi.spyOn(Element.prototype, 'scrollTop', 'get').mockImplementation(function (this: Element) {
+        return top.get(this) ?? 0;
       }),
-      vi.spyOn(Element.prototype, 'scrollLeft', 'set').mockImplementation(function (this: Element, value: number) {
-        left.set(this, Math.max(0, Math.min(value, size.scroll - size.client)));
+      vi.spyOn(Element.prototype, 'scrollTop', 'set').mockImplementation(function (this: Element, value: number) {
+        top.set(this, value);
       }),
-      // every pill is 100 px wide, one after the other
-      vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (this: HTMLElement) {
-        const pills = this.parentElement ? [...this.parentElement.querySelectorAll('.dsh-tab')] : [];
-        return Math.max(0, pills.indexOf(this)) * 100;
+      vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function (this: HTMLElement) {
+        const list = this.closest('.dsb-list');
+        const links = list ? [...list.querySelectorAll('.dsb-link')] : [];
+        return Math.max(0, links.indexOf(this)) * 40;
       }),
-      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
-        return this.classList.contains('dsh-tab') ? 100 : 0;
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.classList.contains('dsb-link') ? 40 : 0;
       }),
     ];
-    (Element.prototype as unknown as { scrollBy: unknown }).scrollBy = scrollBy;
+    (Element.prototype as unknown as { scrollIntoView: unknown }).scrollIntoView = intoView;
   });
   afterEach(() => {
     for (const spy of spies) spy.mockRestore();
-    delete (Element.prototype as unknown as { scrollBy?: unknown }).scrollBy;
+    delete (Element.prototype as unknown as { scrollIntoView?: unknown }).scrollIntoView;
   });
 
-  const nav = () => screen.getByRole('navigation', { name: 'Dashboard sections' });
+  const list = () => screen.getByRole('navigation', { name: 'Dashboard sections' });
 
-  it('starts with the open section in the middle of the row, with arrows to both sides', () => {
+  it('scrolls on its own to bring the open section into the middle when it is out of sight', () => {
     signIn('supplier');
-    renderAt('/dashboard/supplier/wallet');
-    // Wallet is the 9th pill: 800 − (800 − 100) / 2
-    expect(nav().scrollLeft).toBe(450);
-    expect(screen.getByRole('button', { name: 'Show earlier sections' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Show more sections' })).toBeInTheDocument();
-    expect(nav()).toHaveClass('has-left', 'has-right');
+    renderAt('/dashboard/supplier/profile');
+    // Business Profile is the 21st section: 800 − (400 − 40) / 2
+    expect(list().scrollTop).toBe(620);
+    expect(intoView).not.toHaveBeenCalled();
   });
 
-  it('slides along the row from its arrows', async () => {
-    const user = userEvent.setup();
+  it('stays where it is when the open section is already in sight', () => {
     signIn('supplier');
-    renderAt('/dashboard/supplier/wallet');
-    await user.click(screen.getByRole('button', { name: 'Show more sections' }));
-    expect(scrollBy).toHaveBeenLastCalledWith({ left: 480, behavior: 'smooth' });
-    await user.click(screen.getByRole('button', { name: 'Show earlier sections' }));
-    expect(scrollBy).toHaveBeenLastCalledWith({ left: -480, behavior: 'smooth' });
+    renderAt('/dashboard/supplier/products');
+    expect(list().scrollTop).toBe(0);
   });
 
-  it('shows only the right arrow at the start of the row, and updates as the row moves', () => {
-    signIn('buyer');
-    renderAt('/dashboard/buyer');
-    expect(screen.queryByRole('button', { name: 'Show earlier sections' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Show more sections' })).toBeInTheDocument();
-    act(() => {
-      nav().scrollLeft = 1200;
-      fireEvent.scroll(nav());
-    });
-    expect(screen.getByRole('button', { name: 'Show earlier sections' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Show more sections' })).not.toBeInTheDocument();
-  });
-
-  it('moves the row sideways with an ordinary mouse wheel', () => {
-    signIn('buyer');
-    renderAt('/dashboard/buyer');
-    const notHandled = fireEvent.wheel(nav(), { deltaY: 120 });
-    expect(notHandled).toBe(false);
-    expect(nav().scrollLeft).toBe(120);
-  });
-
-  it('has no arrows, and leaves the wheel alone, when every section fits', () => {
-    size.scroll = 800;
-    signIn('buyer');
-    renderAt('/dashboard/buyer');
-    expect(screen.queryByRole('button', { name: /sections$/ })).not.toBeInTheDocument();
-    expect(fireEvent.wheel(nav(), { deltaY: 120 })).toBe(true);
-    expect(nav().scrollLeft).toBe(0);
+  it('asks the drawer to show the open section when the list itself does not scroll', () => {
+    size.scroll = 400;
+    signIn('supplier');
+    renderAt('/dashboard/supplier/profile');
+    expect(intoView).toHaveBeenCalledWith({ block: 'nearest' });
   });
 });
 
-describe('Dashboard shell: the round buttons', () => {
+describe('Dashboard shell: the header', () => {
+  it('holds only the search, add, theme, notifications and the account', () => {
+    signIn('supplier');
+    renderAt('/dashboard/supplier');
+    const header = within(document.querySelector('.dsh-bar') as HTMLElement);
+    expect(header.getByRole('searchbox', { name: 'Search the marketplace for products' })).toBeInTheDocument();
+    expect(header.getByRole('link', { name: 'Add a product' })).toBeInTheDocument();
+    expect(header.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
+    expect(header.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
+    expect(header.getByRole('button', { name: 'Priya Nair account menu' })).toBeInTheDocument();
+    expect(header.queryByRole('button', { name: /AI trade help/i })).not.toBeInTheDocument();
+  });
+
   it('has a plus that posts a requirement for a buyer and adds a product for a supplier, and none for an admin', () => {
     signIn('buyer');
     const buyer = renderAt('/dashboard/buyer');
@@ -346,14 +365,18 @@ describe('Dashboard shell: the round buttons', () => {
     expect(screen.queryByRole('link', { name: /Post a requirement|Add a product/ })).not.toBeInTheDocument();
   });
 
-  it('opens the AI trade help chat', () => {
+  it('switches between the light and the dark look of the site', async () => {
+    const user = userEvent.setup();
     signIn('buyer');
+    const dark = renderAt('/dashboard/buyer');
+    // the site is dark, so the button offers the other one
+    await user.click(screen.getByRole('button', { name: 'Switch to light mode' }));
+    expect(themeState.toggleTheme).toHaveBeenCalledTimes(1);
+    dark.unmount();
+    themeState.theme = 'light';
     renderAt('/dashboard/buyer');
-    const opened = vi.fn();
-    window.addEventListener('open-ai-chat', opened);
-    fireEvent.click(screen.getByRole('button', { name: 'Ask AI trade help' }));
-    window.removeEventListener('open-ai-chat', opened);
-    expect(opened).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Switch to light mode' })).not.toBeInTheDocument();
   });
 
   it('has the bell', () => {
@@ -362,17 +385,30 @@ describe('Dashboard shell: the round buttons', () => {
     expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
   });
 
-  it('opens the search from its button, takes focus, and searches the marketplace', async () => {
+  const searchForm = () => document.getElementById('dsh-search');
+
+  it('searches the marketplace from the search box', async () => {
     const user = userEvent.setup();
     signIn('buyer');
     renderAt('/dashboard/buyer');
-    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Search the marketplace' }));
+    await user.type(screen.getByRole('searchbox', { name: 'Search the marketplace for products' }), 'HDPE pipe{Enter}');
+    expect(where()).toBe('/products?q=HDPE%20pipe');
+  });
+
+  it('on a phone opens the search from its button, takes focus, and closes it after searching', async () => {
+    const user = userEvent.setup();
+    signIn('buyer');
+    renderAt('/dashboard/buyer');
+    const button = screen.getByRole('button', { name: 'Search the marketplace' });
+    expect(searchForm()).not.toHaveClass('is-open');
+    await user.click(button);
+    expect(searchForm()).toHaveClass('is-open');
+    expect(button).toHaveAttribute('aria-expanded', 'true');
     const box = screen.getByRole('searchbox', { name: 'Search the marketplace for products' });
     expect(box).toHaveFocus();
     await user.type(box, 'HDPE pipe{Enter}');
     expect(where()).toBe('/products?q=HDPE%20pipe');
-    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(searchForm()).not.toHaveClass('is-open');
   });
 
   it('does nothing when the search box is empty', async () => {
@@ -382,7 +418,7 @@ describe('Dashboard shell: the round buttons', () => {
     await user.click(screen.getByRole('button', { name: 'Search the marketplace' }));
     await user.type(screen.getByRole('searchbox'), '   {Enter}');
     expect(where()).toBe('/dashboard/buyer');
-    expect(screen.getByRole('searchbox')).toBeInTheDocument();
+    expect(searchForm()).toHaveClass('is-open');
   });
 
   it('closes the search on Escape', async () => {
@@ -391,17 +427,20 @@ describe('Dashboard shell: the round buttons', () => {
     renderAt('/dashboard/buyer');
     await user.click(screen.getByRole('button', { name: 'Search the marketplace' }));
     await user.keyboard('{Escape}');
-    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(searchForm()).not.toHaveClass('is-open');
+    expect(screen.getByRole('button', { name: 'Search the marketplace' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('searchbox')).not.toHaveFocus();
   });
 
-  it('opens the search on "/", unless the person is already typing somewhere', () => {
+  it('goes to the search on "/", unless the person is already typing somewhere', () => {
     signIn('buyer');
     renderAt('/dashboard/buyer');
     const other = document.createElement('input');
     document.body.appendChild(other);
     other.focus();
     fireEvent.keyDown(other, { key: '/' });
-    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(searchForm()).not.toHaveClass('is-open');
+    expect(other).toHaveFocus();
     other.remove();
     fireEvent.keyDown(window, { key: '/' });
     expect(screen.getByRole('searchbox', { name: 'Search the marketplace for products' })).toHaveFocus();
@@ -444,22 +483,6 @@ describe('Dashboard shell: the account menu', () => {
     expect(screen.queryByRole('button', { name: 'Copy public link' })).not.toBeInTheDocument();
   });
 
-  it('switches between the light and the dark look of the site from the menu', async () => {
-    const user = userEvent.setup();
-    signIn('buyer');
-    const dark = renderAt('/dashboard/buyer');
-    await user.click(screen.getByRole('button', { name: 'Suresh Kumar account menu' }));
-    // the site is dark, so the menu offers the other one
-    await user.click(screen.getByRole('menuitem', { name: 'Light mode' }));
-    expect(themeState.toggleTheme).toHaveBeenCalledTimes(1);
-    dark.unmount();
-    themeState.theme = 'light';
-    renderAt('/dashboard/buyer');
-    await user.click(screen.getByRole('button', { name: 'Suresh Kumar account menu' }));
-    expect(screen.getByRole('menuitem', { name: 'Dark mode' })).toBeInTheDocument();
-    expect(screen.queryByRole('menuitem', { name: 'Light mode' })).not.toBeInTheDocument();
-  });
-
   it('signs out and goes to the home page', async () => {
     const user = userEvent.setup();
     signIn('buyer');
@@ -491,8 +514,8 @@ describe('Dashboard shell: the account menu', () => {
   });
 });
 
-describe('Dashboard shell: the menu on a phone', () => {
-  it('opens every section as a list, with the calculators, help desk and sign out', async () => {
+describe('Dashboard shell: the sidebar on a phone (behind the hamburger)', () => {
+  it('opens every section as a list, with the calculators, AI help, help desk and sign out', async () => {
     const user = userEvent.setup();
     signIn('buyer');
     renderAt('/dashboard/buyer');
@@ -518,7 +541,9 @@ describe('Dashboard shell: the menu on a phone', () => {
     expect(list.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
     expect(sheet.getByText('Buyer hub')).toBeInTheDocument();
     expect(sheet.getByRole('link', { name: 'Help Desk' })).toHaveAttribute('href', '/contact');
-    expect(sheet.getByRole('link', { name: 'Market' })).toHaveAttribute('href', '/');
+    expect(sheet.getByRole('link', { name: 'Marketplace' })).toHaveAttribute('href', '/');
+    expect(sheet.getByRole('button', { name: 'AI Trade Help' })).toBeInTheDocument();
+    expect(sheet.getByRole('button', { name: 'Copy public link' })).toBeInTheDocument();
     expect(sheet.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
   });
 
@@ -594,7 +619,7 @@ describe('Dashboard shell: a manufacturer whose account is still loading', () =>
     expect(screen.getByText('Unpaid Manufacturer Account')).toBeInTheDocument();
   });
 
-  it('can leave out the notice under the bar for a page that explains the unpaid state itself, and keeps the rest', () => {
+  it('can leave out the notice under the header for a page that explains the unpaid state itself, and keeps the rest', () => {
     signIn('supplier', { isPaidSubscriber: false });
     renderAt('/dashboard/supplier', { hideUnpaidNotice: true });
     expect(screen.queryByText('Unpaid Manufacturer Account')).not.toBeInTheDocument();
@@ -616,7 +641,7 @@ describe('Dashboard shell: the manufacturer addresses', () => {
     expect(menu().getByRole('link', { name: 'Quotations' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('mark a section that used to sit out of sight, like Inventory & Stock, straight in the bar', () => {
+  it('mark a section deep in the list, like Inventory & Stock, in the sidebar', () => {
     signIn('supplier');
     renderAt('/dashboard/manufacturer/inventory');
     expect(menu().getByRole('link', { name: 'Inventory & Stock' })).toHaveAttribute('aria-current', 'page');
@@ -736,16 +761,16 @@ describe('Dashboard shell: how far down the page starts', () => {
   const root = () => document.querySelector('.dsh') as HTMLElement;
   const downBy = () => root().style.getPropertyValue('--dsh-top');
 
-  it('tells the page how far down it starts, and again when the bar changes height', () => {
+  it('tells the page how far down it starts, and again when the header changes height', () => {
     signIn('buyer');
     renderAt('/dashboard/buyer');
     expect(downBy()).toBe('137px');
-    top = 173; // the window got narrower and the menu wrapped onto a second row
+    top = 173; // the header got taller
     act(() => watchers.forEach((watcher) => watcher.callback()));
     expect(downBy()).toBe('173px');
   });
 
-  it('watches the bar and a notice under it, and stops when the page is closed', () => {
+  it('watches the header and a notice under it, and stops when the page is closed', () => {
     signIn('supplier', { isPaidSubscriber: false });
     const view = renderAt('/dashboard/supplier/products');
     const watched = watchers.flatMap((watcher) => watcher.watched);
@@ -756,7 +781,7 @@ describe('Dashboard shell: how far down the page starts', () => {
     for (const watcher of watchers) expect(watcher.disconnect).toHaveBeenCalled();
   });
 
-  it('measures again when a notice appears under the bar', () => {
+  it('measures again when a notice appears under the header', () => {
     signIn('supplier', { loading: true, isPaidSubscriber: false });
     const view = renderAt('/dashboard/supplier/products');
     expect(document.querySelector('.dsh-notice')).toBeNull();

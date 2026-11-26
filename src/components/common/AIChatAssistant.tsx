@@ -192,7 +192,8 @@ export default function AIChatAssistant() {
       {/* Floating launcher button: positioned safely with clean clearance above content CTA rows */}
       <button
         onClick={() => setOpen(p => !p)}
-        className={`fixed bottom-24 sm:bottom-28 right-2 sm:right-3 z-30 flex items-center justify-center rounded-full shadow-xl transition-all duration-200 border border-white/20 select-none ${
+        data-open={open}
+        className={`ai-launcher fixed bottom-24 sm:bottom-28 right-2 sm:right-3 z-30 flex items-center justify-center rounded-full shadow-xl transition-all duration-200 border border-white/20 select-none ${
           open
             ? 'w-10 h-10 md:w-auto md:px-3 md:py-2 bg-muted text-foreground border-border'
             : 'w-11 h-11 md:w-auto md:px-3 md:py-2 bg-[#FF5A00] text-white hover:bg-[#e04e00] hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(255,90,0,0.4)]'
