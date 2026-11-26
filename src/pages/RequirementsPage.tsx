@@ -27,7 +27,6 @@ import SubscribeToContactDialog from '@/components/common/SubscribeToContactDial
 import { toast } from 'sonner';
 import PostRequirementDialog from '@/components/common/PostRequirementDialog';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
-import RequirementDetailDrawer from '@/components/common/RequirementDetailDrawer';
 import { getRequirementVisualInfo, placeLabel, quantityLabel } from '@/lib/requirementVisuals';
 import RequirementThumb, { categoryIcon } from '@/components/common/RequirementThumb';
 import PublicListingsSection from '@/components/common/PublicListingsSection';
@@ -204,8 +203,6 @@ export default function RequirementsPage() {
   const [dialogReason, setDialogReason] = useState<GateReason>('no_subscription');
   const [postDialogOpen, setPostDialogOpen] = useState(false);
   const [respondDialogReq, setRespondDialogReq] = useState<Requirement | null>(null);
-  const [detailDrawerReq, setDetailDrawerReq] = useState<Requirement | null>(null);
-  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
 
   // Tab state
   const [activeTab, setActiveTab] = useState<'feed' | 'mine'>('feed');
@@ -938,17 +935,6 @@ export default function RequirementsPage() {
       </div>
 
       {/* ── Dialogs & Drawers ─────────────────────────────────────────────── */}
-      {detailDrawerReq && (
-        <RequirementDetailDrawer
-          requirement={detailDrawerReq}
-          open={detailDrawerOpen}
-          onClose={() => setDetailDrawerOpen(false)}
-          onRequirementUpdated={updated => {
-            setDetailDrawerReq(updated);
-            setRequirements(prev => prev.map(r => r.id === updated.id ? updated : r));
-          }}
-        />
-      )}
 
       {respondDialogReq && user && company && (
         <SupplierRespondDialog

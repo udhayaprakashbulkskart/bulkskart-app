@@ -21,7 +21,6 @@ import { checkDirectMessageQuota, checkSupplierPaidSubscription } from '@/lib/ap
 import type { Requirement } from '@/types/types';
 import { useAuth } from '@/contexts/AuthContext';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
-import RequirementDetailDrawer from '@/components/common/RequirementDetailDrawer';
 import SafeImage from '@/components/common/SafeImage';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import PremiumSupplierBadge from '@/components/common/PremiumSupplierBadge';
@@ -178,7 +177,6 @@ export default function LiveRequirementsFeed() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogReason, setDialogReason] = useState<SubscriptionReason>('not_logged_in');
-  const [detailReq, setDetailReq] = useState<Requirement | null>(null);
   const [respondReq, setRespondReq] = useState<Requirement | null>(null);
 
   const sectionRef = useRef<HTMLElement>(null);
@@ -628,9 +626,10 @@ export default function LiveRequirementsFeed() {
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     className={`relative flex gap-2.5 rounded-2xl border bg-gradient-to-b from-[#161616] to-[#0d0d0d] p-2 md:gap-4 md:p-3 ${freshIds.has(req.id) ? 'border-[#FF5A00] shadow-[0_0_24px_-6px_rgba(255,90,0,0.75)]' : 'border-white/15'}`}
                   >
-                    <button type="button" onClick={() => setDetailReq(req)} className="h-[70px] w-[82px] shrink-0 overflow-hidden rounded-xl bg-[#e9e9eb] md:h-[118px] md:w-[140px]" aria-label={`View ${visual.cleanTitle}`}>
-                      <SafeImage src={picture} alt={visual.cleanTitle} category={req.categories?.name || req.category_id} fallbackType="rfq" className="h-full w-full object-cover" sizes="140px" />
-                    </button>
+                    {/* the RFQ opens on its own full page (Overview, Quotations, Chat) */}
+                    <Link to={`/requirements/${req.id}`} tabIndex={-1} aria-hidden="true" className="h-[70px] w-[82px] shrink-0 overflow-hidden rounded-xl bg-[#e9e9eb] md:h-[118px] md:w-[140px]">
+                      <SafeImage src={picture} alt="" category={req.categories?.name || req.category_id} fallbackType="rfq" className="h-full w-full object-cover" sizes="140px" />
+                    </Link>
 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1 md:gap-1.5">
@@ -645,9 +644,9 @@ export default function LiveRequirementsFeed() {
                           </span>
                         )}
                       </div>
-                      <button type="button" onClick={() => setDetailReq(req)} className="-my-1.5 block w-full py-1.5 text-left">
+                      <Link to={`/requirements/${req.id}`} className="-my-1.5 block w-full py-1.5 text-left">
                         <h3 className="line-clamp-2 text-[11.5px] font-bold leading-tight text-white hover:text-[#FF7A2E] md:text-[16px]">{visual.cleanTitle}</h3>
-                      </button>
+                      </Link>
                       <dl className="mt-1 space-y-[1px] text-[9.5px] leading-snug text-white/85 md:mt-2 md:space-y-1 md:text-[13px]">
                         <div className="flex gap-1.5">
                           <dt className="flex shrink-0 items-center gap-1 text-white/70"><Users className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />Quantity:</dt>
@@ -717,17 +716,6 @@ export default function LiveRequirementsFeed() {
         </Link>
       </div>
 
-      {detailReq && (
-        <RequirementDetailDrawer
-          requirement={detailReq}
-          open={!!detailReq}
-          onClose={() => setDetailReq(null)}
-          onRequirementUpdated={(updated) => {
-            setDetailReq(updated);
-            setItems((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
-          }}
-        />
-      )}
 
       {respondReq && user && company && (
         <SupplierRespondDialog
