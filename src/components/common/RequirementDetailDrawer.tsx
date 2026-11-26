@@ -316,7 +316,35 @@ function timeLeft(req: Requirement): string | null {
 const dateLabel = (iso?: string | null) =>
   iso ? new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
 
-export default function RequirementDetailDrawer({ open, onClose, requirement, onRequirementUpdated }: Props) {
+export interface RequirementDetailViewProps {
+  requirement: Requirement;
+  onRequirementUpdated: (req: Requirement) => void;
+  /** 'drawer': inside the side panel; 'page': the RFQ's own full page (/requirements/:id) */
+  layout?: 'drawer' | 'page';
+  /** the side panel is open (each opening starts on Overview); always true on the page */
+  active?: boolean;
+  /** page only: under the title (e.g. the loan tag) */
+  headerExtra?: React.ReactNode;
+  /** page only: inside the buyer card (e.g. the protected contact) */
+  buyerExtra?: React.ReactNode;
+  /** page only: under the right-hand column of Overview (e.g. similar requirements) */
+  aside?: React.ReactNode;
+  /** page only: under the left-hand column of Overview (e.g. the supplier's matching products) */
+  below?: React.ReactNode;
+}
+
+/** Overview, quotations and chat for one RFQ: the side panel's content, also the full RFQ page. */
+export function RequirementDetailView({
+  requirement,
+  onRequirementUpdated,
+  layout = 'drawer',
+  active = true,
+  headerExtra,
+  buyerExtra,
+  aside,
+  below,
+}: RequirementDetailViewProps) {
+  const page = layout === 'page';
   const { user, profile, company, isPaidSubscriber } = useAuth();
   const [quotes, setQuotes] = useState<Quotation[]>([]);
   const [loadingQuotes, setLoadingQuotes] = useState(false);
@@ -335,17 +363,17 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
   const canSeeContact = canViewContacts({ isPaidSubscriber, viewerId: user?.id, ownerId: requirement?.buyer_id });
   const upgradeHref = contactUpgradeHref(profile?.role);
 
+  const requirementId = requirement.id;
   const loadQuotes = useCallback(async () => {
-    if (!requirement) return;
     setLoadingQuotes(true);
-    const data = await getQuotationsForRequirement(requirement.id);
+    const data = await getQuotationsForRequirement(requirementId);
     setQuotes(data);
     setLoadingQuotes(false);
-  }, [requirement]);
+  }, [requirementId]);
 
   useEffect(() => {
-    if (open && requirement) { loadQuotes(); setActiveConvId(null); setActiveTab('overview'); }
-  }, [open, requirement, loadQuotes]);
+    if (active) { loadQuotes(); setActiveConvId(null); setActiveTab('overview'); }
+  }, [active, loadQuotes]);
 
   const handleAdvanceDealStatus = async (nextStatus: string) => {
     if (!requirement) return;
@@ -417,7 +445,6 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
     if (await supplierGate()) setRespondDialogOpen(true);
   };
 
-  if (!requirement) return null;
 
   // @ts-expect-error
   const dealStatus: string = requirement.deal_status ?? 'active';
@@ -467,12 +494,9 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
     </div>
   );
 
-  return (
-    <Sheet open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <SheetContent side="right" className="flex h-[100dvh] w-full max-w-[100vw] flex-col gap-0 overflow-hidden border-l border-border bg-background p-0 sm:max-w-xl md:w-[640px]">
-        {/* Header */}
-        <SheetHeader className="shrink-0 space-y-1.5 border-b border-border bg-card px-4 pb-3 pt-4 text-left">
-          <div className="flex flex-wrap items-center gap-1.5 pr-8">
+  const header = page ? (
+    <header className="space-y-2">
+      <div className="flex flex-wrap items-center gap-1.5 pr-8">
             {requirement.categories && (
               <span className="rounded-full bg-[#FF5A00]/15 px-2 py-0.5 text-[10.5px] font-semibold text-[#FF5A00]">{requirement.categories.name}</span>
             )}
@@ -486,34 +510,90 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
               <span className="flex items-center gap-0.5 text-[10.5px] font-semibold text-[#FF5A00]"><BadgeCheck className="h-3.5 w-3.5" /> Verified buyer</span>
             )}
           </div>
-          <SheetTitle className="pr-8 text-[17px] font-black leading-snug text-foreground md:text-[19px]">{requirement.title}</SheetTitle>
-          <SheetDescription className="sr-only">Buying requirement details, quotations and chat</SheetDescription>
-        </SheetHeader>
+      <h1 className="text-[22px] font-black leading-tight tracking-tight text-foreground sm:text-[28px] lg:text-[32px]">{requirement.title}</h1>
+      {headerExtra}
+    </header>
+  ) : (
+    <SheetHeader className="shrink-0 space-y-1.5 border-b border-border bg-card px-4 pb-3 pt-4 text-left">
+      <div className="flex flex-wrap items-center gap-1.5 pr-8">
+            {requirement.categories && (
+              <span className="rounded-full bg-[#FF5A00]/15 px-2 py-0.5 text-[10.5px] font-semibold text-[#FF5A00]">{requirement.categories.name}</span>
+            )}
+            {requirement.req_number && <span className="text-[10.5px] text-muted-foreground">{requirement.req_number}</span>}
+            {isUrgent && (
+              <span className="flex items-center gap-0.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10.5px] font-bold text-red-500">
+                <Zap className="h-3 w-3" /> Urgent
+              </span>
+            )}
+            {requirement.is_verified_buyer && (
+              <span className="flex items-center gap-0.5 text-[10.5px] font-semibold text-[#FF5A00]"><BadgeCheck className="h-3.5 w-3.5" /> Verified buyer</span>
+            )}
+          </div>
+      <SheetTitle className="pr-8 text-[17px] font-black leading-snug text-foreground md:text-[19px]">{requirement.title}</SheetTitle>
+      <SheetDescription className="sr-only">Buying requirement details, quotations and chat</SheetDescription>
+    </SheetHeader>
+  );
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
-          <TabsList className="mx-4 mt-3 grid h-10 shrink-0 grid-cols-3 rounded-xl border border-border bg-card p-1">
-            {[
-              { id: 'overview', label: 'Overview' },
-              { id: 'quotes', label: isOwner ? 'Quotations' : 'My Quote', count: myQuotes.length },
-              { id: 'chat', label: 'Chat' },
-            ].map(t => (
-              <TabsTrigger key={t.id} value={t.id} className="h-8 rounded-lg text-[12.5px] font-semibold data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white">
-                {t.label}
-                {t.count ? <span className="ml-1 rounded-full bg-black/15 px-1.5 text-[10px]">{t.count}</span> : null}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+  const actions = (
+    <>
+      {!premium && (
+              <p className="mb-2 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                <Crown className="h-3.5 w-3.5 shrink-0 fill-[#FFC928] text-[#C98A00]" aria-hidden="true" />
+                Only Premium Suppliers (active paid plan) can chat and send quotations.
+              </p>
+            )}
+            <div className="grid grid-cols-[1fr_1.35fr] gap-2">
+              <Button variant="outline" onClick={startChatWithBuyer} disabled={chatStarting} className="h-11 gap-1.5 rounded-xl border-[#FF5A00]/50 font-bold text-[#E04E00] hover:bg-[#FF5A00]/10 dark:text-[#FF7A2E]">
+                {chatStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : premium ? <MessageSquare className="h-4 w-4" /> : <Lock className="h-4 w-4" />} Chat
+              </Button>
+              <Button onClick={sendQuotation} className="h-11 gap-1.5 rounded-xl bg-[#FF5A00] font-bold text-white shadow-md hover:bg-[#e04e00]">
+                {premium ? <Send className="h-4 w-4" /> : <Lock className="h-4 w-4" />} Send Quotation
+              </Button>
+            </div>
+    </>
+  );
 
-          {/* Overview: the whole requirement, scrolling inside the full-height panel */}
-          <TabsContent value="overview" className="mt-0 min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-6 pt-3 data-[state=inactive]:hidden">
-            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border bg-muted/40">
+  // on a phone the page is one column (picture, facts, actions, deal, buyer, then the text); on a computer the text is
+  // on the left and the facts, actions and buyer stay in view on the right
+  const pageOverview = (
+    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-start lg:gap-5">
+      <div className="contents lg:flex lg:flex-col lg:gap-4">
+        <div className="order-1"><div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border bg-muted/40">
               <SafeImage src={picture} alt={requirement.title} type="rfq" className="h-full w-full object-cover" />
               <span className="absolute bottom-2 left-2 rounded-md border border-border/50 bg-background/85 px-2 py-0.5 text-[10px] font-medium text-foreground backdrop-blur-sm">
                 Reference picture
               </span>
-            </div>
-
-            <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            </div></div>
+        <div className="order-6 space-y-3 empty:hidden">
+          {description && (
+              <section className="rounded-2xl border border-border bg-card p-3.5">
+                <h3 className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Description</h3>
+                <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-foreground">{shown(description)}</p>
+              </section>
+            )}
+          {specs && (
+              <section className="rounded-2xl border border-border bg-card p-3.5">
+                <h3 className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Specifications</h3>
+                <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-foreground">{shown(specs)}</p>
+              </section>
+            )}
+          {contactsHidden && (
+              <p className="flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
+                <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Phone numbers and emails in the text are hidden for members without a paid plan.
+              </p>
+            )}
+          {/* Only files stored by BulkSkart open from here; links to other websites are not shown */}
+            {requirement.attachment_url && isOwnUrl(requirement.attachment_url) && (
+              <a href={requirement.attachment_url} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-1 text-[12px] font-semibold text-[#FF5A00] hover:underline">
+                <Upload className="h-3.5 w-3.5" /> View attachment
+              </a>
+            )}
+        </div>
+        {below && <div className="order-7">{below}</div>}
+      </div>
+      <div className="contents lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-4">
+        <div className="order-2"><dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {facts.map(({ icon: Icon, label, value, note }) => (
                 <div key={label} className="rounded-xl border border-border bg-card p-3">
                   <dt className="flex items-center gap-1 text-[10.5px] font-medium text-muted-foreground">
@@ -523,11 +603,21 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                   {note && <dd className="text-[10.5px] text-muted-foreground">{note}</dd>}
                 </div>
               ))}
-            </dl>
-
-            <DealStatusBar status={dealStatus} isBuyer={isOwner} onAdvance={handleAdvanceDealStatus} />
-
-            <section className="rounded-2xl border border-border bg-card p-3.5">
+            </dl></div>
+        {isOwner ? (
+          <div className="order-3 flex flex-wrap gap-2 rounded-2xl border border-border bg-card p-3.5">
+            <Button onClick={() => setActiveTab('quotes')} className="h-11 flex-1 gap-1.5 rounded-xl bg-[#FF5A00] font-bold text-white hover:bg-[#e04e00]">
+              <MessageSquare className="h-4 w-4" /> See quotations{myQuotes.length ? ` (${myQuotes.length})` : ''}
+            </Button>
+            <Button asChild variant="outline" className="h-11 flex-1 rounded-xl font-bold">
+              <Link to="/dashboard/buyer/requirements">My requirements</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="order-3 rounded-2xl border border-border bg-card p-3.5">{actions}</div>
+        )}
+        <div className="order-4"><DealStatusBar status={dealStatus} isBuyer={isOwner} onAdvance={handleAdvanceDealStatus} /></div>
+        <div className="order-5"><section className="rounded-2xl border border-border bg-card p-3.5">
               <div className="flex items-center gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FF5A00]/15 text-[16px] font-black text-[#FF5A00]">
                   {buyerName.charAt(0).toUpperCase()}
@@ -546,37 +636,118 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                   The buyer's phone and email are shown only to Premium Suppliers.
                 </p>
               )}
-            </section>
+              {buyerExtra}
+            </section></div>
+        {aside && <div className="order-8 space-y-4">{aside}</div>}
+      </div>
+    </div>
+  );
 
-            {description && (
+  const body = (
+    <>
+      {header}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className={page ? 'mt-4' : 'flex min-h-0 flex-1 flex-col'}>
+        <TabsList
+          className={
+            page
+              ? 'grid h-11 w-full max-w-md grid-cols-3 rounded-xl border border-border bg-card p-1'
+              : 'mx-4 mt-3 grid h-10 shrink-0 grid-cols-3 rounded-xl border border-border bg-card p-1'
+          }
+        >
+          {[
+              { id: 'overview', label: 'Overview' },
+              { id: 'quotes', label: isOwner ? 'Quotations' : 'My Quote', count: myQuotes.length },
+              { id: 'chat', label: 'Chat' },
+            ].map(t => (
+              <TabsTrigger key={t.id} value={t.id} className="h-8 rounded-lg text-[12.5px] font-semibold data-[state=active]:bg-[#FF5A00] data-[state=active]:text-white">
+                {t.label}
+                {t.count ? <span className="ml-1 rounded-full bg-black/15 px-1.5 text-[10px]">{t.count}</span> : null}
+              </TabsTrigger>
+            ))}
+        </TabsList>
+
+        {/* Overview: the whole requirement */}
+        <TabsContent
+          value="overview"
+          className={`${page ? 'mt-4' : 'mt-0 min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-6 pt-3'} data-[state=inactive]:hidden`}
+        >
+          {page ? (
+            pageOverview
+          ) : (
+            <>
+              <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border bg-muted/40">
+              <SafeImage src={picture} alt={requirement.title} type="rfq" className="h-full w-full object-cover" />
+              <span className="absolute bottom-2 left-2 rounded-md border border-border/50 bg-background/85 px-2 py-0.5 text-[10px] font-medium text-foreground backdrop-blur-sm">
+                Reference picture
+              </span>
+            </div>
+              <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {facts.map(({ icon: Icon, label, value, note }) => (
+                <div key={label} className="rounded-xl border border-border bg-card p-3">
+                  <dt className="flex items-center gap-1 text-[10.5px] font-medium text-muted-foreground">
+                    <Icon className="h-3.5 w-3.5 text-[#FF5A00]" aria-hidden="true" /> {label}
+                  </dt>
+                  <dd className="mt-1 break-words text-[14px] font-bold leading-snug text-foreground">{value}</dd>
+                  {note && <dd className="text-[10.5px] text-muted-foreground">{note}</dd>}
+                </div>
+              ))}
+            </dl>
+              <DealStatusBar status={dealStatus} isBuyer={isOwner} onAdvance={handleAdvanceDealStatus} />
+              <section className="rounded-2xl border border-border bg-card p-3.5">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FF5A00]/15 text-[16px] font-black text-[#FF5A00]">
+                  {buyerName.charAt(0).toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-bold text-foreground">{buyerName}</p>
+                  <p className="truncate text-[11.5px] text-muted-foreground">
+                    {requirement.is_verified_buyer ? 'Verified buyer' : 'Buyer'}{place ? ` · ${place}` : ''}
+                  </p>
+                </div>
+                {requirement.is_verified_buyer && <BadgeCheck className="h-5 w-5 shrink-0 text-[#FF5A00]" aria-hidden="true" />}
+              </div>
+              {!canSeeContact && (
+                <p className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-2 text-[11.5px] text-muted-foreground">
+                  <Lock className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" aria-hidden="true" />
+                  The buyer's phone and email are shown only to Premium Suppliers.
+                </p>
+              )}
+              {buyerExtra}
+            </section>
+              {description && (
               <section className="rounded-2xl border border-border bg-card p-3.5">
                 <h3 className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Description</h3>
                 <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-foreground">{shown(description)}</p>
               </section>
             )}
-            {specs && (
+              {specs && (
               <section className="rounded-2xl border border-border bg-card p-3.5">
                 <h3 className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Specifications</h3>
                 <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-foreground">{shown(specs)}</p>
               </section>
             )}
-            {contactsHidden && (
+              {contactsHidden && (
               <p className="flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
                 <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Phone numbers and emails in the text are hidden for members without a paid plan.
               </p>
             )}
-            {/* Only files stored by BulkSkart open from here; links to other websites are not shown */}
+              {/* Only files stored by BulkSkart open from here; links to other websites are not shown */}
             {requirement.attachment_url && isOwnUrl(requirement.attachment_url) && (
               <a href={requirement.attachment_url} target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1.5 px-1 text-[12px] font-semibold text-[#FF5A00] hover:underline">
                 <Upload className="h-3.5 w-3.5" /> View attachment
               </a>
             )}
-          </TabsContent>
+            </>
+          )}
+        </TabsContent>
 
-          {/* Quotations: the buyer's received quotations, or the supplier's own */}
-          <TabsContent value="quotes" className="mt-0 min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-6 pt-3 data-[state=inactive]:hidden">
-            {isOwner && (
+        {/* Quotations: the buyer's received quotations, or the supplier's own */}
+        <TabsContent
+          value="quotes"
+          className={`${page ? 'mx-auto mt-4 max-w-3xl space-y-3' : 'mt-0 min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 pb-6 pt-3'} data-[state=inactive]:hidden`}
+        >
+          {isOwner && (
               <BuyerQuotationsPanel requirementId={requirement.id} requirementTitle={requirement.title} buyerId={user?.id ?? ''} />
             )}
             {isOwner && quotes.length > 0 && (
@@ -608,11 +779,14 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
             ) : (
               lockedPanel('Quotations are for Premium Suppliers', 'Only registered companies with an active paid plan can send quotations to buyers.')
             )}
-          </TabsContent>
+        </TabsContent>
 
-          {/* Chat with the buyer (Premium suppliers) or with a supplier who quoted (the buyer) */}
-          <TabsContent value="chat" className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
-            {activeConvId ? (
+        {/* Chat with the buyer (Premium suppliers) or with a supplier who quoted (the buyer) */}
+        <TabsContent
+          value="chat"
+          className={`${page ? 'mx-auto mt-4 flex h-[min(72vh,680px)] max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-card' : 'mt-0 flex min-h-0 flex-1 flex-col'} data-[state=inactive]:hidden`}
+        >
+          {activeConvId ? (
               <ChatPanel conversationId={activeConvId} currentUserId={user?.id ?? ''} />
             ) : isOwner ? (
               <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
@@ -638,30 +812,17 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
                 {lockedPanel('Chat is for Premium Suppliers', 'Only registered companies with an active paid plan can chat with buyers.')}
               </div>
             )}
-          </TabsContent>
-        </Tabs>
+        </TabsContent>
+      </Tabs>
 
-        {/* Actions: chat and quotation, for Premium suppliers */}
-        {showActionBar && (
-          <div className="shrink-0 border-t border-border bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
-            {!premium && (
-              <p className="mb-2 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
-                <Crown className="h-3.5 w-3.5 shrink-0 fill-[#FFC928] text-[#C98A00]" aria-hidden="true" />
-                Only Premium Suppliers (active paid plan) can chat and send quotations.
-              </p>
-            )}
-            <div className="grid grid-cols-[1fr_1.35fr] gap-2">
-              <Button variant="outline" onClick={startChatWithBuyer} disabled={chatStarting} className="h-11 gap-1.5 rounded-xl border-[#FF5A00]/50 font-bold text-[#E04E00] hover:bg-[#FF5A00]/10 dark:text-[#FF7A2E]">
-                {chatStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : premium ? <MessageSquare className="h-4 w-4" /> : <Lock className="h-4 w-4" />} Chat
-              </Button>
-              <Button onClick={sendQuotation} className="h-11 gap-1.5 rounded-xl bg-[#FF5A00] font-bold text-white shadow-md hover:bg-[#e04e00]">
-                {premium ? <Send className="h-4 w-4" /> : <Lock className="h-4 w-4" />} Send Quotation
-              </Button>
-            </div>
-          </div>
-        )}
+      {/* Actions: chat and quotation, for Premium suppliers (the page shows them inside Overview) */}
+      {!page && showActionBar && (
+        <div className="shrink-0 border-t border-border bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
+          {actions}
+        </div>
+      )}
 
-        <SubscribeToContactDialog
+      <SubscribeToContactDialog
           open={subDialogOpen}
           onClose={() => setSubDialogOpen(false)}
           reason={subDialogReason}
@@ -681,6 +842,19 @@ export default function RequirementDetailDrawer({ open, onClose, requirement, on
             }}
           />
         )}
+    </>
+  );
+
+  return page ? <div className="w-full">{body}</div> : body;
+}
+
+/** The RFQ in a side panel. The home feed and the RFQ list open the full page (/requirements/:id) instead. */
+export default function RequirementDetailDrawer({ open, onClose, requirement, onRequirementUpdated }: Props) {
+  if (!requirement) return null;
+  return (
+    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <SheetContent side="right" className="flex h-[100dvh] w-full max-w-[100vw] flex-col gap-0 overflow-hidden border-l border-border bg-background p-0 sm:max-w-xl md:w-[640px]">
+        <RequirementDetailView requirement={requirement} onRequirementUpdated={onRequirementUpdated} layout="drawer" active={open} />
       </SheetContent>
     </Sheet>
   );

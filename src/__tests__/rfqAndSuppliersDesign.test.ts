@@ -53,7 +53,8 @@ describe('RFQs stay on BulkSkart', () => {
     expect(src('src/components/common/LiveRequirementsFeed.tsx')).toContain('.filter((r) => !isOutsideListing(r) && !isSeededRequirement(r) && !isPublicListing(r))');
     expect(src('src/lib/api.ts')).toContain('rows.filter((r) => !isOutsideListing(r) && !isPublicListing(r))');
     expect(src('src/components/common/RequirementDetailDrawer.tsx')).toContain('isOwnUrl(requirement.attachment_url)');
-    expect(src('src/pages/RequirementDetailsPage.tsx')).toContain('isOwnUrl(req.attachment_url)');
+    // the RFQ page shows the same view as the panel, so the same rule applies there
+    expect(src('src/pages/RequirementDetailsPage.tsx')).toContain('<RequirementDetailView');
   });
 });
 
