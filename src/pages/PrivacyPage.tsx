@@ -52,7 +52,7 @@ const SECTIONS = [
 
 export default function PrivacyPage() {
   return (
-    <>
+    <div className="site-shell contents">
       <PageMeta
         title="Privacy Policy — BulkSkart"
         description="Read BulkSkart's Privacy Policy to understand how we collect, use, and protect your personal and business data on our B2B trade platform."
@@ -97,6 +97,6 @@ export default function PrivacyPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

@@ -255,3 +255,29 @@
 @media (prefers-reduced-motion: reduce) {
   .bs-bell-ring, .bs-alert-drain { animation: none; }
 }
+
+/* Desktop: public pages use the width of the screen (up to 1800px) instead of a narrow centred column with empty
+   sides. Page wrappers (the 1400px header/page width and the 5xl–7xl boxes inside it) grow, and so do 4xl boxes that
+   are or hold a card grid; reading text (3xl and less), centred headings (.text-center) and plain 4xl text keep their
+   width on purpose. .site-shell is MainLayout's root; pages that draw their own header wrap themselves in
+   <div className="site-shell contents">. Pop-ups render outside it, and the dashboard has its own rule (dashboard.css). */
+@media (min-width: 1280px) {
+  .site-shell
+    :is(
+      .max-w-\[1100px\],
+      .max-w-\[1200px\],
+      .max-w-\[1240px\],
+      .max-w-\[1400px\],
+      .max-w-\[1440px\],
+      .max-w-\[1600px\],
+      .max-w-5xl,
+      .max-w-6xl,
+      .max-w-7xl,
+      .max-w-screen-xl,
+      .max-w-screen-2xl
+    ).mx-auto:not(.text-center),
+  .site-shell .max-w-4xl.mx-auto:not(.text-center):is(.grid, :has(> .grid, > div > .grid)) {
+    max-width: min(100%, 1800px);
+  }
+}
+

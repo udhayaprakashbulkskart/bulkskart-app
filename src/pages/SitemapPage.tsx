@@ -97,7 +97,7 @@ export default function SitemapPage() {
   }, [search, selectedCountry]);
 
   return (
-    <>
+    <div className="site-shell contents">
       <PageMeta
         title="Sitemap & Global Directory Index | BulkSkart"
         description="Full sitemap of BulkSkart — Browse all verified companies, manufacturers, wholesale products, live RFQ feeds, and platform resources."
@@ -353,6 +353,6 @@ export default function SitemapPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

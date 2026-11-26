@@ -344,13 +344,21 @@ export default function ProductDetailPage() {
               {/* ── Image Gallery — current product images only ─── */}
               {hasImages ? (
                 <>
-                  <div className="relative rounded-xl overflow-hidden bg-card border border-border mb-3 aspect-[4/3] md:aspect-[16/10]">
+                  {/* on a wide screen the box is capped in height and shows the whole photo over a blurred copy of it */}
+                  <div className="relative rounded-xl overflow-hidden bg-card border border-border mb-3 aspect-[4/3] md:aspect-[16/10] xl:aspect-auto xl:h-[min(66vh,620px)]">
+                    <img
+                      src={images[imgIdx]}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      className="absolute inset-0 hidden h-full w-full scale-110 object-cover opacity-50 blur-2xl xl:block"
+                    />
                     <SafeImage
                       src={images[imgIdx]}
                       alt={`${product.name} — image ${imgIdx + 1}`}
                       category={product.categories?.name}
                       type="product"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover xl:[&_img]:object-contain"
                     />
                     <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs rounded px-2 py-0.5 z-10">
                       {imgIdx + 1} / {images.length}
@@ -385,7 +393,7 @@ export default function ProductDetailPage() {
                   )}
                 </>
               ) : (
-                <div className="relative rounded-xl overflow-hidden bg-card border border-border mb-4 aspect-[4/3] md:aspect-[16/10]">
+                <div className="relative rounded-xl overflow-hidden bg-card border border-border mb-4 aspect-[4/3] md:aspect-[16/10] xl:aspect-auto xl:h-[min(66vh,620px)]">
                   <SafeImage
                     src={fallbackImg}
                     alt={product.name}

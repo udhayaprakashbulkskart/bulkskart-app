@@ -173,9 +173,9 @@ export default function HowItWorksPage() {
 
       {/* FAQs */}
       <section className="py-16">
-        <div className="max-w-3xl mx-auto px-4 md:px-6">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6">
           <h2 className="text-2xl font-bold text-foreground text-center mb-10">Frequently Asked Questions</h2>
-          <FaqAccordion faqs={faqs} />
+          <FaqAccordion faqs={faqs} layout="grid" />
         </div>
       </section>
     </MainLayout>
