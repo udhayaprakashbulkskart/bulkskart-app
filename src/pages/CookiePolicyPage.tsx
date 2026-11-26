@@ -32,7 +32,7 @@ const COOKIE_TYPES = [
 
 export default function CookiePolicyPage() {
   return (
-    <>
+    <div className="site-shell contents">
       <PageMeta
         title="Cookie Policy — BulkSkart"
         description="Learn how BulkSkart uses cookies on our B2B trade platform — what types we use, why, and how to manage your preferences."
@@ -116,6 +116,6 @@ export default function CookiePolicyPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

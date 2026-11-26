@@ -60,7 +60,7 @@ const SECTIONS = [
 
 export default function TermsPage() {
   return (
-    <>
+    <div className="site-shell contents">
       <PageMeta
         title="Terms & Conditions — BulkSkart"
         description="Read BulkSkart's Terms & Conditions governing the use of our B2B bulk trade marketplace operated by Tech Pod AI Database Private Limited."
@@ -105,6 +105,6 @@ export default function TermsPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

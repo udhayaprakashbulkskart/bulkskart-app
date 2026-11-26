@@ -90,7 +90,7 @@ export default function BlogPage() {
     : POSTS.filter(p => p.category === selectedCat);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="site-shell min-h-screen bg-background text-foreground flex flex-col">
       <PageMeta
         title="B2B Sourcing Guides & Global Trade Insights | Bulkskart Blog"
         description="Authoritative B2B trade guides, manufacturer discovery strategies, MOQ negotiation tips, and wholesale sourcing insights for global procurement professionals."
@@ -106,7 +106,7 @@ export default function BlogPage() {
 
       {/* Breadcrumbs */}
       <div className="border-b border-border/60 bg-muted/20 py-2.5">
-        <div className="max-w-4xl mx-auto px-4">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6">
           <Breadcrumbs
             items={[
               { name: 'Blog & Sourcing Guides' },
@@ -132,7 +132,7 @@ export default function BlogPage() {
 
       {/* Category filter */}
       <div className="border-b border-border bg-card px-4 sticky top-14 z-10 overflow-x-auto">
-        <div className="max-w-4xl mx-auto flex gap-1.5 py-2.5 whitespace-nowrap">
+        <div className="max-w-[1400px] mx-auto md:px-2 flex gap-1.5 py-2.5 whitespace-nowrap">
           {CATEGORIES.map(cat => (
             <button
               key={cat}
@@ -150,8 +150,8 @@ export default function BlogPage() {
       </div>
 
       {/* Posts List */}
-      <section className="py-10 px-4 max-w-4xl mx-auto flex-1 w-full">
-        <div className="grid grid-cols-1 gap-6">
+      <section className="py-10 px-4 md:px-6 max-w-[1400px] mx-auto flex-1 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
           {filteredPosts.map((post, idx) => (
             <article
               key={post.slug}

@@ -33,7 +33,7 @@ const DEPT_COLORS: Record<string, string> = {
 
 export default function CareersPage() {
   return (
-    <>
+    <div className="site-shell contents">
       <PageMeta
         title="Careers — BulkSkart | Join Our Team"
         description="Join BulkSkart and help build India's leading B2B bulk trade platform. Open roles in Engineering, Product, Sales, Marketing, and more."
@@ -73,10 +73,10 @@ export default function CareersPage() {
       </section>
 
       {/* Openings */}
-      <section className="py-12 px-4 max-w-4xl mx-auto">
+      <section className="py-12 px-4 md:px-6 max-w-[1400px] mx-auto">
         <h2 className="text-[20px] md:text-[26px] font-black text-foreground mb-2">Open Positions</h2>
         <p className="text-muted-foreground text-sm mb-8">{OPENINGS.length} roles across {new Set(OPENINGS.map(o => o.dept)).size} departments</p>
-        <div className="space-y-3">
+        <div className="grid gap-3 lg:grid-cols-2">
           {OPENINGS.map((job) => (
             <div key={job.title} className="bg-card border border-border rounded-xl p-4 md:p-5 flex flex-col md:flex-row md:items-center gap-3 md:gap-4 hover:border-primary/40 transition-colors">
               <div className="flex-1 min-w-0">
@@ -112,6 +112,6 @@ export default function CareersPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

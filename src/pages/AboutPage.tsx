@@ -28,7 +28,7 @@ const TEAM = [
 
 export default function AboutPage() {
   return (
-    <>
+    <div className="site-shell contents">
       <PageMeta
         title="About Us — BulkSkart | Global B2B Bulk Trade Platform"
         description="BulkSkart is India's leading B2B bulk trade platform by Tech Pod AI Database Private Limited. Learn about our mission, values, and team connecting verified manufacturers with global buyers."
@@ -134,6 +134,6 @@ export default function AboutPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

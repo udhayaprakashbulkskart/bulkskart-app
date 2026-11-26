@@ -17,7 +17,7 @@ export default function FaqPage() {
         faq={BRAND_FAQ.map((item) => ({ question: item.q, answer: item.a }))}
       />
       <div className="bg-[#f5f5f5] text-neutral-900 dark:bg-[#0a0a0a] dark:text-white">
-        <div className="mx-auto w-full max-w-[880px] px-4 pb-14 pt-4 sm:px-6">
+        <div className="mx-auto w-full max-w-[1400px] px-4 pb-14 pt-4 sm:px-6">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[12px] text-neutral-500 dark:text-white/55">
             <Link to="/" className="hover:text-[#FF5A00]">Home</Link>
             <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -31,7 +31,7 @@ export default function FaqPage() {
           </p>
 
           <div className="mt-5">
-            <SeoFaqList items={BRAND_FAQ} />
+            <SeoFaqList items={BRAND_FAQ} wide />
           </div>
 
           <div className="mt-6 flex flex-wrap gap-2">
