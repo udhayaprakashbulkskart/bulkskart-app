@@ -9,7 +9,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CalendarDays, MapPin, Package } from 'lucide-react';
+import { ArrowRight, Truck, MapPin, Package } from 'lucide-react';
 import { getOpenRequirements } from '@/lib/api';
 import { isPublicListing } from '@/lib/publicListings';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
@@ -48,6 +48,12 @@ export function deliveryDateLabel(deadline: string | null | undefined): string |
   return day.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+/** "Delivery by 12 Dec 2026", or null when the buyer left the date blank. */
+export function deliveryByLabel(deadline: string | null | undefined): string | null {
+  const day = deliveryDateLabel(deadline);
+  return day ? `Delivery by ${day}` : null;
+}
+
 /** Fields the ticker may keep — never phone, email or a profile object. */
 export function toLiveRfqCard(req: Requirement): LiveRfqCard {
   return {
@@ -56,7 +62,7 @@ export function toLiveRfqCard(req: Requirement): LiveRfqCard {
     quantityLabel: quantityLabel(req),
     city: (req.destination_city || '').trim() || placeLabel(req) || 'Location not stated',
     photo: rfqReferencePhoto(req),
-    deliveryDate: deliveryDateLabel(req.deadline),
+    deliveryDate: deliveryByLabel(req.deadline),
   };
 }
 
@@ -191,7 +197,7 @@ function RfqTickerCard({ card, tabIndex }: { card: LiveRfqCard; tabIndex?: numbe
       <div className="mt-2.5 flex items-center justify-between gap-2">
         {card.deliveryDate ? (
           <span className="flex min-w-0 items-center gap-1 truncate text-[11px] font-semibold text-[#FF5A00]">
-            <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <Truck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span className="truncate">{card.deliveryDate}</span>
           </span>
         ) : (

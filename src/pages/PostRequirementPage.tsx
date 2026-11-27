@@ -397,7 +397,7 @@ export default function PostRequirementPage() {
             <div className="bg-muted/20 p-4 rounded-2xl border border-border/80">
               <SingleImageUploader
                 label="Product Sample Photo / Engineering Drawing (Optional but Recommended)"
-                description="Upload an image representing the item, CAD drawing or material standard (JPG, PNG, max 5MB)."
+                description="Upload an image representing the item, CAD drawing or material standard (JPG or PNG; large phone photos are compressed automatically)."
                 value={attachmentUrl}
                 shape="rectangle"
                 bucket="rfq-images"
