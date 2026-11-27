@@ -164,7 +164,31 @@ describe('Opening an RFQ', () => {
     auth.value = { user: { id: 'admin-1' }, profile: { role: 'admin' }, company: null, isPaidSubscriber: true };
     renderPage();
     expect(screen.getAllByRole('button', { name: 'Emergency' }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('button', { name: 'Urgent' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Urgent Requirement' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Regular' }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: 'Hot' }).length).toBeGreaterThan(0);
+  });
+});
+
+describe('RFQ page tabs from the home ticker', () => {
+  it('opens the Quotes or Chat tab when the URL asks for it', () => {
+    auth.value = { user: { id: 'supplier-paid' }, profile: { role: 'supplier' }, company: { id: 'co-1' }, isPaidSubscriber: true };
+    render(
+      <MemoryRouter initialEntries={['/requirements/11111111-2222-4333-8444-555555555555?tab=quotes']}>
+        <RequirementDetailView layout="page" requirement={req} onRequirementUpdated={() => {}} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('tab', { name: /My Quote/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /^Overview$/ })).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('opens the Chat tab when the URL asks for it', () => {
+    auth.value = { user: { id: 'supplier-paid' }, profile: { role: 'supplier' }, company: { id: 'co-1' }, isPaidSubscriber: true };
+    render(
+      <MemoryRouter initialEntries={['/requirements/11111111-2222-4333-8444-555555555555?tab=chat']}>
+        <RequirementDetailView layout="page" requirement={req} onRequirementUpdated={() => {}} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('tab', { name: /^Chat$/ })).toHaveAttribute('aria-selected', 'true');
   });
 });

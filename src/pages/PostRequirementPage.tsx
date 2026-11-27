@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/contexts/AuthContext';
 import { createRequirement, getCategories } from '@/lib/api';
 import { RfqPriorityPicker } from '@/components/common/RfqPriorityBadge';
-import { isUrgentFromTag, normalizePriorityTag, type RfqPriorityTag } from '@/lib/rfqPriority';
+import { isUrgentFromTag, normalizePriorityChoice, priorityTagForStorage, PRIORITY_TAG_REQUIRED_MESSAGE, type RfqPriorityChoice } from '@/lib/rfqPriority';
 import { isValidDeliveryDate, normalizeDeadlineInput, PAST_DELIVERY_DATE_MESSAGE, todayIsoDateIST } from '@/lib/deliveryDate';
 import { supabase } from '@/db/supabase';
 import type { Category, RfqStatus } from '@/types/types';
@@ -66,7 +66,7 @@ export default function PostRequirementPage() {
     buyerName: profile?.full_name || '',
     buyerContact: profile?.phone || user?.email || '',
     targetAudience: 'all', // 'all' or 'verified'
-    priorityTag: '' as '' | RfqPriorityTag,
+    priorityTag: '' as '' | RfqPriorityChoice,
   });
   const [error, setError] = useState('');
 
@@ -130,6 +130,9 @@ export default function PostRequirementPage() {
     if (form.requiredDate && !isValidDeliveryDate(form.requiredDate)) {
       errors.requiredDate = PAST_DELIVERY_DATE_MESSAGE;
     }
+    if (!form.priorityTag) {
+      errors.priorityTag = PRIORITY_TAG_REQUIRED_MESSAGE;
+    }
 
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
@@ -188,8 +191,8 @@ export default function PostRequirementPage() {
         quote_count: 0,
         view_count: 1,
         is_verified_buyer: true,
-        priority_tag: normalizePriorityTag(form.priorityTag),
-        is_urgent: isUrgentFromTag(normalizePriorityTag(form.priorityTag)),
+        priority_tag: priorityTagForStorage(normalizePriorityChoice(form.priorityTag)),
+        is_urgent: isUrgentFromTag(normalizePriorityChoice(form.priorityTag)),
       };
 
       const { error: err, id } = await createRequirement(payload);
@@ -679,9 +682,11 @@ export default function PostRequirementPage() {
             <div className="pt-2 border-t border-border/60">
               <RfqPriorityPicker
                 id="rfq-priority-tag"
-                value={normalizePriorityTag(form.priorityTag)}
-                onChange={(tag) => setForm((p) => ({ ...p, priorityTag: tag ?? '' }))}
+                value={normalizePriorityChoice(form.priorityTag)}
+                onChange={(tag) => { setForm((p) => ({ ...p, priorityTag: tag })); setFieldErrors((prev) => ({ ...prev, priorityTag: '' })); }}
                 disabled={loading}
+                required
+                error={fieldErrors.priorityTag}
               />
             </div>
           </div>

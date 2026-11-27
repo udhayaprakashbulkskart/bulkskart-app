@@ -38,3 +38,16 @@ export async function withBuyerContacts<T extends Pick<Requirement, 'buyer_id'> 
     return { ...row, profiles, buyer_phone: c.phone, buyer_email: c.email };
   });
 }
+
+/** Buyer contacts for one RFQ, only when the RPC allows it (owner, admin, or paid supplier). Call this on click — do not preload into a public list. */
+export async function fetchRfqBuyerContacts(requirementId: string): Promise<VisibleContacts | null> {
+  const { data, error } = await supabase.rpc('rfq_buyer_contacts', { p_requirement_id: requirementId });
+  if (error) return null;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return {
+    phone: (row as VisibleContacts).phone ?? null,
+    email: (row as VisibleContacts).email ?? null,
+    whatsapp_number: (row as VisibleContacts).whatsapp_number ?? null,
+  };
+}

@@ -1,15 +1,34 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Requirement } from '@/types/types';
 import { deliveryByLabel, deliveryDateLabel, loopUnit, rfqReferencePhoto, toLiveRfqCard } from '@/components/home/LiveRfqScrollSection';
 
 const getOpenRequirements = vi.fn();
+const checkSupplierPaidSubscription = vi.fn();
 vi.mock('@/lib/api', () => ({
   getOpenRequirements: (...args: unknown[]) => getOpenRequirements(...args),
+  checkSupplierPaidSubscription: (...args: unknown[]) => checkSupplierPaidSubscription(...args),
 }));
+
+const auth = vi.hoisted(() => ({
+  value: {
+    user: null as null | { id: string },
+    profile: null as null | { role: string },
+    company: null as null | { id: string },
+    isPaidSubscriber: false,
+  },
+}));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => auth.value }));
+
+const fetchRfqBuyerContacts = vi.fn();
+vi.mock('@/lib/profileContacts', () => ({
+  fetchRfqBuyerContacts: (...args: unknown[]) => fetchRfqBuyerContacts(...args),
+}));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), message: vi.fn() } }));
 
 import LiveRfqScrollSection from '@/components/home/LiveRfqScrollSection';
 
@@ -43,9 +62,23 @@ function renderSection() {
   );
 }
 
+const originalLocation = window.location;
+const originalOpen = window.open;
+
 beforeEach(() => {
   getOpenRequirements.mockReset();
   getOpenRequirements.mockResolvedValue({ rows: [rfq], total: 1, error: null });
+  checkSupplierPaidSubscription.mockReset();
+  checkSupplierPaidSubscription.mockResolvedValue({ allowed: false, reason: 'no_subscription' });
+  fetchRfqBuyerContacts.mockReset();
+  auth.value = { user: null, profile: null, company: null, isPaidSubscriber: false };
+  window.open = originalOpen;
+  Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
+});
+
+afterEach(() => {
+  window.open = originalOpen;
+  Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
 });
 
 describe('Live RFQs sit under Verified Suppliers and above Verified Products', () => {
@@ -149,7 +182,7 @@ describe('Live RFQ priority badges', () => {
     await waitFor(() => expect(screen.getAllByText('Emergency').length).toBeGreaterThan(0));
     expect(screen.getAllByTestId('rfq-priority-badge').length).toBeGreaterThan(0);
     expect(screen.getAllByTestId('rfq-priority-badge')[0]).toHaveClass('absolute', 'left-2', 'top-2');
-    expect(screen.queryByText('Urgent')).toBeNull();
+    expect(screen.queryByText('Urgent Requirement')).toBeNull();
     expect(screen.queryByText('Hot')).toBeNull();
   });
 
@@ -158,7 +191,7 @@ describe('Live RFQ priority badges', () => {
     expect(toLiveRfqCard(flagged).priorityTag).toBe('urgent');
     getOpenRequirements.mockResolvedValue({ rows: [flagged], total: 1, error: null });
     renderSection();
-    await waitFor(() => expect(screen.getAllByText('Urgent').length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByText('Urgent Requirement').length).toBeGreaterThan(0));
     const overlays = screen.getAllByTestId('rfq-priority-badge');
     expect(overlays.length).toBeGreaterThan(0);
     expect(overlays[0]).toHaveClass('absolute', 'left-2', 'top-2');
@@ -171,8 +204,95 @@ describe('Live RFQ priority badges', () => {
     renderSection();
     await waitFor(() => expect(screen.getAllByText('Dell OptiPlex Business Desktop Computer').length).toBeGreaterThan(0));
     expect(screen.queryByText('Emergency')).toBeNull();
-    expect(screen.queryByText('Urgent')).toBeNull();
+    expect(screen.queryByText('Urgent Requirement')).toBeNull();
     expect(screen.queryByText('Hot')).toBeNull();
     expect(screen.queryByTestId('rfq-priority-badge')).toBeNull();
+  });
+});
+
+describe('Live RFQ card actions', () => {
+  it('puts Call, WhatsApp, Quote and Chat on every card, without preloading the buyer number', async () => {
+    renderSection();
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /^Call$/ }).length).toBeGreaterThan(0));
+    expect(screen.getAllByRole('button', { name: /^WhatsApp$/ }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: /^Chat$/ }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: /^Quote$/ }).length).toBeGreaterThan(0);
+    expect(fetchRfqBuyerContacts).not.toHaveBeenCalled();
+    expect(screen.queryByText('9876543210')).toBeNull();
+    expect(screen.queryByText('buyer@example.com')).toBeNull();
+    expect(toLiveRfqCard(rfq)).not.toHaveProperty('phone');
+    expect(toLiveRfqCard(rfq)).not.toHaveProperty('email');
+    const section = src('src/components/home/LiveRfqScrollSection.tsx');
+    expect(section).toContain('LiveRfqActions');
+    expect(section).not.toContain('fetchRfqBuyerContacts');
+    expect(src('src/lib/profileContacts.ts')).toContain("rpc('rfq_buyer_contacts'");
+    expect(src('src/components/home/LiveRfqActions.tsx')).toContain('fetchRfqBuyerContacts');
+  });
+
+  it('asks a visitor to sign up, and does not fetch the number or leave the page', async () => {
+    const user = userEvent.setup();
+    renderSection();
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /^Call$/ }).length).toBeGreaterThan(0));
+    expect(screen.getAllByRole('link', { name: 'Sign up' })[0]).toHaveAttribute('href', '/register');
+    await user.click(screen.getAllByRole('button', { name: /^Call$/ })[0]);
+    expect(await screen.findByText('Login to Send Quotations & Messages')).toBeInTheDocument();
+    expect(fetchRfqBuyerContacts).not.toHaveBeenCalled();
+    expect(screen.queryByText('9876543210')).toBeNull();
+  });
+
+  it('asks a free user to upgrade, and still does not fetch the number', async () => {
+    auth.value = { user: { id: 'supplier-1' }, profile: { role: 'supplier' }, company: { id: 'co-1' }, isPaidSubscriber: false };
+    const user = userEvent.setup();
+    renderSection();
+    await waitFor(() => expect(screen.getAllByRole('link', { name: 'Upgrade' }).length).toBeGreaterThan(0));
+    expect(screen.getAllByRole('link', { name: 'Upgrade' })[0]).toHaveAttribute('href', '/dashboard/supplier/subscription');
+    await user.click(screen.getAllByRole('button', { name: /^WhatsApp$/ })[0]);
+    expect(await screen.findByText('Active Subscription Required')).toBeInTheDocument();
+    expect(fetchRfqBuyerContacts).not.toHaveBeenCalled();
+    expect(checkSupplierPaidSubscription).toHaveBeenCalled();
+  });
+
+  it('lets a paid supplier fetch the number only after they click Call or WhatsApp', async () => {
+    auth.value = { user: { id: 'supplier-paid' }, profile: { role: 'supplier' }, company: { id: 'co-1' }, isPaidSubscriber: true };
+    fetchRfqBuyerContacts.mockResolvedValue({ phone: '9876543210', email: 'buyer@example.com', whatsapp_number: null });
+    const open = vi.fn();
+    window.open = open;
+    const loc = { href: 'http://localhost/' };
+    Object.defineProperty(window, 'location', { configurable: true, value: loc });
+    const user = userEvent.setup();
+    renderSection();
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /^Call$/ }).length).toBeGreaterThan(0));
+    expect(fetchRfqBuyerContacts).not.toHaveBeenCalled();
+    expect(screen.queryByText('9876543210')).toBeNull();
+    await user.click(screen.getAllByRole('button', { name: /^Call$/ })[0]);
+    await waitFor(() => expect(fetchRfqBuyerContacts).toHaveBeenCalledTimes(1));
+    expect(fetchRfqBuyerContacts).toHaveBeenCalledWith('5e015cc4-47a0-4e82-b1f4-271424ce7e3f');
+    expect(loc.href).toBe('tel:+919876543210');
+    await user.click(screen.getAllByRole('button', { name: /^WhatsApp$/ })[0]);
+    await waitFor(() => expect(fetchRfqBuyerContacts).toHaveBeenCalledTimes(2));
+    expect(open).toHaveBeenCalled();
+    expect(String(open.mock.calls[0][0])).toMatch(/^https:\/\/wa\.me\/919876543210/);
+  });
+
+  it('sends a paid supplier to the RFQ quote or chat tab, and a button click does not follow the card View link', async () => {
+    auth.value = { user: { id: 'supplier-paid' }, profile: { role: 'supplier' }, company: { id: 'co-1' }, isPaidSubscriber: true };
+    const user = userEvent.setup();
+    function Where() {
+      const { pathname, search } = useLocation();
+      return <div data-testid="where">{pathname + search}</div>;
+    }
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Where />
+        <LiveRfqScrollSection />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /^Quote$/ }).length).toBeGreaterThan(0));
+    expect(screen.getByTestId('where').textContent).toBe('/');
+    await user.click(screen.getAllByRole('button', { name: /^Quote$/ })[0]);
+    await waitFor(() => expect(screen.getByTestId('where').textContent).toBe('/requirements/5e015cc4-47a0-4e82-b1f4-271424ce7e3f?tab=quotes'));
+    expect(fetchRfqBuyerContacts).not.toHaveBeenCalled();
+    await user.click(screen.getAllByRole('button', { name: /^Chat$/ })[0]);
+    await waitFor(() => expect(screen.getByTestId('where').textContent).toBe('/requirements/5e015cc4-47a0-4e82-b1f4-271424ce7e3f?tab=chat'));
   });
 });

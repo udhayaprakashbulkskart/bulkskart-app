@@ -13,6 +13,7 @@ import { ArrowRight, Truck, MapPin, Package } from 'lucide-react';
 import { getOpenRequirements } from '@/lib/api';
 import { isPublicListing } from '@/lib/publicListings';
 import RfqPriorityBadge from '@/components/common/RfqPriorityBadge';
+import LiveRfqActions from '@/components/home/LiveRfqActions';
 import { displayPriorityTag, type RfqPriorityTag } from '@/lib/rfqPriority';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
 import type { Requirement } from '@/types/types';
@@ -175,7 +176,7 @@ function RfqPhoto({ src, alt }: { src: string | null; alt: string }) {
 
 function RfqTickerCard({ card, tabIndex }: { card: LiveRfqCard; tabIndex?: number }) {
   return (
-    <article className="flex w-[230px] shrink-0 flex-col rounded-2xl border border-border bg-card p-3 shadow-sm sm:w-[260px] sm:p-3.5">
+    <article className="flex w-[240px] shrink-0 flex-col rounded-2xl border border-border bg-card p-3 shadow-sm sm:w-[270px] sm:p-3.5">
       <div className="relative">
         <RfqPhoto src={card.photo} alt={card.title} />
         {card.priorityTag && (
@@ -211,6 +212,7 @@ function RfqTickerCard({ card, tabIndex }: { card: LiveRfqCard; tabIndex?: numbe
           <ArrowRight className="h-3 w-3" aria-hidden="true" />
         </Link>
       </div>
+      <LiveRfqActions card={card} tabIndex={tabIndex} />
     </article>
   );
 }
