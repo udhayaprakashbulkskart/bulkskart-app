@@ -12,6 +12,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Truck, MapPin, Package } from 'lucide-react';
 import { getOpenRequirements } from '@/lib/api';
 import { isPublicListing } from '@/lib/publicListings';
+import RfqPriorityBadge from '@/components/common/RfqPriorityBadge';
+import { normalizePriorityTag, type RfqPriorityTag } from '@/lib/rfqPriority';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
 import type { Requirement } from '@/types/types';
 import './live-rfq-scroll.css';
@@ -27,6 +29,7 @@ export type LiveRfqCard = {
   photo: string | null;
   /** Required delivery date (deadline), e.g. "12 Dec 2026". Null when the buyer left it blank. */
   deliveryDate: string | null;
+  priorityTag: RfqPriorityTag | null;
 };
 
 /** The reference picture on /requirements/<id>: first saved image, otherwise the attachment. */
@@ -63,6 +66,7 @@ export function toLiveRfqCard(req: Requirement): LiveRfqCard {
     city: (req.destination_city || '').trim() || placeLabel(req) || 'Location not stated',
     photo: rfqReferencePhoto(req),
     deliveryDate: deliveryByLabel(req.deadline),
+    priorityTag: normalizePriorityTag(req.priority_tag),
   };
 }
 
@@ -185,7 +189,8 @@ function RfqTickerCard({ card, tabIndex }: { card: LiveRfqCard; tabIndex?: numbe
   return (
     <article className="flex w-[230px] shrink-0 flex-col rounded-2xl border border-border bg-card p-3 shadow-sm sm:w-[260px] sm:p-3.5">
       <RfqPhoto src={card.photo} alt={card.title} />
-      <h3 className="mt-2.5 line-clamp-2 min-h-[2.5rem] text-[13px] font-bold leading-snug text-foreground sm:text-[14px]">{card.title}</h3>
+      {card.priorityTag && <div className="mt-2"><RfqPriorityBadge tag={card.priorityTag} /></div>}
+      <h3 className={`${card.priorityTag ? 'mt-1.5' : 'mt-2.5'} line-clamp-2 min-h-[2.5rem] text-[13px] font-bold leading-snug text-foreground sm:text-[14px]`}>{card.title}</h3>
       <p className="mt-2 flex items-center gap-1.5 text-[12px] text-muted-foreground">
         <Package className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" aria-hidden="true" />
         <span className="truncate">{card.quantityLabel}</span>

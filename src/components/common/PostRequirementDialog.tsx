@@ -11,7 +11,6 @@ import { Calendar, FileText, Globe2, IndianRupee, Layers, Loader2, MapPin, Messa
 import { toast } from 'sonner';
 import {
   Actions,
-  CheckRow,
   CountedTextArea,
   Field,
   FormDialog,
@@ -25,6 +24,8 @@ import {
   type FormPoint,
 } from '@/components/formkit';
 import { createRequirement } from '@/lib/api';
+import { RfqPriorityPicker } from '@/components/common/RfqPriorityBadge';
+import { isUrgentFromTag, type RfqPriorityTag } from '@/lib/rfqPriority';
 import { supabase } from '@/db/supabase';
 import { invokeAutoQuotation } from '@/lib/autoQuotationApi';
 import { CITY_NAMES } from '@/lib/signup/places';
@@ -71,9 +72,10 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
     deadline: '',
     specifications: '',
     is_urgent: false,
+    priority_tag: null as RfqPriorityTag | null,
   });
 
-  const set = (k: string, v: string | boolean) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k: string, v: string | boolean | RfqPriorityTag | null) => setForm(f => ({ ...f, [k]: v }));
 
   const validateDialogForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -128,8 +130,9 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
       specifications: form.specifications.trim() || null,
       attachment_url: attachmentUrl,
       status: 'active',
-      // @ts-expect-error — new columns not yet in TS type
-      is_urgent: form.is_urgent,
+      priority_tag: form.priority_tag,
+      // @ts-expect-error — columns not yet in the official Requirement type
+      is_urgent: isUrgentFromTag(form.priority_tag) || form.is_urgent,
       deal_status: 'active',
     };
     const { error, id } = await createRequirement(payload);
@@ -146,7 +149,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
     // Trigger auto-quotation matching in background (non-blocking)
     invokeAutoQuotation(id).catch(() => {/* silent — non-critical */});
     // Reset form
-    setForm({ title: '', category_id: '', description: '', quantity: '', quantity_unit: 'Pcs', budget_max: '', destination_country: 'India', destination_city: '', deadline: '', specifications: '', is_urgent: false });
+    setForm({ title: '', category_id: '', description: '', quantity: '', quantity_unit: 'Pcs', budget_max: '', destination_country: 'India', destination_city: '', deadline: '', specifications: '', is_urgent: false, priority_tag: null });
     setAttachmentUrl(null);
     setFieldErrors({});
     onClose();
@@ -348,9 +351,12 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
           />
         </Field>
 
-        <CheckRow id={`${ids}-urgent`} checked={form.is_urgent} onCheckedChange={(checked) => set('is_urgent', checked)} icon={Zap}>
-          Mark this requirement as urgent
-        </CheckRow>
+        <RfqPriorityPicker
+          id={`${ids}-priority`}
+          value={form.priority_tag}
+          onChange={(tag) => setForm((f) => ({ ...f, priority_tag: tag, is_urgent: isUrgentFromTag(tag) }))}
+          disabled={loading}
+        />
 
         <Actions>
           <KitButton type="submit" disabled={loading}>

@@ -130,3 +130,30 @@ describe('Live RFQ scroll section', () => {
     expect(section).not.toContain('SafeImage');
   });
 });
+
+
+describe('Live RFQ priority badges', () => {
+  it('maps a valid tag onto the card and leaves untagged RFQs untagged', () => {
+    expect(toLiveRfqCard(rfq).priorityTag).toBeNull();
+    expect(toLiveRfqCard({ ...rfq, priority_tag: 'emergency' } as unknown as Requirement).priorityTag).toBe('emergency');
+    expect(toLiveRfqCard({ ...rfq, priority_tag: 'hot' } as unknown as Requirement).priorityTag).toBe('hot');
+    expect(toLiveRfqCard({ ...rfq, priority_tag: 'made-up' } as unknown as Requirement).priorityTag).toBeNull();
+  });
+
+  it('renders the chosen tag on the ticker card and stays silent when there is none', async () => {
+    const tagged = { ...rfq, priority_tag: 'emergency' } as unknown as Requirement;
+    getOpenRequirements.mockResolvedValue({ rows: [tagged], total: 1, error: null });
+    renderSection();
+    await waitFor(() => expect(screen.getAllByText('Emergency').length).toBeGreaterThan(0));
+    expect(screen.queryByText('Urgent')).toBeNull();
+    expect(screen.queryByText('Hot')).toBeNull();
+  });
+
+  it('does not invent a tag on untagged RFQs', async () => {
+    renderSection();
+    await waitFor(() => expect(screen.getAllByText('Dell OptiPlex Business Desktop Computer').length).toBeGreaterThan(0));
+    expect(screen.queryByText('Emergency')).toBeNull();
+    expect(screen.queryByText('Urgent')).toBeNull();
+    expect(screen.queryByText('Hot')).toBeNull();
+  });
+});

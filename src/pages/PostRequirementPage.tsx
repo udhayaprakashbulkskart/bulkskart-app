@@ -9,6 +9,8 @@ import MainLayout from '@/components/layouts/MainLayout';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { createRequirement, getCategories } from '@/lib/api';
+import { RfqPriorityPicker } from '@/components/common/RfqPriorityBadge';
+import { isUrgentFromTag, normalizePriorityTag, type RfqPriorityTag } from '@/lib/rfqPriority';
 import { supabase } from '@/db/supabase';
 import type { Category, RfqStatus } from '@/types/types';
 import { toast } from 'sonner';
@@ -62,7 +64,8 @@ export default function PostRequirementPage() {
     currency: 'INR',
     buyerName: profile?.full_name || '',
     buyerContact: profile?.phone || user?.email || '',
-    targetAudience: 'all' // 'all' or 'verified'
+    targetAudience: 'all', // 'all' or 'verified'
+    priorityTag: '' as '' | RfqPriorityTag,
   });
   const [error, setError] = useState('');
 
@@ -185,7 +188,9 @@ export default function PostRequirementPage() {
         status: 'active' as RfqStatus,
         quote_count: 0,
         view_count: 1,
-        is_verified_buyer: true
+        is_verified_buyer: true,
+        priority_tag: normalizePriorityTag(form.priorityTag),
+        is_urgent: isUrgentFromTag(normalizePriorityTag(form.priorityTag)),
       };
 
       const { error: err, id } = await createRequirement(payload);
@@ -284,6 +289,7 @@ export default function PostRequirementPage() {
                     pincode: '',
                     closingDuration: '48h',
                     requiredDate: '',
+                    priorityTag: '',
                     budgetMin: '',
                     budgetMax: '',
                     currency: 'INR',
@@ -660,6 +666,15 @@ export default function PostRequirementPage() {
                 />
                 {fieldErrors.buyerContact && <p className="text-[11px] text-destructive">{fieldErrors.buyerContact}</p>}
               </div>
+            </div>
+
+            <div className="pt-2 border-t border-border/60">
+              <RfqPriorityPicker
+                id="rfq-priority-tag"
+                value={normalizePriorityTag(form.priorityTag)}
+                onChange={(tag) => setForm((p) => ({ ...p, priorityTag: tag ?? '' }))}
+                disabled={loading}
+              />
             </div>
           </div>
 

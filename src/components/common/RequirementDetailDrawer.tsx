@@ -35,6 +35,8 @@ import SubscribeToContactDialog, { type SubscriptionReason } from './SubscribeTo
 import SupplierRespondDialog from './SupplierRespondDialog';
 import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
 import { canViewContacts, contactUpgradeHref, maskContactsInText, telHref, whatsappHref } from '@/lib/contactAccess';
+import RfqPriorityBadge, { RfqPriorityPicker } from '@/components/common/RfqPriorityBadge';
+import { isUrgentFromTag, normalizePriorityTag } from '@/lib/rfqPriority';
 import { fetchVisibleContacts } from '@/lib/profileContacts';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
 import { rfqBudget } from '@/lib/rfqAlerts';
@@ -317,6 +319,36 @@ function timeLeft(req: Requirement): string | null {
 const dateLabel = (iso?: string | null) =>
   iso ? new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
 
+
+function OwnerPriorityEditor({
+  requirement,
+  onRequirementUpdated,
+}: {
+  requirement: Requirement;
+  onRequirementUpdated: (req: Requirement) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const current = normalizePriorityTag(requirement.priority_tag);
+  const save = async (tag: ReturnType<typeof normalizePriorityTag>) => {
+    if (saving) return;
+    setSaving(true);
+    const patch = { priority_tag: tag, is_urgent: isUrgentFromTag(tag) } as Partial<Requirement>;
+    const { error } = await updateRequirement(requirement.id, patch);
+    setSaving(false);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    onRequirementUpdated({ ...requirement, ...patch });
+    toast.success(tag ? 'Priority tag updated' : 'Priority tag removed');
+  };
+  return (
+    <div className="pt-1">
+      <RfqPriorityPicker value={current} onChange={(tag) => { void save(tag); }} disabled={saving} id={`rfq-priority-${requirement.id}`} />
+    </div>
+  );
+}
+
 export interface RequirementDetailViewProps {
   requirement: Requirement;
   onRequirementUpdated: (req: Requirement) => void;
@@ -522,7 +554,8 @@ export function RequirementDetailView({
               <span className="rounded-full bg-[#FF5A00]/15 px-2 py-0.5 text-[10.5px] font-semibold text-[#FF5A00]">{requirement.categories.name}</span>
             )}
             {requirement.req_number && <span className="text-[10.5px] text-muted-foreground">{requirement.req_number}</span>}
-            {isUrgent && (
+            <RfqPriorityBadge tag={requirement.priority_tag} className="text-[10.5px]" />
+            {isUrgent && !normalizePriorityTag(requirement.priority_tag) && (
               <span className="flex items-center gap-0.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10.5px] font-bold text-red-500">
                 <Zap className="h-3 w-3" /> Urgent
               </span>
@@ -532,6 +565,7 @@ export function RequirementDetailView({
             )}
           </div>
       <h1 className="text-[22px] font-black leading-tight tracking-tight text-foreground sm:text-[28px] lg:text-[32px]">{requirement.title}</h1>
+      {isOwner && <OwnerPriorityEditor requirement={requirement} onRequirementUpdated={onRequirementUpdated} />}
       {headerExtra}
     </header>
   ) : (
@@ -541,7 +575,8 @@ export function RequirementDetailView({
               <span className="rounded-full bg-[#FF5A00]/15 px-2 py-0.5 text-[10.5px] font-semibold text-[#FF5A00]">{requirement.categories.name}</span>
             )}
             {requirement.req_number && <span className="text-[10.5px] text-muted-foreground">{requirement.req_number}</span>}
-            {isUrgent && (
+            <RfqPriorityBadge tag={requirement.priority_tag} className="text-[10.5px]" />
+            {isUrgent && !normalizePriorityTag(requirement.priority_tag) && (
               <span className="flex items-center gap-0.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10.5px] font-bold text-red-500">
                 <Zap className="h-3 w-3" /> Urgent
               </span>
@@ -551,6 +586,7 @@ export function RequirementDetailView({
             )}
           </div>
       <SheetTitle className="pr-8 text-[17px] font-black leading-snug text-foreground md:text-[19px]">{requirement.title}</SheetTitle>
+      {isOwner && <OwnerPriorityEditor requirement={requirement} onRequirementUpdated={onRequirementUpdated} />}
       <SheetDescription className="sr-only">Buying requirement details, quotations and chat</SheetDescription>
     </SheetHeader>
   );
