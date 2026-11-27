@@ -13,7 +13,7 @@ const FeaturedProductsSection = lazy(() => import('@/components/home/FeaturedPro
 const OrderBenefitsSection = lazy(() => import('@/components/home/OrderBenefitsSection'));
 const CategoriesAndStatsSection = lazy(() => import('@/components/home/CategoriesAndStatsSection'));
 const VerifiedSupplierQuickActions = lazy(() => import('@/components/home/VerifiedSupplierQuickActions'));
-const LiveRequirementsFeed = lazy(() => import('@/components/common/LiveRequirementsFeed'));
+const LiveRfqScrollSection = lazy(() => import('@/components/home/LiveRfqScrollSection'));
 const PublicListingsSection = lazy(() => import('@/components/common/PublicListingsSection'));
 const LiveReverseAuctionsRail = lazy(() => import('@/components/home/LiveReverseAuctionsRail'));
 const GlobalTradeNetworkSection = lazy(() => import('@/components/home/GlobalTradeNetworkSection'));
@@ -138,15 +138,16 @@ export default function HomePage() {
       <LandingHero />
 
       {/* ═══════════════════════════════════════════════════
-          SECTION 2: VERIFIED SUPPLIERS (POSITIONED IN FRONT OF FEATURED PRODUCTS)
+          SECTION 2: VERIFIED SUPPLIERS, then Live RFQs, then Verified Products
       ═══════════════════════════════════════════════════ */}
       <Suspense fallback={null}><VerifiedSuppliersSection /></Suspense>
+      <WhenVisible><LiveRfqScrollSection /></WhenVisible>
       <WhenVisible><FeaturedProductsSection /></WhenVisible>
       <WhenVisible><OrderBenefitsSection /></WhenVisible>
       {/* Hidden for now (code and data kept): see src/config/homeSections.ts */}
       {!HIDDEN_HOME_SECTIONS.exploreCategories && <WhenVisible><CategoriesAndStatsSection /></WhenVisible>}
       {!HIDDEN_HOME_SECTIONS.tradeWorkflows && <WhenVisible><VerifiedSupplierQuickActions /></WhenVisible>}
-      <WhenVisible><LiveRequirementsFeed /></WhenVisible>
+      {/* Live RFQs now sit under Verified Suppliers (LiveRfqScrollSection). */}
       {/* buyer requirements from other marketplaces, kept apart from BulkSkart RFQs */}
       <WhenVisible><PublicListingsSection /></WhenVisible>
       {!HIDDEN_HOME_SECTIONS.sellIn24Hours && <WhenVisible><LiveReverseAuctionsRail /></WhenVisible>}

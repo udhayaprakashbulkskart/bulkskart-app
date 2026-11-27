@@ -1,0 +1,46 @@
+/* Continuous, seamless RFQ ticker on the home page. The section itself never widens the page. */
+.live-rfq-scroll {
+  overflow: hidden;
+}
+
+.live-rfq-scroll__viewport {
+  overflow: hidden;
+  width: 100%;
+}
+
+.live-rfq-scroll__track {
+  display: flex;
+  width: max-content;
+  gap: 0.75rem;
+  animation: live-rfq-marquee var(--live-rfq-duration, 40s) linear infinite;
+  will-change: transform;
+}
+
+.live-rfq-scroll.is-paused .live-rfq-scroll__track,
+.live-rfq-scroll__viewport.is-paused .live-rfq-scroll__track,
+.live-rfq-scroll__viewport:hover .live-rfq-scroll__track,
+.live-rfq-scroll__viewport:focus-within .live-rfq-scroll__track {
+  animation-play-state: paused;
+}
+
+@keyframes live-rfq-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-rfq-scroll__viewport {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .live-rfq-scroll__viewport::-webkit-scrollbar {
+    display: none;
+  }
+  .live-rfq-scroll__track {
+    animation: none;
+    will-change: auto;
+    padding-inline: 0.25rem;
+  }
+}
