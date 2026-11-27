@@ -62,7 +62,11 @@ describe('SEO: pre-rendered pages', () => {
     expect(paths).toContain('/faq');
     for (const c of CATEGORY_CATALOG) expect(paths).toContain(`/categories/${c.slug}`);
     for (const a of ALTERNATIVES) expect(paths).toContain(`/${a.slug}`);
-    expect(paths).toHaveLength(1 + 1 + CATEGORY_CATALOG.length + 1 + ALTERNATIVES.length);
+    expect(paths).toContain('/products');
+    expect(paths).toContain('/requirements');
+    expect(paths).toContain('/suppliers');
+    expect(paths).toContain('/manufacturers');
+    expect(paths).toHaveLength(1 + 1 + CATEGORY_CATALOG.length + 1 + ALTERNATIVES.length + 8);
   });
 
   it('puts the meta, one canonical (before the route script) and the structured data in the head, and the text in #root', () => {

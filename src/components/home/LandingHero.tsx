@@ -16,7 +16,7 @@ import ProductCarouselHero from '@/components/home/hero/ProductCarouselHero';
 
 // ── Content ────────────────────────────────────────────────────────────
 const HERO_SLIDES = [
-  { title: 'The Global B2B Marketplace for', accent: 'Bulk Buying & Selling' },
+  { title: 'BulkSkart — The Global B2B Marketplace for', accent: 'Bulk Buying & Selling' },
   { title: 'Compare Quotes From', accent: 'Factories Worldwide' },
   { title: 'Pay Securely With', accent: 'Trade Assurance' },
 ];

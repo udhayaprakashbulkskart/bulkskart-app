@@ -232,6 +232,31 @@ export function prerenderPages(catalog, content, staticPages = []) {
         footerNav(),
     });
   }
+  const extraLandings = [
+    { path: '/products', title: 'Bulk Wholesale Products Catalog — Factory Direct Pricing & MOQs | BulkSkart', description: 'Browse wholesale products from verified manufacturers. Compare bulk pricing and send a buying requirement on BulkSkart.', h1: 'Wholesale products on BulkSkart' },
+    { path: '/requirements', title: 'Live Buying Requirements & Active B2B RFQs | BulkSkart', description: 'Browse active buying requests. Filter by category, delivery location, and quantity, then submit a quotation on BulkSkart.', h1: 'Live buying requirements on BulkSkart' },
+    { path: '/suppliers', title: 'Verified Global Manufacturers & Wholesale Exporters Directory | BulkSkart', description: 'Search verified factories, exporters, and OEM manufacturers. Filter by certification and connect on BulkSkart.', h1: 'Verified manufacturers and suppliers on BulkSkart' },
+    { path: '/manufacturers', title: 'Verified Global Manufacturers & Wholesale Exporters Directory | BulkSkart', description: 'Search verified factories, exporters, and OEM manufacturers. Filter by certification and connect on BulkSkart.', h1: 'Verified manufacturers on BulkSkart' },
+    { path: '/about', title: 'About Us — BulkSkart | Global B2B Bulk Trade Platform', description: 'BulkSkart is a B2B wholesale marketplace connecting buyers with manufacturers and suppliers.', h1: 'About BulkSkart' },
+    { path: '/contact', title: 'Contact BulkSkart — Support, Partnerships & Global Trade Enquiries', description: 'Contact BulkSkart for support, partnerships, and trade enquiries.', h1: 'Contact BulkSkart' },
+    { path: '/how-it-works', title: 'How BulkSkart Works — B2B Bulk Trade Made Simple', description: 'See how buyers post requirements and suppliers respond on BulkSkart.', h1: 'How BulkSkart works' },
+    { path: '/pricing', title: 'Supplier Pricing Plans | BulkSkart', description: 'Compare BulkSkart supplier plans for listing products and responding to buyer requirements.', h1: 'BulkSkart supplier plans' },
+  ];
+  for (const page of extraLandings) {
+    if (pages.some((p) => p.path === page.path)) continue;
+    const trail = [['Home', '/'], [page.h1.replace(/ on BulkSkart$/i, '').replace(/^About /, ''), page.path]];
+    pages.push({
+      path: page.path,
+      title: page.title,
+      description: page.description,
+      jsonLd: [breadcrumbLd(trail)],
+      body:
+        crumbs(trail) +
+        `<h1>${esc(page.h1)}</h1><p>${esc(page.description)}</p>` +
+        `<p>${a('/post-requirement', 'Post a free buying requirement (RFQ)')} · ${a('/auth?tab=supplier', 'Sell on BulkSkart')} · ${a('/categories', 'Browse categories')}</p>` +
+        footerNav(),
+    });
+  }
   return pages;
 }
 
@@ -262,6 +287,7 @@ export function renderPage(baseHtml, page) {
   }
   const head = [
     `<link rel="canonical" href="${canonical}" />`,
+    `<link rel="alternate" hreflang="en" href="${canonical}" />`,
     `<link rel="alternate" hreflang="en-IN" href="${canonical}" />`,
     `<link rel="alternate" hreflang="x-default" href="${canonical}" />`,
     // the same id PageMeta uses, so the app overwrites this one instead of adding a second copy

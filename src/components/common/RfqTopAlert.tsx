@@ -32,8 +32,8 @@ import {
 const FIRST_MS = 6_000;
 const REFRESH_MS = 5 * 60_000;
 const LIMIT = 12;
-// '*' so source_type is read when the database has it (public listings are left out) and nothing breaks before
-const SELECT = '*';
+// Only the fields the alert shows, plus source_type so public listings can be left out.
+const SELECT = 'id,title,description,specifications,quantity,quantity_unit,budget_min,budget_max,currency,created_at,source_type';
 
 async function loadLeads(): Promise<Lead[]> {
   const now = new Date().toISOString();

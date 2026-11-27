@@ -280,6 +280,8 @@ export async function getCompanies(options?: {
   country?: string;
   cursor?: string;
   limit?: number;
+  /** When false, skip the large static Alibaba dataset (home teasers). Default true for the directory. */
+  includeStaticCatalog?: boolean;
 }): Promise<Company[]> {
   let dbCompanies: Company[] = [];
   try {
@@ -323,27 +325,30 @@ export async function getCompanies(options?: {
     return true;
   });
 
-  // Filter Alibaba Verified Suppliers dataset (loaded on demand)
-  const { ALIBABA_VERIFIED_SUPPLIERS } = await loadAlibabaCatalog();
-  const filteredAlibaba = ALIBABA_VERIFIED_SUPPLIERS.filter((s) => {
-    if (options?.verified && !s.is_verified) return false;
-    if (options?.featured && !s.is_featured) return false;
-    if (options?.country && options.country !== 'all' && s.country.toLowerCase() !== options.country.toLowerCase()) {
-      return false;
-    }
-    if (searchQ) {
-      const matchName = s.company_name.toLowerCase().includes(searchQ);
-      const matchCity = s.city?.toLowerCase().includes(searchQ);
-      const matchCountry = s.country.toLowerCase().includes(searchQ);
-      const matchIndustry = s.industry.toLowerCase().includes(searchQ);
-      const matchSub = s.subcategory.toLowerCase().includes(searchQ);
-      const matchProducts = s.key_products?.some((p) => p.toLowerCase().includes(searchQ));
-      if (!matchName && !matchCity && !matchCountry && !matchIndustry && !matchSub && !matchProducts) {
+  // The 1.8MB Alibaba dataset is only merged on directory pages, never on the home teaser.
+  let filteredAlibaba: Company[] = [];
+  if (options?.includeStaticCatalog !== false) {
+    const { ALIBABA_VERIFIED_SUPPLIERS } = await loadAlibabaCatalog();
+    filteredAlibaba = ALIBABA_VERIFIED_SUPPLIERS.filter((s) => {
+      if (options?.verified && !s.is_verified) return false;
+      if (options?.featured && !s.is_featured) return false;
+      if (options?.country && options.country !== 'all' && s.country.toLowerCase() !== options.country.toLowerCase()) {
         return false;
       }
-    }
-    return true;
-  });
+      if (searchQ) {
+        const matchName = s.company_name.toLowerCase().includes(searchQ);
+        const matchCity = s.city?.toLowerCase().includes(searchQ);
+        const matchCountry = s.country.toLowerCase().includes(searchQ);
+        const matchIndustry = s.industry.toLowerCase().includes(searchQ);
+        const matchSub = s.subcategory.toLowerCase().includes(searchQ);
+        const matchProducts = s.key_products?.some((p) => p.toLowerCase().includes(searchQ));
+        if (!matchName && !matchCity && !matchCountry && !matchIndustry && !matchSub && !matchProducts) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
 
   const merged = [...filteredMockup, ...dbCompanies, ...filteredAlibaba];
   const maxLimit = options?.limit ?? 1500;
@@ -586,14 +591,6 @@ export async function getSimilarProducts(categoryId: string | null, excludeId: s
 
   const { data } = await query.order('view_count', { ascending: false });
   let result: Product[] = Array.isArray(data) ? [...data] : [];
-
-  if (result.length < 6 && categoryId) {
-    const { EXPANDED_GLOBAL_PRODUCTS } = await loadGlobalCatalog();
-    const globals = EXPANDED_GLOBAL_PRODUCTS.filter(
-      p => (p.category_id === categoryId || p.category_slug === categoryId) && p.id !== excludeId
-    ).slice(0, 8 - result.length);
-    result.push(...globals.map(mapGlobalToProduct));
-  }
 
   return result;
 }

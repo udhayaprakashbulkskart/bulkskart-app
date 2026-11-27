@@ -1055,7 +1055,7 @@ export default function VerifiedSuppliersSection() {
     try {
       let dbCompanies: Company[] = [];
       try {
-        dbCompanies = await getCompanies({ verified: true, limit: 24 });
+        dbCompanies = await getCompanies({ verified: true, limit: 24, includeStaticCatalog: false });
       } catch (err) {
         console.warn('Could not fetch companies from DB, using simulation catalog:', err);
       }

@@ -12,7 +12,7 @@ describe('home page top laid out from the design picture', () => {
     expect(landing).not.toContain('52,000+');
     expect(landing).toContain("`Live Now: ${openRfqs.toLocaleString('en-IN')} Active RFQs`");
     expect(landing).toContain('loadLiveStats()');
-    expect(landing).toContain("{ title: 'The Global B2B Marketplace for', accent: 'Bulk Buying & Selling' }");
+    expect(landing).toContain("{ title: 'BulkSkart — The Global B2B Marketplace for', accent: 'Bulk Buying & Selling' }");
     expect(landing).toContain('Post Your Requirement');
     expect(landing).toContain('Get Supplier Quotes');
     for (const word of ["['Verified', 'Suppliers']", "['Bulk', 'Pricing']", "['Free', 'Delivery*']", "['Trade', 'Assurance']"]) expect(landing).toContain(word);
