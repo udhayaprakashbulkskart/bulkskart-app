@@ -151,6 +151,15 @@ describe('Live RFQ priority badges', () => {
     expect(screen.queryByText('Hot')).toBeNull();
   });
 
+  it('shows an Urgent badge when is_urgent is set and priority_tag is empty', async () => {
+    const flagged = { ...rfq, is_urgent: true, priority_tag: null } as unknown as Requirement;
+    expect(toLiveRfqCard(flagged).priorityTag).toBe('urgent');
+    getOpenRequirements.mockResolvedValue({ rows: [flagged], total: 1, error: null });
+    renderSection();
+    await waitFor(() => expect(screen.getAllByText('Urgent').length).toBeGreaterThan(0));
+    expect(screen.queryByText('Emergency')).toBeNull();
+  });
+
   it('does not invent a tag on untagged RFQs', async () => {
     renderSection();
     await waitFor(() => expect(screen.getAllByText('Dell OptiPlex Business Desktop Computer').length).toBeGreaterThan(0));

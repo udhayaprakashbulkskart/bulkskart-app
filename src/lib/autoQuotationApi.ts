@@ -53,14 +53,14 @@ export interface AutoQuotationRow {
   auto_sent_at: string | null;
   created_at: string;
   updated_at: string;
-  requirements?: { id: string; title: string; quantity: number; quantity_unit: string; destination_country: string | null; deadline: string | null };
+  requirements?: { id: string; title: string; quantity: number; quantity_unit: string; destination_country: string | null; deadline: string | null; priority_tag?: string | null; is_urgent?: boolean | null };
 }
 
 /** Supplier: fetch all auto_quotations pending approval for their company */
 export async function getPendingApprovalQuotations(companyId: string): Promise<AutoQuotationRow[]> {
   const { data } = await supabase
     .from('auto_quotations')
-    .select('*, requirements!requirement_id(id,title,quantity,quantity_unit,destination_country,deadline)')
+    .select('*, requirements!requirement_id(id,title,quantity,quantity_unit,destination_country,deadline,priority_tag,is_urgent)')
     .eq('supplier_company_id', companyId)
     .eq('status', 'pending_approval')
     .order('created_at', { ascending: false });

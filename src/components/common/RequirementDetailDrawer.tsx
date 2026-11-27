@@ -36,7 +36,7 @@ import SupplierRespondDialog from './SupplierRespondDialog';
 import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
 import { canViewContacts, contactUpgradeHref, maskContactsInText, telHref, whatsappHref } from '@/lib/contactAccess';
 import RfqPriorityBadge, { RfqPriorityPicker } from '@/components/common/RfqPriorityBadge';
-import { isUrgentFromTag, normalizePriorityTag } from '@/lib/rfqPriority';
+import { displayPriorityTag, isUrgentFromTag, normalizePriorityTag } from '@/lib/rfqPriority';
 import { deliveryByLabel, isDeliveryDatePassed } from '@/lib/deliveryDate';
 import { fetchVisibleContacts } from '@/lib/profileContacts';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
@@ -492,8 +492,6 @@ export function RequirementDetailView({
 
   // @ts-expect-error
   const dealStatus: string = requirement.deal_status ?? 'active';
-  // @ts-expect-error extended col
-  const isUrgent: boolean = Boolean(requirement.is_urgent);
   const buyer = requirement.profiles as { full_name?: string | null; company_name?: string | null; phone?: string | null } | undefined;
   const buyerName = buyer?.company_name || buyer?.full_name || 'Buyer';
   const place = placeLabel(requirement);
@@ -546,12 +544,7 @@ export function RequirementDetailView({
               <span className="rounded-full bg-[#FF5A00]/15 px-2 py-0.5 text-[10.5px] font-semibold text-[#FF5A00]">{requirement.categories.name}</span>
             )}
             {requirement.req_number && <span className="text-[10.5px] text-muted-foreground">{requirement.req_number}</span>}
-            <RfqPriorityBadge tag={requirement.priority_tag} className="text-[10.5px]" />
-            {isUrgent && !normalizePriorityTag(requirement.priority_tag) && (
-              <span className="flex items-center gap-0.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10.5px] font-bold text-red-500">
-                <Zap className="h-3 w-3" /> Urgent
-              </span>
-            )}
+            <RfqPriorityBadge tag={displayPriorityTag(requirement)} className="text-[10.5px]" />
             {requirement.is_verified_buyer && (
               <span className="flex items-center gap-0.5 text-[10.5px] font-semibold text-[#FF5A00]"><BadgeCheck className="h-3.5 w-3.5" /> Verified buyer</span>
             )}
@@ -567,12 +560,7 @@ export function RequirementDetailView({
               <span className="rounded-full bg-[#FF5A00]/15 px-2 py-0.5 text-[10.5px] font-semibold text-[#FF5A00]">{requirement.categories.name}</span>
             )}
             {requirement.req_number && <span className="text-[10.5px] text-muted-foreground">{requirement.req_number}</span>}
-            <RfqPriorityBadge tag={requirement.priority_tag} className="text-[10.5px]" />
-            {isUrgent && !normalizePriorityTag(requirement.priority_tag) && (
-              <span className="flex items-center gap-0.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10.5px] font-bold text-red-500">
-                <Zap className="h-3 w-3" /> Urgent
-              </span>
-            )}
+            <RfqPriorityBadge tag={displayPriorityTag(requirement)} className="text-[10.5px]" />
             {requirement.is_verified_buyer && (
               <span className="flex items-center gap-0.5 text-[10.5px] font-semibold text-[#FF5A00]"><BadgeCheck className="h-3.5 w-3.5" /> Verified buyer</span>
             )}

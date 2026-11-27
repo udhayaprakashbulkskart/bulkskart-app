@@ -29,3 +29,8 @@ export function normalizePriorityTag(value: unknown): RfqPriorityTag | null {
 export function isUrgentFromTag(tag: RfqPriorityTag | null): boolean {
   return tag === 'urgent' || tag === 'emergency';
 }
+
+/** Badge to show: the buyer's chosen tag, or Urgent when only the older is_urgent flag is set. Display only — does not write data. */
+export function displayPriorityTag(req: { priority_tag?: unknown; is_urgent?: boolean | null }): RfqPriorityTag | null {
+  return normalizePriorityTag(req.priority_tag) ?? (req.is_urgent ? 'urgent' : null);
+}

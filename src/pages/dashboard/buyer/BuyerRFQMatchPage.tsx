@@ -24,6 +24,8 @@ import { supabase } from '@/db/supabase';
 import { getQuotationsForRequirement } from '@/lib/api';
 import type { Quotation } from '@/types/types';
 import DeliveryByText from '@/components/common/DeliveryByText';
+import RfqPriorityBadge from '@/components/common/RfqPriorityBadge';
+import { displayPriorityTag } from '@/lib/rfqPriority';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +44,8 @@ interface Requirement {
   status: string;
   quote_count: number;
   categories: { name: string } | null;
+  priority_tag?: string | null;
+  is_urgent?: boolean | null;
 }
 
 interface MatchRow {
@@ -174,7 +178,7 @@ export default function BuyerRFQMatchPage() {
     if (!id) return;
     supabase
       .from('requirements')
-      .select('id,title,description,quantity,quantity_unit,destination_country,destination_city,deadline,budget_min,budget_max,currency,status,quote_count,categories(name)')
+      .select('id,title,description,quantity,quantity_unit,destination_country,destination_city,deadline,budget_min,budget_max,currency,status,quote_count,priority_tag,is_urgent,categories(name)')
       .eq('id', id)
       .maybeSingle()
       .then(({ data }) => {
@@ -297,7 +301,7 @@ export default function BuyerRFQMatchPage() {
               <div className="flex flex-col md:flex-row md:items-start gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                    <h1 className="text-lg font-bold text-foreground">{requirement.title}</h1>
+                    <h1 className="text-lg font-bold text-foreground inline-flex flex-wrap items-center gap-2">{requirement.title}<RfqPriorityBadge tag={displayPriorityTag(requirement)} /></h1>
                     <Badge variant="outline" className={`text-xs capitalize shrink-0 ${
                       requirement.status === 'active' ? 'text-orange-500 border-orange-500/30 bg-orange-500/10'
                         : 'text-muted-foreground border-border'

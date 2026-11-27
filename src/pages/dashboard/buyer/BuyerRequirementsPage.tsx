@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PageMeta from '@/components/common/PageMeta';
 import DeliveryByText from '@/components/common/DeliveryByText';
+import RfqPriorityBadge from '@/components/common/RfqPriorityBadge';
+import { displayPriorityTag } from '@/lib/rfqPriority';
 
 export default function BuyerRequirementsPage() {
   const { user } = useAuth();
@@ -112,7 +114,7 @@ export default function BuyerRequirementsPage() {
                     {filtered.map(req => (
                       <tr key={req.id} className="border-b border-border hover:bg-muted/20 transition-colors">
                         <td className="px-4 py-3 text-sm font-medium text-foreground max-w-xs">
-                          <p className="truncate">{req.title}</p>
+                          <p className="truncate inline-flex flex-wrap items-center gap-1.5">{req.title}<RfqPriorityBadge tag={displayPriorityTag(req)} /></p>
                           {req.categories && <p className="text-xs text-muted-foreground">{req.categories.name}</p>}
                         </td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">{req.quantity} {req.quantity_unit}</td>

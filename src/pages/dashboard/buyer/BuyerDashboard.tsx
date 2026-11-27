@@ -13,6 +13,8 @@ import PageMeta from '@/components/common/PageMeta';
 import { AccountCard, ActionsCard, BarsChart, Gauge, Kpi, Mini, Notice, PageHeader, Panel, QuickLink, Segmented } from '@/components/dashboard/parts';
 import { fetchMonthly, lastMonths, percentChange, sum } from '@/components/dashboard/series';
 import DeliveryByText from '@/components/common/DeliveryByText';
+import RfqPriorityBadge from '@/components/common/RfqPriorityBadge';
+import { displayPriorityTag } from '@/lib/rfqPriority';
 
 type BuyerStats = {
   totalReqs: number; totalQuotes: number; activeConvs: number;
@@ -330,7 +332,9 @@ export default function BuyerDashboard() {
                 <tbody>
                   {requirements.slice(0, 5).map((req) => (
                     <tr key={req.id} className="border-t border-border transition-colors hover:bg-muted/30">
-                      <td className="px-4 py-3 text-sm font-medium text-foreground">{req.title}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-foreground">
+                        <span className="inline-flex flex-wrap items-center gap-1.5">{req.title}<RfqPriorityBadge tag={displayPriorityTag(req)} /></span>
+                      </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">{req.quantity} {req.quantity_unit}</td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">
                         {req.deadline ? <DeliveryByText deadline={req.deadline} /> : '—'}
