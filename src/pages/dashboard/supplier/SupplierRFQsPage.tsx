@@ -14,6 +14,8 @@ import { getRequirements } from '@/lib/api';
 import { getPendingApprovalQuotations, approveAutoQuotation, dismissAutoQuotation, type AutoQuotationRow } from '@/lib/autoQuotationApi';
 import type { Requirement } from '@/types/types';
 import DeliveryByText from '@/components/common/DeliveryByText';
+import RfqPriorityBadge from '@/components/common/RfqPriorityBadge';
+import { displayPriorityTag } from '@/lib/rfqPriority';
 
 const LEAD_COUNT = 30;
 
@@ -163,6 +165,7 @@ export default function SupplierRFQsPage() {
                             <Badge className="text-[10px] bg-orange-100 text-orange-700 border-orange-300">Pending Approval</Badge>
                           </div>
                           <p className="text-sm font-semibold text-foreground truncate">{aq.product_name}</p>
+                          {req && <div className="mt-1"><RfqPriorityBadge tag={displayPriorityTag(req)} /></div>}
                           {req && (
                             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
                               <span className="flex items-center gap-1">
@@ -276,6 +279,7 @@ export default function SupplierRFQsPage() {
                           <Link to={`/requirements/${lead.id}`} className="text-sm font-semibold text-foreground line-clamp-1 hover:text-primary">
                             {lead.title}
                           </Link>
+                          <RfqPriorityBadge tag={displayPriorityTag(lead)} />
                           {lead.created_at && <span className="text-[10px] font-semibold text-orange-500 shrink-0">{postedLabel(lead.created_at)}</span>}
                         </div>
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">

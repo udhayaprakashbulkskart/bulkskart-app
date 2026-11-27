@@ -13,7 +13,7 @@ import { ArrowRight, Truck, MapPin, Package } from 'lucide-react';
 import { getOpenRequirements } from '@/lib/api';
 import { isPublicListing } from '@/lib/publicListings';
 import RfqPriorityBadge from '@/components/common/RfqPriorityBadge';
-import { normalizePriorityTag, type RfqPriorityTag } from '@/lib/rfqPriority';
+import { displayPriorityTag, type RfqPriorityTag } from '@/lib/rfqPriority';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
 import type { Requirement } from '@/types/types';
 import './live-rfq-scroll.css';
@@ -54,7 +54,7 @@ export function toLiveRfqCard(req: Requirement): LiveRfqCard {
     city: (req.destination_city || '').trim() || placeLabel(req) || 'Location not stated',
     photo: rfqReferencePhoto(req),
     deliveryDate: deliveryByLabel(req.deadline),
-    priorityTag: normalizePriorityTag(req.priority_tag),
+    priorityTag: displayPriorityTag(req),
   };
 }
 

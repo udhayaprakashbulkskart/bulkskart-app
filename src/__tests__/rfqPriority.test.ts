@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { isUrgentFromTag, normalizePriorityTag, RFQ_PRIORITY_CLASS, RFQ_PRIORITY_LABEL } from '@/lib/rfqPriority';
+import { displayPriorityTag, isUrgentFromTag, normalizePriorityTag, RFQ_PRIORITY_CLASS, RFQ_PRIORITY_LABEL } from '@/lib/rfqPriority';
 
 const src = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
@@ -15,6 +15,15 @@ describe('normalizePriorityTag', () => {
     expect(normalizePriorityTag('')).toBeNull();
     expect(normalizePriorityTag('new')).toBeNull();
     expect(normalizePriorityTag('priority')).toBeNull();
+  });
+
+  it('shows Urgent when only the older is_urgent flag is set, and prefers a chosen tag', () => {
+    expect(displayPriorityTag({ priority_tag: null, is_urgent: true })).toBe('urgent');
+    expect(displayPriorityTag({ is_urgent: true })).toBe('urgent');
+    expect(displayPriorityTag({ priority_tag: 'emergency', is_urgent: true })).toBe('emergency');
+    expect(displayPriorityTag({ priority_tag: 'hot', is_urgent: false })).toBe('hot');
+    expect(displayPriorityTag({ priority_tag: null, is_urgent: false })).toBeNull();
+    expect(displayPriorityTag({})).toBeNull();
   });
 
   it('keeps the older is_urgent flag in step with Urgent and Emergency only', () => {
@@ -66,9 +75,10 @@ describe('the tag is optional on the post form and visible on RFQ cards and the 
     const list = src('src/pages/RequirementsPage.tsx');
     const detail = src('src/components/common/RequirementDetailDrawer.tsx');
     expect(ticker).toContain('RfqPriorityBadge');
+    expect(ticker).toContain('displayPriorityTag');
     expect(ticker).toContain('priorityTag');
     expect(list).toContain('RfqPriorityBadge');
-    expect(list).toContain('req.priority_tag');
+    expect(list).toContain('displayPriorityTag');
     expect(detail).toContain('RfqPriorityBadge');
     expect(detail).toContain('OwnerPriorityEditor');
     expect(detail).toContain('updateRequirement');

@@ -30,7 +30,7 @@ import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import { getRequirementVisualInfo, placeLabel, quantityLabel } from '@/lib/requirementVisuals';
 import { isDeliveryDatePassed } from '@/lib/deliveryDate';
 import RfqPriorityBadge from '@/components/common/RfqPriorityBadge';
-import { normalizePriorityTag } from '@/lib/rfqPriority';
+import { displayPriorityTag } from '@/lib/rfqPriority';
 import RequirementThumb, { categoryIcon } from '@/components/common/RequirementThumb';
 import PublicListingsSection from '@/components/common/PublicListingsSection';
 
@@ -745,8 +745,8 @@ export default function RequirementsPage() {
                         <div className="flex-1 min-w-0">
                           {/* Tag Badge */}
                           <div className="flex items-center gap-2 mb-1">
-                            <RfqPriorityBadge tag={req.priority_tag} />
-                            {!(normalizePriorityTag(req.priority_tag) && visual.tag.type === 'urgent') && (
+                            <RfqPriorityBadge tag={displayPriorityTag(req)} />
+                            {!(displayPriorityTag(req) && visual.tag.type === 'urgent') && (
                             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded tracking-wide uppercase flex items-center gap-1 ${visual.tag.bgClass} ${visual.tag.textClass}`}>
                               {visual.tag.type === 'urgent' && <Zap className="w-2.5 h-2.5 fill-current" />}
                               {visual.tag.label}

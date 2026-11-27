@@ -23,6 +23,8 @@ import {
 import InstantQuoteDialog from '@/components/common/InstantQuoteDialog';
 import RFQMatchResultsPanel from '@/components/common/RFQMatchResultsPanel';
 import DeliveryByText from '@/components/common/DeliveryByText';
+import RfqPriorityBadge from '@/components/common/RfqPriorityBadge';
+import { displayPriorityTag } from '@/lib/rfqPriority';
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
@@ -245,7 +247,10 @@ export default function BuyerRequirementsOverviewPage() {
                     <div className="flex flex-col md:flex-row md:items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <p className="text-sm font-semibold text-foreground truncate">{req.title}</p>
+                          <p className="text-sm font-semibold text-foreground truncate inline-flex items-center gap-1.5 max-w-full">
+                            <span className="truncate">{req.title}</span>
+                            <RfqPriorityBadge tag={displayPriorityTag(req)} />
+                          </p>
                           <StatusBadge status={req.status} />
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
