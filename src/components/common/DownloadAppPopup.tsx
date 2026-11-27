@@ -1,8 +1,9 @@
 /**
  * "Download the BulkSkart App" popup notification.
  *
- * Phones and small tablets: a card that slides down from the top of the screen (the bottom is used by the buyer
- * alert and the chat button). Laptops and desktops: a card at the bottom left.
+ * A card that slides in from the top of the screen (below the header on laptops and desktops). It is kept off
+ * the bottom so it cannot sit on the Live RFQ ticker's Call, WhatsApp, Quote and Chat buttons, the chat launcher,
+ * or the mobile bottom nav.
  * Download opens the app store page when one is set, otherwise the browser's own install dialog, otherwise short
  * steps for adding BulkSkart to the home screen (Safari on iPhone and iPad, and browsers without an install dialog).
  * It waits a few seconds after the page opens, stays away for a few days once closed, never shows inside the
@@ -142,7 +143,7 @@ export default function DownloadAppPopup() {
       aria-modal="false"
       aria-labelledby="download-app-title"
       aria-describedby="download-app-text"
-      className="fixed inset-x-2 top-[max(8px,env(safe-area-inset-top))] z-[90] mx-auto max-w-[460px] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-4 motion-safe:duration-300 md:inset-x-auto md:bottom-5 md:left-5 md:top-auto md:mx-0 md:w-[400px] md:max-w-none md:motion-safe:slide-in-from-bottom-4"
+      className="fixed inset-x-2 top-[max(8px,env(safe-area-inset-top))] z-[90] mx-auto max-w-[460px] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-4 motion-safe:duration-300 md:inset-x-auto md:left-5 md:top-28 md:bottom-auto md:mx-0 md:w-[400px] md:max-w-none"
     >
       <div className="relative overflow-hidden rounded-2xl border border-[#FF5A00]/55 bg-[#0b0b0b]/95 p-3 text-white shadow-[0_18px_44px_-14px_rgba(255,90,0,0.55)] backdrop-blur-xl sm:p-4">
         <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-[#FF5A00]/20 blur-3xl" />

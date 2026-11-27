@@ -240,6 +240,21 @@ describe('Live RFQ card actions', () => {
     expect(screen.queryByText('9876543210')).toBeNull();
   });
 
+  it('opens the sign-in or upgrade dialog from a locked button on a card inside the marquee', async () => {
+    const user = userEvent.setup();
+    const { container } = renderSection();
+    await waitFor(() => expect(container.querySelector('.live-rfq-scroll__track')).toBeTruthy());
+    expect(container.querySelector('.live-rfq-scroll__viewport')).toBeTruthy();
+    expect(container.querySelector('.live-rfq-scroll__track ul')).toBeTruthy();
+    const call = container.querySelector('.live-rfq-scroll__track button') as HTMLButtonElement;
+    expect(call).toBeTruthy();
+    expect(call.textContent).toMatch(/Call/);
+    await user.click(call);
+    const dialog = await screen.findByRole('dialog', { name: /Login to Send Quotations/ });
+    expect(dialog).toBeVisible();
+    expect(dialog).toHaveTextContent('Sign in or register');
+  });
+
   it('asks a free user to upgrade, and still does not fetch the number', async () => {
     auth.value = { user: { id: 'supplier-1' }, profile: { role: 'supplier' }, company: { id: 'co-1' }, isPaidSubscriber: false };
     const user = userEvent.setup();

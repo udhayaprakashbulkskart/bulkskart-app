@@ -76,6 +76,15 @@ describe('Download App popup', () => {
     expect(src('src/App.tsx')).toContain('<DownloadAppPopup />');
     expect(src('src/main.tsx')).toContain('import "./lib/appInstall";');
   });
+
+  it('stays at the top of the screen so it cannot cover Live RFQ Call, WhatsApp, Quote and Chat buttons', () => {
+    const popup = src('src/components/common/DownloadAppPopup.tsx');
+    expect(popup).toContain('md:top-28');
+    expect(popup).toContain('md:bottom-auto');
+    expect(popup).not.toContain('md:bottom-5');
+    expect(popup).not.toContain('md:top-auto');
+    expect(popup).not.toContain('slide-in-from-bottom-4');
+  });
 });
 
 describe('Live RFQ: anyone can view, only Premium (paid) suppliers send quotations', () => {
