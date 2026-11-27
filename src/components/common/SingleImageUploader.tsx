@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, Camera, RefreshCw, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { uploadImage, formatBytes, StorageBucket } from '@/lib/storage';
+import { uploadImage, formatBytes, inferImageType, isKnownImageType, StorageBucket } from '@/lib/storage';
 import { toast } from 'sonner';
 
 interface SingleImageUploaderProps {
@@ -40,32 +40,31 @@ export default function SingleImageUploader({
   const handleFile = async (file: File) => {
     if (disabled || isUploading) return;
 
-    if (!file.type.startsWith('image/')) {
+    const type = inferImageType(file);
+    if (!type.startsWith('image/') && !isKnownImageType(type)) {
       toast.error('Please upload a valid image file (JPG, PNG, WEBP, GIF)');
       return;
     }
 
-    if (file.size > maxSizeBytes) {
-      toast.error(`Image size exceeds limit of ${formatBytes(maxSizeBytes)}`);
+    // Phone camera photos are often 5–12 MB; compress them first instead of rejecting here.
+    const maxOriginalBytes = Math.max(maxSizeBytes, 15 * 1024 * 1024);
+    if (file.size > maxOriginalBytes) {
+      toast.error(`Image size exceeds limit of ${formatBytes(maxOriginalBytes)}`);
       return;
     }
 
     setIsUploading(true);
-    setProgress(20);
-
-    // Simulate steady progress feedback
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev < 85 ? prev + 15 : prev));
-    }, 150);
+    setProgress(10);
 
     try {
       const result = await uploadImage(file, {
         bucket,
         folder,
         maxSizeBytes,
+        maxOriginalBytes,
+        onProgress: (pct) => setProgress(pct),
       });
 
-      clearInterval(interval);
       setProgress(100);
 
       onChange(result.url);
@@ -76,7 +75,6 @@ export default function SingleImageUploader({
         toast.success(`Image uploaded successfully (${formatBytes(result.newSize)})`);
       }
     } catch (err: any) {
-      clearInterval(interval);
       console.error('Upload error:', err);
       toast.error(err.message || 'Failed to upload image. Please try again.');
     } finally {
@@ -210,7 +208,7 @@ export default function SingleImageUploader({
 
           {description && <p className="text-[11px] text-muted-foreground leading-relaxed">{description}</p>}
           <p className="text-[10px] text-muted-foreground/70">
-            JPG, PNG, WEBP • Max {formatBytes(maxSizeBytes)} • Auto-compressed
+            JPG, PNG, WEBP • Auto-compressed (photos up to {formatBytes(Math.max(maxSizeBytes, 15 * 1024 * 1024))})
           </p>
         </div>
       </div>
@@ -218,7 +216,7 @@ export default function SingleImageUploader({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];

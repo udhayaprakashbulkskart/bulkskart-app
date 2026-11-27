@@ -189,7 +189,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
           </IconBox>
         </Field>
 
-        <Field label="Reference Image" required error={fieldErrors.image} hint="A photo or drawing of the exact product (JPG, PNG or WEBP, up to 5 MB).">
+        <Field label="Reference Image" required error={fieldErrors.image} hint="A photo or drawing of the exact product (JPG, PNG or WEBP). Large phone photos are compressed automatically.">
           <SingleImageUploader
             value={attachmentUrl}
             shape="rectangle"

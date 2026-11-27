@@ -179,7 +179,7 @@ export default function SupplierRFQsPage() {
                               {req.deadline && (
                                 <span className="flex items-center gap-1">
                                   <Calendar className="w-3 h-3" />
-                                  {dateLabel(req.deadline)}
+                                  Delivery by {dateLabel(req.deadline)}
                                 </span>
                               )}
                             </div>
@@ -293,7 +293,7 @@ export default function SupplierRFQsPage() {
                           {lead.deadline && (
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              By {dateLabel(lead.deadline)}
+                              Delivery by {dateLabel(lead.deadline)}
                             </span>
                           )}
                           {lead.categories?.name && <span>{lead.categories.name}</span>}

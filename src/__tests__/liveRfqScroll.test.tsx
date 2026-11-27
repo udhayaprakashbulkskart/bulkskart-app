@@ -4,7 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Requirement } from '@/types/types';
-import { deliveryDateLabel, loopUnit, rfqReferencePhoto, toLiveRfqCard } from '@/components/home/LiveRfqScrollSection';
+import { deliveryByLabel, deliveryDateLabel, loopUnit, rfqReferencePhoto, toLiveRfqCard } from '@/components/home/LiveRfqScrollSection';
 
 const getOpenRequirements = vi.fn();
 vi.mock('@/lib/api', () => ({
@@ -70,7 +70,7 @@ describe('Live RFQ scroll section', () => {
     expect(screen.getAllByText('Dell OptiPlex Business Desktop Computer').length).toBeGreaterThan(0);
     expect(screen.getAllByText('200 Sets').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Bengaluru').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('12 Dec 2026').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Delivery by 12 Dec 2026').length).toBeGreaterThan(0);
     expect(screen.queryByText('3 hours ago')).toBeNull();
     expect(screen.queryByText(/just now/i)).toBeNull();
     const photos = screen.getAllByRole('img', { name: 'Dell OptiPlex Business Desktop Computer' });
@@ -92,6 +92,7 @@ describe('Live RFQ scroll section', () => {
     renderSection();
     await waitFor(() => expect(screen.getAllByTestId('rfq-photo-placeholder').length).toBeGreaterThan(0));
     expect(screen.queryByRole('img', { name: 'Dell OptiPlex Business Desktop Computer' })).toBeNull();
+    expect(screen.queryByText(/Delivery by/)).toBeNull();
     expect(screen.queryByText('12 Dec 2026')).toBeNull();
     expect(screen.queryByText(/hours ago|min ago|Just now|Yesterday|flexible/i)).toBeNull();
   });
@@ -113,7 +114,9 @@ describe('Live RFQ scroll section', () => {
     expect(loopUnit(['a', 'b'], 8)).toHaveLength(8);
     expect(toLiveRfqCard(rfq).city).toBe('Bengaluru');
     expect(toLiveRfqCard(rfq).photo).toBe(PHOTO);
-    expect(toLiveRfqCard(rfq).deliveryDate).toBe('12 Dec 2026');
+    expect(toLiveRfqCard(rfq).deliveryDate).toBe('Delivery by 12 Dec 2026');
+    expect(deliveryByLabel('2026-12-12')).toBe('Delivery by 12 Dec 2026');
+    expect(deliveryByLabel(null)).toBeNull();
     expect(toLiveRfqCard(rfq)).not.toHaveProperty('phone');
     expect(toLiveRfqCard(rfq)).not.toHaveProperty('email');
     expect(toLiveRfqCard(rfq)).not.toHaveProperty('postedAgo');
