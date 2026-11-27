@@ -176,9 +176,15 @@ function RfqPhoto({ src, alt }: { src: string | null; alt: string }) {
 function RfqTickerCard({ card, tabIndex }: { card: LiveRfqCard; tabIndex?: number }) {
   return (
     <article className="flex w-[230px] shrink-0 flex-col rounded-2xl border border-border bg-card p-3 shadow-sm sm:w-[260px] sm:p-3.5">
-      <RfqPhoto src={card.photo} alt={card.title} />
-      {card.priorityTag && <div className="mt-2"><RfqPriorityBadge tag={card.priorityTag} /></div>}
-      <h3 className={`${card.priorityTag ? 'mt-1.5' : 'mt-2.5'} line-clamp-2 min-h-[2.5rem] text-[13px] font-bold leading-snug text-foreground sm:text-[14px]`}>{card.title}</h3>
+      <div className="relative">
+        <RfqPhoto src={card.photo} alt={card.title} />
+        {card.priorityTag && (
+          <div className="pointer-events-none absolute left-2 top-2 z-10" data-testid="rfq-priority-badge">
+            <RfqPriorityBadge tag={card.priorityTag} className="shadow-sm" />
+          </div>
+        )}
+      </div>
+      <h3 className="mt-2.5 line-clamp-2 min-h-[2.5rem] text-[13px] font-bold leading-snug text-foreground sm:text-[14px]">{card.title}</h3>
       <p className="mt-2 flex items-center gap-1.5 text-[12px] text-muted-foreground">
         <Package className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" aria-hidden="true" />
         <span className="truncate">{card.quantityLabel}</span>

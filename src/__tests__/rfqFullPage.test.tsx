@@ -156,4 +156,15 @@ describe('Opening an RFQ', () => {
   it('the RFQ page renders the shared view as a page', () => {
     expect(src('src/pages/RequirementDetailsPage.tsx')).toContain('<RequirementDetailView\n            layout="page"');
   });
+
+  it('lets an admin set a priority tag on any RFQ, and hides the picker from a visitor', () => {
+    renderPage();
+    expect(screen.queryByRole('button', { name: 'Emergency' })).toBeNull();
+    expect(screen.queryByText('Priority tag')).toBeNull();
+    auth.value = { user: { id: 'admin-1' }, profile: { role: 'admin' }, company: null, isPaidSubscriber: true };
+    renderPage();
+    expect(screen.getAllByRole('button', { name: 'Emergency' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Urgent' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Hot' }).length).toBeGreaterThan(0);
+  });
 });

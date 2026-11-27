@@ -81,6 +81,8 @@ describe('the tag is optional on the post form and visible on RFQ cards and the 
     expect(list).toContain('displayPriorityTag');
     expect(detail).toContain('RfqPriorityBadge');
     expect(detail).toContain('OwnerPriorityEditor');
+    expect(detail).toContain('canEditPriority');
+    expect(detail).toContain("profile?.role === 'admin'");
     expect(detail).toContain('updateRequirement');
   });
 });
