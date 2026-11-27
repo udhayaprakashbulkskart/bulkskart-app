@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PageMeta from '@/components/common/PageMeta';
+import DeliveryByText from '@/components/common/DeliveryByText';
 
 export default function BuyerRequirementsPage() {
   const { user } = useAuth();
@@ -101,7 +102,7 @@ export default function BuyerRequirementsPage() {
                       <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Requirement</th>
                       <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Qty</th>
                       <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Destination</th>
-                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Deadline</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Delivery by</th>
                       <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Status</th>
                       <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Quotes</th>
                       <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Actions</th>
@@ -117,7 +118,7 @@ export default function BuyerRequirementsPage() {
                         <td className="px-4 py-3 text-xs text-muted-foreground">{req.quantity} {req.quantity_unit}</td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">{req.destination_country ?? '—'}</td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {req.deadline ? new Date(req.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                          {req.deadline ? <DeliveryByText deadline={req.deadline} /> : '—'}
                         </td>
                         <td className="px-4 py-3">
                           <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'text-orange-400 border-orange-400/30' : 'text-muted-foreground'}`}>

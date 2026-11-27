@@ -13,6 +13,7 @@ import { supabase } from '@/db/supabase';
 import { getRequirements } from '@/lib/api';
 import { getPendingApprovalQuotations, approveAutoQuotation, dismissAutoQuotation, type AutoQuotationRow } from '@/lib/autoQuotationApi';
 import type { Requirement } from '@/types/types';
+import DeliveryByText from '@/components/common/DeliveryByText';
 
 const LEAD_COUNT = 30;
 
@@ -25,8 +26,6 @@ function postedLabel(iso: string | null | undefined): string {
   const days = Math.round(hours / 24);
   return days === 1 ? 'Yesterday' : `${days} days ago`;
 }
-
-const dateLabel = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
 /**
  * RFQ leads: the open buyer requirements on BulkSkart, newest first. A quote sent from here is a real quotation the
@@ -179,7 +178,7 @@ export default function SupplierRFQsPage() {
                               {req.deadline && (
                                 <span className="flex items-center gap-1">
                                   <Calendar className="w-3 h-3" />
-                                  Delivery by {dateLabel(req.deadline)}
+                                  <DeliveryByText deadline={req.deadline} />
                                 </span>
                               )}
                             </div>
@@ -293,7 +292,7 @@ export default function SupplierRFQsPage() {
                           {lead.deadline && (
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              Delivery by {dateLabel(lead.deadline)}
+                              <DeliveryByText deadline={lead.deadline} />
                             </span>
                           )}
                           {lead.categories?.name && <span>{lead.categories.name}</span>}

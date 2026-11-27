@@ -26,6 +26,7 @@ import {
 import { createRequirement } from '@/lib/api';
 import { RfqPriorityPicker } from '@/components/common/RfqPriorityBadge';
 import { isUrgentFromTag, type RfqPriorityTag } from '@/lib/rfqPriority';
+import { isValidDeliveryDate, normalizeDeadlineInput, PAST_DELIVERY_DATE_MESSAGE, todayIsoDateIST } from '@/lib/deliveryDate';
 import { supabase } from '@/db/supabase';
 import { invokeAutoQuotation } from '@/lib/autoQuotationApi';
 import { CITY_NAMES } from '@/lib/signup/places';
@@ -97,6 +98,9 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
     if (!attachmentUrl) {
       errors.image = 'Requirement reference image is required. Upload an image representing the requested item.';
     }
+    if (form.deadline && !isValidDeliveryDate(form.deadline)) {
+      errors.deadline = PAST_DELIVERY_DATE_MESSAGE;
+    }
 
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
@@ -126,7 +130,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
       budget_max: form.budget_max ? parseFloat(form.budget_max) : null,
       destination_country: form.destination_country || null,
       destination_city: form.destination_city.trim() || null,
-      deadline: form.deadline || null,
+      deadline: normalizeDeadlineInput(form.deadline),
       specifications: form.specifications.trim() || null,
       attachment_url: attachmentUrl,
       status: 'active',
@@ -309,14 +313,16 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
               ))}
             </datalist>
           </Field>
-          <Field htmlFor={`${ids}-deadline`} label="Required Delivery Date" optional wide>
+          <Field htmlFor={`${ids}-deadline`} label="Delivery by" optional wide error={fieldErrors.deadline} hint="When you need the goods. Leave blank if you do not have a date yet.">
             <IconBox icon={Calendar}>
               <TextInput
                 id={`${ids}-deadline`}
                 type="date"
+                lang="en-GB"
                 value={form.deadline}
-                onChange={(e) => set('deadline', e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) => { set('deadline', e.target.value); clear('deadline'); }}
+                min={todayIsoDateIST()}
+                invalid={Boolean(fieldErrors.deadline)}
                 iconPadding
               />
             </IconBox>

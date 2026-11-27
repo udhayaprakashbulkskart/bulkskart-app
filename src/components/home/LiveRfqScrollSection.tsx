@@ -42,20 +42,8 @@ export function rfqReferencePhoto(req: Pick<Requirement, 'images' | 'attachment_
   return attachment || null;
 }
 
-/** "12 Dec 2026", the same day format the RFQ page uses for the deadline. */
-export function deliveryDateLabel(deadline: string | null | undefined): string | null {
-  const iso = (deadline ?? '').trim();
-  if (!iso) return null;
-  const day = new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso);
-  if (Number.isNaN(day.getTime())) return null;
-  return day.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-/** "Delivery by 12 Dec 2026", or null when the buyer left the date blank. */
-export function deliveryByLabel(deadline: string | null | undefined): string | null {
-  const day = deliveryDateLabel(deadline);
-  return day ? `Delivery by ${day}` : null;
-}
+import { deliveryByLabel } from '@/lib/deliveryDate';
+export { deliveryByLabel, deliveryDateLabel } from '@/lib/deliveryDate';
 
 /** Fields the ticker may keep — never phone, email or a profile object. */
 export function toLiveRfqCard(req: Requirement): LiveRfqCard {
@@ -201,7 +189,7 @@ function RfqTickerCard({ card, tabIndex }: { card: LiveRfqCard; tabIndex?: numbe
       </p>
       <div className="mt-2.5 flex items-center justify-between gap-2">
         {card.deliveryDate ? (
-          <span className="flex min-w-0 items-center gap-1 truncate text-[11px] font-semibold text-[#FF5A00]">
+          <span className={`flex min-w-0 items-center gap-1 truncate text-[11px] font-semibold ${card.deliveryDate === 'Delivery date passed' ? 'text-muted-foreground' : 'text-[#FF5A00]'}`}>
             <Truck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span className="truncate">{card.deliveryDate}</span>
           </span>

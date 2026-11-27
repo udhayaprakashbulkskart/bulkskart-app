@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createRequirement, getCategories } from '@/lib/api';
 import { RfqPriorityPicker } from '@/components/common/RfqPriorityBadge';
 import { isUrgentFromTag, normalizePriorityTag, type RfqPriorityTag } from '@/lib/rfqPriority';
+import { isValidDeliveryDate, normalizeDeadlineInput, PAST_DELIVERY_DATE_MESSAGE, todayIsoDateIST } from '@/lib/deliveryDate';
 import { supabase } from '@/db/supabase';
 import type { Category, RfqStatus } from '@/types/types';
 import { toast } from 'sonner';
@@ -126,6 +127,9 @@ export default function PostRequirementPage() {
     if (!user && !form.buyerContact.trim()) {
       errors.buyerContact = 'Contact email or phone is required to receive manufacturer quotations';
     }
+    if (form.requiredDate && !isValidDeliveryDate(form.requiredDate)) {
+      errors.requiredDate = PAST_DELIVERY_DATE_MESSAGE;
+    }
 
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
@@ -157,15 +161,10 @@ export default function PostRequirementPage() {
 
     setLoading(true);
 
-    // Compute deadline based on closing duration or requiredDate
-    const now = new Date();
-    let computedDeadline = form.requiredDate;
-    if (!computedDeadline) {
-      const durationHours = form.closingDuration === '24h' ? 24 : form.closingDuration === '48h' ? 48 : form.closingDuration === '7d' ? 168 : 336;
-      computedDeadline = new Date(now.getTime() + durationHours * 3600 * 1000).toISOString().split('T')[0];
-    }
+    // Store the buyer's delivery date only. Do not invent one from the closing window
+    // (that would show up as a false "Delivery by" date). The column is nullable.
+    const deadline = normalizeDeadlineInput(form.requiredDate);
 
-    const uniqueRfqNumber = `BS-RFQ-${Math.floor(1000 + Math.random() * 9000)}`;
 
     try {
       const buyerId = user.id;
@@ -180,7 +179,7 @@ export default function PostRequirementPage() {
         quantity_unit: form.quantityUnit,
         destination_country: form.destinationCountry,
         destination_city: form.destinationCity || null,
-        deadline: computedDeadline,
+        deadline,
         budget_min: form.budgetMin ? parseFloat(form.budgetMin) : null,
         budget_max: form.budgetMax ? parseFloat(form.budgetMax) : null,
         currency: form.currency,
@@ -631,14 +630,23 @@ export default function PostRequirementPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="rfq-expected-delivery-by-date" className="text-xs font-bold text-foreground">Expected Delivery By Date (Optional)</Label>
-                <Input id="rfq-expected-delivery-by-date"
+                <Label htmlFor="rfq-delivery-by-date" className="text-xs font-bold text-foreground">Delivery by <span className="font-medium text-muted-foreground">(optional)</span></Label>
+                <Input id="rfq-delivery-by-date"
                   type="date"
+                  lang="en-GB"
                   value={form.requiredDate}
-                  min={new Date().toISOString().split('T')[0]}
-                  onChange={e => set('requiredDate', e.target.value)}
-                  className="bg-background h-10 rounded-xl text-xs sm:text-sm border-border"
+                  min={todayIsoDateIST()}
+                  onChange={e => { set('requiredDate', e.target.value); setFieldErrors(prev => ({ ...prev, requiredDate: '' })); }}
+                  className={`bg-background h-10 rounded-xl text-xs sm:text-sm ${
+                    fieldErrors.requiredDate ? 'border-destructive ring-1 ring-destructive' : 'border-border'
+                  }`}
+                  aria-invalid={Boolean(fieldErrors.requiredDate) || undefined}
                 />
+                {fieldErrors.requiredDate ? (
+                  <p className="text-[11px] text-destructive" role="alert">{fieldErrors.requiredDate}</p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">When you need the goods. Leave blank if you do not have a date yet.</p>
+                )}
               </div>
             </div>
 

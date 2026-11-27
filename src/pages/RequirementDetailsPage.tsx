@@ -24,6 +24,7 @@ import type { Product, Requirement } from '@/types/types';
 import '@/components/formkit/formkit.css';
 import { isOutsideListing, withoutOutsideLinks } from '@/lib/rfqSources';
 import { maskContactsInText } from '@/lib/contactAccess';
+import { isDeliveryDatePassed } from '@/lib/deliveryDate';
 import { isSeededRequirement } from '@/lib/seedData';
 import { isPublicListing, postedOnLabel } from '@/lib/publicListings';
 
@@ -254,7 +255,7 @@ export default function RequirementDetailsPage() {
   const rfqCode = req.req_number || `RFQ-${req.id.slice(0, 8).toUpperCase()}`;
   const place = [req.destination_city, req.destination_country].filter(Boolean).join(', ');
   const hasBudget = Boolean(req.budget_min || req.budget_max);
-  const deadlinePassed = Boolean(req.deadline && new Date(req.deadline).getTime() < Date.now() - 24 * 60 * 60 * 1000);
+  const deadlinePassed = isDeliveryDatePassed(req.deadline);
   const isOpen = req.status === 'active' && !deadlinePassed;
   const publicText = (text?: string | null) => maskContactsInText(withoutOutsideLinks(text ?? '')).replace(/\s+/g, ' ').trim();
   // tender imports and demo rows stay out of search results

@@ -115,6 +115,8 @@ describe('Live RFQ scroll section', () => {
     expect(toLiveRfqCard(rfq).city).toBe('Bengaluru');
     expect(toLiveRfqCard(rfq).photo).toBe(PHOTO);
     expect(toLiveRfqCard(rfq).deliveryDate).toBe('Delivery by 12 Dec 2026');
+    expect(deliveryByLabel('2020-01-01', new Date('2026-11-27T10:00:00+05:30'))).toBe('Delivery date passed');
+    expect(toLiveRfqCard({ ...rfq, deadline: '2020-01-01' } as unknown as Requirement).deliveryDate).toBe('Delivery date passed');
     expect(deliveryByLabel('2026-12-12')).toBe('Delivery by 12 Dec 2026');
     expect(deliveryByLabel(null)).toBeNull();
     expect(toLiveRfqCard(rfq)).not.toHaveProperty('phone');

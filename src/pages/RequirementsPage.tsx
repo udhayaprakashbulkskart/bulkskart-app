@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import PostRequirementDialog from '@/components/common/PostRequirementDialog';
 import SupplierRespondDialog from '@/components/common/SupplierRespondDialog';
 import { getRequirementVisualInfo, placeLabel, quantityLabel } from '@/lib/requirementVisuals';
+import { isDeliveryDatePassed } from '@/lib/deliveryDate';
 import RfqPriorityBadge from '@/components/common/RfqPriorityBadge';
 import { normalizePriorityTag } from '@/lib/rfqPriority';
 import RequirementThumb, { categoryIcon } from '@/components/common/RequirementThumb';
@@ -802,7 +803,7 @@ export default function RequirementsPage() {
                               </div>
                             )}
                             {visual.orderAttribute && (
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <div className={`flex items-center gap-1.5 text-xs ${visual.attributeIcon === 'calendar' && isDeliveryDatePassed(req.deadline) ? 'text-muted-foreground' : 'text-foreground/80'}`}>
                                 {visual.attributeIcon === 'calendar' ? (
                                   <Calendar className="w-3.5 h-3.5 text-muted-foreground/60" />
                                 ) : (

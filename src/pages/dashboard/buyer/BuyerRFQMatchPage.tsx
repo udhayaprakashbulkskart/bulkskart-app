@@ -23,6 +23,7 @@ import {
 import { supabase } from '@/db/supabase';
 import { getQuotationsForRequirement } from '@/lib/api';
 import type { Quotation } from '@/types/types';
+import DeliveryByText from '@/components/common/DeliveryByText';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -314,9 +315,9 @@ export default function BuyerRFQMatchPage() {
                       { label: 'Quantity', value: `${requirement.quantity.toLocaleString()} ${requirement.quantity_unit}` },
                       { label: 'Destination', value: requirement.destination_country ?? '—' },
                       {
-                        label: 'Deadline',
+                        label: 'Delivery by',
                         value: requirement.deadline
-                          ? new Date(requirement.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                          ? <DeliveryByText deadline={requirement.deadline} />
                           : '—',
                       },
                       {
