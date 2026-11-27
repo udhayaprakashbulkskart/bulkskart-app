@@ -147,16 +147,23 @@ describe('Live RFQ priority badges', () => {
     getOpenRequirements.mockResolvedValue({ rows: [tagged], total: 1, error: null });
     renderSection();
     await waitFor(() => expect(screen.getAllByText('Emergency').length).toBeGreaterThan(0));
+    expect(screen.getAllByTestId('rfq-priority-badge').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('rfq-priority-badge')[0]).toHaveClass('absolute', 'left-2', 'top-2');
     expect(screen.queryByText('Urgent')).toBeNull();
     expect(screen.queryByText('Hot')).toBeNull();
   });
 
-  it('shows an Urgent badge when is_urgent is set and priority_tag is empty', async () => {
+  it('shows an Urgent badge over the photo (top-left) when is_urgent is set and priority_tag is empty', async () => {
     const flagged = { ...rfq, is_urgent: true, priority_tag: null } as unknown as Requirement;
     expect(toLiveRfqCard(flagged).priorityTag).toBe('urgent');
     getOpenRequirements.mockResolvedValue({ rows: [flagged], total: 1, error: null });
     renderSection();
     await waitFor(() => expect(screen.getAllByText('Urgent').length).toBeGreaterThan(0));
+    const overlays = screen.getAllByTestId('rfq-priority-badge');
+    expect(overlays.length).toBeGreaterThan(0);
+    expect(overlays[0]).toHaveClass('absolute', 'left-2', 'top-2');
+    const photo = screen.getAllByRole('img', { name: 'Dell OptiPlex Business Desktop Computer' })[0];
+    expect(overlays[0].parentElement).toContainElement(photo);
     expect(screen.queryByText('Emergency')).toBeNull();
   });
 
@@ -166,5 +173,6 @@ describe('Live RFQ priority badges', () => {
     expect(screen.queryByText('Emergency')).toBeNull();
     expect(screen.queryByText('Urgent')).toBeNull();
     expect(screen.queryByText('Hot')).toBeNull();
+    expect(screen.queryByTestId('rfq-priority-badge')).toBeNull();
   });
 });

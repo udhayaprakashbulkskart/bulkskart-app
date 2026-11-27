@@ -384,6 +384,8 @@ export function RequirementDetailView({
   // as a supplier would. Chat and quotations are for Premium suppliers: a registered company with an active paid plan
   // (admins count as paid).
   const isOwner = Boolean(user && requirement && requirement.buyer_id === user.id);
+  const isAdmin = profile?.role === 'admin';
+  const canEditPriority = isOwner || isAdmin;
   const premium = Boolean(company && isPaidSubscriber);
   const canSeeContact = canViewContacts({ isPaidSubscriber, viewerId: user?.id, ownerId: requirement?.buyer_id });
   useEffect(() => {
@@ -550,7 +552,7 @@ export function RequirementDetailView({
             )}
           </div>
       <h1 className="text-[22px] font-black leading-tight tracking-tight text-foreground sm:text-[28px] lg:text-[32px]">{requirement.title}</h1>
-      {isOwner && <OwnerPriorityEditor requirement={requirement} onRequirementUpdated={onRequirementUpdated} />}
+      {canEditPriority && <OwnerPriorityEditor requirement={requirement} onRequirementUpdated={onRequirementUpdated} />}
       {headerExtra}
     </header>
   ) : (
@@ -566,7 +568,7 @@ export function RequirementDetailView({
             )}
           </div>
       <SheetTitle className="pr-8 text-[17px] font-black leading-snug text-foreground md:text-[19px]">{requirement.title}</SheetTitle>
-      {isOwner && <OwnerPriorityEditor requirement={requirement} onRequirementUpdated={onRequirementUpdated} />}
+      {canEditPriority && <OwnerPriorityEditor requirement={requirement} onRequirementUpdated={onRequirementUpdated} />}
       <SheetDescription className="sr-only">Buying requirement details, quotations and chat</SheetDescription>
     </SheetHeader>
   );
