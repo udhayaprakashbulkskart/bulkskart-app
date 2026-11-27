@@ -145,6 +145,7 @@ export default function PageMeta({
       }
       node.setAttribute('href', href);
     };
+    setLink('alternate', fullCanonical, { hreflang: 'en' });
     setLink('alternate', fullCanonical, { hreflang: 'en-IN' });
     setLink('alternate', fullCanonical, { hreflang: 'x-default' });
 

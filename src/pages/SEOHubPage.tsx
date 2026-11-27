@@ -312,7 +312,7 @@ export default function SEOHubPage({ forcedSlug }: { forcedSlug?: string }) {
     setLoading(true);
 
     Promise.all([
-      getCompanies({ limit: 12 }),
+      getCompanies({ limit: 12, includeStaticCatalog: false }),
       getProducts({ limit: 8 }),
     ]).then(([coList, prodList]) => {
       if (cancelled) return;

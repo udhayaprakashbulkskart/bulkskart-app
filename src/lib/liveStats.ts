@@ -8,7 +8,7 @@
  */
 import { supabase } from '@/db/supabase';
 import { isOutsideListing, withoutOutsideOrDemoRfqs } from '@/lib/rfqSources';
-import { INCLUDE_TEMPLATE_SEED_DATA, isSeededCompany, isSeededRequirement, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
+import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEED_COMPANY_ID_PREFIX, SEED_OWNER_ID, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
 
 export interface LiveStats {
   openRfqs: number | null;
@@ -28,15 +28,19 @@ async function fetchLiveStats(): Promise<LiveStats> {
     .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
     .or(`deadline.is.null,deadline.gt.${nowIso}`);
   if (!INCLUDE_TEMPLATE_SEED_DATA) open = open.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
+  let companiesQuery = supabase.from('companies').select('id', { count: 'exact', head: true });
+  if (!INCLUDE_TEMPLATE_SEED_DATA) {
+    companiesQuery = companiesQuery.neq('owner_id', SEED_OWNER_ID).not('id', 'like', `${SEED_COMPANY_ID_PREFIX}%`);
+  }
   const [rfqs, companies, buyers, industries] = await Promise.all([
     withoutOutsideOrDemoRfqs(open).limit(1000),
-    supabase.from('companies').select('id,owner_id').limit(5000),
+    companiesQuery,
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'buyer').eq('status', 'active'),
     supabase.from('categories').select('id', { count: 'exact', head: true }).is('parent_id', null),
   ]);
   return {
     openRfqs: rfqs.error ? null : (rfqs.data ?? []).filter((r) => !isOutsideListing(r as never) && !isSeededRequirement(r as never)).length,
-    suppliers: companies.error ? null : (companies.data ?? []).filter((c) => !isSeededCompany(c)).length,
+    suppliers: companies.error ? null : companies.count ?? null,
     buyers: buyers.error ? null : buyers.count ?? null,
     industries: industries.error ? null : industries.count ?? null,
   };

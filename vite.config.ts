@@ -62,4 +62,19 @@ export default defineConfig({
       "react/jsx-dev-runtime",
     ],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes("node_modules/react-dom") || id.includes("node_modules/react/")) return "react";
+          if (id.includes("node_modules/@supabase")) return "supabase";
+          if (id.includes("node_modules/leaflet") || id.includes("react-leaflet")) return "leaflet";
+          if (id.includes("node_modules/recharts") || id.includes("node_modules/chart.js")) return "charts";
+          if (id.includes("node_modules/framer-motion")) return "motion";
+          if (id.includes("node_modules/jspdf") || id.includes("node_modules/pdfjs")) return "pdf";
+          return undefined;
+        },
+      },
+    },
+  },
 });

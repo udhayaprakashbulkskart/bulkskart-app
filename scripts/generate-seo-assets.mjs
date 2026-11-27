@@ -86,7 +86,8 @@ function escapeHtml(value) {
 }
 
 function urlset(urls) {
-  const body = urls.map(url => `  <url><loc>${escapeXml(url)}</loc></url>`).join('\n');
+  const lastmod = new Date().toISOString().slice(0, 10);
+  const body = urls.map(url => `  <url><loc>${escapeXml(url)}</loc><lastmod>${lastmod}</lastmod></url>`).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
 }
 
@@ -116,7 +117,7 @@ function injectRouteMeta(html, pages) {
     routes[noSlash(page.path)] = { title: page.title, description: page.description };
   }
   const payload = JSON.stringify(routes).replace(/</g, '\\u003c');
-  const script = `<script id="bsk-route-meta">(function(){var routes=${payload};var path=location.pathname||"/";if(path.length>1&&path.endsWith("/"))path=path.slice(0,-1);var canonical="https://www.bulkskart.com"+(path==="/"?"/":path);function link(rel,attrs){var q='link[rel="'+rel+'"]'+(attrs.hreflang?'[hreflang="'+attrs.hreflang+'"]':'');var el=document.querySelector(q);if(!el){el=document.createElement("link");el.setAttribute("rel",rel);if(attrs.hreflang)el.setAttribute("hreflang",attrs.hreflang);document.head.appendChild(el);}el.setAttribute("href",canonical);}link("canonical",{});link("alternate",{hreflang:"en-IN"});link("alternate",{hreflang:"x-default"});var page=routes[path];if(!page)return;document.title=page.title;function meta(attr,name,content){var q="meta["+attr+"=\\""+name+"\\"]";var el=document.querySelector(q);if(!el){el=document.createElement("meta");el.setAttribute(attr,name);document.head.appendChild(el);}el.setAttribute("content",content);}meta("name","description",page.description);meta("property","og:title",page.title);meta("property","og:description",page.description);meta("property","og:url",canonical);meta("name","twitter:title",page.title);meta("name","twitter:description",page.description);})();</script>`;
+  const script = `<script id="bsk-route-meta">(function(){var routes=${payload};var path=location.pathname||"/";if(path.length>1&&path.endsWith("/"))path=path.slice(0,-1);var canonical="https://www.bulkskart.com"+(path==="/"?"/":path);function link(rel,attrs){var q='link[rel="'+rel+'"]'+(attrs.hreflang?'[hreflang="'+attrs.hreflang+'"]':'');var el=document.querySelector(q);if(!el){el=document.createElement("link");el.setAttribute("rel",rel);if(attrs.hreflang)el.setAttribute("hreflang",attrs.hreflang);document.head.appendChild(el);}el.setAttribute("href",canonical);}link("canonical",{});link("alternate",{hreflang:"en"});link("alternate",{hreflang:"en-IN"});link("alternate",{hreflang:"x-default"});var page=routes[path];if(!page)return;document.title=page.title;function meta(attr,name,content){var q="meta["+attr+"=\\""+name+"\\"]";var el=document.querySelector(q);if(!el){el=document.createElement("meta");el.setAttribute(attr,name);document.head.appendChild(el);}el.setAttribute("content",content);}meta("name","description",page.description);meta("property","og:title",page.title);meta("property","og:description",page.description);meta("property","og:url",canonical);meta("name","twitter:title",page.title);meta("name","twitter:description",page.description);})();</script>`;
   const without = html.replace(/<script id="bsk-route-meta">[\s\S]*?<\/script>\n?/, '');
   return without.replace('</head>', `${script}\n</head>`);
 }
@@ -232,11 +233,11 @@ export async function generateSeoAssets(distDir) {
     fs.writeFileSync(path.join(distDir, 'sitemap-categories.xml'), urlset(unique(categoryUrls)));
     const index = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <sitemap><loc>${SITE}/sitemap-main.xml</loc></sitemap>
-  <sitemap><loc>${SITE}/sitemap-categories.xml</loc></sitemap>
-  <sitemap><loc>${SITE}/sitemap-products.xml</loc></sitemap>
-  <sitemap><loc>${SITE}/sitemap-companies.xml</loc></sitemap>
-  <sitemap><loc>${SITE}/sitemap-rfqs.xml</loc></sitemap>
+  <sitemap><loc>${SITE}/sitemap-main.xml</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod></sitemap>
+  <sitemap><loc>${SITE}/sitemap-categories.xml</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod></sitemap>
+  <sitemap><loc>${SITE}/sitemap-products.xml</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod></sitemap>
+  <sitemap><loc>${SITE}/sitemap-companies.xml</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod></sitemap>
+  <sitemap><loc>${SITE}/sitemap-rfqs.xml</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod></sitemap>
 </sitemapindex>
 `;
     fs.writeFileSync(path.join(distDir, 'sitemap.xml'), index);

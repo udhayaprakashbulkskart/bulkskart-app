@@ -118,7 +118,7 @@ export function heroLists(real: HeroProduct[], catalogue: HeroProduct[], hour = 
 export async function loadHeroProducts(hour = currentHour()): Promise<ReturnType<typeof heroLists>> {
   const catalogue = fromCatalogue();
   try {
-    const res = await getMarketplaceProducts({ page: 1, pageSize: 120, sortBy: 'popular' });
+    const res = await getMarketplaceProducts({ page: 1, pageSize: 48, sortBy: 'popular' });
     return heroLists(fromProducts(res.products ?? []), catalogue, hour);
   } catch {
     return heroLists([], catalogue, hour);
