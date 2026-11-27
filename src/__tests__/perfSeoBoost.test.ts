@@ -17,6 +17,8 @@ describe('performance: heavy catalogues stay off the home teaser', () => {
   it('does not download 5,000 company rows just to count them, and the RFQ alert selects only the fields it shows', () => {
     const stats = src('src/lib/liveStats.ts');
     expect(stats).toContain("select('id', { count: 'exact', head: true })");
+    expect(stats).toContain("neq('owner_id', SEED_OWNER_ID)");
+    expect(stats).not.toContain("not('id', 'like'");
     expect(stats).not.toContain('limit(5000)');
     const alert = src('src/components/common/RfqTopAlert.tsx');
     expect(alert).toContain('id,title,description,specifications,quantity,quantity_unit,budget_min,budget_max,currency,created_at,source_type');
