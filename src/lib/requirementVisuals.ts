@@ -1,4 +1,5 @@
 import type { Requirement } from '@/types/types';
+import { deliveryByLabel } from '@/lib/deliveryDate';
 
 /**
  * What a requirement card shows, taken only from what the buyer saved. Nothing is guessed from the
@@ -22,7 +23,7 @@ export interface RequirementVisualInfo {
   };
   /** "Verified buyer" only when the buyer is verified, otherwise empty */
   verifiedStatus: string;
-  /** the buyer's deadline ("Needed by 12 Dec") or how many quotes it has, otherwise empty */
+  /** the buyer's delivery date ("Delivery by 12 Dec 2026") or how many quotes it has, otherwise empty */
   orderAttribute: string;
   attributeIcon: 'calendar' | 'quotes' | 'none';
   /** first line of the description or specifications, otherwise empty */
@@ -105,8 +106,7 @@ export function getRequirementVisualInfo(
   let orderAttribute = '';
   let attributeIcon: RequirementVisualInfo['attributeIcon'] = 'none';
   if (deadline !== null) {
-    const day = new Date(deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-    orderAttribute = deadline >= now ? `Needed by ${day}` : `Deadline was ${day}`;
+    orderAttribute = deliveryByLabel(req.deadline, new Date(now)) ?? '';
     attributeIcon = 'calendar';
   } else if (quotes > 0) {
     orderAttribute = `${quotes} quote${quotes === 1 ? '' : 's'} received`;

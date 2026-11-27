@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Actions, CountedTextArea, Field, FormDialog, KitButton } from '@/components/formkit';
 import { supabase } from '@/db/supabase';
 import PageMeta from '@/components/common/PageMeta';
+import DeliveryByText from '@/components/common/DeliveryByText';
 
 export default function BuyerQuotesPage() {
   const { user } = useAuth();
@@ -177,7 +178,7 @@ export default function BuyerQuotesPage() {
               <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-4 text-xs text-muted-foreground">
                 <span>Qty: <span className="text-foreground font-medium">{selectedReq.quantity} {selectedReq.quantity_unit}</span></span>
                 {selectedReq.destination_country && <span>Dest: <span className="text-foreground font-medium">{selectedReq.destination_country}</span></span>}
-                {selectedReq.deadline && <span>Deadline: <span className="text-foreground font-medium">{new Date(selectedReq.deadline).toLocaleDateString()}</span></span>}
+                {selectedReq.deadline && <span className="text-foreground font-medium"><DeliveryByText deadline={selectedReq.deadline} /></span>}
               </div>
             )}
           </div>

@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Send, Loader2, MessageSquare, CheckCircle, XCircle, Phone,
   Upload, Building2, Calendar, Package, BadgeCheck, Zap,
-  Clock, TrendingUp, ShieldCheck, Lock, Crown, IndianRupee, MapPin,
+  TrendingUp, ShieldCheck, Lock, Crown, IndianRupee, MapPin, Truck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
@@ -35,6 +35,9 @@ import SubscribeToContactDialog, { type SubscriptionReason } from './SubscribeTo
 import SupplierRespondDialog from './SupplierRespondDialog';
 import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
 import { canViewContacts, contactUpgradeHref, maskContactsInText, telHref, whatsappHref } from '@/lib/contactAccess';
+import RfqPriorityBadge, { RfqPriorityPicker } from '@/components/common/RfqPriorityBadge';
+import { isUrgentFromTag, normalizePriorityTag } from '@/lib/rfqPriority';
+import { deliveryByLabel, isDeliveryDatePassed } from '@/lib/deliveryDate';
 import { fetchVisibleContacts } from '@/lib/profileContacts';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
 import { rfqBudget } from '@/lib/rfqAlerts';
@@ -304,18 +307,38 @@ interface Props {
   onRequirementUpdated: (req: Requirement) => void;
 }
 
-/** "36d 20h", "5h 12m", or "Closed" once the deadline (end of that day) or expiry has passed. */
-function timeLeft(req: Requirement): string | null {
-  const end = req.deadline ? new Date(`${req.deadline.slice(0, 10)}T23:59:59`).getTime() : req.expires_at ? new Date(req.expires_at).getTime() : NaN;
-  if (Number.isNaN(end)) return null;
-  const ms = end - Date.now();
-  if (ms <= 0) return 'Closed';
-  const h = Math.floor(ms / 3600e3);
-  return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : `${h}h ${Math.floor((ms % 3600e3) / 60e3)}m`;
-}
-
 const dateLabel = (iso?: string | null) =>
   iso ? new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
+
+
+function OwnerPriorityEditor({
+  requirement,
+  onRequirementUpdated,
+}: {
+  requirement: Requirement;
+  onRequirementUpdated: (req: Requirement) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const current = normalizePriorityTag(requirement.priority_tag);
+  const save = async (tag: ReturnType<typeof normalizePriorityTag>) => {
+    if (saving) return;
+    setSaving(true);
+    const patch = { priority_tag: tag, is_urgent: isUrgentFromTag(tag) } as Partial<Requirement>;
+    const { error } = await updateRequirement(requirement.id, patch);
+    setSaving(false);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    onRequirementUpdated({ ...requirement, ...patch });
+    toast.success(tag ? 'Priority tag updated' : 'Priority tag removed');
+  };
+  return (
+    <div className="pt-1">
+      <RfqPriorityPicker value={current} onChange={(tag) => { void save(tag); }} disabled={saving} id={`rfq-priority-${requirement.id}`} />
+    </div>
+  );
+}
 
 export interface RequirementDetailViewProps {
   requirement: Requirement;
@@ -474,7 +497,6 @@ export function RequirementDetailView({
   const buyer = requirement.profiles as { full_name?: string | null; company_name?: string | null; phone?: string | null } | undefined;
   const buyerName = buyer?.company_name || buyer?.full_name || 'Buyer';
   const place = placeLabel(requirement);
-  const left = timeLeft(requirement);
   const budget = rfqBudget(requirement);
   const picture = (Array.isArray(requirement.images) && requirement.images.find((u) => typeof u === 'string' && u.trim())) || requirement.attachment_url;
   const shown = (text: string) => (canSeeContact ? text : maskContactsInText(text));
@@ -487,10 +509,12 @@ export function RequirementDetailView({
   const myQuotes = isOwner ? quotes : quotes.filter(q => q.supplier_id === user?.id);
   const showActionBar = !isOwner && !(activeTab === 'chat' && activeConvId);
 
-  const facts = [
+  const deliveryPassed = isDeliveryDatePassed(requirement.deadline);
+  const deliveryValue = deliveryByLabel(requirement.deadline) ?? 'Not stated';
+  const facts: { icon: typeof Package; label: string; value: string; muted?: boolean; note?: string }[] = [
     { icon: Package, label: 'Quantity', value: quantityLabel(requirement) },
     { icon: MapPin, label: 'Delivery', value: place ?? 'Not stated' },
-    { icon: Clock, label: left === 'Closed' ? 'Status' : 'Ends in', value: left ?? 'Open', note: requirement.deadline ? `by ${dateLabel(requirement.deadline)}` : undefined },
+    { icon: Truck, label: 'Delivery by', value: deliveryValue, muted: deliveryPassed },
     { icon: IndianRupee, label: 'Budget', value: budget ?? 'Open to quotes' },
     { icon: Calendar, label: 'Posted', value: dateLabel(requirement.created_at) ?? '—' },
     { icon: MessageSquare, label: 'Quotations', value: String(requirement.quote_count ?? 0) },
@@ -522,7 +546,8 @@ export function RequirementDetailView({
               <span className="rounded-full bg-[#FF5A00]/15 px-2 py-0.5 text-[10.5px] font-semibold text-[#FF5A00]">{requirement.categories.name}</span>
             )}
             {requirement.req_number && <span className="text-[10.5px] text-muted-foreground">{requirement.req_number}</span>}
-            {isUrgent && (
+            <RfqPriorityBadge tag={requirement.priority_tag} className="text-[10.5px]" />
+            {isUrgent && !normalizePriorityTag(requirement.priority_tag) && (
               <span className="flex items-center gap-0.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10.5px] font-bold text-red-500">
                 <Zap className="h-3 w-3" /> Urgent
               </span>
@@ -532,6 +557,7 @@ export function RequirementDetailView({
             )}
           </div>
       <h1 className="text-[22px] font-black leading-tight tracking-tight text-foreground sm:text-[28px] lg:text-[32px]">{requirement.title}</h1>
+      {isOwner && <OwnerPriorityEditor requirement={requirement} onRequirementUpdated={onRequirementUpdated} />}
       {headerExtra}
     </header>
   ) : (
@@ -541,7 +567,8 @@ export function RequirementDetailView({
               <span className="rounded-full bg-[#FF5A00]/15 px-2 py-0.5 text-[10.5px] font-semibold text-[#FF5A00]">{requirement.categories.name}</span>
             )}
             {requirement.req_number && <span className="text-[10.5px] text-muted-foreground">{requirement.req_number}</span>}
-            {isUrgent && (
+            <RfqPriorityBadge tag={requirement.priority_tag} className="text-[10.5px]" />
+            {isUrgent && !normalizePriorityTag(requirement.priority_tag) && (
               <span className="flex items-center gap-0.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10.5px] font-bold text-red-500">
                 <Zap className="h-3 w-3" /> Urgent
               </span>
@@ -551,6 +578,7 @@ export function RequirementDetailView({
             )}
           </div>
       <SheetTitle className="pr-8 text-[17px] font-black leading-snug text-foreground md:text-[19px]">{requirement.title}</SheetTitle>
+      {isOwner && <OwnerPriorityEditor requirement={requirement} onRequirementUpdated={onRequirementUpdated} />}
       <SheetDescription className="sr-only">Buying requirement details, quotations and chat</SheetDescription>
     </SheetHeader>
   );
@@ -644,12 +672,12 @@ export function RequirementDetailView({
       </div>
       <div className="contents lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-4">
         <div className="order-2"><dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {facts.map(({ icon: Icon, label, value, note }) => (
+              {facts.map(({ icon: Icon, label, value, note, muted }) => (
                 <div key={label} className="rounded-xl border border-border bg-card p-3">
                   <dt className="flex items-center gap-1 text-[10.5px] font-medium text-muted-foreground">
                     <Icon className="h-3.5 w-3.5 text-[#FF5A00]" aria-hidden="true" /> {label}
                   </dt>
-                  <dd className="mt-1 break-words text-[14px] font-bold leading-snug text-foreground">{value}</dd>
+                  <dd className={`mt-1 break-words text-[14px] font-bold leading-snug ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>{value}</dd>
                   {note && <dd className="text-[10.5px] text-muted-foreground">{note}</dd>}
                 </div>
               ))}
@@ -741,12 +769,12 @@ export function RequirementDetailView({
               </span>
             </div>
               <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {facts.map(({ icon: Icon, label, value, note }) => (
+              {facts.map(({ icon: Icon, label, value, note, muted }) => (
                 <div key={label} className="rounded-xl border border-border bg-card p-3">
                   <dt className="flex items-center gap-1 text-[10.5px] font-medium text-muted-foreground">
                     <Icon className="h-3.5 w-3.5 text-[#FF5A00]" aria-hidden="true" /> {label}
                   </dt>
-                  <dd className="mt-1 break-words text-[14px] font-bold leading-snug text-foreground">{value}</dd>
+                  <dd className={`mt-1 break-words text-[14px] font-bold leading-snug ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>{value}</dd>
                   {note && <dd className="text-[10.5px] text-muted-foreground">{note}</dd>}
                 </div>
               ))}

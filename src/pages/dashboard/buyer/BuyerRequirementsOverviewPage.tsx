@@ -22,11 +22,7 @@ import {
 } from 'lucide-react';
 import InstantQuoteDialog from '@/components/common/InstantQuoteDialog';
 import RFQMatchResultsPanel from '@/components/common/RFQMatchResultsPanel';
-
-function daysUntil(date: string | null): number | null {
-  if (!date) return null;
-  return Math.ceil((new Date(date).getTime() - Date.now()) / 86400000);
-}
+import DeliveryByText from '@/components/common/DeliveryByText';
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
@@ -242,7 +238,6 @@ export default function BuyerRequirementsOverviewPage() {
           ) : (
             <div className="space-y-3">
               {filtered.map(req => {
-                const days = daysUntil(req.deadline);
                 return (
                   <div key={req.id}
                     className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors cursor-pointer"
@@ -258,11 +253,9 @@ export default function BuyerRequirementsOverviewPage() {
                           <span>{req.quantity.toLocaleString()} {req.quantity_unit}</span>
                           {req.destination_country && <span>{req.destination_country}</span>}
                           {req.deadline && (
-                            <span className={`flex items-center gap-1 ${days !== null && days <= 3 && req.status === 'active' ? 'text-destructive' : ''}`}>
+                            <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
-                              {days !== null && req.status === 'active'
-                                ? days <= 0 ? 'Deadline passed' : `${days} day${days !== 1 ? 's' : ''} left`
-                                : new Date(req.deadline).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}
+                              <DeliveryByText deadline={req.deadline} />
                             </span>
                           )}
                         </div>
@@ -328,7 +321,7 @@ export default function BuyerRequirementsOverviewPage() {
                   {[
                     { label: 'Quantity', value: `${selectedReq.quantity.toLocaleString()} ${selectedReq.quantity_unit}` },
                     { label: 'Destination', value: selectedReq.destination_country ?? '—' },
-                    { label: 'Deadline', value: selectedReq.deadline ? new Date(selectedReq.deadline).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—' },
+                    { label: 'Delivery by', value: selectedReq.deadline ? <DeliveryByText deadline={selectedReq.deadline} /> : '—' },
                     { label: 'Quotes Received', value: String(selectedReq.quote_count ?? 0) },
                   ].map(d => (
                     <div key={d.label} className="bg-muted rounded-lg p-3">

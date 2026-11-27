@@ -69,7 +69,7 @@ describe('requirement cards show only what the buyer saved', () => {
 
   it('shows the deadline or the real quote count, otherwise nothing', () => {
     const withDeadline = getRequirementVisualInfo(req({ deadline: '2026-12-12' }), 0, NOW);
-    expect(withDeadline.orderAttribute).toBe('Needed by 12 Dec');
+    expect(withDeadline.orderAttribute).toBe('Delivery by 12 Dec 2026');
     expect(getRequirementVisualInfo(req({ quote_count: 3 }), 0, NOW).orderAttribute).toBe('3 quotes received');
     expect(getRequirementVisualInfo(req(), 0, NOW).orderAttribute).toBe('');
   });

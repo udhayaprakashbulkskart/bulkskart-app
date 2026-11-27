@@ -231,6 +231,8 @@ export interface Requirement {
   review_status?: 'pending' | 'approved' | 'rejected' | null;
   /** public requirements only: product category as listed (e.g. "Bearings") */
   listing_category?: string | null;
+  /** Optional buyer-chosen tag: urgent, emergency or hot (migration 00081). Null = untagged. */
+  priority_tag?: 'urgent' | 'emergency' | 'hot' | null;
   // joins
   profiles?: Profile;
   categories?: Category;

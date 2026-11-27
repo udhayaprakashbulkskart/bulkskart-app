@@ -12,6 +12,7 @@ import { supabase } from '@/db/supabase';
 import PageMeta from '@/components/common/PageMeta';
 import { AccountCard, ActionsCard, BarsChart, Gauge, Kpi, Mini, Notice, PageHeader, Panel, QuickLink, Segmented } from '@/components/dashboard/parts';
 import { fetchMonthly, lastMonths, percentChange, sum } from '@/components/dashboard/series';
+import DeliveryByText from '@/components/common/DeliveryByText';
 
 type BuyerStats = {
   totalReqs: number; totalQuotes: number; activeConvs: number;
@@ -320,7 +321,7 @@ export default function BuyerDashboard() {
                   <tr className="bg-muted/50">
                     <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Requirement</th>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Qty</th>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Deadline</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Delivery by</th>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Status</th>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Quotes</th>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground"></th>
@@ -332,7 +333,7 @@ export default function BuyerDashboard() {
                       <td className="px-4 py-3 text-sm font-medium text-foreground">{req.title}</td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">{req.quantity} {req.quantity_unit}</td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {req.deadline ? new Date(req.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—'}
+                        {req.deadline ? <DeliveryByText deadline={req.deadline} /> : '—'}
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant="outline" className={`text-xs capitalize ${req.status === 'active' ? 'border-orange-600/40 text-orange-700' : 'text-muted-foreground'}`}>

@@ -4,6 +4,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Requirement } from '@/types/types';
+import { deliveryByLabel } from '@/lib/deliveryDate';
 
 vi.mock('@/db/supabase', () => ({
   supabase: {
@@ -68,10 +69,11 @@ describe('RFQ full page (the panel\'s Overview, Quotations and Chat as a page)',
   it('shows the RFQ as the page heading, the overview facts and the three tabs', () => {
     renderPage();
     expect(screen.getByRole('heading', { level: 1, name: req.title })).toBeInTheDocument();
-    for (const label of ['Quantity', 'Delivery', 'Ends in', 'Budget', 'Posted', 'Quotations']) {
+    for (const label of ['Quantity', 'Delivery', 'Delivery by', 'Budget', 'Posted', 'Quotations']) {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     }
     expect(screen.getByText('200 Sets')).toBeInTheDocument();
+    expect(screen.getByText(deliveryByLabel(req.deadline)!)).toBeInTheDocument();
     for (const tab of ['Overview', 'My Quote', 'Chat']) expect(screen.getByRole('tab', { name: new RegExp(tab) })).toBeInTheDocument();
     expect(screen.getByText('Deal status')).toBeInTheDocument();
     expect(screen.getByText('For a new office.')).toBeInTheDocument();

@@ -115,6 +115,8 @@ describe('Live RFQ scroll section', () => {
     expect(toLiveRfqCard(rfq).city).toBe('Bengaluru');
     expect(toLiveRfqCard(rfq).photo).toBe(PHOTO);
     expect(toLiveRfqCard(rfq).deliveryDate).toBe('Delivery by 12 Dec 2026');
+    expect(deliveryByLabel('2020-01-01', new Date('2026-11-27T10:00:00+05:30'))).toBe('Delivery date passed');
+    expect(toLiveRfqCard({ ...rfq, deadline: '2020-01-01' } as unknown as Requirement).deliveryDate).toBe('Delivery date passed');
     expect(deliveryByLabel('2026-12-12')).toBe('Delivery by 12 Dec 2026');
     expect(deliveryByLabel(null)).toBeNull();
     expect(toLiveRfqCard(rfq)).not.toHaveProperty('phone');
@@ -128,5 +130,32 @@ describe('Live RFQ scroll section', () => {
     const section = src('src/components/home/LiveRfqScrollSection.tsx');
     expect(section).not.toContain('resolveRfqImage');
     expect(section).not.toContain('SafeImage');
+  });
+});
+
+
+describe('Live RFQ priority badges', () => {
+  it('maps a valid tag onto the card and leaves untagged RFQs untagged', () => {
+    expect(toLiveRfqCard(rfq).priorityTag).toBeNull();
+    expect(toLiveRfqCard({ ...rfq, priority_tag: 'emergency' } as unknown as Requirement).priorityTag).toBe('emergency');
+    expect(toLiveRfqCard({ ...rfq, priority_tag: 'hot' } as unknown as Requirement).priorityTag).toBe('hot');
+    expect(toLiveRfqCard({ ...rfq, priority_tag: 'made-up' } as unknown as Requirement).priorityTag).toBeNull();
+  });
+
+  it('renders the chosen tag on the ticker card and stays silent when there is none', async () => {
+    const tagged = { ...rfq, priority_tag: 'emergency' } as unknown as Requirement;
+    getOpenRequirements.mockResolvedValue({ rows: [tagged], total: 1, error: null });
+    renderSection();
+    await waitFor(() => expect(screen.getAllByText('Emergency').length).toBeGreaterThan(0));
+    expect(screen.queryByText('Urgent')).toBeNull();
+    expect(screen.queryByText('Hot')).toBeNull();
+  });
+
+  it('does not invent a tag on untagged RFQs', async () => {
+    renderSection();
+    await waitFor(() => expect(screen.getAllByText('Dell OptiPlex Business Desktop Computer').length).toBeGreaterThan(0));
+    expect(screen.queryByText('Emergency')).toBeNull();
+    expect(screen.queryByText('Urgent')).toBeNull();
+    expect(screen.queryByText('Hot')).toBeNull();
   });
 });
