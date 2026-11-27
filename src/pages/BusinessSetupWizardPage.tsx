@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
+import { fetchOwnProfile } from '@/lib/profileContacts';
 import { toast } from 'sonner';
 import {
   Building2, User, FileText, CheckCircle2, ArrowRight, ArrowLeft,
@@ -314,11 +315,7 @@ export default function BusinessSetupWizardPage() {
       setLoading(true);
       try {
         // Direct query to guarantee exact logged-in user profile without crosstalk
-        const { data: directProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
+        const directProfile = await fetchOwnProfile();
 
         const activeProfile = directProfile || profile;
 

@@ -2,7 +2,7 @@
  * Who may see phone numbers, WhatsApp numbers and email addresses on public profile and product pages.
  *
  * Only members with an active paid subscription (admins count as paid, see AuthContext) and the person themselves.
- * Everyone else still reaches them on BulkSkart: chat, quote requests and factory visits stay open to all.
+ * Chat, quotations, Call and WhatsApp on an RFQ are for paid suppliers only (the same paid rule).
  */
 export function canViewContacts(opts: { isPaidSubscriber: boolean; viewerId?: string | null; ownerId?: string | null }): boolean {
   if (opts.isPaidSubscriber) return true;
@@ -42,4 +42,29 @@ export function maskContactsInText(text: string): string {
   return text
     .replace(EMAIL_IN_TEXT, '•••••@•••••')
     .replace(PHONE_IN_TEXT, (m) => (m.replace(/\D/g, '').length >= 9 ? '••••• •••••' : m));
+}
+
+export type VisibleContacts = { phone: string | null; email: string | null; whatsapp_number: string | null };
+
+/** 10-digit Indian mobiles get a 91 prefix; already-international numbers are kept as digits only. */
+export function contactDigits(phone: string | null | undefined): string | null {
+  const digits = (phone ?? '').replace(/\D/g, '');
+  if (digits.length === 10 && /^[6-9]/.test(digits)) return `91${digits}`;
+  if (digits.length >= 11 && digits.length <= 15) return digits.replace(/^00/, '');
+  return null;
+}
+
+export function telHref(phone: string | null | undefined): string | null {
+  const digits = contactDigits(phone);
+  return digits ? `tel:+${digits}` : null;
+}
+
+/** WhatsApp chat with a short pre-filled message about this RFQ. */
+export function whatsappHref(phone: string | null | undefined, rfq: { title: string; req_number?: string | null; id?: string }): string | null {
+  const digits = contactDigits(phone);
+  if (!digits) return null;
+  const ref = rfq.req_number?.trim() || rfq.title;
+  const page = rfq.id ? ` https://www.bulkskart.com/requirements/${rfq.id}` : '';
+  const text = `Hello, I am a supplier on BulkSkart. I am writing about your requirement ${ref}.${page}`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }

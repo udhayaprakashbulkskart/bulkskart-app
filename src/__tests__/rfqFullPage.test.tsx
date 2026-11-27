@@ -6,7 +6,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Requirement } from '@/types/types';
 
 vi.mock('@/db/supabase', () => ({
-  supabase: { channel: () => ({ on: () => ({ subscribe: () => ({}) }) }), removeChannel: () => {}, storage: { from: () => ({}) } },
+  supabase: {
+    channel: () => ({ on: () => ({ subscribe: () => ({}) }) }),
+    removeChannel: () => {},
+    storage: { from: () => ({}) },
+    rpc: vi.fn(async () => ({ data: [], error: null })),
+  },
 }));
 vi.mock('@/lib/api', () => ({
   getQuotationsForRequirement: vi.fn(async () => []),
@@ -72,11 +77,49 @@ describe('RFQ full page (the panel\'s Overview, Quotations and Chat as a page)',
     expect(screen.getByText('For a new office.')).toBeInTheDocument();
   });
 
-  it('gives a supplier the Chat and Send Quotation buttons inside the overview (no bottom bar)', () => {
+  it('gives a visitor locked Call, WhatsApp, Chat and Send Quotation buttons and a sign-up prompt', () => {
     renderPage();
     expect(screen.getByRole('button', { name: /Send Quotation/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Chat$/ })).toBeInTheDocument();
-    expect(screen.getByText(/Only Premium Suppliers \(active paid plan\) can chat and send quotations/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Call$/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^WhatsApp$/ })).toBeInTheDocument();
+    expect(screen.getByText(/Only suppliers with an active paid plan can call, WhatsApp, chat or send a quotation/)).toBeInTheDocument();
+    const signups = screen.getAllByRole('link', { name: 'Sign up' });
+    expect(signups.length).toBeGreaterThan(0);
+    signups.forEach((el) => expect(el).toHaveAttribute('href', '/register'));
+    expect(screen.queryByText(/98765/)).toBeNull();
+    expect(screen.queryByRole('link', { name: /^Call$/ })).toBeNull();
+  });
+
+  it('locks the four actions for an unpaid supplier and points them to the subscription page', () => {
+    auth.value = { user: { id: 'supplier-1' }, profile: { role: 'supplier' }, company: { id: 'co-1' }, isPaidSubscriber: false };
+    renderPage();
+    expect(screen.getByRole('button', { name: /^Call$/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^WhatsApp$/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Upgrade' })).toHaveAttribute('href', '/dashboard/supplier/subscription');
+    expect(screen.getByText(/See plans/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Call$/ })).toBeNull();
+    expect(screen.queryByText(/9876543210/)).toBeNull();
+  });
+
+  it('gives a paid supplier Call and WhatsApp links to the real number, and never invents one', () => {
+    auth.value = { user: { id: 'supplier-paid' }, profile: { role: 'supplier' }, company: { id: 'co-1' }, isPaidSubscriber: true };
+    const withPhone = {
+      ...req,
+      profiles: { id: BUYER, full_name: 'deepak', phone: '9876543210', email: 'buyer@example.com' },
+    } as unknown as Requirement;
+    render(
+      <MemoryRouter>
+        <RequirementDetailView layout="page" requirement={withPhone} onRequirementUpdated={() => {}} />
+      </MemoryRouter>,
+    );
+    const call = screen.getByRole('link', { name: /^Call$/ });
+    expect(call).toHaveAttribute('href', 'tel:+919876543210');
+    const wa = screen.getByRole('link', { name: /^WhatsApp$/ });
+    expect(wa.getAttribute('href')).toMatch(/^https:\/\/wa\.me\/919876543210\?text=/);
+    expect(decodeURIComponent(wa.getAttribute('href') || '')).toContain('RFQ-042469');
+    expect(screen.getByText('Phone: 9876543210')).toBeInTheDocument();
+    expect(screen.getByText('Email: buyer@example.com')).toBeInTheDocument();
   });
 
   it('gives the buyer who posted it a way to their quotations instead', () => {

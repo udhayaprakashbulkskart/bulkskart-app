@@ -89,8 +89,9 @@ export default function ProtectedContact({
     ? 'Buyer Contact Number' 
     : 'Direct Contact Number';
 
-  // Nothing to unlock when no number was shared: a made-up number would send calls to a stranger.
-  if (!(phone && String(phone).trim())) {
+  // A made-up unique.phone must never become a real tel / WhatsApp link.
+  // When the viewer is not allowed to see contacts, the number is omitted on purpose — show the lock, not "no number".
+  if (canView && !(phone && String(phone).trim())) {
     return variant === 'card' ? (
       <div className={`p-3.5 rounded-2xl bg-muted/30 border border-dashed border-border space-y-1 text-xs ${className}`}>
         <span className="text-muted-foreground flex items-center gap-1.5 font-medium">

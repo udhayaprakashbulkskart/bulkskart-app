@@ -310,7 +310,7 @@ export async function getBuyerVisits(buyerId: string): Promise<FactoryVisit[]> {
 export async function getCompanyVisits(companyId: string): Promise<FactoryVisit[]> {
   const { data } = await supabase
     .from('factory_visits')
-    .select('*, buyer:profiles!buyer_id(full_name,email)')
+    .select('*, buyer:profiles!buyer_id(full_name)')
     .eq('company_id', companyId)
     .order('requested_at', { ascending: true });
   return (data ?? []) as FactoryVisit[];

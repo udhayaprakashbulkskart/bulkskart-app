@@ -1,3 +1,4 @@
+import type { Profile } from '@/types/types';
 import React, { useEffect, useState, useRef } from 'react';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
+import { fetchOwnProfile } from '@/lib/profileContacts';
 import { toast } from 'sonner';
 import {
   User, Building2, ShieldCheck, Mail, Phone, MapPin,
@@ -82,11 +84,7 @@ export default function BuyerProfilePage() {
       setLoading(true);
       try {
         // 1. Fetch user profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
+        const profileData = await fetchOwnProfile();
 
         // 2. Fetch buyer details
         const { data: buyerData } = await supabase
@@ -103,7 +101,7 @@ export default function BuyerProfilePage() {
             avatarUrl: profileData?.avatar_url || '',
             logoUrl: buyerData?.logo_url || '',
             bannerUrl: buyerData?.banner_url || '',
-            companyName: buyerData?.company_name || profileData?.company_name || '',
+            companyName: buyerData?.company_name || (profileData as Profile & { company_name?: string | null })?.company_name || '',
             businessType: buyerData?.business_type || 'Wholesaler / Distributor',
             gstNumber: buyerData?.gst_number || '',
             panNumber: buyerData?.pan_number || '',

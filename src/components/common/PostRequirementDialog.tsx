@@ -138,7 +138,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
     // Fetch full row with joins for live prepend
     const { data: newReq } = await supabase
       .from('requirements')
-      .select('*, profiles!buyer_id(id,full_name,email), categories!category_id(id,name,slug)')
+      .select('*, profiles!buyer_id(id,full_name), categories!category_id(id,name,slug)')
       .eq('id', id)
       .maybeSingle();
     if (newReq) onPosted(newReq as Requirement);

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { pickActiveSubscription } from '@/lib/quoteAccess';
+import { fetchOwnProfile } from '@/lib/profileContacts';
 import { claimBrowserStorageFor } from '@/lib/userScopedStorage';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/db/supabase';
@@ -106,16 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const fetchProfile = async (userId: string, authUser?: User | null) => {
-    const { data: existing, error: profileErr } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (profileErr) {
-      console.warn('Profile fetch failed:', profileErr.message);
-    }
-
+    const existing = await fetchOwnProfile();
     let profileData = existing as Profile | null;
     const metaUser = authUser || user;
     const metaRole = resolveUserRole(null, metaUser);
@@ -125,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Ensure a profile row always exists after signup/login
     if (!profileData) {
       const bootstrapRole = metaRole || 'buyer';
-      const { data: created, error: createErr } = await supabase
+      const { error: createErr } = await supabase
         .from('profiles')
         .upsert(
           {
@@ -136,12 +128,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             status: 'active',
           },
           { onConflict: 'id' }
-        )
-        .select('*')
-        .maybeSingle();
+        );
       if (createErr) {
         console.warn('Profile bootstrap failed:', createErr.message);
       }
+      const created = createErr ? null : await fetchOwnProfile();
       profileData = (created as Profile | null) || {
         id: userId,
         email: metaEmail,

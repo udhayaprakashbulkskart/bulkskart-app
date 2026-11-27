@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Send, Loader2, MessageSquare, CheckCircle, XCircle,
+  Send, Loader2, MessageSquare, CheckCircle, XCircle, Phone,
   Upload, Building2, Calendar, Package, BadgeCheck, Zap,
   Clock, TrendingUp, ShieldCheck, Lock, Crown, IndianRupee, MapPin,
 } from 'lucide-react';
@@ -34,7 +34,8 @@ import BuyerQuotationsPanel from './BuyerQuotationsPanel';
 import SubscribeToContactDialog, { type SubscriptionReason } from './SubscribeToContactDialog';
 import SupplierRespondDialog from './SupplierRespondDialog';
 import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
-import { canViewContacts, contactUpgradeHref, maskContactsInText } from '@/lib/contactAccess';
+import { canViewContacts, contactUpgradeHref, maskContactsInText, telHref, whatsappHref } from '@/lib/contactAccess';
+import { fetchVisibleContacts } from '@/lib/profileContacts';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
 import { rfqBudget } from '@/lib/rfqAlerts';
 
@@ -354,6 +355,7 @@ export function RequirementDetailView({
   const [subDialogReason, setSubDialogReason] = useState<SubscriptionReason>('no_subscription');
   const [respondDialogOpen, setRespondDialogOpen] = useState(false);
   const [chatStarting, setChatStarting] = useState(false);
+  const [buyerContacts, setBuyerContacts] = useState<{ phone: string | null; email: string | null; whatsapp_number: string | null } | null>(null);
 
   // The buyer who posted this RFQ manages it (accept or reject quotations, move the deal on); everyone else sees it
   // as a supplier would. Chat and quotations are for Premium suppliers: a registered company with an active paid plan
@@ -361,6 +363,25 @@ export function RequirementDetailView({
   const isOwner = Boolean(user && requirement && requirement.buyer_id === user.id);
   const premium = Boolean(company && isPaidSubscriber);
   const canSeeContact = canViewContacts({ isPaidSubscriber, viewerId: user?.id, ownerId: requirement?.buyer_id });
+  useEffect(() => {
+    if (!requirement?.buyer_id || !canSeeContact) {
+      setBuyerContacts(null);
+      return;
+    }
+    const ext = requirement as Requirement & { buyer_phone?: string | null; buyer_email?: string | null };
+    const phone = requirement.profiles?.phone || ext.buyer_phone || null;
+    const email = requirement.profiles?.email || ext.buyer_email || null;
+    const whatsapp = (requirement.profiles as { whatsapp_number?: string | null } | null | undefined)?.whatsapp_number || null;
+    if (phone || email || whatsapp) {
+      setBuyerContacts({ phone, email, whatsapp_number: whatsapp });
+      return;
+    }
+    let cancelled = false;
+    fetchVisibleContacts([requirement.buyer_id]).then((map) => {
+      if (!cancelled) setBuyerContacts(map[requirement.buyer_id] ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [requirement, canSeeContact]);
   const upgradeHref = contactUpgradeHref(profile?.role);
 
   const requirementId = requirement.id;
@@ -534,19 +555,48 @@ export function RequirementDetailView({
     </SheetHeader>
   );
 
+  const callHref = canSeeContact ? telHref(buyerContacts?.phone) : null;
+  const waHref = canSeeContact ? whatsappHref(buyerContacts?.phone || buyerContacts?.whatsapp_number, { title: requirement.title, req_number: requirement.req_number, id: requirement.id }) : null;
+  const lockActions = () => { void supplierGate(); };
+  const actionBtn = 'h-11 gap-1.5 rounded-xl font-bold';
+  const outlineBtn = `${actionBtn} border-[#FF5A00]/50 text-[#E04E00] hover:bg-[#FF5A00]/10 dark:text-[#FF7A2E]`;
+  const solidBtn = `${actionBtn} bg-[#FF5A00] text-white shadow-md hover:bg-[#e04e00]`;
   const actions = (
     <>
       {!premium && (
               <p className="mb-2 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
                 <Crown className="h-3.5 w-3.5 shrink-0 fill-[#FFC928] text-[#C98A00]" aria-hidden="true" />
-                Only Premium Suppliers (active paid plan) can chat and send quotations.
+                Only suppliers with an active paid plan can call, WhatsApp, chat or send a quotation.{' '}
+                {user ? (
+                  <Link to={contactUpgradeHref(profile?.role)} className="font-semibold text-[#FF5A00] hover:underline">Upgrade</Link>
+                ) : (
+                  <Link to="/register" className="font-semibold text-[#FF5A00] hover:underline">Sign up</Link>
+                )}
               </p>
             )}
-            <div className="grid grid-cols-[1fr_1.35fr] gap-2">
-              <Button variant="outline" onClick={startChatWithBuyer} disabled={chatStarting} className="h-11 gap-1.5 rounded-xl border-[#FF5A00]/50 font-bold text-[#E04E00] hover:bg-[#FF5A00]/10 dark:text-[#FF7A2E]">
+            <div className="grid grid-cols-2 gap-2">
+              {premium && callHref ? (
+                <Button asChild variant="outline" className={outlineBtn}>
+                  <a href={callHref}><Phone className="h-4 w-4" aria-hidden="true" /> Call</a>
+                </Button>
+              ) : (
+                <Button type="button" variant="outline" onClick={lockActions} disabled={premium && !callHref} className={outlineBtn}>
+                  {premium ? <Phone className="h-4 w-4" aria-hidden="true" /> : <Lock className="h-4 w-4" aria-hidden="true" />} Call
+                </Button>
+              )}
+              {premium && waHref ? (
+                <Button asChild variant="outline" className={outlineBtn}>
+                  <a href={waHref} target="_blank" rel="noopener noreferrer"><MessageSquare className="h-4 w-4" aria-hidden="true" /> WhatsApp</a>
+                </Button>
+              ) : (
+                <Button type="button" variant="outline" onClick={lockActions} disabled={premium && !waHref} className={outlineBtn}>
+                  {premium ? <MessageSquare className="h-4 w-4" aria-hidden="true" /> : <Lock className="h-4 w-4" aria-hidden="true" />} WhatsApp
+                </Button>
+              )}
+              <Button type="button" variant="outline" onClick={startChatWithBuyer} disabled={chatStarting} className={outlineBtn}>
                 {chatStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : premium ? <MessageSquare className="h-4 w-4" /> : <Lock className="h-4 w-4" />} Chat
               </Button>
-              <Button onClick={sendQuotation} className="h-11 gap-1.5 rounded-xl bg-[#FF5A00] font-bold text-white shadow-md hover:bg-[#e04e00]">
+              <Button type="button" onClick={sendQuotation} className={solidBtn}>
                 {premium ? <Send className="h-4 w-4" /> : <Lock className="h-4 w-4" />} Send Quotation
               </Button>
             </div>
@@ -630,12 +680,21 @@ export function RequirementDetailView({
                 </div>
                 {requirement.is_verified_buyer && <BadgeCheck className="h-5 w-5 shrink-0 text-[#FF5A00]" aria-hidden="true" />}
               </div>
-              {!canSeeContact && (
+              {canSeeContact && (buyerContacts?.phone || buyerContacts?.email) ? (
+                <div className="mt-2.5 space-y-0.5 text-[12px] text-foreground">
+                  {buyerContacts.phone && <p>Phone: {buyerContacts.phone}</p>}
+                  {buyerContacts.email && <p>Email: {buyerContacts.email}</p>}
+                </div>
+              ) : !canSeeContact ? (
                 <p className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-2 text-[11.5px] text-muted-foreground">
                   <Lock className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" aria-hidden="true" />
-                  The buyer's phone and email are shown only to Premium Suppliers.
+                  {user ? (
+                    <>The buyer&apos;s phone and email are shown only to paid suppliers. <Link to={contactUpgradeHref(profile?.role)} className="font-semibold text-[#FF5A00] hover:underline">See plans</Link></>
+                  ) : (
+                    <>Sign in or create an account, then upgrade to a paid supplier plan to unlock the buyer&apos;s phone and email. <Link to="/register" className="font-semibold text-[#FF5A00] hover:underline">Sign up</Link></>
+                  )}
                 </p>
-              )}
+              ) : null}
               {buyerExtra}
             </section></div>
         {aside && <div className="order-8 space-y-4">{aside}</div>}
@@ -706,12 +765,21 @@ export function RequirementDetailView({
                 </div>
                 {requirement.is_verified_buyer && <BadgeCheck className="h-5 w-5 shrink-0 text-[#FF5A00]" aria-hidden="true" />}
               </div>
-              {!canSeeContact && (
+              {canSeeContact && (buyerContacts?.phone || buyerContacts?.email) ? (
+                <div className="mt-2.5 space-y-0.5 text-[12px] text-foreground">
+                  {buyerContacts.phone && <p>Phone: {buyerContacts.phone}</p>}
+                  {buyerContacts.email && <p>Email: {buyerContacts.email}</p>}
+                </div>
+              ) : !canSeeContact ? (
                 <p className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-2 text-[11.5px] text-muted-foreground">
                   <Lock className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" aria-hidden="true" />
-                  The buyer's phone and email are shown only to Premium Suppliers.
+                  {user ? (
+                    <>The buyer&apos;s phone and email are shown only to paid suppliers. <Link to={contactUpgradeHref(profile?.role)} className="font-semibold text-[#FF5A00] hover:underline">See plans</Link></>
+                  ) : (
+                    <>Sign in or create an account, then upgrade to a paid supplier plan to unlock the buyer&apos;s phone and email. <Link to="/register" className="font-semibold text-[#FF5A00] hover:underline">Sign up</Link></>
+                  )}
                 </p>
-              )}
+              ) : null}
               {buyerExtra}
             </section>
               {description && (
