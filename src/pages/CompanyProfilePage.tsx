@@ -12,6 +12,7 @@ import type { Company, Product, CompanyCertification, CompanyReview } from '@/ty
 import { useAuth } from '@/contexts/AuthContext';
 import LockedContact from '@/components/common/LockedContact';
 import { canViewContacts, contactUpgradeHref } from '@/lib/contactAccess';
+import { fetchVisibleContacts } from '@/lib/profileContacts';
 import SafeImage from '@/components/common/SafeImage';
 import { resolveCompanyBranding } from '@/lib/contentImages';
 import {
@@ -109,14 +110,9 @@ export default function CompanyProfilePage() {
       return;
     }
     let cancelled = false;
-    supabase
-      .from('profiles')
-      .select('phone, email, whatsapp_number')
-      .eq('id', ownerId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled) setContact(data ?? null);
-      });
+    fetchVisibleContacts([ownerId]).then((map) => {
+      if (!cancelled) setContact(map[ownerId] ?? null);
+    });
     return () => {
       cancelled = true;
     };

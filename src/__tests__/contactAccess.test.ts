@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { PROFILE_PUBLIC_COLUMNS, canViewContacts, contactUpgradeHref, withoutProfileContacts } from '@/lib/contactAccess';
+import { PROFILE_PUBLIC_COLUMNS, canViewContacts, contactUpgradeHref, withoutProfileContacts, telHref, whatsappHref, contactDigits } from '@/lib/contactAccess';
 
 describe('contact details only for paid subscribers', () => {
   it('lets paid members (admins included) and the person themselves see contacts, nobody else', () => {
@@ -50,5 +50,37 @@ describe('phone numbers and emails inside RFQ text', () => {
     // hidden tabs must not keep their height (the Chat tab used to take half the screen)
     expect(drawer.match(/data-\[state=inactive\]:hidden/g)?.length).toBe(3);
     expect(drawer).toContain('h-[100dvh]');
+  });
+});
+
+describe('Call and WhatsApp links', () => {
+  it('turns an Indian 10-digit mobile into tel: and wa.me with 91 and a pre-filled RFQ message', () => {
+    expect(contactDigits('98765 43210')).toBe('919876543210');
+    expect(telHref('+91 98765 43210')).toBe('tel:+919876543210');
+    const href = whatsappHref('9876543210', { title: 'Steel coils', req_number: 'RFQ-042469', id: 'abc' });
+    expect(href).toMatch(/^https:\/\/wa\.me\/919876543210\?text=/);
+    const text = decodeURIComponent(href!.split('text=')[1]);
+    expect(text).toContain('RFQ-042469');
+    expect(text).toContain('https://www.bulkskart.com/requirements/abc');
+  });
+  it('does not invent a number when the phone is missing', () => {
+    expect(telHref(null)).toBeNull();
+    expect(whatsappHref('', { title: 'Steel coils' })).toBeNull();
+  });
+});
+
+describe('migration 00080 keeps contacts off the profiles table for anon and authenticated', () => {
+  it('revokes the contact columns, exposes them only through the paid-or-owner RPCs, and uses the existing paid rule', () => {
+    const sql = readFileSync('supabase/migrations/00080_rfq_paid_contacts.sql', 'utf8');
+    expect(sql).toContain('REVOKE SELECT ON public.profiles FROM anon, authenticated');
+    expect(sql).toContain('GRANT SELECT (');
+    expect(sql).toContain('CREATE OR REPLACE FUNCTION public.profile_contacts');
+    expect(sql).toContain('CREATE OR REPLACE FUNCTION public.profile_contacts_for');
+    expect(sql).toContain('CREATE OR REPLACE FUNCTION public.rfq_buyer_contacts');
+    expect(sql).toContain('CREATE OR REPLACE FUNCTION public.my_profile');
+    expect(sql).toContain('can_view_contacts');
+    expect(sql).toContain('is_supplier_subscribed');
+    expect(sql).toContain('SECURITY DEFINER');
+    expect(sql).not.toMatch(/INSERT INTO\s+public\.subscriptions/i);
   });
 });

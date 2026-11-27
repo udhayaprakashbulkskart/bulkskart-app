@@ -14,12 +14,13 @@ import type { Category, Company, CompanyCertification, CompanyReview, Product, R
 import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
 import { CLOSING_SOON_DAYS, NEW_REQUIREMENT_HOURS } from '@/lib/requirementVisuals';
 import { withoutProfileContacts } from '@/lib/contactAccess';
+import { fetchOwnProfile, fetchVisibleContacts, withBuyerContacts } from '@/lib/profileContacts';
 
-/** Visitors who are not signed in do not get profile phone, email or WhatsApp from the database (migration 00069). */
+/** Public profile queries never ask for phone, email or WhatsApp; those come from the 00080 RPCs when allowed. */
 // (typed as the original select so result types stay the same; the visitor version only has fewer profile columns)
 async function forViewer<S extends string>(select: S): Promise<S> {
-  const { data } = await supabase.auth.getSession();
-  return (data.session ? select : withoutProfileContacts(select)) as S;
+  // always drop profile contact columns; paid users get them from profile_contacts_for (00080)
+  return withoutProfileContacts(select) as S;
 }
 
 function mapGlobalToProduct(gp: GlobalCatalogProduct): Product {
@@ -838,18 +839,11 @@ export async function getRequirements(options?: {
     if (item.req_number) seenReqNums.add(item.req_number);
     if (normTitle) seenTitles.add(normTitle);
 
-    const buyerPhone =
-      (item as any).profiles?.phone ||
-      (item as any).buyer_phone ||
-      null;
-    uniqueItems.push({
-      ...item,
-      buyer_phone: buyerPhone,
-    } as Requirement);
+    uniqueItems.push(item as Requirement);
     if (uniqueItems.length >= maxItems) break;
   }
 
-  return uniqueItems;
+  return withBuyerContacts(uniqueItems);
 }
 
 /**
@@ -865,7 +859,8 @@ export async function getRequirementById(id: string): Promise<Requirement | null
   const query = supabase.from('requirements').select(await forViewer('*, profiles!buyer_id(*), categories!category_id(*)'));
   const { data } = await (isUuid ? query.eq('id', key) : query.ilike('req_number', key)).limit(1).maybeSingle();
   if (!data || isSeededRequirement(data) || isTenderImport(data as Requirement)) return null;
-  return data as Requirement;
+  const [row] = await withBuyerContacts([data as Requirement]);
+  return row ?? null;
 }
 
 export type OpenRequirementTab = 'all' | 'urgent' | 'new' | 'expiring';
@@ -935,7 +930,7 @@ export async function getOpenRequirements(
 
     const { data, count, error } = await query;
     if (error) return { rows: [], total: 0, error: error.message };
-    const rows = ((data ?? []) as unknown as Requirement[]).filter((row) => !isSeededRequirement(row) && !isTenderImport(row));
+    const rows = await withBuyerContacts(((data ?? []) as unknown as Requirement[]).filter((row) => !isSeededRequirement(row) && !isTenderImport(row)));
     return { rows, total: count ?? rows.length, error: null };
   } catch (e) {
     return { rows: [], total: 0, error: (e as Error)?.message || 'Requirements could not be loaded' };
@@ -1561,12 +1556,17 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
 // PROFILE
 // ============================================================
 export async function getProfile(userId: string): Promise<Profile | null> {
+  const mine = await fetchOwnProfile();
+  if (mine?.id === userId) return mine;
   const { data } = await supabase
     .from('profiles')
-    .select('*')
+    .select('id,full_name,avatar_url,role,status,country,state,city,created_at,updated_at,onboarding_completed,company_name,is_super_admin')
     .eq('id', userId)
     .maybeSingle();
-  return data;
+  if (!data) return null;
+  const contacts = await fetchVisibleContacts([userId]);
+  const c = contacts[userId];
+  return { ...(data as unknown as Profile), phone: c?.phone ?? null, email: c?.email ?? null, whatsapp_number: c?.whatsapp_number ?? null } as Profile;
 }
 
 export async function updateProfile(userId: string, payload: Partial<Profile>): Promise<{ error: string | null }> {
@@ -1583,12 +1583,17 @@ export async function updateProfile(userId: string, payload: Partial<Profile>): 
 export async function adminGetAllProfiles(cursor?: string): Promise<Profile[]> {
   let query = supabase
     .from('profiles')
-    .select('*')
+    .select('id,full_name,avatar_url,role,status,country,state,city,created_at,updated_at,onboarding_completed,company_name,is_super_admin')
     .order('created_at', { ascending: false })
     .limit(PAGE_SIZE);
   if (cursor) query = query.lt('created_at', cursor);
   const { data } = await query;
-  return Array.isArray(data) ? data : [];
+  const rows = (Array.isArray(data) ? data : []) as unknown as Profile[];
+  const contacts = await fetchVisibleContacts(rows.map((r) => r.id));
+  return rows.map((r) => {
+    const c = contacts[r.id];
+    return { ...r, phone: c?.phone ?? null, email: c?.email ?? null, whatsapp_number: c?.whatsapp_number ?? null } as Profile;
+  });
 }
 
 export async function adminGetPendingCompanies(): Promise<Company[]> {
@@ -1631,7 +1636,7 @@ export interface AdminReport {
 export async function adminGetReports(options?: { status?: ReportStatus | 'all'; limit?: number }): Promise<{ rows: AdminReport[]; error: string | null }> {
   let query = supabase
     .from('reports')
-    .select('*, reporter:profiles!reporter_id(full_name,email)')
+    .select('*, reporter:profiles!reporter_id(full_name)')
     .order('created_at', { ascending: false })
     .limit(options?.limit ?? 100);
   if (options?.status && options.status !== 'all') query = query.eq('status', options.status);
@@ -1927,11 +1932,8 @@ export async function getRequirementsPage(q: {
   const from = Math.max(0, (q.page - 1) * q.pageSize);
   const { data, count, error } = await query.range(from, from + q.pageSize - 1);
   if (error) throw error;
-  const rows = (Array.isArray(data) ? data : []).map((item: any) => ({
-    ...item,
-    buyer_phone: item.profiles?.phone || item.buyer_phone || null,
-  })) as Requirement[];
+  const rows = (Array.isArray(data) ? data : []) as Requirement[];
   // Listings taken from tender portals or other websites stay off BulkSkart's RFQ pages
-  const own = rows.filter((r) => !isOutsideListing(r) && !isPublicListing(r));
+  const own = await withBuyerContacts(rows.filter((r) => !isOutsideListing(r) && !isPublicListing(r)));
   return { data: own, count: typeof count === 'number' ? count : own.length };
 }

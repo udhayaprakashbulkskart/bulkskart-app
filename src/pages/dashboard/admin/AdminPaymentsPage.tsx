@@ -56,7 +56,7 @@ export default function AdminPaymentsPage() {
     const [orders, requests] = await Promise.all([
       supabase
         .from('orders')
-        .select('id,order_number,paid_amount,total_amount,currency,paid_at,order_status,commission_pct,buyer:profiles!buyer_id(full_name,email),companies:supplier_company_id(company_name)')
+        .select('id,order_number,paid_amount,total_amount,currency,paid_at,order_status,commission_pct,buyer:profiles!buyer_id(full_name),companies:supplier_company_id(company_name)')
         .eq('payment_status', 'escrow')
         .order('paid_at', { ascending: true }),
       supabase.from('withdrawal_requests').select('*, companies(company_name)').order('created_at', { ascending: false }).limit(100),
