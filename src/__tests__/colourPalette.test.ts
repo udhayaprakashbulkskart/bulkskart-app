@@ -32,13 +32,19 @@ const VERIFIED_GREEN_FILES = [
   '/src/pages/dashboard/admin/AdminVerificationsPage.tsx',
 ];
 
+/** Hot RFQ tags use a flame/amber badge (already live since #58). */
+const HOT_AMBER_FILES = [
+  '/src/lib/rfqPriority.ts',
+];
+
 describe('colour palette', () => {
   it('uses no Tailwind colour classes outside white, black (neutral), orange and red', () => {
     const found: string[] = [];
     for (const file of sourceFiles(join(process.cwd(), 'src'))) {
       const rel = file.replace(process.cwd(), '');
       const allowGreen = VERIFIED_GREEN_FILES.some((f) => rel.startsWith(f));
-      const hits = (readFileSync(file, 'utf8').match(CLASS) ?? []).filter((h) => !(allowGreen && /-emerald-/.test(h)));
+      const allowAmber = HOT_AMBER_FILES.some((f) => rel.startsWith(f));
+      const hits = (readFileSync(file, 'utf8').match(CLASS) ?? []).filter((h) => !(allowGreen && /-emerald-/.test(h)) && !(allowAmber && /-amber-/.test(h)));
       if (hits.length === 0) continue;
       found.push(`${rel}: ${[...new Set(hits)].join(', ')}`);
     }

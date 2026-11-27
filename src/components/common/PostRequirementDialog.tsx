@@ -25,7 +25,7 @@ import {
 } from '@/components/formkit';
 import { createRequirement } from '@/lib/api';
 import { RfqPriorityPicker } from '@/components/common/RfqPriorityBadge';
-import { isUrgentFromTag, type RfqPriorityTag } from '@/lib/rfqPriority';
+import { isUrgentFromTag, priorityTagForStorage, PRIORITY_TAG_REQUIRED_MESSAGE, type RfqPriorityChoice } from '@/lib/rfqPriority';
 import { isValidDeliveryDate, normalizeDeadlineInput, PAST_DELIVERY_DATE_MESSAGE, todayIsoDateIST } from '@/lib/deliveryDate';
 import { supabase } from '@/db/supabase';
 import { invokeAutoQuotation } from '@/lib/autoQuotationApi';
@@ -73,10 +73,10 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
     deadline: '',
     specifications: '',
     is_urgent: false,
-    priority_tag: null as RfqPriorityTag | null,
+    priority_tag: null as RfqPriorityChoice | null,
   });
 
-  const set = (k: string, v: string | boolean | RfqPriorityTag | null) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k: string, v: string | boolean | RfqPriorityChoice | null) => setForm(f => ({ ...f, [k]: v }));
 
   const validateDialogForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -100,6 +100,9 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
     }
     if (form.deadline && !isValidDeliveryDate(form.deadline)) {
       errors.deadline = PAST_DELIVERY_DATE_MESSAGE;
+    }
+    if (!form.priority_tag) {
+      errors.priority_tag = PRIORITY_TAG_REQUIRED_MESSAGE;
     }
 
     setFieldErrors(errors);
@@ -134,7 +137,7 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
       specifications: form.specifications.trim() || null,
       attachment_url: attachmentUrl,
       status: 'active',
-      priority_tag: form.priority_tag,
+      priority_tag: priorityTagForStorage(form.priority_tag),
       // @ts-expect-error — columns not yet in the official Requirement type
       is_urgent: isUrgentFromTag(form.priority_tag) || form.is_urgent,
       deal_status: 'active',
@@ -360,8 +363,10 @@ export default function PostRequirementDialog({ open, onClose, categories, buyer
         <RfqPriorityPicker
           id={`${ids}-priority`}
           value={form.priority_tag}
-          onChange={(tag) => setForm((f) => ({ ...f, priority_tag: tag, is_urgent: isUrgentFromTag(tag) }))}
+          onChange={(tag) => { setForm((f) => ({ ...f, priority_tag: tag, is_urgent: isUrgentFromTag(tag) })); clear('priority_tag'); }}
           disabled={loading}
+          required
+          error={fieldErrors.priority_tag}
         />
 
         <Actions>

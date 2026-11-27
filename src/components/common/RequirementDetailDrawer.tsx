@@ -10,7 +10,7 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import SafeImage from '@/components/common/SafeImage';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +36,7 @@ import SupplierRespondDialog from './SupplierRespondDialog';
 import { isOwnUrl, withoutOutsideLinks } from '@/lib/rfqSources';
 import { canViewContacts, contactUpgradeHref, maskContactsInText, telHref, whatsappHref } from '@/lib/contactAccess';
 import RfqPriorityBadge, { RfqPriorityPicker } from '@/components/common/RfqPriorityBadge';
-import { displayPriorityTag, isUrgentFromTag, normalizePriorityTag } from '@/lib/rfqPriority';
+import { displayPriorityTag, isUrgentFromTag, normalizePriorityTag, priorityTagForStorage } from '@/lib/rfqPriority';
 import { deliveryByLabel, isDeliveryDatePassed } from '@/lib/deliveryDate';
 import { fetchVisibleContacts } from '@/lib/profileContacts';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
@@ -320,9 +320,10 @@ function OwnerPriorityEditor({
 }) {
   const [saving, setSaving] = useState(false);
   const current = normalizePriorityTag(requirement.priority_tag);
-  const save = async (tag: ReturnType<typeof normalizePriorityTag>) => {
+  const save = async (choice: Parameters<typeof priorityTagForStorage>[0]) => {
     if (saving) return;
     setSaving(true);
+    const tag = priorityTagForStorage(choice);
     const patch = { priority_tag: tag, is_urgent: isUrgentFromTag(tag) } as Partial<Requirement>;
     const { error } = await updateRequirement(requirement.id, patch);
     setSaving(false);
@@ -369,11 +370,13 @@ export function RequirementDetailView({
   below,
 }: RequirementDetailViewProps) {
   const page = layout === 'page';
+  const [searchParams] = useSearchParams();
   const { user, profile, company, isPaidSubscriber } = useAuth();
   const [quotes, setQuotes] = useState<Quotation[]>([]);
   const [loadingQuotes, setLoadingQuotes] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const tabFromUrl = page && (searchParams.get('tab') === 'quotes' || searchParams.get('tab') === 'chat') ? searchParams.get('tab')! : 'overview';
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [subDialogOpen, setSubDialogOpen] = useState(false);
   const [subDialogReason, setSubDialogReason] = useState<SubscriptionReason>('no_subscription');
   const [respondDialogOpen, setRespondDialogOpen] = useState(false);
@@ -418,8 +421,13 @@ export function RequirementDetailView({
   }, [requirementId]);
 
   useEffect(() => {
-    if (active) { loadQuotes(); setActiveConvId(null); setActiveTab('overview'); }
-  }, [active, loadQuotes]);
+    if (active) {
+      loadQuotes();
+      setActiveConvId(null);
+      const tab = page && (searchParams.get('tab') === 'quotes' || searchParams.get('tab') === 'chat') ? searchParams.get('tab')! : 'overview';
+      setActiveTab(tab);
+    }
+  }, [active, loadQuotes, page, searchParams]);
 
   const handleAdvanceDealStatus = async (nextStatus: string) => {
     if (!requirement) return;

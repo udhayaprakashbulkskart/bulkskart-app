@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { displayPriorityTag, isUrgentFromTag, normalizePriorityTag, RFQ_PRIORITY_CLASS, RFQ_PRIORITY_LABEL } from '@/lib/rfqPriority';
+import { displayPriorityTag, isUrgentFromTag, normalizePriorityChoice, normalizePriorityTag, priorityTagForStorage, PRIORITY_TAG_REQUIRED_MESSAGE, RFQ_PRIORITY_CLASS, RFQ_PRIORITY_LABEL } from '@/lib/rfqPriority';
 
 const src = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
@@ -35,7 +35,8 @@ describe('normalizePriorityTag', () => {
 
   it('uses red for Emergency, BulkSkart orange for Urgent, and amber for Hot', () => {
     expect(RFQ_PRIORITY_LABEL.emergency).toBe('Emergency');
-    expect(RFQ_PRIORITY_LABEL.urgent).toBe('Urgent');
+    expect(RFQ_PRIORITY_LABEL.urgent).toBe('Urgent Requirement');
+    expect(RFQ_PRIORITY_LABEL.regular).toBe('Regular');
     expect(RFQ_PRIORITY_LABEL.hot).toBe('Hot');
     expect(RFQ_PRIORITY_CLASS.emergency).toContain('bg-red-600');
     expect(RFQ_PRIORITY_CLASS.urgent).toContain('bg-[#FF5A00]');
@@ -58,16 +59,27 @@ describe('migration 00081', () => {
   });
 });
 
-describe('the tag is optional on the post form and visible on RFQ cards and the detail page', () => {
-  it('adds a chip picker on both post-requirement forms', () => {
+describe('the tag is required on the post form and visible on RFQ cards and the detail page', () => {
+  it('adds a required chip picker on both post-requirement forms, and stores Regular as null', () => {
     const dialog = src('src/components/common/PostRequirementDialog.tsx');
     const page = src('src/pages/PostRequirementPage.tsx');
     expect(dialog).toContain('RfqPriorityPicker');
     expect(page).toContain('RfqPriorityPicker');
-    expect(dialog).toContain('priority_tag: form.priority_tag');
-    expect(page).toContain('priority_tag: normalizePriorityTag(form.priorityTag)');
+    expect(dialog).toContain('priorityTagForStorage(form.priority_tag)');
+    expect(page).toContain('priorityTagForStorage(normalizePriorityChoice(form.priorityTag))');
+    expect(dialog).toContain('PRIORITY_TAG_REQUIRED_MESSAGE');
+    expect(page).toContain('PRIORITY_TAG_REQUIRED_MESSAGE');
+    expect(dialog).toContain('required');
+    expect(page).toContain('required');
     expect(dialog).toContain('isUrgentFromTag');
     expect(page).toContain('isUrgentFromTag');
+    expect(priorityTagForStorage('regular')).toBeNull();
+    expect(priorityTagForStorage('urgent')).toBe('urgent');
+    expect(priorityTagForStorage(null)).toBeNull();
+    expect(normalizePriorityChoice('regular')).toBe('regular');
+    expect(normalizePriorityChoice('Urgent')).toBe('urgent');
+    expect(isUrgentFromTag('regular')).toBe(false);
+    expect(PRIORITY_TAG_REQUIRED_MESSAGE).toBe('Choose a priority tag');
   });
 
   it('shows the badge on the home ticker, the list, and the detail page, and lets the owner edit it', () => {
