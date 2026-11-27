@@ -8,7 +8,7 @@
  */
 import { supabase } from '@/db/supabase';
 import { isOutsideListing, withoutOutsideOrDemoRfqs } from '@/lib/rfqSources';
-import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEED_COMPANY_ID_PREFIX, SEED_OWNER_ID, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
+import { INCLUDE_TEMPLATE_SEED_DATA, isSeededRequirement, SEED_OWNER_ID, SEEDED_RFQ_TITLE_LIKE } from '@/lib/seedData';
 
 export interface LiveStats {
   openRfqs: number | null;
@@ -30,7 +30,8 @@ async function fetchLiveStats(): Promise<LiveStats> {
   if (!INCLUDE_TEMPLATE_SEED_DATA) open = open.not('title', 'like', SEEDED_RFQ_TITLE_LIKE);
   let companiesQuery = supabase.from('companies').select('id', { count: 'exact', head: true });
   if (!INCLUDE_TEMPLATE_SEED_DATA) {
-    companiesQuery = companiesQuery.neq('owner_id', SEED_OWNER_ID).not('id', 'like', `${SEED_COMPANY_ID_PREFIX}%`);
+    // Seed companies all use SEED_OWNER_ID. Do not filter id with LIKE: it is a uuid column and PostgREST returns 404.
+    companiesQuery = companiesQuery.neq('owner_id', SEED_OWNER_ID);
   }
   const [rfqs, companies, buyers, industries] = await Promise.all([
     withoutOutsideOrDemoRfqs(open).limit(1000),
