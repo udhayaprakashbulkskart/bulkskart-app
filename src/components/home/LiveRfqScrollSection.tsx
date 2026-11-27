@@ -9,7 +9,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Package } from 'lucide-react';
+import { ArrowRight, CalendarDays, MapPin, Package } from 'lucide-react';
 import { getOpenRequirements } from '@/lib/api';
 import { isPublicListing } from '@/lib/publicListings';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
@@ -23,33 +23,41 @@ export type LiveRfqCard = {
   title: string;
   quantityLabel: string;
   city: string;
-  postedAgo: string;
+  /** Same source as the RFQ page's reference picture: first images[] URL, else attachment_url. */
+  photo: string | null;
+  /** Required delivery date (deadline), e.g. "12 Dec 2026". Null when the buyer left it blank. */
+  deliveryDate: string | null;
 };
 
+/** The reference picture on /requirements/<id>: first saved image, otherwise the attachment. */
+export function rfqReferencePhoto(req: Pick<Requirement, 'images' | 'attachment_url'>): string | null {
+  const fromGallery = Array.isArray(req.images)
+    ? req.images.find((url): url is string => typeof url === 'string' && Boolean(url.trim()))
+    : undefined;
+  if (fromGallery) return fromGallery.trim();
+  const attachment = (req.attachment_url ?? '').trim();
+  return attachment || null;
+}
+
+/** "12 Dec 2026", the same day format the RFQ page uses for the deadline. */
+export function deliveryDateLabel(deadline: string | null | undefined): string | null {
+  const iso = (deadline ?? '').trim();
+  if (!iso) return null;
+  const day = new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso);
+  if (Number.isNaN(day.getTime())) return null;
+  return day.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 /** Fields the ticker may keep — never phone, email or a profile object. */
-export function toLiveRfqCard(req: Requirement, now = Date.now()): LiveRfqCard {
+export function toLiveRfqCard(req: Requirement): LiveRfqCard {
   return {
     id: req.id,
     title: req.title,
     quantityLabel: quantityLabel(req),
     city: (req.destination_city || '').trim() || placeLabel(req) || 'Location not stated',
-    postedAgo: postedAgo(req.created_at, now),
+    photo: rfqReferencePhoto(req),
+    deliveryDate: deliveryDateLabel(req.deadline),
   };
-}
-
-export function postedAgo(iso: string | null | undefined, now = Date.now()): string {
-  if (!iso) return '';
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return '';
-  const minutes = Math.max(0, Math.floor((now - then) / 60_000));
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return 'Yesterday';
-  if (days < 30) return `${days} days ago`;
-  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
 /** Repeat the list so the first copy of the track is wide enough for a seamless loop. */
@@ -144,10 +152,34 @@ export default function LiveRfqScrollSection() {
   );
 }
 
+function RfqPhoto({ src, alt }: { src: string | null; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  const showPhoto = Boolean(src) && !failed;
+  return (
+    <div className="aspect-[16/9] overflow-hidden rounded-xl bg-[#FF5A00]/10">
+      {showPhoto ? (
+        <img
+          src={src ?? undefined}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-[#FF5A00]" data-testid="rfq-photo-placeholder" aria-hidden="true">
+          <Package className="h-8 w-8" strokeWidth={1.6} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RfqTickerCard({ card, tabIndex }: { card: LiveRfqCard; tabIndex?: number }) {
   return (
-    <article className="flex w-[230px] shrink-0 flex-col justify-between rounded-2xl border border-border bg-card p-3 shadow-sm sm:w-[260px] sm:p-3.5">
-      <h3 className="line-clamp-2 min-h-[2.5rem] text-[13px] font-bold leading-snug text-foreground sm:text-[14px]">{card.title}</h3>
+    <article className="flex w-[230px] shrink-0 flex-col rounded-2xl border border-border bg-card p-3 shadow-sm sm:w-[260px] sm:p-3.5">
+      <RfqPhoto src={card.photo} alt={card.title} />
+      <h3 className="mt-2.5 line-clamp-2 min-h-[2.5rem] text-[13px] font-bold leading-snug text-foreground sm:text-[14px]">{card.title}</h3>
       <p className="mt-2 flex items-center gap-1.5 text-[12px] text-muted-foreground">
         <Package className="h-3.5 w-3.5 shrink-0 text-[#FF5A00]" aria-hidden="true" />
         <span className="truncate">{card.quantityLabel}</span>
@@ -157,7 +189,14 @@ function RfqTickerCard({ card, tabIndex }: { card: LiveRfqCard; tabIndex?: numbe
         <span className="truncate">{card.city}</span>
       </p>
       <div className="mt-2.5 flex items-center justify-between gap-2">
-        <span className="truncate text-[11px] font-semibold text-[#FF5A00]">{card.postedAgo}</span>
+        {card.deliveryDate ? (
+          <span className="flex min-w-0 items-center gap-1 truncate text-[11px] font-semibold text-[#FF5A00]">
+            <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="truncate">{card.deliveryDate}</span>
+          </span>
+        ) : (
+          <span />
+        )}
         <Link
           to={`/requirements/${card.id}`}
           tabIndex={tabIndex}
