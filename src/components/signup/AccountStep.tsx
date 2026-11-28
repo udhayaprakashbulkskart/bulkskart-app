@@ -58,6 +58,8 @@ interface AccountStepProps {
   /** gets what has been typed, so it is still there when the person comes back */
   onBack: (values: AccountValues) => void;
   onSubmit: (values: AccountValues) => void;
+  /** shown with a save error, so payment is not blocked by an unfinished profile */
+  onPayNow?: () => void;
 }
 
 function FieldError({ id, message }: { id: string; message?: string }) {
@@ -70,7 +72,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-export function AccountStep({ mode, initial, summary, busy, error, emailTaken, signInHref, onBack, onSubmit }: AccountStepProps) {
+export function AccountStep({ mode, initial, summary, busy, error, emailTaken, signInHref, onBack, onSubmit, onPayNow }: AccountStepProps) {
   const [values, setValues] = useState<AccountValues>({ ...initial, password: '', agreed: false });
   const [errors, setErrors] = useState<AccountErrors>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -279,6 +281,11 @@ export function AccountStep({ mode, initial, summary, busy, error, emailTaken, s
                 <Link to={signInHref} className="mt-1 inline-block font-semibold underline">
                   Sign in instead
                 </Link>
+              )}
+              {onPayNow && (
+                <button type="button" onClick={onPayNow} className="mt-1 block font-semibold text-primary underline">
+                  Pay for a plan now
+                </button>
               )}
             </div>
           </div>

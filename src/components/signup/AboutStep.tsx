@@ -40,6 +40,8 @@ interface AboutStepProps {
   /** why the person cannot continue yet, other than having said nothing about their products */
   blocked: string;
   onContinue: () => void;
+  /** a signed-in supplier can pay before this form is finished */
+  onPayNow?: () => void;
 }
 
 const chip =
@@ -83,7 +85,7 @@ function GstinStatus({ value }: { value: string }) {
   );
 }
 
-export function AboutStep({ text, onText, gstin, onGstin, details, edited, onChange, onResetEdits, blocked, onContinue }: AboutStepProps) {
+export function AboutStep({ text, onText, gstin, onGstin, details, edited, onChange, onResetEdits, blocked, onContinue, onPayNow }: AboutStepProps) {
   const [adding, setAdding] = useState(false);
   const [productInput, setProductInput] = useState('');
   const [manual, setManual] = useState(false);
@@ -369,6 +371,11 @@ export function AboutStep({ text, onText, gstin, onGstin, details, edited, onCha
         <Button type="button" onClick={onContinue} disabled={!ready || Boolean(blocked)} className="h-12 w-full rounded-xl text-base font-bold shadow-[0_10px_26px_-12px_rgba(255,90,0,0.85)]">
           Looks right, continue <ArrowRight className="h-4 w-4" />
         </Button>
+        {onPayNow && (
+          <button type="button" onClick={onPayNow} className="w-full text-center text-sm font-semibold text-primary hover:underline">
+            Pay for a plan now
+          </button>
+        )}
         {blocked ? (
           <p aria-live="polite" className="text-center text-xs text-destructive">
             {blocked}

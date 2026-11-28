@@ -269,9 +269,8 @@ export default function PricingPage() {
 
   const handlePlanCTA = (plan: typeof dynamicPlans[0]) => {
     if (plan.tierKey === 'enterprise') { navigate('/how-it-works'); return; }
-    if (!user || !profile) { navigate('/auth?tab=supplier'); return; }
-    if (profile.role === 'buyer') { navigate('/auth?tab=supplier'); return; }
-    if (!company) { navigate('/auth?tab=supplier'); return; }
+    if (!user || !profile) { navigate('/signup/manufacturer'); return; }
+    if (profile.role === 'buyer') { navigate('/signup/manufacturer'); return; }
 
     const breakdown = plan.basePrice ? calculatePricing(plan.basePrice) : null;
     const totalAmount = breakdown ? breakdown.totalPayable : (plan.price_inr ?? 0);
@@ -281,7 +280,7 @@ export default function PricingPage() {
       plan_label: `${plan.tier} Plan`,
       price_inr: totalAmount,
       billing_cycle: 'monthly',
-      company_id: company.id,
+      company_id: company?.id,
       user_name: profile.full_name ?? '',
       user_email: user.email ?? '',
       onSuccess: () => { /* hook navigates to /payment-success */ },
@@ -289,13 +288,8 @@ export default function PricingPage() {
   };
 
   const handleAddonCheckout = (addonKey: 'ai_accessibility' | 'flash_sell_24h') => {
-    if (!user || !profile) { navigate('/auth?tab=supplier'); return; }
-    if (profile.role === 'buyer') { navigate('/auth?tab=supplier'); return; }
-    if (!company) {
-      toast.error('Please complete your company profile first');
-      navigate('/dashboard/supplier/profile');
-      return;
-    }
+    if (!user || !profile) { navigate('/signup/manufacturer'); return; }
+    if (profile.role === 'buyer') { navigate('/signup/manufacturer'); return; }
 
     const isAi = addonKey === 'ai_accessibility';
     const baseInr = isAi ? 7500 : 5000;
@@ -308,7 +302,7 @@ export default function PricingPage() {
       plan_label: label,
       price_inr: totalAmount,
       billing_cycle: isAi ? 'monthly' : 'one_time',
-      company_id: company.id,
+      company_id: company?.id,
       user_name: profile.full_name ?? '',
       user_email: user.email ?? '',
       onSuccess: () => {

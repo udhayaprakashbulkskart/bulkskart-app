@@ -81,9 +81,9 @@ export default function PlansHomeSection() {
   const { startCheckout, loading: paying } = useRazorpay();
 
   const handleSelectPlan = async (plan: typeof MONTHLY_PLANS[0]) => {
-    if (!user || !profile || !company) {
-      toast.info('Please sign in as a supplier or register your company to activate this plan');
-      navigate('/auth?tab=supplier');
+    if (!user || !profile || profile.role === 'buyer') {
+      toast.info('Sign in as a supplier to pay. You can finish your business profile afterwards.');
+      navigate('/signup/manufacturer');
       return;
     }
 
@@ -93,7 +93,7 @@ export default function PlansHomeSection() {
         plan_label: `${plan.tier} Plan`,
         price_inr: plan.price_inr,
         billing_cycle: 'monthly',
-        company_id: company.id,
+        company_id: company?.id,
         user_name: profile.full_name ?? '',
         user_email: user.email ?? '',
         onSuccess: () => {
