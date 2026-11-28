@@ -45,17 +45,6 @@ function activeFilters(nowIso: string) {
   );
 }
 
-function timeAgo(iso?: string | null): string | null {
-  if (!iso) return null;
-  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (!Number.isFinite(mins) || mins < 0) return null;
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
-
 function locationOf(req: Requirement): string | null {
   const city = req.destination_city?.trim();
   const country = req.destination_country?.trim();
@@ -423,9 +412,6 @@ export default function LiveBuyerOrderAlert() {
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#FF8A00]" />
               </span>
               <span className="text-[10px] font-black tracking-[0.14em]">LIVE</span>
-              {leads[active] && timeAgo(leads[active].created_at) && (
-                <span className="truncate text-[10px] text-white/60">{timeAgo(leads[active].created_at)}</span>
-              )}
             </div>
           </div>
           <button
@@ -574,8 +560,7 @@ function AlertCard({
 }) {
   const qty = quantityOf(req);
   const place = locationOf(req);
-  const posted = timeAgo(req.created_at);
-  const meta = [qty, place, posted].filter(Boolean).join(' · ');
+  const meta = [qty, place].filter(Boolean).join(' · ');
   return (
     <article
       data-card={req.id}
