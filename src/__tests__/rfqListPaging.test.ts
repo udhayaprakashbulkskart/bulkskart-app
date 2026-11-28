@@ -47,12 +47,12 @@ describe('RFQ list pages after page 1 are for paid subscribers', () => {
 describe('home Live RFQ action colours and hidden totals', () => {
   it('colours Call, WhatsApp, Chat and Quote distinctly, without changing the layout', () => {
     const actions = src('src/components/home/LiveRfqActions.tsx');
-    expect(actions).toContain('bg-[#1D4ED8]');
-    expect(actions).toContain('bg-[#25D366]');
-    expect(actions).toContain('text-[#052E16]');
-    expect(actions).toContain('bg-[#6D28D9]');
+    expect(actions).toContain('bg-[#16A34A]');
+    expect(actions).toContain("dark:border-white/80 dark:text-white");
     expect(actions).toContain('bg-[#FF5A00]');
-    expect(actions).toContain('grid grid-cols-2 gap-1');
+    expect(actions).toContain('live-rfq-quote-btn');
+    expect(actions).toContain('rounded-xl');
+    expect(actions).toContain('grid grid-cols-2 gap-1.5');
     expect(actions).toContain('fetchRfqBuyerContacts');
     expect(actions).toContain('SubscribeToContactDialog');
   });

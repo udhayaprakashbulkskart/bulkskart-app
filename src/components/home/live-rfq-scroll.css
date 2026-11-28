@@ -44,3 +44,75 @@
     padding-inline: 0.25rem;
   }
 }
+
+/* LIVE pill: pinging white dot (in the markup) plus a soft glow via scale/opacity. */
+.live-rfq-live-pill {
+  position: relative;
+  isolation: isolate;
+}
+.live-rfq-live-pill::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  background: #b91c1c;
+  z-index: -1;
+  opacity: 0.28;
+  transform: scale(1);
+  animation: live-rfq-glow-pulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Soft pulse behind the URGENT badge on a ticker card. */
+.live-rfq-urgent-glow {
+  position: relative;
+  isolation: isolate;
+}
+.live-rfq-urgent-glow::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  background: #dc2626;
+  z-index: -1;
+  opacity: 0.35;
+  transform: scale(1);
+  animation: live-rfq-glow-pulse 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes live-rfq-glow-pulse {
+  0%, 100% { opacity: 0.18; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.08); }
+}
+
+/* Gentle shimmer sweep across the Quote button. */
+.live-rfq-quote-btn {
+  position: relative;
+  overflow: hidden;
+}
+.live-rfq-quote-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.38) 50%, transparent 60%);
+  transform: translateX(-130%);
+  opacity: 0;
+  animation: live-rfq-shimmer 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes live-rfq-shimmer {
+  0%, 25% { transform: translateX(-130%); opacity: 0; }
+  35% { opacity: 1; }
+  55%, 100% { transform: translateX(130%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-rfq-live-pill::before,
+  .live-rfq-urgent-glow::after,
+  .live-rfq-quote-btn::after {
+    animation: none;
+    opacity: 0;
+  }
+}

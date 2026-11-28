@@ -114,6 +114,8 @@ describe('Live RFQ scroll section', () => {
     expect(views[0]).toHaveAttribute('href', '/requirements/5e015cc4-47a0-4e82-b1f4-271424ce7e3f');
     expect(screen.getByRole('link', { name: 'View all RFQs' })).toHaveAttribute('href', '/requirements');
     expect(document.querySelector('.animate-ping')).toBeTruthy();
+    expect(document.querySelector('.live-rfq-live-pill')).toBeTruthy();
+    expect(document.querySelector('.live-rfq-live-pill')).toHaveClass('bg-[#b91c1c]', 'text-white');
     expect(screen.queryByText('9876543210')).toBeNull();
     expect(screen.queryByText('buyer@example.com')).toBeNull();
     expect(screen.queryByText('deepak')).toBeNull();
@@ -141,9 +143,13 @@ describe('Live RFQ scroll section', () => {
   it('keeps a seamless looping track, pauses on hover, and respects reduced motion', () => {
     const css = src('src/components/home/live-rfq-scroll.css');
     expect(css).toContain('@keyframes live-rfq-marquee');
+    expect(css).toContain('@keyframes live-rfq-glow-pulse');
+    expect(css).toContain('@keyframes live-rfq-shimmer');
     expect(css).toContain('animation-play-state: paused');
     expect(css).toContain('prefers-reduced-motion: reduce');
     expect(css).toContain('overflow-x: auto');
+    expect(css).toContain('.live-rfq-live-pill::before');
+    expect(css).toContain('.live-rfq-quote-btn::after');
     expect(loopUnit(['a', 'b'], 8)).toHaveLength(8);
     expect(toLiveRfqCard(rfq).city).toBe('Bengaluru');
     expect(toLiveRfqCard(rfq).photo).toBe(PHOTO);
@@ -192,6 +198,7 @@ describe('Live RFQ priority badges', () => {
     getOpenRequirements.mockResolvedValue({ rows: [flagged], total: 1, error: null });
     renderSection();
     await waitFor(() => expect(screen.getAllByText('Urgent Requirement').length).toBeGreaterThan(0));
+    expect(document.querySelector('.live-rfq-urgent-glow')).toBeTruthy();
     const overlays = screen.getAllByTestId('rfq-priority-badge');
     expect(overlays.length).toBeGreaterThan(0);
     expect(overlays[0]).toHaveClass('absolute', 'left-2', 'top-2');
@@ -233,7 +240,7 @@ describe('Live RFQ card actions', () => {
     const user = userEvent.setup();
     renderSection();
     await waitFor(() => expect(screen.getAllByRole('button', { name: /^Call$/ }).length).toBeGreaterThan(0));
-    expect(screen.getAllByRole('link', { name: 'Sign up' })[0]).toHaveAttribute('href', '/register');
+    expect(screen.getAllByRole('link', { name: 'Upgrade' })[0]).toHaveAttribute('href', '/register');
     await user.click(screen.getAllByRole('button', { name: /^Call$/ })[0]);
     expect(await screen.findByText('Login to Send Quotations & Messages')).toBeInTheDocument();
     expect(fetchRfqBuyerContacts).not.toHaveBeenCalled();
