@@ -19,20 +19,6 @@ import { displayPriorityTag } from '@/lib/rfqPriority';
 
 const LEAD_COUNT = 30;
 
-function postedLabel(iso: string | null | undefined): string {
-  if (!iso) return '';
-  const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  if (minutes < 60) return minutes <= 1 ? 'Just posted' : `${minutes} min ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} h ago`;
-  const days = Math.round(hours / 24);
-  return days === 1 ? 'Yesterday' : `${days} days ago`;
-}
-
-/**
- * RFQ leads: the open buyer requirements on BulkSkart, newest first. A quote sent from here is a real quotation the
- * buyer receives, and a buyer's phone number shows only when the buyer shared one (and the supplier's plan allows it).
- */
 export default function SupplierRFQsPage() {
   const { user, company } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -280,7 +266,6 @@ export default function SupplierRFQsPage() {
                             {lead.title}
                           </Link>
                           <RfqPriorityBadge tag={displayPriorityTag(lead)} />
-                          {lead.created_at && <span className="text-[10px] font-semibold text-orange-500 shrink-0">{postedLabel(lead.created_at)}</span>}
                         </div>
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">

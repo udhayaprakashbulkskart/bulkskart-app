@@ -26,7 +26,7 @@ import { isOutsideListing, withoutOutsideLinks } from '@/lib/rfqSources';
 import { maskContactsInText } from '@/lib/contactAccess';
 import { isDeliveryDatePassed } from '@/lib/deliveryDate';
 import { isSeededRequirement } from '@/lib/seedData';
-import { isPublicListing, postedOnLabel } from '@/lib/publicListings';
+import { isPublicListing } from '@/lib/publicListings';
 
 
 
@@ -228,7 +228,6 @@ export default function RequirementDetailsPage() {
 
   // A Public Requirement (collected from a public page elsewhere): its buyer is not on BulkSkart, so no quotation here.
   if (isPublicListing(req)) {
-    const posted = postedOnLabel(req.created_at);
     const qty = req.quantity != null ? `${Number(req.quantity).toLocaleString('en-IN')}${req.quantity_unit ? ` ${req.quantity_unit}` : ''}` : 'Not stated';
     return (
       <MainLayout>
@@ -241,7 +240,6 @@ export default function RequirementDetailsPage() {
               <dt className="text-muted-foreground">Quantity</dt><dd className="text-foreground">{qty}</dd>
               <dt className="text-muted-foreground">Delivery location</dt><dd className="text-foreground">{[req.destination_city, req.destination_country].filter(Boolean).join(', ') || 'Not stated'}</dd>
               {req.listing_category && (<><dt className="text-muted-foreground">Category</dt><dd className="text-foreground">{req.listing_category}</dd></>)}
-              {posted && (<><dt className="text-muted-foreground">Posted</dt><dd className="text-foreground">{posted}</dd></>)}
             </dl>
             {req.specifications && <p className="whitespace-pre-line text-sm text-muted-foreground">{req.specifications}</p>}
             <p className="text-sm text-muted-foreground">This requirement was publicly listed by a buyer who is not registered on BulkSkart, so quotations cannot be sent through BulkSkart for it.</p>

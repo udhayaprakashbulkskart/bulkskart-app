@@ -39,18 +39,6 @@ const PAGE_SIZE = 12;
 
 type GateReason = React.ComponentProps<typeof SubscribeToContactDialog>['reason'];
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins === 1) return '1 min ago';
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs === 1) return '1 hr ago';
-  if (hrs < 24) return `${hrs} hrs ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
-
 const TAB_LABELS: { key: OpenRequirementTab; label: string; icon?: React.ComponentType<{ className?: string }>; iconClass?: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'urgent', label: 'Urgent', icon: Zap, iconClass: 'text-orange-500' },
@@ -121,9 +109,6 @@ function MyRequirementCard({
       <div className="flex items-start justify-between gap-2">
         <span className={`text-[10px] font-semibold border rounded-full px-2.5 py-0.5 ${STATUS_COLOR[dealStatus]}`}>
           {DEAL_STAGES.find(s => s.key === dealStatus)?.label ?? dealStatus}
-        </span>
-        <span className="text-[11px] text-muted-foreground">
-          {new Date(req.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
         </span>
       </div>
 
@@ -500,7 +485,6 @@ export default function RequirementsPage() {
                     <React.Fragment key={item.id}>
                       {i > 0 && <span className="text-border">•</span>}
                       <Link to={`/requirement/${item.req_number || item.id}`} className={`inline-flex items-center gap-1.5 hover:text-foreground ${i === 0 ? 'text-foreground' : ''}`}>
-                        <span className="text-[#FF5A00] font-bold">{timeAgo(item.created_at)}:</span>
                         {quantityLabel(item)} {item.title}{place ? ` · ${place}` : ''}
                       </Link>
                     </React.Fragment>
@@ -779,15 +763,11 @@ export default function RequirementsPage() {
                             </div>
                           )}
 
-                          {/* Bottom Meta: Location & posted time */}
+                          {/* Bottom Meta: Location */}
                           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2 flex-wrap">
                             <span className={`flex items-center gap-1 ${visual.hasLocation ? '' : 'italic'}`}>
                               <MapPin className="w-3 h-3 text-[#FF5A00] shrink-0" />
                               {visual.locationDisplay}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 shrink-0" />
-                              {timeAgo(req.created_at)}
                             </span>
                           </div>
                         </div>

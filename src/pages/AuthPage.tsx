@@ -20,16 +20,6 @@ import { trackSignUp } from '@/lib/analytics';
 import { getOpenRequirements } from '@/lib/api';
 import { placeLabel, quantityLabel } from '@/lib/requirementVisuals';
 
-function timeSince(iso: string): string {
-  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hr${hrs === 1 ? '' : 's'} ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days} day${days === 1 ? '' : 's'} ago`;
-}
-
 // ── Industry mockup images (Optimized Unsplash CDN with auto-format) ────────────
 const INDUSTRY_SLIDES = [
   {
@@ -100,7 +90,7 @@ function AuthLeftPanel({ tab }: { tab: string }) {
   const ctx = TAB_CONTEXT[tab] ?? TAB_CONTEXT.login;
   const [slideIdx, setSlideIdx] = useState(0);
   const [activityIdx, setActivityIdx] = useState(0);
-  const [latest, setLatest] = useState<{ id: string; text: string; when: string }[]>([]);
+  const [latest, setLatest] = useState<{ id: string; text: string }[]>([]);
   const [fadeSlide, setFadeSlide] = useState(true);
   const [fadeActivity, setFadeActivity] = useState(true);
 
@@ -123,7 +113,7 @@ function AuthLeftPanel({ tab }: { tab: string }) {
       if (!alive) return;
       setLatest(rows.map((r) => {
         const place = placeLabel(r);
-        return { id: r.id, text: `New RFQ: ${quantityLabel(r)} ${r.title}${place ? ` — ${place}` : ''}`, when: timeSince(r.created_at) };
+        return { id: r.id, text: `New RFQ: ${quantityLabel(r)} ${r.title}${place ? ` — ${place}` : ''}` };
       }));
     });
     return () => {
@@ -225,7 +215,7 @@ function AuthLeftPanel({ tab }: { tab: string }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-medium text-white/80 truncate">{activity.text}</p>
-              <p className="text-[9px] text-white/35 mt-0.5">{activity.when} · posted on BulkSkart</p>
+              <p className="text-[9px] text-white/35 mt-0.5">Posted on BulkSkart</p>
             </div>
           </div>
         )}

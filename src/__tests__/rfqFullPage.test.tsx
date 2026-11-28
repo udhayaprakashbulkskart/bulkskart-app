@@ -69,9 +69,10 @@ describe('RFQ full page (the panel\'s Overview, Quotations and Chat as a page)',
   it('shows the RFQ as the page heading, the overview facts and the three tabs', () => {
     renderPage();
     expect(screen.getByRole('heading', { level: 1, name: req.title })).toBeInTheDocument();
-    for (const label of ['Quantity', 'Delivery', 'Delivery by', 'Budget', 'Posted', 'Quotations']) {
+    for (const label of ['Quantity', 'Delivery', 'Delivery by', 'Budget', 'Quotations']) {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     }
+    expect(screen.queryByText('Posted')).not.toBeInTheDocument();
     expect(screen.getByText('200 Sets')).toBeInTheDocument();
     expect(screen.getByText(deliveryByLabel(req.deadline)!)).toBeInTheDocument();
     for (const tab of ['Overview', 'My Quote', 'Chat']) expect(screen.getByRole('tab', { name: new RegExp(tab) })).toBeInTheDocument();
