@@ -95,14 +95,14 @@ export default function LiveRfqScrollSection() {
       <div className="mx-auto w-full max-w-[1400px] px-2.5 sm:px-5 md:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2 px-1">
           <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#FF5A00]/50 bg-[#FF5A00]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-[#E04E00] dark:text-[#FF7A2E] sm:text-[12px]">
+            <span className="live-rfq-live-pill inline-flex items-center gap-1.5 rounded-full border border-[#7f1d1d] bg-[#b91c1c] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white sm:text-[12px]">
               <span className="relative flex h-2 w-2" aria-hidden="true">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF5A00] opacity-75 motion-reduce:animate-none" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF5A00]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75 motion-reduce:animate-none" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
               </span>
               Live
             </span>
-            <h2 id="live-rfq-scroll-title" className="truncate text-[20px] font-black tracking-tight min-[400px]:text-[22px] sm:text-[28px] md:text-[32px]">
+            <h2 id="live-rfq-scroll-title" className="truncate text-[20px] font-black tracking-tight text-foreground dark:text-white min-[400px]:text-[22px] sm:text-[28px] md:text-[32px]">
               Live <span className="text-[#FF5A00]">RFQs</span>
             </h2>
           </div>
@@ -181,7 +181,10 @@ function RfqTickerCard({ card, tabIndex }: { card: LiveRfqCard; tabIndex?: numbe
         <RfqPhoto src={card.photo} alt={card.title} />
         {card.priorityTag && (
           <div className="pointer-events-none absolute left-2 top-2 z-10" data-testid="rfq-priority-badge">
-            <RfqPriorityBadge tag={card.priorityTag} className="shadow-sm" />
+            <RfqPriorityBadge
+              tag={card.priorityTag}
+              className={`shadow-sm${card.priorityTag === 'urgent' ? ' !border-red-500/40 !bg-red-600 text-white live-rfq-urgent-glow' : ''}`}
+            />
           </div>
         )}
       </div>

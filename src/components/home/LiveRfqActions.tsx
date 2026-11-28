@@ -1,6 +1,6 @@
 import { useState, type SyntheticEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, Loader2, MessageCircle, MessageSquare, Phone, Send } from 'lucide-react';
+import { FileText, Lock, Loader2, MessageSquare, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkSupplierPaidSubscription } from '@/lib/api';
@@ -8,6 +8,18 @@ import { contactUpgradeHref, telHref, whatsappHref } from '@/lib/contactAccess';
 import { fetchRfqBuyerContacts } from '@/lib/profileContacts';
 import SubscribeToContactDialog, { type SubscriptionReason } from '@/components/common/SubscribeToContactDialog';
 import type { LiveRfqCard } from '@/components/home/LiveRfqScrollSection';
+
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M12.04 2c-5.46 0-9.91 4.43-9.91 9.9 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.9-4.44 9.9-9.9 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 1.8a8.1 8.1 0 0 1 8.11 8.1 8.1 8.1 0 0 1-8.11 8.11c-1.42 0-2.82-.37-4.05-1.07l-.29-.17-3.12.82.83-3.04-.19-.31a8.08 8.08 0 0 1-1.3-4.34 8.1 8.1 0 0 1 8.12-8.1zm-2.67 5.17c-.15-.32-.3-.33-.44-.33h-.38c-.13 0-.34.05-.52.26-.18.2-.68.66-.68 1.62 0 .95.7 1.88.8 2.01.1.13 1.37 2.2 3.38 2.99 1.67.66 2.01.53 2.38.5.36-.04 1.17-.48 1.34-.94.16-.46.16-.86.11-.94-.05-.08-.18-.13-.38-.23-.2-.1-1.17-.58-1.35-.64-.18-.07-.31-.1-.44.1-.13.2-.5.64-.62.77-.11.13-.23.15-.43.05-.2-.1-.84-.31-1.6-.99-.59-.52-.99-1.17-1.1-1.37-.12-.2-.01-.3.09-.4.09-.09.2-.23.3-.35.1-.11.13-.2.2-.33.07-.13.03-.25-.02-.35-.05-.1-.44-1.07-.6-1.46z"
+      />
+    </svg>
+  );
+}
+
 
 /**
  * Call, WhatsApp, Quote and Chat on a home Live RFQ card.
@@ -68,40 +80,38 @@ export default function LiveRfqActions({ card, tabIndex }: { card: LiveRfqCard; 
     event.stopPropagation();
   };
 
-  // Distinct, high-contrast colours in light and dark. Layout, size and behaviour stay the same.
-  const actionBtn = 'inline-flex h-8 min-w-0 items-center justify-center gap-1 rounded-lg border px-1.5 text-[10px] font-bold sm:h-8 sm:text-[11px]';
-  const callBtn = `${actionBtn} border-[#1D4ED8] bg-[#1D4ED8] text-white hover:bg-[#1E40AF] hover:border-[#1E40AF]`;
-  const waBtn = `${actionBtn} border-[#25D366] bg-[#25D366] text-[#052E16] hover:bg-[#1EBE5A] hover:border-[#1EBE5A]`;
-  const chatBtn = `${actionBtn} border-[#6D28D9] bg-[#6D28D9] text-white hover:bg-[#5B21B6] hover:border-[#5B21B6]`;
-  const quoteBtn = `${actionBtn} border-[#FF5A00] bg-[#FF5A00] text-white hover:bg-[#e04e00] hover:border-[#e04e00]`;
+  // Colours follow the Live RFQs mockup. Green stays in both themes; Chat is outlined.
+  const actionBtn = 'inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-bold sm:h-11 sm:text-[12px]';
+  const callBtn = `${actionBtn} border-[#16A34A] bg-[#16A34A] text-white hover:bg-[#15803d] hover:border-[#15803d]`;
+  const waBtn = `${actionBtn} border-[#16A34A] bg-[#16A34A] text-white hover:bg-[#15803d] hover:border-[#15803d]`;
+  const chatBtn = `${actionBtn} border-black/40 bg-transparent text-black hover:bg-black/5 dark:border-white/80 dark:text-white dark:hover:bg-white/10`;
+  const quoteBtn = `live-rfq-quote-btn ${actionBtn} border-[#FF5A00] bg-[#FF5A00] text-white hover:bg-[#e04e00] hover:border-[#e04e00]`;
 
   return (
     <div className="mt-2.5" onClick={stop} onPointerDown={stop}>
-      <div className="grid grid-cols-2 gap-1">
+      <div className="grid grid-cols-2 gap-1.5">
         <button type="button" tabIndex={tabIndex} className={callBtn} onClick={() => { void openContact('call'); }} disabled={busy === 'call'}>
-          {busy === 'call' ? <Loader2 className="h-3 w-3 animate-spin" /> : paid ? <Phone className="h-3 w-3" aria-hidden="true" /> : <Lock className="h-3 w-3" aria-hidden="true" />}
+          {busy === 'call' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : paid ? <Phone className="h-3.5 w-3.5" aria-hidden="true" /> : <Lock className="h-3.5 w-3.5" aria-hidden="true" />}
           Call
         </button>
         <button type="button" tabIndex={tabIndex} className={waBtn} onClick={() => { void openContact('whatsapp'); }} disabled={busy === 'whatsapp'}>
-          {busy === 'whatsapp' ? <Loader2 className="h-3 w-3 animate-spin" /> : paid ? <MessageCircle className="h-3 w-3" aria-hidden="true" /> : <Lock className="h-3 w-3" aria-hidden="true" />}
+          {busy === 'whatsapp' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : paid ? <WhatsAppIcon className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" aria-hidden="true" />}
           WhatsApp
         </button>
         <button type="button" tabIndex={tabIndex} className={chatBtn} onClick={() => { void openTab('chat'); }}>
-          {paid ? <MessageSquare className="h-3 w-3" aria-hidden="true" /> : <Lock className="h-3 w-3" aria-hidden="true" />}
+          {paid ? <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" /> : <Lock className="h-3.5 w-3.5" aria-hidden="true" />}
           Chat
         </button>
         <button type="button" tabIndex={tabIndex} className={quoteBtn} onClick={() => { void openTab('quotes'); }}>
-          {paid ? <Send className="h-3 w-3" aria-hidden="true" /> : <Lock className="h-3 w-3" aria-hidden="true" />}
+          {paid ? <FileText className="h-3.5 w-3.5" aria-hidden="true" /> : <Lock className="h-3.5 w-3.5" aria-hidden="true" />}
           Quote
         </button>
       </div>
       {locked && (
-        <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
-          {user ? (
-            <>Paid suppliers only. <Link to={contactUpgradeHref(profile?.role)} className="font-semibold text-[#FF5A00] hover:underline">Upgrade</Link> to call, WhatsApp, chat or quote.</>
-          ) : (
-            <>Paid suppliers only. <Link to="/register" className="font-semibold text-[#FF5A00] hover:underline">Sign up</Link> to get access.</>
-          )}
+        <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
+          Paid suppliers only.{' '}
+          <Link to={user ? contactUpgradeHref(profile?.role) : '/register'} className="font-semibold text-[#FF5A00] hover:underline">Upgrade</Link>
+          {' '}to call, WhatsApp, chat or quote.
         </p>
       )}
       <SubscribeToContactDialog open={dialogOpen} onClose={() => setDialogOpen(false)} reason={dialogReason} />
