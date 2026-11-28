@@ -9,6 +9,7 @@ import { getMarketplaceProducts } from '@/lib/api';
 import { CURATED_INDUSTRIAL_PRODUCTS } from '@/data/curatedIndustrialProducts';
 import { catalogProductPhoto, VERIFIED_BULK_CURATED_PHOTOS } from '@/data/verifiedBulkProductPhotos';
 import type { Product } from '@/types/types';
+import { isVerifiedProduct } from '@/lib/verifiedProduct';
 
 export interface HeroProduct {
   id: string;
@@ -64,7 +65,7 @@ export function fromProducts(products: Product[]): HeroProduct[] {
       name: p.name,
       supplier: company?.company_name || 'Verified supplier',
       country: company?.country || 'India',
-      verified: company?.verification_status === 'verified',
+      verified: company?.verification_status === 'verified' || isVerifiedProduct(p),
       priceMin: p.price_min ?? null,
       priceMax: p.price_max ?? null,
       currency: p.price_currency || 'INR',

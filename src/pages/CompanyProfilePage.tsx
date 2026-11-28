@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import VerifiedProductBadge from '@/components/common/VerifiedProductBadge';
 import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layouts/MainLayout';
@@ -540,6 +541,7 @@ export default function CompanyProfilePage() {
                             <Link to={`/products/${p.slug}`} className="text-sm font-medium text-foreground hover:text-primary line-clamp-1">
                               {p.name}
                             </Link>
+                            <VerifiedProductBadge product={p} size="sm" className="mt-1" />
                             <p className="text-xs text-muted-foreground mt-0.5">MOQ: {p.moq.toLocaleString()} {p.moq_unit}</p>
                             {p.price_min && (
                               <p className="text-xs text-primary font-semibold mt-1">

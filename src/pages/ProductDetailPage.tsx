@@ -27,6 +27,8 @@ import { formatPriceRange, priceInCurrency, productCurrency } from '@/lib/produc
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountry } from '@/contexts/CurrencyContext';
 import PageMeta from '@/components/common/PageMeta';
+import VerifiedProductBadge from '@/components/common/VerifiedProductBadge';
+import { visibleProductTags } from '@/lib/verifiedProduct';
 import LoanEligibleTag from '@/components/common/LoanEligibleTag';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import MaskedPhone from '@/components/common/MaskedPhone';
@@ -329,6 +331,7 @@ export default function ProductDetailPage() {
 
               {/* Badges row (desktop only) */}
               <div className="hidden md:flex items-center gap-2 mb-3">
+                <VerifiedProductBadge product={product} />
                 {isVerified && (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1">
                     <CheckCircle className="w-3.5 h-3.5" /> Verified Supplier
@@ -432,6 +435,7 @@ export default function ProductDetailPage() {
               <div className="md:hidden mb-5">
                 <h2 className="text-xl font-black text-foreground mb-2 leading-tight">{product.name}</h2>
                 <LoanEligibleTag size="sm" />
+                <VerifiedProductBadge product={product} className="mb-2" />
 
                 {isVerified && (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1 mb-3">
@@ -718,9 +722,9 @@ export default function ProductDetailPage() {
                 {activeTab === 'Applications' && (
                   <div>
                     <h2 className="text-lg font-bold text-foreground mb-4">Applications</h2>
-                    {product.tags?.length ? (
+                    {visibleProductTags(product.tags).length ? (
                       <div className="grid md:grid-cols-2 gap-3">
-                        {product.tags.map(tag => (
+                        {visibleProductTags(product.tags).map(tag => (
                           <div key={tag} className="flex items-center gap-3 bg-card border border-border rounded-xl p-3">
                             <CheckCircle className="w-4 h-4 text-primary shrink-0" />
                             <span className="text-sm text-foreground font-medium">{tag}</span>
@@ -934,7 +938,8 @@ export default function ProductDetailPage() {
 
                 {/* Product title + badges */}
                 <div className="bg-card border border-border rounded-xl p-3 md:p-4">
-                  <div className="flex items-start gap-2 mb-2">
+                  <div className="flex items-start gap-2 mb-2 flex-wrap">
+                    <VerifiedProductBadge product={product} size="sm" />
                     {isVerified && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 border border-primary/25 rounded-full px-2 py-0.5">
                         <CheckCircle className="w-3 h-3" /> Verified Supplier

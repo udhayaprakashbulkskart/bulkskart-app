@@ -1,0 +1,21 @@
+/* Green is used only for the Verified product mark (the brief asks for a green check). */
+.verified-product-badge {
+  border-color: rgba(21, 128, 61, 0.35);
+  background: rgba(22, 163, 74, 0.15);
+  color: #15803d;
+}
+.dark .verified-product-badge {
+  border-color: rgba(110, 231, 183, 0.4);
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+}
+.verified-product-badge--on-photo {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(21, 128, 61, 0.92);
+  color: #fff;
+}
+.dark .verified-product-badge--on-photo {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(21, 128, 61, 0.92);
+  color: #fff;
+}
