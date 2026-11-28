@@ -110,9 +110,6 @@ function MyRequirementCard({
         <span className={`text-[10px] font-semibold border rounded-full px-2.5 py-0.5 ${STATUS_COLOR[dealStatus]}`}>
           {DEAL_STAGES.find(s => s.key === dealStatus)?.label ?? dealStatus}
         </span>
-        <span className="text-[11px] text-muted-foreground">
-          {new Date(req.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-        </span>
       </div>
 
       <div>

@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Send, Loader2, MessageSquare, CheckCircle, XCircle, Phone,
-  Upload, Building2, Calendar, Package, BadgeCheck, Zap,
+  Upload, Building2, Package, BadgeCheck, Zap,
   TrendingUp, ShieldCheck, Lock, Crown, IndianRupee, MapPin, Truck,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -307,10 +307,6 @@ interface Props {
   onRequirementUpdated: (req: Requirement) => void;
 }
 
-const dateLabel = (iso?: string | null) =>
-  iso ? new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
-
-
 function OwnerPriorityEditor({
   requirement,
   onRequirementUpdated,
@@ -524,7 +520,6 @@ export function RequirementDetailView({
     { icon: MapPin, label: 'Delivery', value: place ?? 'Not stated' },
     { icon: Truck, label: 'Delivery by', value: deliveryValue, muted: deliveryPassed },
     { icon: IndianRupee, label: 'Budget', value: budget ?? 'Open to quotes' },
-    { icon: Calendar, label: 'Posted', value: dateLabel(requirement.created_at) ?? '—' },
     { icon: MessageSquare, label: 'Quotations', value: String(requirement.quote_count ?? 0) },
   ];
 

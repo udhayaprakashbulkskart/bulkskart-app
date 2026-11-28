@@ -7,10 +7,10 @@
  * and have not authorised it to forward quotations. Renders nothing when there are none (or before the migration).
  */
 import { useEffect, useState } from 'react';
-import { Box, CalendarDays, Globe2, Info, MapPin, Tag } from 'lucide-react';
+import { Box, Globe2, Info, MapPin, Tag } from 'lucide-react';
 import { supabase } from '@/db/supabase';
 import type { Requirement } from '@/types/types';
-import { isMissingColumnError, postedOnLabel } from '@/lib/publicListings';
+import { isMissingColumnError } from '@/lib/publicListings';
 import { representativeImage } from '@/lib/representativeImage';
 
 const PAGE = 12;
@@ -106,7 +106,6 @@ export default function PublicListingsSection({ className = '' }: { className?: 
 }
 
 function PublicRequirementCard({ listing: r }: { listing: Listing }) {
-  const posted = postedOnLabel(r.created_at);
   const qty = r.quantity != null ? `${Number(r.quantity).toLocaleString('en-IN')}${r.quantity_unit ? ` ${r.quantity_unit}` : ''}` : null;
   const place = [r.destination_city, r.destination_country].filter(Boolean).join(', ') || null;
   const specs = (r.specifications ?? '').split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 2);
@@ -145,13 +144,6 @@ function PublicRequirementCard({ listing: r }: { listing: Listing }) {
                 <MapPin className="h-3.5 w-3.5 shrink-0 text-[#FF6A14]" aria-hidden="true" />
                 <dt className="sr-only">Delivery location</dt>
                 <dd className="truncate">{place}</dd>
-              </div>
-            )}
-            {posted && (
-              <div className="flex items-center gap-1.5">
-                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#FF6A14]" aria-hidden="true" />
-                <dt className="sr-only">Posted on</dt>
-                <dd>Posted {posted}</dd>
               </div>
             )}
           </dl>

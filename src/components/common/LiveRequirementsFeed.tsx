@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
-  ArrowRight, Bookmark, Box, CalendarDays, CheckCircle2, ChevronDown, Clock, Coins, Crown, FileText, Filter, Flame,
+  ArrowRight, Bookmark, Box, CheckCircle2, ChevronDown, Clock, Coins, Crown, FileText, Filter, Flame,
   BellRing, Handshake, Layers, LayoutGrid, Loader2, Lock, MapPin, Plus, Sparkles, Star, Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -101,11 +101,6 @@ function endsIn(ms: number): string {
   if (d > 0) return `${d}d ${h}h`;
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m ${String(s % 60).padStart(2, '0')}s`;
-}
-
-function postedOn(iso?: string): string {
-  if (!iso) return '';
-  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function isMultiProduct(title: string): boolean {
@@ -655,10 +650,6 @@ export default function LiveRequirementsFeed() {
                         <div className="flex gap-1.5">
                           <dt className="flex shrink-0 items-center gap-1 text-white/70"><MapPin className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />Delivery:</dt>
                           <dd className="truncate">{visual.locationDisplay}</dd>
-                        </div>
-                        <div className="flex gap-1.5">
-                          <dt className="flex shrink-0 items-center gap-1 text-white/70"><CalendarDays className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />Posted:</dt>
-                          <dd className="truncate">{postedOn(req.created_at)}</dd>
                         </div>
                       </dl>
                     </div>
