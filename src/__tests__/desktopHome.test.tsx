@@ -105,7 +105,7 @@ describe('desktop home (wide screens)', () => {
   it('shows the four figures as printed in the design', () => {
     setup();
     const stats = within(document.querySelector('.dh-stats') as HTMLElement);
-    for (const text of ['5000+', 'Verified Manufacturers', '1M+', 'Bulk Products', '120+', 'Trade Countries', '10,000+', 'Live RFQs & Auctions']) {
+    for (const text of ['5000+', 'Verified Manufacturers', '1M+', 'Bulk Products', '120+', 'Trade Countries', 'Live', 'RFQs & Auctions']) {
       expect(stats.getByText(text)).toBeInTheDocument();
     }
   });

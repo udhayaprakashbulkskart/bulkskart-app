@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import MainLayout from '@/components/layouts/MainLayout';
@@ -15,7 +15,6 @@ import {
   getCategories,
   checkSupplierPaidSubscription,
   getOpenRequirements,
-  countOpenRequirements,
   getOpenRequirementPlaces,
   type OpenRequirementSort,
   type OpenRequirementTab,
@@ -33,6 +32,7 @@ import RfqPriorityBadge from '@/components/common/RfqPriorityBadge';
 import { displayPriorityTag } from '@/lib/rfqPriority';
 import RequirementThumb, { categoryIcon } from '@/components/common/RequirementThumb';
 import PublicListingsSection from '@/components/common/PublicListingsSection';
+import { requestedRfqListPage, resolveRfqListPage } from '@/lib/rfqListAccess';
 
 const REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
 const PAGE_SIZE = 12;
@@ -49,21 +49,6 @@ function timeAgo(iso: string): string {
   if (hrs === 1) return '1 hr ago';
   if (hrs < 24) return `${hrs} hrs ago`;
   return `${Math.floor(hrs / 24)}d ago`;
-}
-
-function AnimatedCount({ target }: { target: number }) {
-  const [display, setDisplay] = useState(0);
-  useEffect(() => {
-    let start = 0;
-    const step = Math.max(1, Math.ceil(target / 40));
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= target) { setDisplay(target); clearInterval(timer); }
-      else setDisplay(start);
-    }, 25);
-    return () => clearInterval(timer);
-  }, [target]);
-  return <>{display.toLocaleString()}</>;
 }
 
 const TAB_LABELS: { key: OpenRequirementTab; label: string; icon?: React.ComponentType<{ className?: string }>; iconClass?: string }[] = [
@@ -179,8 +164,9 @@ function MyRequirementCard({
 }
 
 export default function RequirementsPage() {
-  const { profile, company, user } = useAuth();
+  const { profile, company, user, isPaidSubscriber, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -195,10 +181,12 @@ export default function RequirementsPage() {
   const [selectedSort, setSelectedSort] = useState<OpenRequirementSort>('latest');
   const [statusFilter, setStatusFilter] = useState<OpenRequirementTab>('all');
   const [totalCount, setTotalCount] = useState(0);
-  const [tabCounts, setTabCounts] = useState<Record<OpenRequirementTab, number | null>>({ all: null, urgent: null, new: null, expiring: null });
-  const [openTotal, setOpenTotal] = useState<number | null>(null);
-  const [page, setPage] = useState(1);
   const [refreshTick, setRefreshTick] = useState(0);
+  const requestedPage = requestedRfqListPage(searchParams);
+  const resolvedListPage = authLoading
+    ? { page: 1, blocked: false }
+    : resolveRfqListPage(requestedPage, Boolean(isPaidSubscriber));
+  const page = resolvedListPage.page;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   // Dialog and drawer state
@@ -271,21 +259,9 @@ export default function RequirementsPage() {
     loadRequirements();
   }, [loadRequirements]);
 
-  // How many requirements each tab holds under the current filters.
+  // Newest posts and the places buyers deliver to (no public totals).
   useEffect(() => {
     let alive = true;
-    countOpenRequirements(filters).then((counts) => {
-      if (alive) setTabCounts(counts);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [filters, refreshTick]);
-
-  // The whole board: open total, newest posts and the places buyers deliver to.
-  useEffect(() => {
-    let alive = true;
-    countOpenRequirements({}, ['all']).then((counts) => alive && setOpenTotal(counts.all));
     getOpenRequirements({ page: 1, pageSize: 3, sort: 'latest' }).then((result) => alive && setLatest(result.rows));
     getOpenRequirementPlaces().then((list) => alive && setPlaces(list));
     return () => {
@@ -293,10 +269,32 @@ export default function RequirementsPage() {
     };
   }, [refreshTick]);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters change (skip the first render so a paid ?page=2 is kept).
+  const filtersReady = React.useRef(false);
   useEffect(() => {
-    setPage(1);
+    if (!filtersReady.current) {
+      filtersReady.current = true;
+      return;
+    }
+    if (!searchParams.has('page')) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('page');
+    setSearchParams(next, { replace: true });
   }, [search, selectedCat, selectedLocation, statusFilter, selectedSort]);
+
+  // Unpaid visitors and unpaid accounts that open ?page=2 stay on page 1 and see the upgrade prompt.
+  useEffect(() => {
+    if (authLoading || !resolvedListPage.blocked) return;
+    if (!user) setDialogReason('not_logged_in');
+    else if (!company) setDialogReason('not_registered_business');
+    else setDialogReason('no_subscription');
+    setDialogOpen(true);
+    if (searchParams.has('page')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('page');
+      setSearchParams(next, { replace: true });
+    }
+  }, [authLoading, resolvedListPage.blocked, user, company, searchParams, setSearchParams]);
 
   // Load buyer's own requirements
   useEffect(() => {
@@ -324,6 +322,14 @@ export default function RequirementsPage() {
     setStatusFilter('all');
     setSearchInput('');
     setSearch('');
+  };
+
+  const goToListPage = (nextPage: number) => {
+    const next = new URLSearchParams(searchParams);
+    if (nextPage <= 1) next.delete('page');
+    else next.set('page', String(nextPage));
+    setSearchParams(next);
+    window.scrollTo({ top: 350, behavior: 'smooth' });
   };
 
   // Handlers
@@ -455,10 +461,8 @@ export default function RequirementsPage() {
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500" />
                 </span>
                 <div>
-                  <div className="text-lg font-black text-foreground leading-none">
-                    {openTotal === null ? '–' : <AnimatedCount target={openTotal} />}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground font-medium">Open RFQs</div>
+                  <div className="text-sm font-black text-foreground leading-none">Open RFQs</div>
+                  <div className="text-[10px] text-muted-foreground font-medium">Live buying requests</div>
                 </div>
               </div>
 
@@ -644,7 +648,7 @@ export default function RequirementsPage() {
                   </div>
                 </div>
 
-                {/* Status tabs with the real number of requirements in each */}
+                {/* Status tabs */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
                   {TAB_LABELS.map(tab => {
                     const active = statusFilter === tab.key;
@@ -663,11 +667,6 @@ export default function RequirementsPage() {
                       >
                         {Icon && <Icon className={`w-3 h-3 ${tab.iconClass}`} />}
                         <span>{tab.label}</span>
-                        {tabCounts[tab.key] !== null && (
-                          <span className={`text-[11px] ${active ? 'text-white/90' : 'text-muted-foreground'}`}>
-                            ({(tabCounts[tab.key] ?? 0).toLocaleString()})
-                          </span>
-                        )}
                       </button>
                     );
                   })}
@@ -839,21 +838,13 @@ export default function RequirementsPage() {
 
               {/* ── 5.1 Pagination Bar ─────────────────────────────────────── */}
               {totalPages > 1 && (
-                <div className="bg-card border border-border rounded-2xl p-4 mb-16 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="text-xs text-muted-foreground">
-                    Showing Page <strong className="text-foreground">{page}</strong> of{' '}
-                    <strong className="text-foreground">{totalPages.toLocaleString()}</strong> ({totalCount.toLocaleString()} open requirement{totalCount === 1 ? '' : 's'})
-                  </div>
-
+                <div className="bg-card border border-border rounded-2xl p-4 mb-16 flex items-center justify-center gap-4">
                   <div className="flex items-center gap-1.5">
                     <Button
                       variant="ghost"
                       size="sm"
                       disabled={page <= 1}
-                      onClick={() => {
-                        setPage(p => Math.max(1, p - 1));
-                        window.scrollTo({ top: 350, behavior: 'smooth' });
-                      }}
+                      onClick={() => goToListPage(Math.max(1, page - 1))}
                       className="h-8 px-3 text-xs bg-muted/50 border border-border text-foreground hover:bg-muted disabled:opacity-40"
                     >
                       &larr; Prev
@@ -871,10 +862,7 @@ export default function RequirementsPage() {
                       .map(pNum => (
                         <button
                           key={pNum}
-                          onClick={() => {
-                            setPage(pNum);
-                            window.scrollTo({ top: 350, behavior: 'smooth' });
-                          }}
+                          onClick={() => goToListPage(pNum)}
                           className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
                             pNum === page
                               ? 'bg-[#FF5A00] text-white shadow-[0_0_10px_rgba(255,90,0,0.35)]'
@@ -889,10 +877,7 @@ export default function RequirementsPage() {
                       variant="ghost"
                       size="sm"
                       disabled={page >= totalPages}
-                      onClick={() => {
-                        setPage(p => Math.min(totalPages, p + 1));
-                        window.scrollTo({ top: 350, behavior: 'smooth' });
-                      }}
+                      onClick={() => goToListPage(Math.min(totalPages, page + 1))}
                       className="h-8 px-3 text-xs bg-muted/50 border border-border text-foreground hover:bg-muted disabled:opacity-40"
                     >
                       Next &rarr;
@@ -915,12 +900,8 @@ export default function RequirementsPage() {
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500" />
             </span>
             <div>
-              <div className="text-xs md:text-sm font-black text-foreground leading-tight flex items-center gap-2">
-                {openTotal === null ? (
-                  <span>Open requirements</span>
-                ) : (
-                  <span><AnimatedCount target={openTotal} /> open requirement{openTotal === 1 ? '' : 's'}</span>
-                )}
+              <div className="text-xs md:text-sm font-black text-foreground leading-tight">
+                Open requirements
               </div>
               <div className="text-[10px] text-muted-foreground leading-tight">
                 Post what you need and get quotes from suppliers

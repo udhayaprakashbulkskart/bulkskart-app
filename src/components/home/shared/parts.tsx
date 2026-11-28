@@ -66,7 +66,7 @@ export const STATS = [
   { icon: Factory, value: '5000+', label: 'Verified Manufacturers', tone: 'purple' },
   { icon: Box, value: '1M+', label: 'Bulk Products', tone: 'brown' },
   { icon: Globe, value: '120+', label: 'Trade Countries', tone: 'blue' },
-  { icon: Gavel, value: '10,000+', label: 'Live RFQs & Auctions', tone: 'green' },
+  { icon: Gavel, value: 'Live', label: 'RFQs & Auctions', tone: 'green' },
 ];
 
 /** The three lines in the promo banner. */

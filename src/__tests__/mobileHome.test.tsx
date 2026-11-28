@@ -160,7 +160,7 @@ describe('mobile home hero, search panel, stats and promo', () => {
   it('shows the four figures and the promo banner linking to the RFQ form', () => {
     setup();
     const stats = within(document.querySelector('.mh-stats') as HTMLElement);
-    for (const text of ['5000+', 'Verified Manufacturers', '1M+', 'Bulk Products', '120+', 'Trade Countries', '10,000+', 'Live RFQs & Auctions']) {
+    for (const text of ['5000+', 'Verified Manufacturers', '1M+', 'Bulk Products', '120+', 'Trade Countries', 'Live', 'RFQs & Auctions']) {
       expect(stats.getByText(text)).toBeInTheDocument();
     }
     expect(screen.getByRole('link', { name: /Post a requirement and get bulk quotations/ })).toHaveAttribute('href', '/post-requirement');
