@@ -13,6 +13,8 @@ import {
   ArrowRight, Heart, Flame, AlertCircle, ChevronRight, ShieldCheck, ChevronDown, CheckCircle2, Layers,
   Zap, PackageCheck, Loader2, Truck, LayoutGrid, Wrench, Cpu, Shirt, Home, Box, CookingPot, Monitor, ShoppingCart,
 } from 'lucide-react';
+import { isVerifiedProduct } from '@/lib/verifiedProduct';
+import VerifiedProductBadge from '@/components/common/VerifiedProductBadge';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import SafeImage from '@/components/common/SafeImage';
@@ -43,6 +45,7 @@ export interface DisplayProduct {
   rating: number;
   reviewCount: number;
   isVerifiedSupplier: boolean;
+  isVerifiedProduct?: boolean;
   supplierName: string;
   country: string;
   countryFlag?: string;
@@ -446,6 +449,7 @@ export default function FeaturedProductsSection() {
           rating,
           reviewCount,
           isVerifiedSupplier: comp?.verification_status === 'verified',
+          isVerifiedProduct: isVerifiedProduct(p),
           supplierName: comp?.company_name || 'Supplier',
           country: pCountry,
           countryFlag: COUNTRY_FLAGS[pCountry] || '🌐',
@@ -860,6 +864,11 @@ export default function FeaturedProductsSection() {
                           {product.badgeLabel}
                         </span>
                         <span className="absolute -bottom-[4px] left-0 h-[4px] w-[5px] bg-[#8A2E00] [clip-path:polygon(0_0,100%_0,100%_100%)]" />
+                      </span>
+                    )}
+                    {product.isVerifiedProduct && (
+                      <span className={`pointer-events-none absolute z-10 ${product.badgeLabel ? 'left-1 top-8 sm:left-1.5 sm:top-10' : 'left-1 top-2 sm:left-1.5 sm:top-3'}`}>
+                        <VerifiedProductBadge product={{ tags: ['verified-product'] }} size="sm" onPhoto />
                       </span>
                     )}
                     <button
