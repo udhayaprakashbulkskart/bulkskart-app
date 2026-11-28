@@ -166,7 +166,9 @@ export default function SingleImageUploader({
               <div className="w-full max-w-[80%]">
                 <Progress value={progress} className="h-1.5 bg-muted" />
               </div>
-              <span className="text-[10px] text-muted-foreground font-medium">{progress}%</span>
+              <span className="text-[10px] text-muted-foreground font-medium">
+                {progress < 50 ? 'Preparing photo…' : 'Uploading…'} {progress}%
+              </span>
             </div>
           )}
         </div>
