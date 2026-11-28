@@ -1,4 +1,4 @@
-import { supabase } from '@/db/supabase';
+import { supabase, supabaseAnonKey, supabaseUrl } from '@/db/supabase';
 
 export interface CompressionResult {
   file: File;
@@ -233,12 +233,118 @@ export interface UploadResult {
   newSize: number;
 }
 
-const UPLOAD_TIMEOUT_MS = 45_000;
 const DEFAULT_MAX_ORIGINAL = 15 * 1024 * 1024;
 const DEFAULT_MAX_UPLOAD = 5 * 1024 * 1024;
+/** Reading the picked file into memory. A cloud-only or revoked gallery file can stall here forever on Android. */
+const READ_TIMEOUT_MS = 20_000;
+/** Whole compression step (decode + canvas + JPEG/WebP export). On timeout the original photo is uploaded. */
+const COMPRESS_TIMEOUT_MS = 20_000;
+/** Looking up the signed-in token; on timeout the upload goes out with the public key instead of waiting. */
+const TOKEN_TIMEOUT_MS = 3_000;
+/** No upload byte moved for this long: give up on this attempt (and retry once). */
+export const UPLOAD_STALL_MS = 25_000;
+/** All bytes sent but no answer from the server for this long. */
+export const UPLOAD_RESPONSE_MS = 30_000;
+
+/** Copy the picked file into memory so a stalled or revoked content:// handle cannot freeze the upload later. */
+async function readIntoMemory(file: File, type: string): Promise<File> {
+  const buffer = await withTimeout(
+    typeof file.arrayBuffer === 'function'
+      ? file.arrayBuffer()
+      : new Promise<ArrayBuffer>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as ArrayBuffer);
+          reader.onerror = () => reject(reader.error ?? new Error('read failed'));
+          reader.readAsArrayBuffer(file);
+        }),
+    READ_TIMEOUT_MS,
+    'Could not read this photo from your phone (it may still be downloading from Google Photos). Please pick it again, or choose a photo saved on the device.',
+  );
+  return new File([buffer], file.name || safeFileName('photo', type.split('/')[1] || 'jpg'), { type });
+}
+
+async function accessToken(): Promise<string> {
+  try {
+    const { data } = await withTimeout(supabase.auth.getSession(), TOKEN_TIMEOUT_MS, 'session timeout');
+    return data.session?.access_token || supabaseAnonKey;
+  } catch {
+    return supabaseAnonKey;
+  }
+}
+
+interface PutOptions {
+  url: string;
+  body: Blob;
+  headers: Record<string, string>;
+  onUploadProgress?: (fraction: number) => void;
+  stallMs?: number;
+  responseMs?: number;
+}
 
 /**
- * Upload an image to Supabase Storage with automatic compression and public URL generation
+ * POST a file with XMLHttpRequest so we see real upload progress and can abort a stalled request.
+ * Always settles: resolves on 2xx, rejects with a readable message otherwise.
+ */
+export function putWithWatchdog({ url, body, headers, onUploadProgress, stallMs = UPLOAD_STALL_MS, responseMs = UPLOAD_RESPONSE_MS }: PutOptions): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let done = false;
+    const finish = (err?: Error) => {
+      if (done) return;
+      done = true;
+      if (timer) clearTimeout(timer);
+      if (err) reject(err);
+      else resolve();
+    };
+    const arm = (ms: number) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        // settle first: abort() fires onabort synchronously, which would otherwise win with the wrong message
+        finish(new Error('The photo upload stalled. Please check your connection and try again.'));
+        try {
+          xhr.abort();
+        } catch {
+          // ignore
+        }
+      }, ms);
+    };
+    xhr.open('POST', url);
+    for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
+    xhr.upload.onprogress = (e) => {
+      arm(stallMs);
+      if (e.lengthComputable && e.total > 0) onUploadProgress?.(e.loaded / e.total);
+    };
+    xhr.upload.onload = () => {
+      onUploadProgress?.(1);
+      arm(responseMs);
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) return finish();
+      let message = '';
+      try {
+        const parsed = JSON.parse(xhr.responseText || '{}');
+        message = parsed.message || parsed.error || '';
+      } catch {
+        // not JSON
+      }
+      finish(new Error(message || `Failed to upload image to storage (${xhr.status}).`));
+    };
+    xhr.onerror = () => finish(new Error('Network error while uploading the photo. Please check your connection and try again.'));
+    xhr.onabort = () => finish(new Error('The photo upload was cancelled.'));
+    arm(stallMs);
+    try {
+      xhr.send(body);
+    } catch (e) {
+      finish(e instanceof Error ? e : new Error('Could not start the photo upload.'));
+    }
+  });
+}
+
+/**
+ * Upload an image to Supabase Storage with automatic compression and public URL generation.
+ * Never hangs: every step has a timeout, compression failure falls back to the original photo,
+ * and a stalled upload is retried once before a clear error is shown.
  */
 export async function uploadImage(
   file: File,
@@ -264,47 +370,76 @@ export async function uploadImage(
 
   onProgress?.(15);
 
-  let fileToUpload = file;
-  if (fileToUpload.type !== type) {
-    fileToUpload = new File([file], file.name || safeFileName('photo', type.split('/')[1] || 'jpg'), { type });
-  }
+  const original = await readIntoMemory(file, type);
+  let fileToUpload = original;
   let wasCompressed = false;
   const originalSize = file.size;
   let newSize = file.size;
 
   if (autoCompress && !SKIP_COMPRESS.has(type)) {
-    const comp = await compressImage(fileToUpload);
-    fileToUpload = comp.file;
-    wasCompressed = comp.compressed;
-    newSize = comp.newSize;
+    try {
+      const comp = await withTimeout(
+        compressImage(original),
+        COMPRESS_TIMEOUT_MS,
+        'Timed out compressing this photo.',
+      );
+      fileToUpload = comp.file;
+      wasCompressed = comp.compressed;
+      newSize = comp.newSize;
+    } catch (err) {
+      // A browser that cannot decode HEIC cannot show it either, so there is nothing useful to upload.
+      if (isHeicType(type)) throw err;
+      console.warn('Photo compression failed; uploading the original instead.', err);
+      fileToUpload = original;
+      wasCompressed = false;
+      newSize = original.size;
+    }
   }
 
   onProgress?.(50);
 
-  if (fileToUpload.size > maxSizeBytes) {
+  const limit = wasCompressed ? maxSizeBytes : Math.max(maxSizeBytes, maxOriginalBytes);
+  if (fileToUpload.size > limit) {
     throw new Error(`File is still too large after compression (${formatBytes(fileToUpload.size)}). Please try a smaller photo.`);
   }
 
   const ext = fileToUpload.name.split('.').pop()?.toLowerCase() || (fileToUpload.type === 'image/webp' ? 'webp' : 'jpg');
   const timestamp = Date.now();
   const randomStr = Math.random().toString(36).substring(2, 8);
+  const baseName = safeFileName(fileToUpload.name, ext).replace(/\.[^/.]+$/, '');
   const filePath = folder
-    ? `${folder.replace(/^\/+|\/+$/g, '')}/${safeFileName(fileToUpload.name, ext).replace(/\.[^/.]+$/, '')}_${timestamp}_${randomStr}.${ext}`
-    : `${safeFileName(fileToUpload.name, ext).replace(/\.[^/.]+$/, '')}_${timestamp}_${randomStr}.${ext}`;
+    ? `${folder.replace(/^\/+|\/+$/g, '')}/${baseName}_${timestamp}_${randomStr}.${ext}`
+    : `${baseName}_${timestamp}_${randomStr}.${ext}`;
 
-  const { error: uploadError } = await withTimeout(
-    supabase.storage.from(bucket).upload(filePath, fileToUpload, {
-      cacheControl: '31536000',
-      upsert: true,
-      contentType: fileToUpload.type || 'image/jpeg',
-    }),
-    UPLOAD_TIMEOUT_MS,
-    'The photo upload timed out. Please check your connection and try a smaller JPEG.',
-  );
+  const token = await accessToken();
+  const url = `${supabaseUrl}/storage/v1/object/${bucket}/${filePath.split('/').map(encodeURIComponent).join('/')}`;
+  const headers = {
+    apikey: supabaseAnonKey,
+    Authorization: `Bearer ${token}`,
+    'Content-Type': fileToUpload.type || 'image/jpeg',
+    'Cache-Control': 'max-age=31536000',
+    'x-upsert': 'true',
+  };
 
-  if (uploadError) {
-    throw new Error(uploadError.message || 'Failed to upload image to storage.');
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await putWithWatchdog({
+        url,
+        body: fileToUpload,
+        headers,
+        onUploadProgress: (fraction) => onProgress?.(50 + Math.round(fraction * 40)),
+      });
+      lastError = null;
+      break;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error('Failed to upload image to storage.');
+      // only a stall or dropped connection is worth retrying; a server answer (RLS, size) will not change
+      if (!/stalled|Network error/i.test(lastError.message)) break;
+      onProgress?.(50);
+    }
   }
+  if (lastError) throw lastError;
 
   onProgress?.(90);
 
