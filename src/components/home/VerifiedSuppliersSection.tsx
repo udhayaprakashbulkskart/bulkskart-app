@@ -830,7 +830,6 @@ const COUNTRY_TABS = [
 function supplierStats(s: LiveStats) {
   return [
     { icon: Users, value: countLabel(s.suppliers), label: 'Suppliers' },
-    { icon: Box, value: countLabel(s.openRfqs), label: 'Live RFQs' },
     { icon: Globe, value: countLabel(s.buyers), label: 'Active Buyers' },
     { icon: Layers, value: countLabel(s.industries), label: 'Industries' },
   ];

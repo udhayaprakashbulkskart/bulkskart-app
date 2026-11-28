@@ -68,27 +68,25 @@ export default function LiveRfqActions({ card, tabIndex }: { card: LiveRfqCard; 
     event.stopPropagation();
   };
 
-  const btn = `inline-flex h-8 min-w-0 items-center justify-center gap-1 rounded-lg border px-1.5 text-[10px] font-bold sm:h-8 sm:text-[11px] ${
-    paid
-      ? 'border-[#FF5A00]/50 text-[#E04E00] hover:bg-[#FF5A00]/10 dark:text-[#FF7A2E]'
-      : 'border-border text-muted-foreground hover:bg-muted/60'
-  }`;
-  const quoteBtn = paid
-    ? 'inline-flex h-8 min-w-0 items-center justify-center gap-1 rounded-lg bg-[#FF5A00] px-1.5 text-[10px] font-bold text-white hover:bg-[#e04e00] sm:text-[11px]'
-    : btn;
+  // Distinct, high-contrast colours in light and dark. Layout, size and behaviour stay the same.
+  const actionBtn = 'inline-flex h-8 min-w-0 items-center justify-center gap-1 rounded-lg border px-1.5 text-[10px] font-bold sm:h-8 sm:text-[11px]';
+  const callBtn = `${actionBtn} border-[#1D4ED8] bg-[#1D4ED8] text-white hover:bg-[#1E40AF] hover:border-[#1E40AF]`;
+  const waBtn = `${actionBtn} border-[#25D366] bg-[#25D366] text-[#052E16] hover:bg-[#1EBE5A] hover:border-[#1EBE5A]`;
+  const chatBtn = `${actionBtn} border-[#6D28D9] bg-[#6D28D9] text-white hover:bg-[#5B21B6] hover:border-[#5B21B6]`;
+  const quoteBtn = `${actionBtn} border-[#FF5A00] bg-[#FF5A00] text-white hover:bg-[#e04e00] hover:border-[#e04e00]`;
 
   return (
     <div className="mt-2.5" onClick={stop} onPointerDown={stop}>
       <div className="grid grid-cols-2 gap-1">
-        <button type="button" tabIndex={tabIndex} className={btn} onClick={() => { void openContact('call'); }} disabled={busy === 'call'}>
+        <button type="button" tabIndex={tabIndex} className={callBtn} onClick={() => { void openContact('call'); }} disabled={busy === 'call'}>
           {busy === 'call' ? <Loader2 className="h-3 w-3 animate-spin" /> : paid ? <Phone className="h-3 w-3" aria-hidden="true" /> : <Lock className="h-3 w-3" aria-hidden="true" />}
           Call
         </button>
-        <button type="button" tabIndex={tabIndex} className={btn} onClick={() => { void openContact('whatsapp'); }} disabled={busy === 'whatsapp'}>
+        <button type="button" tabIndex={tabIndex} className={waBtn} onClick={() => { void openContact('whatsapp'); }} disabled={busy === 'whatsapp'}>
           {busy === 'whatsapp' ? <Loader2 className="h-3 w-3 animate-spin" /> : paid ? <MessageCircle className="h-3 w-3" aria-hidden="true" /> : <Lock className="h-3 w-3" aria-hidden="true" />}
           WhatsApp
         </button>
-        <button type="button" tabIndex={tabIndex} className={btn} onClick={() => { void openTab('chat'); }}>
+        <button type="button" tabIndex={tabIndex} className={chatBtn} onClick={() => { void openTab('chat'); }}>
           {paid ? <MessageSquare className="h-3 w-3" aria-hidden="true" /> : <Lock className="h-3 w-3" aria-hidden="true" />}
           Chat
         </button>

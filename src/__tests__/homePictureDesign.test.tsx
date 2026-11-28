@@ -8,10 +8,11 @@ describe('home page top laid out from the design picture', () => {
   const landing = src('src/components/home/LandingHero.tsx');
 
   it('has the hero copy, buttons and four promises from the picture', () => {
-    // the live badge counts the open RFQs in the database instead of a typed-in figure
+    // the live badge does not show an RFQ total
     expect(landing).not.toContain('52,000+');
-    expect(landing).toContain("`Live Now: ${openRfqs.toLocaleString('en-IN')} Active RFQs`");
-    expect(landing).toContain('loadLiveStats()');
+    expect(landing).toContain("'Live Now: Active RFQs'");
+    expect(landing).not.toContain('openRfqs.toLocaleString');
+    expect(landing).not.toContain('loadLiveStats()');
     expect(landing).toContain("{ title: 'BulkSkart — The Global B2B Marketplace for', accent: 'Bulk Buying & Selling' }");
     expect(landing).toContain('Post Your Requirement');
     expect(landing).toContain('Get Supplier Quotes');

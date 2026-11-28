@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { loadLiveStats } from '@/lib/liveStats';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
@@ -60,15 +59,6 @@ const ACTION_TILES = [
 // ── Component ──────────────────────────────────────────────────────────
 export default function LandingHero() {
   const reduce = useReducedMotion();
-  // the live badge counts the open RFQs in the database (refreshed every minute)
-  const [openRfqs, setOpenRfqs] = useState<number | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    const load = () => loadLiveStats().then((s) => { if (!cancelled) setOpenRfqs(s.openRfqs); });
-    load();
-    const t = window.setInterval(load, 60_000);
-    return () => { cancelled = true; window.clearInterval(t); };
-  }, []);
   const { profile, resolvedRole } = useAuth();
   const [slide, setSlide] = useState(0);
   const isSupplier = resolvedRole === 'supplier' || profile?.role === 'supplier';
@@ -120,7 +110,7 @@ export default function LandingHero() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF2D1A] opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF2D1A] md:h-2.5 md:w-2.5" />
               </span>
-              {openRfqs ? `Live Now: ${openRfqs.toLocaleString('en-IN')} Active RFQs` : 'Live Now: Active RFQs'}
+              'Live Now: Active RFQs'
             </motion.span>
 
             <div className="mt-2.5 min-h-[72px] min-[400px]:min-h-[76px] sm:min-h-[118px] md:mt-4 lg:min-h-[176px]">
